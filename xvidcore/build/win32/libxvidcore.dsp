@@ -1371,15 +1371,7 @@ SOURCE=..\..\src\plugins\plugin_2pass2.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\src\plugins\plugin_cbr.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\src\plugins\plugin_dump.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\src\plugins\plugin_fixed.c
 # End Source File
 # Begin Source File
 
@@ -1388,6 +1380,10 @@ SOURCE=..\..\src\plugins\plugin_lumimasking.c
 # Begin Source File
 
 SOURCE=..\..\src\plugins\plugin_psnr.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\plugins\plugin_single.c
 # End Source File
 # End Group
 # Begin Source File
