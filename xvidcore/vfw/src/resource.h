@@ -370,13 +370,17 @@
 #define IDC_DEC_DY                      1336
 #define IDC_STATUS_L_AVG                1337
 #define IDC_ZONE_FORCEIVOP              1338
+#define IDC_STATUS_IQ_AVG               1338
 #define IDC_STATUS_I_NUM                1339
 #define IDC_STATUS_P_NUM                1340
 #define IDC_STATUS_B_NUM                1341
 #define IDC_STATUS_NUM                  1342
 #define IDC_CARTOON                     1343
+#define IDC_STATUS_PQ_AVG               1343
 #define IDC_OVERFLOW_CONTROL_STRENGTH   1344
+#define IDC_STATUS_BQ_AVG               1344
 #define IDC_ASPECT_RATIO                1345
+#define IDC_STATUS_Q_AVG                1345
 #define IDC_AR                          1346
 #define IDC_PAR                         1347
 #define IDC_PARX                        1355
@@ -390,6 +394,8 @@
 #define IDC_TURBO                       1369
 #define IDC_DEC_DUV                     1370
 #define IDC_DEC_DR                      1371
+#define IDC_DEBUGOUTPUT                 1371
+#define IDC_SHOWINTERNALS               1372
 #define IDC_DEC_FE                      1373
 
 // Next default values for new objects
@@ -398,7 +404,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        127
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1371
+#define _APS_NEXT_CONTROL_VALUE         1373
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
