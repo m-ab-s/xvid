@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.c,v 1.42.2.5 2004-07-09 14:54:28 syskin Exp $
+ * $Id: bitstream.c,v 1.42.2.6 2004-10-12 21:06:33 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -395,7 +395,7 @@ BitstreamReadHeaders(Bitstream * bs,
 	int32_t time_increment = 0;
 	int resize = 0;
 
-	do {
+	while ((BitstreamPos(bs) >> 3) + 4 <= bs->length) {
 
 		BitstreamByteAlign(bs);
 		start_code = BitstreamShowBits(bs, 32);
@@ -1037,7 +1037,6 @@ BitstreamReadHeaders(Bitstream * bs,
 			BitstreamSkip(bs, 8);
 		}
 	}
-	while ((BitstreamPos(bs) >> 3) < bs->length);
 
 #if 0
 	DPRINTF("*** WARNING: no vop_start_code found");

@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_bvop.c,v 1.2.2.1 2004-05-25 14:14:55 syskin Exp $
+ * $Id: estimation_bvop.c,v 1.2.2.2 2004-10-12 21:06:34 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -574,15 +574,15 @@ SkipDecisionB(const IMAGE * const pCur,
 		b_dx = (b_dx >> 3) + roundtab_76[b_dx & 0xf];
 
 		sum = sad8bi(pCur->u + 8 * x + 8 * y * stride,
-						f_Ref->u + (y*8 + dy/2) * stride + x*8 + dx/2,
-						b_Ref->u + (y*8 + b_dy/2) * stride + x*8 + b_dx/2,
+						f_Ref->u + ((int)y*8 + dy/2) * (int)stride + (int)x*8 + dx/2,
+						b_Ref->u + ((int)y*8 + b_dy/2) * (int)stride + (int)x*8 + b_dx/2,
 						stride);
 
 		if (sum >= MAX_CHROMA_SAD_FOR_SKIP * (int)Data->iQuant) return; /* no skip */
 
 		sum += sad8bi(pCur->v + 8*x + 8 * y * stride,
-						f_Ref->v + (y*8 + dy/2) * stride + x*8 + dx/2,
-						b_Ref->v + (y*8 + b_dy/2) * stride + x*8 + b_dx/2,
+						f_Ref->v + ((int)y*8 + dy/2) * (int)stride + (int)x*8 + dx/2,
+						b_Ref->v + ((int)y*8 + b_dy/2) * (int)stride + (int)x*8 + b_dx/2,
 						stride);
 		
 		if (sum >= MAX_CHROMA_SAD_FOR_SKIP * (int)Data->iQuant) return; /* no skip */

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: interpolate8x8.h,v 1.11 2004-03-22 22:36:23 edgomez Exp $
+ * $Id: interpolate8x8.h,v 1.11.2.1 2004-10-12 21:06:33 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -249,8 +249,8 @@ static __inline void interpolate8x8_quarterpel(uint8_t * const cur,
 					 const uint32_t stride,
 					 const uint32_t rounding)
 {
-	const int32_t xRef = x*4 + dx;
-	const int32_t yRef = y*4 + dy;
+	const int32_t xRef = (int)x*4 + dx;
+	const int32_t yRef = (int)y*4 + dy;
 
 	uint8_t *src, *dst;
 	uint8_t *halfpel_h, *halfpel_v, *halfpel_hv;
@@ -268,7 +268,7 @@ static __inline void interpolate8x8_quarterpel(uint8_t * const cur,
 
 	y_frac = yRef - (4*y_int);
 
-	src = refn + y_int * stride + x_int;
+	src = refn + y_int * (int)stride + x_int;
 	halfpel_h = refh;
 	halfpel_v = refv;
 	halfpel_hv = refhv;
@@ -375,8 +375,8 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
 					 const uint32_t stride,
 					 const uint32_t rounding)
 {
-	const int32_t xRef = x*4 + dx;
-	const int32_t yRef = y*4 + dy;
+	const int32_t xRef = (int)x*4 + dx;
+	const int32_t yRef = (int)y*4 + dy;
 
 	uint8_t *src, *dst;
 	uint8_t *halfpel_h, *halfpel_v, *halfpel_hv;
@@ -394,7 +394,7 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
 
 	y_frac = yRef - (4*y_int);
 
-	src = refn + y_int * stride + x_int;
+	src = refn + y_int * (int)stride + x_int;
 	halfpel_h = refh;
 	halfpel_v = refv;
 	halfpel_hv = refhv;
