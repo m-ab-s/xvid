@@ -25,7 +25,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.11 2003-05-24 21:22:18 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.12 2003-05-24 22:03:50 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -678,7 +678,8 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 static int
 rc_2pass2_after(rc_2pass2_t * rc, xvid_plg_data_t * data)
 {
-    stat_t * s = &rc->stats[data->frame_num];
+	const char frame_type[4] = { 'i', 'p', 'b', 's'};
+	stat_t * s = &rc->stats[data->frame_num];
 
 	/* Insufficent stats data */
     if (data->frame_num >= rc->num_frames)
@@ -706,8 +707,9 @@ rc_2pass2_after(rc_2pass2_t * rc, xvid_plg_data_t * data)
         rc->KFoverflow -= rc->KFoverflow_partial;
     }
 
-	DPRINTF(XVID_DEBUG_RC, "[%i] quant:%i stats1:%i scaled:%i actual:%i overflow:%i\n",
+	DPRINTF(XVID_DEBUG_RC, "[%i] type:%c quant:%i stats1:%i scaled:%i actual:%i overflow:%i\n",
 			data->frame_num,
+			frame_type[data->type-1],
 			data->quant,
 			s->length,
 			s->scaled_length,
