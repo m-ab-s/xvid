@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.5 2003-05-17 13:36:38 suxen_drol Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.6 2003-05-20 17:28:25 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -186,16 +186,16 @@ static int load_stats(rc_2pass2_t *rc, char * filename)
 
 
 
+#if 0
 static void print_stats(rc_2pass2_t * rc)
 {
     int i;
     for (i = 0; i < rc->num_frames; i++) {
         stat_t * s = &rc->stats[i];
         DPRINTF(XVID_DEBUG_RC, "%i %i %i %i\n", s->type, s->quant, s->length, s->scaled_length);
-
     }
 }
-
+#endif
 
 /* pre-process the statistics data 
     - for each type, count, tot_length, min_length, max_length
@@ -328,8 +328,8 @@ static void internal_scale(rc_2pass2_t *rc)
             s->scaled_length = s->length;
         }else {
 		    len = (int)((double)s->length * scaler * s->weight / rc->avg_weight);
-		    if (len < min_size[s->type]) {		/* force frame size */
-			    s->scaled_length = min_size[s->type];
+		    if (len < min_size[s->type-1]) {		/* force frame size */
+			    s->scaled_length = min_size[s->type-1];
 			    target -= s->scaled_length;
 			    pass1_length -= s->length;
 		    }else{
@@ -668,6 +668,7 @@ static int rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t ** handle)
     
 
 	pre_process0(rc);
+
 	if (rc->param.bitrate) {
         zone_process(rc, create);
 		internal_scale(rc);
