@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.11 2003-08-13 11:43:47 edgomez Exp $
+ * $Id: decoder.c,v 1.49.2.12 2003-09-24 01:38:29 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -915,14 +915,11 @@ decoder_pframe(DECODER * dec,
 
 				intra = (mb->mode == MODE_INTRA || mb->mode == MODE_INTRA_Q);
 
-				if (intra) {
-					acpred_flag = BitstreamGetBit(bs);
-				}
-
 				if (gmc_warp && (mb->mode == MODE_INTER || mb->mode == MODE_INTER_Q))
-				{
 					mcsel = BitstreamGetBit(bs);
-				}
+
+				if (intra)
+					acpred_flag = BitstreamGetBit(bs);
 
 				cbpy = get_cbpy(bs, intra);
 				DPRINTF(XVID_DEBUG_MB, "cbpy %i  mcsel %i \n", cbpy,mcsel);
