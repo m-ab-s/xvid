@@ -37,11 +37,13 @@
  *  - 22.12.2001  API change: added xvid_init() - Isibaar
  *  - 16.12.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: xvid.c,v 1.33.2.20 2003-01-02 13:58:54 suxen_drol Exp $
+ *  $Id: xvid.c,v 1.33.2.21 2003-01-03 16:25:14 suxen_drol Exp $
  *
  ****************************************************************************/
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #include "xvid.h"
@@ -708,7 +710,7 @@ int test_transform(void * funcA, void * funcB, const char * nameB,
 	}
 
 	/* print the "average difference" of best/worst transforms */
-	printf("%s:\t%I64i\t(min_error:%i, max_error:%i)\n", nameB, timeB / count, min_error, max_error);
+	printf("%s:\t%i\t(min_error:%i, max_error:%i)\n", nameB, (int)(timeB / count), min_error, max_error);
 
 	return 0;
 }
@@ -790,7 +792,7 @@ int test_quant(void * funcA, void * funcB, const char * nameB,
 		}
 	}
 
-	printf("%s:\t%I64i", nameB, timeB / count);
+	printf("%s:\t%i", nameB, (int)(timeB / count));
 	if (errors>0)
 		printf("\t(%i errors out of %i)", errors, count);
 	printf("\n");

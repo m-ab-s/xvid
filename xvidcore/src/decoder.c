@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.24 2002-12-29 16:59:50 suxen_drol Exp $
+ *  $Id: decoder.c,v 1.37.2.25 2003-01-03 16:25:14 suxen_drol Exp $
  *
  *************************************************************************/
 
@@ -1705,6 +1705,7 @@ repeat:
 	if (vop_type == - 1)
 	{
 		if (success) goto done;
+		emms();
 		return XVID_ERR_FAIL;
 	}
 
@@ -1725,6 +1726,7 @@ repeat:
 			stats->data.vol.par_width = dec->par_width;
 			stats->data.vol.par_height = dec->par_height;
 			frame->length = BitstreamPos(&bs) / 8;
+			emms();
 			return XVID_ERR_OK;
 		}
 		goto repeat;

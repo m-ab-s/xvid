@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.31 2002-12-14 06:07:02 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.76.2.32 2003-01-03 16:25:14 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -73,7 +73,7 @@
  ****************************************************************************/
 
 #define ENC_CHECK(X) if(!(X)) return XVID_ERR_FORMAT
-#define SWAP(A,B)    { void * tmp = A; A = B; B = tmp; }
+#define SWAP(_T_,A,B)    { _T_ tmp = A; A = B; B = tmp; }
 
 /*****************************************************************************
  * Local function prototypes
@@ -713,9 +713,9 @@ ipvop_loop:
 				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
 
 			pEnc->bframenum_tail--;
-			SWAP(pEnc->current, pEnc->reference);
+			SWAP(FRAMEINFO *, pEnc->current, pEnc->reference);
 
-			SWAP(pEnc->current, pEnc->bframes[pEnc->bframenum_tail]);
+			SWAP(FRAMEINFO *, pEnc->current, pEnc->bframes[pEnc->bframenum_tail]);
 
 			FrameCodeP(pEnc, &bs, &bits, 1, 0);
 			bframes_count = 0;
@@ -791,8 +791,8 @@ bvop_loop:
 	if (pEnc->bframenum_dx50bvop != -1)
 	{
 
-		SWAP(pEnc->current, pEnc->reference);
-		SWAP(pEnc->current, pEnc->bframes[pEnc->bframenum_dx50bvop]);		
+		SWAP(FRAMEINFO *, pEnc->current, pEnc->reference);
+		SWAP(FRAMEINFO *, pEnc->current, pEnc->bframes[pEnc->bframenum_dx50bvop]);		
 
 		if ((pEnc->mbParam.global & XVID_GLOBAL_DEBUG)) {
 			image_printf(&pEnc->current->image, pEnc->mbParam.edged_width, pEnc->mbParam.height, 5, 100, "DX50 IVOP");
@@ -806,7 +806,7 @@ bvop_loop:
 
 	} else if (input_valid) {
 
-		SWAP(pEnc->current, pEnc->reference);
+		SWAP(FRAMEINFO *, pEnc->current, pEnc->reference);
 
 		start_timer();
 		if (image_input
@@ -832,7 +832,7 @@ bvop_loop:
 
 	} else if (pEnc->queue_size > 0) {
 		
-		SWAP(pEnc->current, pEnc->reference);
+		SWAP(FRAMEINFO *, pEnc->current, pEnc->reference);
 
 		image_swap(&pEnc->current->image, &pEnc->queue[pEnc->queue_head]);
 		pEnc->queue_head =  (pEnc->queue_head + 1) % pEnc->mbParam.max_bframes;
@@ -985,7 +985,7 @@ bvop_loop:
 			pEnc->bframenum_tail--;
 			pEnc->bframenum_dx50bvop = pEnc->bframenum_tail;
 
-			SWAP(pEnc->current, pEnc->bframes[pEnc->bframenum_dx50bvop]);
+			SWAP(FRAMEINFO *, pEnc->current, pEnc->bframes[pEnc->bframenum_dx50bvop]);
 			if ((pEnc->mbParam.global & XVID_GLOBAL_DEBUG)) {
 				image_printf(&pEnc->current->image, pEnc->mbParam.edged_width, pEnc->mbParam.height, 5, 100, "DX50 BVOP->PVOP");
 			}
@@ -1066,8 +1066,8 @@ bvop_loop:
 				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size,pEnc->current->quant);
 
 		/* store frame into bframe buffer & swap ref back to current */
-		SWAP(pEnc->current, pEnc->bframes[pEnc->bframenum_tail]);
-		SWAP(pEnc->current, pEnc->reference);
+		SWAP(FRAMEINFO *, pEnc->current, pEnc->bframes[pEnc->bframenum_tail]);
+		SWAP(FRAMEINFO *, pEnc->current, pEnc->reference);
 
 		pEnc->bframenum_tail++;
 
@@ -1147,7 +1147,7 @@ encoder_encode(Encoder * pEnc,
 	ENC_CHECK(pFrame->bitstream);
 	ENC_CHECK(pFrame->image);
 
-	SWAP(pEnc->current, pEnc->reference);
+	SWAP(FRAMEINFO *, pEnc->current, pEnc->reference);
 
 	pEnc->current->global_flags = pFrame->general;
 	pEnc->current->motion_flags = pFrame->motion;
@@ -1562,15 +1562,6 @@ FrameCodeI(Encoder * pEnc,
 	pEnc->current->coding_type = I_VOP;
 
 	BitstreamWriteVolHeader(bs, &pEnc->mbParam, pEnc->current);
-
-	/* XXX: move this stuff to BitstreamWriteVolHeader */
-#define DIVX501B481P "DivX501b481p"
-	if ((pEnc->mbParam.global & XVID_GLOBAL_PACKED)) {
-		BitstreamWriteUserData(bs, DIVX501B481P, strlen(DIVX501B481P));
-	}
-
-#define XVID_ID "XviD" XVID_BS_VERSION
-	BitstreamWriteUserData(bs, XVID_ID, strlen(XVID_ID));
 
 	set_timecodes(pEnc->current,pEnc->reference,pEnc->mbParam.fbase);
 	BitstreamWriteVopHeader(bs, &pEnc->mbParam, pEnc->current, 1);

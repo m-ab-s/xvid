@@ -472,7 +472,7 @@ BitstreamReadHeaders(Bitstream * bs,
 			if (BitstreamGetBit(bs))	// is_visual_object_identified
 			{
 				visobj_ver_id = BitstreamGetBits(bs, 4);	// visual_object_ver_id
-				DPRINTF(DPRINTF_HEADER,"ver_id %i", vol_ver_id);
+				DPRINTF(DPRINTF_HEADER,"visobj_ver_id %i", visobj_ver_id);
 				BitstreamSkip(bs, 3);	// visual_object_priority
 			} else {
 				visobj_ver_id = 1;
@@ -1255,6 +1255,15 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	
 	BitstreamPutBit(bs, 0);		// scalability
 
+	/* fake divx5 id, to ensure compatibility with divx5 decoder */
+#define DIVX5_ID "DivX501b481p"
+	if (pParam->max_bframes > 0 && (pParam->global & XVID_GLOBAL_PACKED)) {
+		BitstreamWriteUserData(bs, DIVX5_ID, strlen(DIVX5_ID));
+	}
+
+	/* xvid id */
+#define XVID_ID "XviD" XVID_BS_VERSION
+	BitstreamWriteUserData(bs, XVID_ID, strlen(XVID_ID));
 }
 
 
