@@ -23,6 +23,7 @@
  *
  *	History:
  *
+ *	21.04.2002	fixed custom matrix support, tried to get dll size down
  *	17.04.2002	re-enabled lumi masking in 1st pass
  *	15.04.2002	updated cbr support
  *	07.04.2002	min keyframe interval checkbox
@@ -458,10 +459,14 @@ void adv_dialog(HWND hParent, CONFIG * config)
 void adv_mode(HWND hDlg, int mode)
 {
 	// create arrays of controls to be disabled for each mode
-	const int cbr_disable[] = {
-		IDC_KFBOOST, IDC_DISCARD1PASS, IDC_DUMMY2PASS,
+	const short twopass_disable[] = {
+		IDC_KFBOOST, IDC_DUMMY2PASS, IDC_USEALT,
 		IDC_CURVECOMPH, IDC_CURVECOMPL, IDC_PAYBACK, IDC_PAYBACKBIAS, IDC_PAYBACKPROP,
-		IDC_STATS1, IDC_STATS1_BROWSE, IDC_STATS2, IDC_STATS2_BROWSE,
+		IDC_STATS2, IDC_STATS2_BROWSE,
+	};
+
+	const short cbr_disable[] = {
+		IDC_STATS1, IDC_STATS1_BROWSE, IDC_DISCARD1PASS, IDC_HINTEDME,
 		IDC_CREDITS_START, IDC_CREDITS_END, IDC_CREDITS_START_BEGIN, IDC_CREDITS_START_END,
 		IDC_CREDITS_END_BEGIN, IDC_CREDITS_END_END, IDC_CREDITS_RATE_RADIO,
 		IDC_CREDITS_QUANT_RADIO, IDC_CREDITS_QUANT_STATIC, IDC_CREDITS_SIZE_RADIO,
@@ -469,96 +474,110 @@ void adv_mode(HWND hDlg, int mode)
 		IDC_CREDITS_START_SIZE, IDC_CREDITS_END_SIZE,
 	};
 
-	const int qual_disable[] = {
+	const short qual_disable[] = {
+		IDC_STATS1, IDC_STATS1_BROWSE, IDC_DISCARD1PASS, IDC_HINTEDME,
 		IDC_CBR_REACTIONDELAY, IDC_CBR_AVERAGINGPERIOD, IDC_CBR_BUFFER,
-		IDC_KFBOOST, IDC_DISCARD1PASS, IDC_DUMMY2PASS,
-		IDC_CURVECOMPH, IDC_CURVECOMPL, IDC_PAYBACK, IDC_PAYBACKBIAS, IDC_PAYBACKPROP,
-		IDC_STATS1, IDC_STATS1_BROWSE, IDC_STATS2, IDC_STATS2_BROWSE,
 		IDC_CREDITS_SIZE_RADIO, IDC_CREDITS_END_STATIC, IDC_CREDITS_START_SIZE, IDC_CREDITS_END_SIZE
 	};
 
-	const int quant_disable[] = {
+	const short quant_disable[] = {
+		IDC_STATS1, IDC_STATS1_BROWSE, IDC_DISCARD1PASS, IDC_HINTEDME,
 		IDC_CBR_REACTIONDELAY, IDC_CBR_AVERAGINGPERIOD, IDC_CBR_BUFFER,
 		IDC_MINIQUANT, IDC_MAXIQUANT, IDC_MINPQUANT, IDC_MAXPQUANT,
-		IDC_KFBOOST, IDC_DISCARD1PASS, IDC_DUMMY2PASS,
-		IDC_CURVECOMPH, IDC_CURVECOMPL, IDC_PAYBACK, IDC_PAYBACKBIAS, IDC_PAYBACKPROP,
-		IDC_STATS1, IDC_STATS1_BROWSE, IDC_STATS2, IDC_STATS2_BROWSE,
 		IDC_CREDITS_SIZE_RADIO, IDC_CREDITS_END_STATIC, IDC_CREDITS_START_SIZE, IDC_CREDITS_END_SIZE
 	};
 
-	const int twopass1_disable[] = {
+	const short twopass1_disable[] = {
 		IDC_CBR_REACTIONDELAY, IDC_CBR_AVERAGINGPERIOD, IDC_CBR_BUFFER,
 		IDC_MINIQUANT, IDC_MAXIQUANT, IDC_MINPQUANT, IDC_MAXPQUANT,
-		IDC_KFBOOST, IDC_DUMMY2PASS,
-		IDC_CURVECOMPH, IDC_CURVECOMPL, IDC_PAYBACK, IDC_PAYBACKBIAS, IDC_PAYBACKPROP,
-		IDC_STATS2, IDC_STATS2_BROWSE,
 		IDC_CREDITS_RATE_RADIO, IDC_CREDITS_RATE, IDC_CREDITS_SIZE_RADIO, IDC_CREDITS_END_STATIC,
 		IDC_CREDITS_START_SIZE, IDC_CREDITS_END_SIZE
 	};
 
-	const int twopass2_ext_disable[] = {
+	const short twopass2_ext_disable[] = {
 		IDC_CBR_REACTIONDELAY, IDC_CBR_AVERAGINGPERIOD, IDC_CBR_BUFFER,
 		IDC_CREDITS_RATE_RADIO, IDC_CREDITS_QUANT_RADIO, IDC_CREDITS_QUANT_STATIC,
 		IDC_CREDITS_SIZE_RADIO, IDC_CREDITS_END_STATIC, IDC_CREDITS_RATE,
 		IDC_CREDITS_QUANTI, IDC_CREDITS_QUANTP, IDC_CREDITS_START_SIZE, IDC_CREDITS_END_SIZE
 	};
 
-	const int twopass2_int_disable[] = {
+	const short twopass2_int_disable[] = {
 		IDC_CBR_REACTIONDELAY, IDC_CBR_AVERAGINGPERIOD, IDC_CBR_BUFFER,
 		IDC_STATS2, IDC_STATS2_BROWSE
 	};
 
 	// store pointers in order so we can lookup using config->mode
-	const int* modes[] = {
+	const short* modes[] = {
 		cbr_disable, qual_disable, quant_disable,
 		twopass1_disable, twopass2_ext_disable, twopass2_int_disable
 	};
 
 	// ditto modes[]
 	const int lengths[] = {
-		sizeof(cbr_disable)/sizeof(int), sizeof(qual_disable)/sizeof(int),
-		sizeof(quant_disable)/sizeof(int), sizeof(twopass1_disable)/sizeof(int),
-		sizeof(twopass2_ext_disable)/sizeof(int), sizeof(twopass2_int_disable)/sizeof(int)
+		sizeof(cbr_disable)/sizeof(short), sizeof(qual_disable)/sizeof(short),
+		sizeof(quant_disable)/sizeof(short), sizeof(twopass1_disable)/sizeof(short),
+		sizeof(twopass2_ext_disable)/sizeof(short), sizeof(twopass2_int_disable)/sizeof(short), 0
 	};
 
 	int i;
+	int hinted_me, use_alt, use_alt_auto, use_alt_auto_bonus;
+	int credits_start, credits_end, credits_rate, credits_quant, credits_size;
+	int cpu_force;
 
 	// first perform checkbox-based enable/disable
-	CONTROLDLG(IDC_HINTFILE,			ISDLGSET(IDC_HINTEDME));
-	CONTROLDLG(IDC_HINT_BROWSE,			ISDLGSET(IDC_HINTEDME));
+	hinted_me = ISDLGSET(IDC_HINTEDME);
+	CONTROLDLG(IDC_HINTFILE,			hinted_me);
+	CONTROLDLG(IDC_HINT_BROWSE,			hinted_me);
 
-	CONTROLDLG(IDC_USEAUTO,				ISDLGSET(IDC_USEALT));
-	CONTROLDLG(IDC_AUTOSTR,				ISDLGSET(IDC_USEALT) && ISDLGSET(IDC_USEAUTO));
-	CONTROLDLG(IDC_USEAUTOBONUS,		ISDLGSET(IDC_USEALT));
-	CONTROLDLG(IDC_BONUSBIAS,			(ISDLGSET(IDC_USEALT) && !(ISDLGSET(IDC_USEAUTOBONUS))));
-	CONTROLDLG(IDC_CURVETYPE,			ISDLGSET(IDC_USEALT));
-	CONTROLDLG(IDC_ALTCURVEHIGH,		ISDLGSET(IDC_USEALT));
-	CONTROLDLG(IDC_ALTCURVELOW,			ISDLGSET(IDC_USEALT));
-	CONTROLDLG(IDC_MINQUAL,				ISDLGSET(IDC_USEALT) && !(ISDLGSET(IDC_USEAUTO)));
+	use_alt				= ISDLGSET(IDC_USEALT) && (mode == DLG_MODE_2PASS_2_EXT || mode == DLG_MODE_2PASS_2_INT);
+	use_alt_auto		= ISDLGSET(IDC_USEAUTO);
+	use_alt_auto_bonus	= ISDLGSET(IDC_USEAUTOBONUS);
+	CONTROLDLG(IDC_USEAUTO,				use_alt);
+	CONTROLDLG(IDC_AUTOSTR,				use_alt && use_alt_auto);
+	CONTROLDLG(IDC_USEAUTOBONUS,		use_alt);
+	CONTROLDLG(IDC_BONUSBIAS,			use_alt && !use_alt_auto_bonus);
+	CONTROLDLG(IDC_CURVETYPE,			use_alt);
+	CONTROLDLG(IDC_ALTCURVEHIGH,		use_alt);
+	CONTROLDLG(IDC_ALTCURVELOW,			use_alt);
+	CONTROLDLG(IDC_MINQUAL,				use_alt && !use_alt_auto);
 
-	CONTROLDLG(IDC_CREDITS_START_BEGIN,	ISDLGSET(IDC_CREDITS_START));
-	CONTROLDLG(IDC_CREDITS_START_END,	ISDLGSET(IDC_CREDITS_START));
+	credits_start		= ISDLGSET(IDC_CREDITS_START);
+	CONTROLDLG(IDC_CREDITS_START_BEGIN,	credits_start);
+	CONTROLDLG(IDC_CREDITS_START_END,	credits_start);
 
-	CONTROLDLG(IDC_CREDITS_END_BEGIN,	ISDLGSET(IDC_CREDITS_END));
-	CONTROLDLG(IDC_CREDITS_END_END,		ISDLGSET(IDC_CREDITS_END));
+	credits_end			= ISDLGSET(IDC_CREDITS_END);
+	CONTROLDLG(IDC_CREDITS_END_BEGIN,	credits_end);
+	CONTROLDLG(IDC_CREDITS_END_END,		credits_end);
 
-	CONTROLDLG(IDC_CREDITS_RATE,		ISDLGSET(IDC_CREDITS_RATE_RADIO));
-	CONTROLDLG(IDC_CREDITS_QUANTI,		ISDLGSET(IDC_CREDITS_QUANT_RADIO));
-	CONTROLDLG(IDC_CREDITS_QUANTP,		ISDLGSET(IDC_CREDITS_QUANT_RADIO));
-	CONTROLDLG(IDC_CREDITS_START_SIZE,	ISDLGSET(IDC_CREDITS_SIZE_RADIO));
-	CONTROLDLG(IDC_CREDITS_END_SIZE,	ISDLGSET(IDC_CREDITS_SIZE_RADIO));
+	credits_rate		= ISDLGSET(IDC_CREDITS_RATE_RADIO);
+	credits_quant		= ISDLGSET(IDC_CREDITS_QUANT_RADIO);
+	credits_size		= ISDLGSET(IDC_CREDITS_SIZE_RADIO);
+	CONTROLDLG(IDC_CREDITS_RATE,		credits_rate);
+	CONTROLDLG(IDC_CREDITS_QUANTI,		credits_quant);
+	CONTROLDLG(IDC_CREDITS_QUANTP,		credits_quant);
+	CONTROLDLG(IDC_CREDITS_START_SIZE,	credits_size);
+	CONTROLDLG(IDC_CREDITS_END_SIZE,	credits_size);
 
-	CONTROLDLG(IDC_CPU_MMX,				ISDLGSET(IDC_CPU_FORCE));
-	CONTROLDLG(IDC_CPU_MMXEXT,			ISDLGSET(IDC_CPU_FORCE));
-	CONTROLDLG(IDC_CPU_SSE,				ISDLGSET(IDC_CPU_FORCE));
-	CONTROLDLG(IDC_CPU_SSE2,			ISDLGSET(IDC_CPU_FORCE));
-	CONTROLDLG(IDC_CPU_3DNOW,			ISDLGSET(IDC_CPU_FORCE));
-	CONTROLDLG(IDC_CPU_3DNOWEXT,		ISDLGSET(IDC_CPU_FORCE));
+	cpu_force			= ISDLGSET(IDC_CPU_FORCE);
+	CONTROLDLG(IDC_CPU_MMX,				cpu_force);
+	CONTROLDLG(IDC_CPU_MMXEXT,			cpu_force);
+	CONTROLDLG(IDC_CPU_SSE,				cpu_force);
+	CONTROLDLG(IDC_CPU_SSE2,			cpu_force);
+	CONTROLDLG(IDC_CPU_3DNOW,			cpu_force);
+	CONTROLDLG(IDC_CPU_3DNOWEXT,		cpu_force);
 
 	// now perform codec mode enable/disable
 	for (i=0 ; i<lengths[mode] ; ++i)
 	{
 		EnableWindow(GetDlgItem(hDlg, modes[mode][i]), FALSE);
+	}
+
+	if (mode != DLG_MODE_2PASS_2_EXT && mode != DLG_MODE_2PASS_2_INT)
+	{
+		for (i=0 ; i<sizeof(twopass_disable)/sizeof(short) ; ++i)
+		{
+			EnableWindow(GetDlgItem(hDlg, twopass_disable[i]), FALSE);
+		}
 	}
 }
 
@@ -829,11 +848,11 @@ void quant_download(HWND hDlg, CONFIG* config)
 
 		temp = config_get_int(hDlg, i + IDC_QINTRA00, config->qmatrix_intra[i]);
 		CONSTRAINVAL(temp, 1, 255);
-		temp = config->qmatrix_intra[i];
+		config->qmatrix_intra[i] = temp;
 
 		temp = config_get_int(hDlg, i + IDC_QINTER00, config->qmatrix_inter[i]);
 		CONSTRAINVAL(temp, 1, 255);
-		temp = config->qmatrix_inter[i];
+		config->qmatrix_inter[i] = temp;
 	}
 }
 

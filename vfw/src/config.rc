@@ -684,10 +684,6 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     IDC_MODE                "1-pass CBR encodes to your specified bitrate.\n1-pass quality and quantizer encodes every frame at the same quality.\n2-pass 1st pass gathers statistics for the 2nd pass.\n2-pass internal scales the 2nd pass to your desired file size.\n2-pass external relies on GKnot to scale the .stats file."
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
     IDC_ALTCURVELOW         "Distance from the average framesize where the best quality will be applied"
     IDC_MINQUAL             "The minimum produced quality in relation to the best produced quality"
     IDC_INTERLACING         "Enables interlaced frame support - only use if your source contains interlacing artifacts (i.e. fields instead of progressive frames)"
@@ -697,10 +693,6 @@ BEGIN
     IDC_CBR_REACTIONDELAY   "Determines how slowly it will adjust the current encoding quality based upon scene intensity - this has the strongest influence on quality"
     IDC_CBR_AVERAGINGPERIOD "Determines how slowly it adapts to the current adjusted quality"
     IDC_CBR_BUFFER          "Provides said number of frames worth of buffer between the adjusted encoding quality and lowest possible quality"
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
     IDC_MOTION              "Higher settings give higher-quality results, at the cost of slower encoding.  5 (default) should suffice for most jobs."
     IDC_QUANTTYPE           "H.263 smooths the image whereas MPEG (slightly slower) sharpens.\nModulated varies between the two.\nCustom lets you define your own matrix via the Quantization tab."
     IDC_FOURCC              "Choose what you would like the avi to identify itself as"
@@ -714,10 +706,6 @@ BEGIN
     IDC_KFBOOST             "A value of 20 will give 20% more bits to every I-frame"
     IDC_MINKEY              "Minimum space between I-frames - should be less than 10, set to 1 to disable forced I-frame spacing"
     IDC_DISCARD1PASS        "Check this if you would like to skip the storage of the 1st pass output.  It is often very large."
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
     IDC_DUMMY2PASS          "Performs a dummy 2nd pass - doesn't output any video data"
     IDC_CURVECOMPH          "The higher this value, the more bits get taken from frames larger than the average size, and redistributed to others"
     IDC_CURVECOMPL          "The higher this value, the more bits get assigned to frames below the average frame size"
@@ -729,10 +717,6 @@ BEGIN
     IDC_CREDITS_START_BEGIN "Credits begin at this frame"
     IDC_CREDITS_START_END   "Credits end at this frame"
     IDC_CREDITS_END_START   "Credits start at this frame"
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
     IDC_CREDITS_END_END     "Credits end at this frame"
     IDC_CREDITS_RATE        "Encode credits at this % rate of the rest of the movie"
     IDC_CREDITS_QUANTI      "Encode credits I-frames with this quantizer"
@@ -741,16 +725,8 @@ BEGIN
     IDC_CREDITS_END_SIZE    "Encode ending credits to fit into this many kbytes"
     IDC_CPU_AUTO            "Enable XviD's internal CPU detection"
     IDC_CPU_FORCE           "Override XviD's internal CPU detection (not recommended)"
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
     IDC_LOAD                "Load a pair of custom intra/inter matrices"
     IDC_SAVE                "Save the current intra/inter matrices to a file"
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
     IDC_USEALT              "Use Foxer's alternative 2-pass curve system (still uses bias and boost information from other 2-pass tab)"
     IDC_AUTOSTR             "How much influence a poor desired quality (file size) has on minimum relative quality"
     IDC_BONUSBIAS           "The percentage of the bonus that will be applied with bias (the rest is proportionally distributed)"
