@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.21 2002-11-23 14:57:09 syskin Exp $
+ *  $Id: encoder.c,v 1.76.2.22 2002-11-27 11:50:33 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -944,6 +944,14 @@ bvop_loop:
 			pEnc->mbParam.m_quarterpel = 0;
 
 		if (pEnc->current->global_flags & XVID_MPEGQUANT) pEnc->mbParam.m_quant_type = MPEG4_QUANT;
+
+		if ((pEnc->current->global_flags & XVID_CUSTOM_QMATRIX) > 0) {
+			if (pFrame->quant_intra_matrix != NULL)
+				set_intra_matrix(pFrame->quant_intra_matrix);
+			if (pFrame->quant_inter_matrix != NULL)
+				set_inter_matrix(pFrame->quant_inter_matrix);
+		}
+
 
 		DPRINTF(DPRINTF_DEBUG,"*** IFRAME bf: head=%i tail=%i   queue: head=%i tail=%i size=%i",
 				pEnc->bframenum_head, pEnc->bframenum_tail,
