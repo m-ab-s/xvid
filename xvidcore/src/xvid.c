@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.7 2003-06-09 19:42:08 edgomez Exp $
+ * $Id: xvid.c,v 1.45.2.8 2003-06-11 14:10:40 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -305,7 +305,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 
 		/* Forward and Inverse Discrete Cosine Transformation functions */
 		fdct = fdct_mmx;
-		idct = simple_idct_mmx;
+		idct = idct_mmx;
 
 		/* Quantization related functions */
 		quant_intra   = quant_intra_mmx;
@@ -391,9 +391,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	if ((cpu_flags & XVID_CPU_MMXEXT)) {
 
 		/* Inverse DCT */
-#if 0 /* We don't use  Walken idct anymore! */
 		idct = idct_xmm;
-#endif
 
 		/* Interpolation */
 		interpolate8x8_halfpel_h  = interpolate8x8_halfpel_h_xmm;
@@ -439,9 +437,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	if ((cpu_flags & XVID_CPU_3DNOWEXT)) {
 
 		/* Inverse DCT */
-#if 0 /* We don't use  Walken idct anymore! */
 		idct =  idct_3dne;
-#endif
 
 		/* Buffer transfer */
 		transfer_8to16copy =  transfer_8to16copy_3dne;
