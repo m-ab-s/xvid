@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.17 2003-03-30 00:36:53 edgomez Exp $
+ *  $Id: encoder.c,v 1.95.2.18 2003-04-02 20:43:56 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -202,8 +202,8 @@ enc_create(xvid_enc_create_t * create)
 	pEnc->mbParam.frame_drop_ratio = MAX(create->frame_drop_ratio, 0);
 
     /* max keyframe interval */
-    pEnc->mbParam.iMaxKeyInterval = create->max_key_interval <=0 ? 250 : create->max_key_interval;
-    /*XXX: replace 250 hard code with "10seconds * framerate" */
+    pEnc->mbParam.iMaxKeyInterval = create->max_key_interval <= 0 ?
+		10 * pEnc->mbParam.fbase / pEnc->mbParam.fincr : create->max_key_interval;
 
 	/* Bitrate allocator defaults 
 
