@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.c,v 1.58.2.33 2003-09-04 18:40:02 Isibaar Exp $
+ * $Id: motion_est.c,v 1.58.2.34 2003-09-05 10:01:50 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -1005,9 +1005,10 @@ SubpelRefine_Fast(SearchData * data, CheckFunc * CheckCandidate)
 
 	second_best = *data->currentMV;
 	
-	if(data->qpel_precision)
+	if(data->qpel_precision) {
 		second_best.x *= 2;	second_best.y *= 2;
-	
+	}
+
 	data->currentMV[0] = centerMV;
 	*data->iMinSAD = best_sad;
 
@@ -1158,7 +1159,7 @@ ModeDecision_Fast(SearchData * const Data,
 	pMB->mcsel = 0;
 
 	/* INTER <-> INTER4V decision */
-	if ((Data->iMinSAD[0] + 125 < Data->iMinSAD[1] + 
+	if ((Data->iMinSAD[0] + 50 < Data->iMinSAD[1] + 
 		Data->iMinSAD[2] + Data->iMinSAD[3] + Data->iMinSAD[4])) { /* normal, fast, SAD-based mode decision */
 		if (inter4v == 0 || Data->iMinSAD[0] < Data->iMinSAD[1] + Data->iMinSAD[2] +
 			Data->iMinSAD[3] + Data->iMinSAD[4] + IMV16X16 * (int32_t)iQuant) {
