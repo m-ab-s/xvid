@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.25 2003-01-03 16:25:14 suxen_drol Exp $
+ *  $Id: decoder.c,v 1.37.2.26 2003-01-04 06:14:32 suxen_drol Exp $
  *
  *************************************************************************/
 
@@ -68,6 +68,7 @@
 
 #include "xvid.h"
 #include "portab.h"
+#include "global.h"
 
 #include "decoder.h"
 #include "bitstream/bitstream.h"
@@ -383,10 +384,6 @@ decoder_mbintra(DECODER * dec,
 
 
 
-
-
-#define SIGN(X) (((X)>0)?1:-1)
-#define ABS(X) (((X)>0)?(X):-(X))
 
 // decode an inter macroblock
 

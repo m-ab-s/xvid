@@ -40,7 +40,7 @@
  *
  *************************************************************************/
 
-
+#include "../global.h"
 #include "quant_mpeg4.h"
 #include "quant_matrix.h"
 
@@ -51,8 +51,6 @@ dequant_interFuncPtr dequant4_inter;
 quant_interFuncPtr quant4_inter;
 
 
-#define DIV_DIV(A,B)    ( (A) > 0 ? ((A)+((B)>>1))/(B) : ((A)-((B)>>1))/(B) )
-#define SIGN(A)  ((A)>0?1:-1)
 #define VM18P    3
 #define VM18Q    4
 

@@ -1,9 +1,9 @@
 #include "../portab.h"
+#include "../global.h"
 #include "adapt_quant.h"
 
 #include <stdlib.h>				/* free, malloc */
 
-#define MAX(a,b)      (((a) > (b)) ? (a) : (b))
 #define RDIFF(a,b)    ((int)(a+0.5)-(int)(b+0.5))
 
 int

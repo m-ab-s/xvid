@@ -50,11 +50,12 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: reduced.c,v 1.1.2.2 2002-12-09 10:47:05 suxen_drol Exp $
+ * $Id: reduced.c,v 1.1.2.3 2003-01-04 06:14:33 suxen_drol Exp $
  *
  ****************************************************************************/
 
 #include "../portab.h"
+#include "../global.h"
 #include "reduced.h"
 
 // function pointers
@@ -68,8 +69,7 @@ FILTER_DIFF_18X18_TO_8X8 * filter_diff_18x18_to_8x8;
 //////////////////////////////////////////////////////////
 // Upsampling (1/3/3/1) filter
 
-#define CLIP(x) ((x)<0 ? 0 : (x)>255 ? 255 : (x))
-#define ADD(dst,src)  (dst) = CLIP((dst)+(src))
+#define ADD(dst,src)  (dst) = CLIP((dst)+(src), 0, 255)
 
 static __inline void Filter_31(uint8_t *Dst1, uint8_t *Dst2,
                              const int16_t *Src1, const int16_t *Src2)
@@ -77,8 +77,8 @@ static __inline void Filter_31(uint8_t *Dst1, uint8_t *Dst2,
     /* Src[] is assumed to be >=0. So we can use ">>2" instead of "/2" */
   int16_t a = (3*Src1[0]+  Src2[0]+2) >> 2;
   int16_t b = (  Src1[0]+3*Src2[0]+2) >> 2;
-  Dst1[0] = CLIP(a);
-  Dst2[0] = CLIP(b);
+  Dst1[0] = CLIP(a, 0, 255);
+  Dst2[0] = CLIP(b, 0, 255);
 }
 
 static __inline void Filter_9331(uint8_t *Dst1, uint8_t *Dst2,
@@ -89,19 +89,19 @@ static __inline void Filter_9331(uint8_t *Dst1, uint8_t *Dst2,
   int16_t b = (3*Src1[0]+  9*Src1[1]+ 1*Src2[0] + 3*Src2[1] + 8) >> 4;
   int16_t c = (3*Src1[0]+  1*Src1[1]+ 9*Src2[0] + 3*Src2[1] + 8) >> 4;
   int16_t d = (1*Src1[0]+  3*Src1[1]+ 3*Src2[0] + 9*Src2[1] + 8) >> 4;
-  Dst1[0] = CLIP(a);
-  Dst1[1] = CLIP(b);
-  Dst2[0] = CLIP(c);
-  Dst2[1] = CLIP(d);
+  Dst1[0] = CLIP(a, 0, 255);
+  Dst1[1] = CLIP(b, 0, 255);
+  Dst2[0] = CLIP(c, 0, 255);
+  Dst2[1] = CLIP(d, 0, 255);
 }
 
 void xvid_Copy_Upsampled_8x8_16To8_C(uint8_t *Dst, const int16_t *Src, const int BpS)
 {
   int x, y;
 
-  Dst[0] = CLIP(Src[0]);
+  Dst[0] = CLIP(Src[0], 0, 255);
   for(x=0; x<7; ++x) Filter_31(Dst+2*x+1, Dst+2*x+2, Src+x, Src+x+1);
-  Dst[15] = CLIP(Src[7]);
+  Dst[15] = CLIP(Src[7], 0, 255);
   Dst += BpS;
   for(y=0; y<7; ++y) {
     uint8_t *const Dst2 = Dst + BpS;
@@ -112,9 +112,9 @@ void xvid_Copy_Upsampled_8x8_16To8_C(uint8_t *Dst, const int16_t *Src, const int
     Src += 8; 
     Dst += 2*BpS;
   }
-  Dst[0] = CLIP(Src[0]);
+  Dst[0] = CLIP(Src[0], 0, 255);
   for(x=0; x<7; ++x) Filter_31(Dst+2*x+1, Dst+2*x+2, Src+x, Src+x+1);
-  Dst[15] = CLIP(Src[7]);
+  Dst[15] = CLIP(Src[7], 0, 255);
 }
 
 static __inline void Filter_Add_31(uint8_t *Dst1, uint8_t *Dst2,
@@ -161,7 +161,6 @@ void xvid_Add_Upsampled_8x8_16To8_C(uint8_t *Dst, const int16_t *Src, const int 
   for(x=0; x<7; ++x) Filter_Add_31(Dst+2*x+1, Dst+2*x+2, Src+x, Src+x+1);
   ADD(Dst[15], Src[7]);
 }
-#undef CLIP
 #undef ADD
 
 //////////////////////////////////////////////////////////

@@ -28,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.18 2002-12-30 10:49:17 suxen_drol Exp $
+*  $Id: xvid.h,v 1.17.2.19 2003-01-04 06:14:32 suxen_drol Exp $
 *
 *****************************************************************************/
 
@@ -96,20 +96,23 @@ extern "C" {
  ****************************************************************************/
 
 /* CPU flags for XVID_INIT_PARAM.cpu_flags */
-
-#define XVID_CPU_MMX		0x00000001
-#define XVID_CPU_MMXEXT		0x00000002
-#define XVID_CPU_SSE		0x00000004 
-#define XVID_CPU_SSE2		0x00000008
-#define XVID_CPU_3DNOW		0x00000010
-#define XVID_CPU_3DNOWEXT	0x00000020
-
-#define XVID_CPU_TSC		0x00000040
-
-#define XVID_CPU_IA64		0x00000080
-
-#define XVID_CPU_CHKONLY	0x40000000		/* check cpu only; dont init globals */
 #define XVID_CPU_FORCE		0x80000000
+#define XVID_CPU_CHKONLY	0x40000000		/* check cpu only; dont init globals */
+
+#define XVID_CPU_ASM		0x00000080		/* native assembly */
+/* ARCH_X86 */
+#define XVID_CPU_MMX		0x00000001		/* mmx: pentiumMMX,k6 */
+#define XVID_CPU_MMXEXT		0x00000002		/* mmxx-ext: pentium2,athlon */
+#define XVID_CPU_SSE		0x00000004		/* sse: pentium3,athlonXP */
+#define XVID_CPU_SSE2		0x00000008		/* sse2: pentium4,athlon64 */
+#define XVID_CPU_3DNOW		0x00000010		/* 3dnow: k6-2 */
+#define XVID_CPU_3DNOWEXT	0x00000020		/* 3dnow-ext: athlon */
+#define XVID_CPU_TSC		0x00000040		/* timestamp counter */
+/* ARCH_IA64 */
+#define XVID_CPU_IA64		XVID_CPU_ASM	/* defined for backward compatibility */
+/* ARCH_PPC */
+#define XVID_CPU_ALTIVEC	0x00000001		/* altivec */
+
 
 	typedef struct
 	{

@@ -69,9 +69,6 @@
 
 MBFIELDTEST_PTR MBFieldTest;
 
-#define MIN(X, Y) ((X)<(Y)?(X):(Y))
-#define MAX(X, Y) ((X)>(Y)?(X):(Y))
-
 #define TOOSMALL_LIMIT 	1	/* skip blocks having a coefficient sum below this value */
 
 void

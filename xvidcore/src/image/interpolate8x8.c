@@ -31,6 +31,7 @@
 
 
 #include "../portab.h"
+#include "../global.h"
 #include "interpolate8x8.h"
 
 // function pointers
@@ -166,8 +167,6 @@ interpolate8x8_halfpel_hv_c(uint8_t * const dst,
 /*************************************************************
  * QPEL STUFF STARTS HERE                                    *
  *************************************************************/
-
-#define CLIP(X,A,B) (X < A) ? (A) : ((X > B) ? (B) : (X))
 
 void interpolate8x8_6tap_lowpass_h_c(uint8_t *dst, uint8_t *src, int32_t stride, int32_t rounding)
 {

@@ -33,8 +33,9 @@
 
 #include <string.h>				// memcpy
 
-#include "colorspace.h"
+#include "../global.h"
 #include "../divx4.h"			// DEC_PICTURE
+#include "colorspace.h"
 
 // function pointers
 
@@ -87,9 +88,6 @@ int32_t G_U_tab[256];
 int32_t G_V_tab[256];
 int32_t R_V_tab[256];
 
-
-#define MIN(A,B)	((A)<(B)?(A):(B))
-#define MAX(A,B)	((A)>(B)?(A):(B))
 
 
 /********** generic colorspace macro **********/

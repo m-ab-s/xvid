@@ -50,14 +50,11 @@
   *                                                                            *
   ******************************************************************************/
 
+#include "../global.h"
 #include "../encoder.h"
 #include "mbprediction.h"
 #include "../utils/mbfunctions.h"
 #include "../bitstream/cbp.h"
-
-
-#define ABS(X) (((X)>0)?(X):-(X))
-#define DIV_DIV(A,B)    ( (A) > 0 ? ((A)+((B)>>1))/(B) : ((A)-((B)>>1))/(B) )
 
 
 static int __inline

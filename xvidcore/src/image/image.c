@@ -1034,7 +1034,6 @@ image_dump_yuvpgm(const IMAGE * image,
 }
 
 
-#define ABS(X)    (((X)>0)?(X):-(X))
 float
 image_mad(const IMAGE * img1,
 		  const IMAGE * img2,

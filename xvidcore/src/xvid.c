@@ -37,7 +37,7 @@
  *  - 22.12.2001  API change: added xvid_init() - Isibaar
  *  - 16.12.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: xvid.c,v 1.33.2.21 2003-01-03 16:25:14 suxen_drol Exp $
+ *  $Id: xvid.c,v 1.33.2.22 2003-01-04 06:14:32 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -65,25 +65,21 @@
 #include "utils/timer.h"
 #include "bitstream/mbcoding.h"
 
-#if defined(ARCH_X86) && defined(EXPERIMENTAL_SSE2_CODE)
+#if defined(ARCH_X86)
 
-#ifdef WIN32
-#include <windows.h>
+#if defined(_MSC_VER)
+#	include <windows.h>
 #else
-#include <signal.h>
-#include <setjmp.h>
-#endif
+#	include <signal.h>
+#	include <setjmp.h>
 
+	static jmp_buf mark;
 
-#ifndef WIN32
-
-static jmp_buf mark;
-
-static void
-sigill_handler(int signal)
-{
-   longjmp(mark, 1);
-}
+	static void
+	sigill_handler(int signal)
+	{
+	   longjmp(mark, 1);
+	}
 #endif
 
 
@@ -98,7 +94,7 @@ return values:
 int
 sigill_check(void (*func)())
 {
-#ifdef WIN32
+#if defined(_MSC_VER)
 	_try {
 		func();
 	}
@@ -131,6 +127,33 @@ sigill_check(void (*func)())
 #endif
 }
 #endif
+
+
+/* detect cpu flags  */
+static unsigned int
+detect_cpu_flags()
+{
+	/* enable native assembly optimizations by default */
+	unsigned int cpu_flags = XVID_CPU_ASM;
+
+#if defined(ARCH_X86)
+	cpu_flags |= check_cpu_features();
+	if ((cpu_flags & XVID_CPU_SSE) && sigill_check(sse_os_trigger))
+		cpu_flags &= ~XVID_CPU_SSE;
+
+	if ((cpu_flags & XVID_CPU_SSE2) && sigill_check(sse2_os_trigger))
+		cpu_flags &= ~XVID_CPU_SSE2;
+#endif
+
+#if defined(ARCH_PPC)
+#if defined(ARCH_PPC_ALTIVEC)
+	cpu_flags |= XVID_CPU_ALTIVEC;
+#endif
+#endif
+
+	return cpu_flags;
+}
+
 
 /*****************************************************************************
  * XviD Init Entry point
@@ -165,15 +188,7 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 
 	} else {
 
-		cpu_flags = check_cpu_features();
-
-#if defined(ARCH_X86) && defined(EXPERIMENTAL_SSE2_CODE)
-		if ((cpu_flags & XVID_CPU_SSE) && sigill_check(sse_os_trigger))
-			cpu_flags &= ~XVID_CPU_SSE;
-
-		if ((cpu_flags & XVID_CPU_SSE2) && sigill_check(sse2_os_trigger))
-			cpu_flags &= ~XVID_CPU_SSE2;
-#endif
+		cpu_flags = detect_cpu_flags();
 	}
 
 	if ((init_param->cpu_flags & XVID_CPU_CHKONLY))
@@ -241,16 +256,10 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 	interpolate8x8_avg4 = interpolate8x8_avg4_c;
 
 	/* reduced resoltuion */
-
 	copy_upsampled_8x8_16to8 = xvid_Copy_Upsampled_8x8_16To8_C;
 	add_upsampled_8x8_16to8 = xvid_Add_Upsampled_8x8_16To8_C;
-#ifdef ARCH_X86
-	vfilter_31 = xvid_VFilter_31_x86;
-	hfilter_31 = xvid_HFilter_31_x86;
-#else
 	vfilter_31 = xvid_VFilter_31_C;
 	hfilter_31 = xvid_HFilter_31_C;
-#endif
 	filter_18x18_to_8x8 = xvid_Filter_18x18_To_8x8_C;
 	filter_diff_18x18_to_8x8 = xvid_Filter_Diff_18x18_To_8x8_C;
 
@@ -308,7 +317,13 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 	
 //	Halfpel8_Refine = Halfpel8_Refine_c;
 
-#ifdef ARCH_X86
+#if defined(ARCH_X86)
+
+	if ((cpu_flags & XVID_CPU_ASM))
+	{
+		vfilter_31 = xvid_VFilter_31_x86;
+		hfilter_31 = xvid_HFilter_31_x86;
+	}
 
 	if ((cpu_flags & XVID_CPU_MMX) || (cpu_flags & XVID_CPU_MMXEXT) ||
 		(cpu_flags & XVID_CPU_3DNOW) || (cpu_flags & XVID_CPU_3DNOWEXT) ||
@@ -318,7 +333,7 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 		emms = emms_mmx;
 	}
 
-	if ((cpu_flags & XVID_CPU_MMX) > 0) {
+	if ((cpu_flags & XVID_CPU_MMX)) {
 
 		/* Forward and Inverse Discrete Cosine Transformation functions */
 		fdct = fdct_mmx;
@@ -388,11 +403,12 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 		sad8bi  = sad8bi_mmx;
 		dev16    = dev16_mmx;
 		sad16v	 = sad16v_mmx;
-
 	}
 
 	/* these 3dnow functions are faster than mmx, but slower than xmm. */
-	if ((cpu_flags & XVID_CPU_3DNOW) > 0) {
+	if ((cpu_flags & XVID_CPU_3DNOW)) {
+
+		emms = emms_3dn;
 
 		/* ME functions */
 		sad16bi = sad16bi_3dn;
@@ -403,7 +419,7 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 	}
 
 
-	if ((cpu_flags & XVID_CPU_MMXEXT) > 0) {
+	if ((cpu_flags & XVID_CPU_MMXEXT)) {
 
 		/* Inverse DCT */
 		idct = idct_xmm;
@@ -441,7 +457,7 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 		sad16v	 = sad16v_xmm;
 	}
 
-	if ((cpu_flags & XVID_CPU_3DNOW) > 0) {
+	if ((cpu_flags & XVID_CPU_3DNOW)) {
 
 		/* Interpolation */
 		interpolate8x8_halfpel_h = interpolate8x8_halfpel_h_3dn;
@@ -449,7 +465,7 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 		interpolate8x8_halfpel_hv = interpolate8x8_halfpel_hv_3dn;
 	}
 
-	if ((cpu_flags & XVID_CPU_3DNOWEXT) > 0) {
+	if ((cpu_flags & XVID_CPU_3DNOWEXT)) {
 
 		/* Inverse DCT */
 		idct =  idct_3dne;
@@ -485,8 +501,7 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 	}
 
 
-	if ((cpu_flags & XVID_CPU_SSE2) > 0) {
-#ifdef EXPERIMENTAL_SSE2_CODE
+	if ((cpu_flags & XVID_CPU_SSE2)) {
 
 		calc_cbp = calc_cbp_sse2;
 
@@ -496,20 +511,19 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 		quant_inter   = quant_inter_sse2;
 		dequant_inter = dequant_inter_sse2;
 
-		/* ME */
+#if defined(EXPERIMENTAL_SSE2_CODE)
+		/* ME; slower than xmm */
 		sad16    = sad16_sse2;
 		dev16    = dev16_sse2;
-
+#endif
 		/* Forward and Inverse DCT */
 		idct  = idct_sse2;
 		fdct = fdct_sse2;
-#endif
 	}
-
 #endif
 
-#ifdef ARCH_IA64
-	if ((cpu_flags & XVID_CPU_IA64) > 0) { //use assembler routines?
+#if defined(ARCH_IA64)
+	if ((cpu_flags & XVID_CPU_ASM)) { //use assembler routines?
 	  idct_ia64_init();
 	  fdct = fdct_ia64;
 	  idct = idct_ia64;   //not yet working, crashes
@@ -535,18 +549,22 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 	}
 #endif 
 
-#ifdef ARCH_PPC
-#ifdef ARCH_PPC_ALTIVEC
-	calc_cbp = calc_cbp_altivec;
-	fdct = fdct_altivec;
-	idct = idct_altivec;
-	sadInit = sadInit_altivec;
-	sad16 = sad16_altivec;
-	sad8 = sad8_altivec;
-	dev16 = dev16_altivec;
-#else
-	calc_cbp = calc_cbp_ppc;
-#endif
+#if defined(ARCH_PPC)
+	if ((cpu_flags & XVID_CPU_ASM))
+	{
+		calc_cbp = calc_cbp_ppc;
+	}
+
+	if ((cpu_flags & XVID_CPU_ALTIVEC))
+	{
+		calc_cbp = calc_cbp_altivec;
+		fdct = fdct_altivec;
+		idct = idct_altivec;
+		sadInit = sadInit_altivec;
+		sad16 = sad16_altivec;
+		sad8 = sad8_altivec;
+		dev16 = dev16_altivec;
+	}
 #endif
 
 	return XVID_ERR_OK;
@@ -811,7 +829,7 @@ int xvid_init_test(int flags)
 	printf("xvid_init_test\n");
 
 #if defined(ARCH_X86)		
-	cpu_flags = check_cpu_features();
+	cpu_flags = detect_cpu_flags();
 	idct_int32_init();
 	emms_mmx();
 

@@ -52,7 +52,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: portab.h,v 1.26.2.3 2002-12-14 09:39:42 suxen_drol Exp $
+ * $Id: portab.h,v 1.26.2.4 2003-01-04 06:14:32 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -199,6 +199,7 @@
 #    if defined(ARCH_X86)
 #        define BSWAP(a) __asm mov eax,a __asm bswap eax __asm mov a, eax
 #        define EMMS() __asm {emms}
+#        define FEMMS() __asm {femms}
 
              static __inline int64_t read_counter(void)
              {
@@ -225,6 +226,7 @@
      (((x) & 0x000000ff) << 24))
 
 #define EMMS()
+#define FEMMS()
 #    endif
 
 
@@ -271,6 +273,7 @@
 #    if defined(ARCH_X86)
 #        define BSWAP(a) __asm__ ( "bswapl %0\n" : "=r" (a) : "0" (a) );
 #        define EMMS() __asm__ ("emms\n\t");
+#        define FEMMS() __asm__ ("femms\n\t");
 
          static __inline int64_t read_counter(void)
          {
@@ -288,6 +291,7 @@
 #        define BSWAP(a) __asm__ __volatile__ \
                 ( "lwbrx %0,0,%1; eieio" : "=r" (a) : "r" (&(a)), "m" (a));
 #        define EMMS()
+#        define FEMMS()
 
          static __inline unsigned long get_tbl(void)
          {
@@ -321,6 +325,7 @@
                 ("mux1 %1 = %0, @rev" ";;" \
                  "shr.u %1 = %1, 32" : "=r" (a) : "r" (a));
 #        define EMMS()
+#        define FEMMS()
 
          static __inline int64_t read_counter(void) {
              unsigned long result;
@@ -336,6 +341,7 @@
                 ((a) = (((a) & 0xff) << 24)  | (((a) & 0xff00) << 8) | \
                        (((a) >> 8) & 0xff00) | (((a) >> 24) & 0xff))
 #        define EMMS()
+#        define FEMMS()
 
          static __inline int64_t read_counter(void)
          {
@@ -350,6 +356,7 @@
                 ((a) = (((a) & 0xff) << 24)  | (((a) & 0xff00) << 8) | \
                        (((a) >> 8) & 0xff00) | (((a) >> 24) & 0xff))
 #        define EMMS()
+#        define FEMMS()
 
          static __inline int64_t read_counter(void)
          {
@@ -368,6 +375,7 @@
      (((x) & 0x000000ff) << 24))
 
 #define EMMS()
+#define FEMMS()
 #    endif /* Architecture checking */
 
 /*****************************************************************************

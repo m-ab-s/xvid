@@ -40,6 +40,7 @@
  *
  *************************************************************************/
 
+#include "../global.h"
 #include "quant_h263.h"
 
 /*	mutliply+shift division table
@@ -60,8 +61,6 @@ static const uint32_t multipliers[32] = {
 };
 
 
-
-#define DIV_DIV(a, b) ((a)>0) ? ((a)+((b)>>1))/(b) : ((a)-((b)>>1))/(b)
 
 // function pointers
 quanth263_intraFuncPtr quant_intra;

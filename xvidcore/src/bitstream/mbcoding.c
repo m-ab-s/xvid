@@ -52,15 +52,13 @@
 
 #include <stdlib.h>
 #include "../portab.h"
+#include "../global.h"
 #include "bitstream.h"
 #include "zigzag.h"
 #include "vlc_codes.h"
 #include "mbcoding.h"
 
 #include "../utils/mbfunctions.h"
-
-#define ABS(X) (((X)>0)?(X):-(X))
-#define CLIP(X,A) (X > A) ? (A) : (X)
 
 VLC intra_table[4*2048*64];
 VLC inter_table[4*2048*64];
@@ -683,7 +681,7 @@ get_mcbpc_inter(Bitstream * bs)
 
 	uint32_t index;
 	
-	index = CLIP(BitstreamShowBits(bs, 9), 256);
+	index = MIN(BitstreamShowBits(bs, 9), 256);
 
 	BitstreamSkip(bs, mcbpc_inter_table[index].len);
 

@@ -39,6 +39,7 @@
 
 
 #include "../portab.h"
+#include "../global.h"
 #include "sad.h"
 
 sad16FuncPtr sad16;
@@ -50,7 +51,6 @@ sad16vFuncPtr sad16v;
 
 sadInitFuncPtr sadInit;
 
-#define ABS(X) (((X)>0)?(X):-(X))
 
 uint32_t
 sad16_c(const uint8_t * const cur,
