@@ -51,6 +51,10 @@ float image_psnr(IMAGE * orig_image,
 				 uint16_t height);
 
 
+void
+image_chroma_optimize(IMAGE * img, int width, int height, int edged_width);
+
+
 int image_input(IMAGE * image,
 				uint32_t width,
 				int height,

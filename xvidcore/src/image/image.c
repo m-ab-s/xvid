@@ -476,6 +476,48 @@ image_interpolate(const IMAGE * refn,
 }
 
 
+/*
+chroma optimize filter, invented by mf
+a chroma pixel is average from the surrounding pixels, when the
+correpsonding luma pixels are pure black or white.
+*/
+
+void
+image_chroma_optimize(IMAGE * img, int width, int height, int edged_width)
+{
+	int x,y;
+	int pixels = 0;
+
+	for (y = 1; y < height/2 - 1; y++)
+	for (x = 1; x < width/2 - 1; x++)
+	{
+#define IS_PURE(a)  ((a)<=16||(a)>=235)
+#define IMG_Y(Y,X)	img->y[(Y)*edged_width + (X)]
+#define IMG_U(Y,X)	img->u[(Y)*edged_width/2 + (X)]
+#define IMG_V(Y,X)	img->v[(Y)*edged_width/2 + (X)]
+
+		if (IS_PURE(IMG_Y(y*2  ,x*2  )) && 
+			IS_PURE(IMG_Y(y*2  ,x*2+1)) &&
+			IS_PURE(IMG_Y(y*2+1,x*2  )) && 
+			IS_PURE(IMG_Y(y*2+1,x*2+1)))
+		{
+			IMG_U(y,x) = (IMG_U(y,x-1) + IMG_U(y-1, x) + IMG_U(y, x+1) + IMG_U(y+1, x)) / 4;
+			IMG_V(y,x) = (IMG_V(y,x-1) + IMG_V(y-1, x) + IMG_V(y, x+1) + IMG_V(y+1, x)) / 4;
+			pixels++;
+		}
+
+#undef IS_PURE
+#undef IMG_Y
+#undef IMG_U
+#undef IMG_V
+	}
+	
+	DPRINTF(DPRINTF_DEBUG,"chroma_optimized_pixels = %i/%i", pixels, width*height/4);
+}
+
+
+
+
 
 /*
   perform safe packed colorspace conversion, by splitting
