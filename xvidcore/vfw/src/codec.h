@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: codec.h,v 1.1.2.7 2004-01-22 16:13:59 syskin Exp $
+ * $Id: codec.h,v 1.1.2.8 2004-01-27 11:21:11 suxen_drol Exp $
  *
  ****************************************************************************/
 #ifndef _CODEC_H_
@@ -68,8 +68,6 @@ typedef struct
 
 } CODEC;
 
-
-int get_colorspace(BITMAPINFOHEADER *);
 
 LRESULT compress_query(CODEC *, BITMAPINFO *, BITMAPINFO *);
 LRESULT compress_get_format(CODEC *, BITMAPINFO *, BITMAPINFO *);

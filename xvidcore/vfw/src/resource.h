@@ -277,7 +277,6 @@
 #define IDC_PROFILE_ADV                 1242
 #define IDC_ADD                         1243
 #define IDC_PROFILE_BVOP                1244
-#define IDC_BITRATE_ADV                 1244
 #define IDC_REMOVE                      1245
 #define IDC_EDIT                        1246
 #define IDC_PROFILE_MPEGQUANT           1247
@@ -409,6 +408,7 @@
 #define IDC_BITRATE_ARATE               1389
 #define IDC_BITRATE_ASIZE               1390
 #define IDC_BITRATE_ASELECT             1391
+#define IDC_BITRATE_ADV                 1392
 
 // Next default values for new objects
 // 
@@ -416,7 +416,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        128
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1392
+#define _APS_NEXT_CONTROL_VALUE         1393
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

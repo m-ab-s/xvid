@@ -108,7 +108,7 @@ BEGIN
     GROUPBOX        "Zones",IDC_STATIC,7,98,212,107
     GROUPBOX        "More",IDC_STATIC,7,200,212,29
     PUSHBUTTON      "Decoder Options",IDC_DECODER,80,238,64,13
-    PUSHBUTTON      "more...",IDC_BITRATE_ADV,184,52,28,12
+    PUSHBUTTON      "calc...",IDC_BITRATE_ADV,184,52,28,12
 END
 
 IDD_QUANT DIALOG DISCARDABLE  0, 0, 212, 212
@@ -934,7 +934,7 @@ IDB_LOGO                BITMAP  DISCARDABLE     "XviD_logo.bmp"
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDC_MODE                """Single Pass""encodes to your specified bitrate or quality.\n""Two-pass 1st pass"" gathers statistics for the 2nd pass.\n""Two-pass 2nd pass"" uses 1st pass' statistics to encode at desired file size or bitrate."
+    IDC_MODE                """Single Pass""encodes to your specified bitrate or quality.\n""Two-pass 1st pass"" gathers statistics for the 2nd pass.\n""Two-pass 2nd pass"" uses 1st pass' statistics to encode at target file size or bitrate."
 END
 
 STRINGTABLE DISCARDABLE 
@@ -1009,7 +1009,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDC_CARTOON             "Enables special motion estimation features for cartoons/anime."
     IDC_OVERFLOW_CONTROL_STRENGTH 
-                            "0=Default from core (let xvid decide). Else overflow payback percent per frame. Higher value will meet target filesize better, but will also spoil quantizer distribution more."
+                            "0=Default from core (let xvid decide). Else overflow payback percent per frame. Higher value will meet target file size better, but will also spoil quantizer distribution more."
     IDC_ASPECT_RATIO        "Display aspect ratio is used to scale the video on playback/anamorphic encoding).\n\nDefault 1:1 for no scaling necessary."
 END
 
@@ -1036,16 +1036,18 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    IDC_BITRATE             "The target AVI bitrate, or file size.\nImportant: This is NOT the same as target average video bitrate or file size"
+    IDC_BITRATE_S           "Toggle between quantizer, target bitrate, target file size"
+    IDC_BITRATE_TSIZE       "Target file or media size"
+    IDC_BITRATE_SSIZE       "The file size of subtitles or other data files"
+    IDC_BITRATE_SSELECT     "Select file size from existing subtitle file"
     IDC_BITRATE_COVERHEAD   "Calculated container format overhead (kbytes)."
     IDC_BITRATE_VRATE       "Calculated average video bitrate (kilobits-per-second)"
-    IDC_BITRATE_VSIZE       "Calculated video size (kilobytes)"
+    IDC_BITRATE_VSIZE       "Calculated video file size"
     IDC_BITRATE_ARATE       "Audio bitrate (kilobits-per-second)"
+    IDC_BITRATE_ASELECT     "Select file size from existing audio file"
 END
 
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDC_BITRATE_TSIZE       "Target media/file size (kilobytes)"
-END
 
 #endif    // Neutral resources
 /////////////////////////////////////////////////////////////////////////////

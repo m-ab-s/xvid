@@ -1214,8 +1214,22 @@ static void adv_download(HWND hDlg, int idd, CONFIG * config)
 		config->audio_rate = config_get_uint(hDlg, IDC_BITRATE_ARATE, config->audio_rate);
 		config->audio_size = config_get_uint(hDlg, IDC_BITRATE_ASIZE, config->audio_size);
 
-		config->desired_size = config_get_uint(hDlg, IDC_BITRATE_VSIZE, config->desired_size);
-		config->bitrate = config_get_uint(hDlg, IDC_BITRATE_VRATE, config->bitrate);
+		/* the main window uses "AVI bitrate/filesize" not "video bitrate/filesize",
+		   so we have to compensate by frames * 24 bytes */
+		{
+			int frame_compensate = 24 * (int)(
+				(3600*config->hours +
+				   60*config->minutes + 
+				      config->seconds) * video_fps_list[config->fps].value) / 1024;
+
+			int bitrate_compensate = (int)(24 * video_fps_list[config->fps].value) / 125;
+
+			config->desired_size = 
+						config_get_uint(hDlg, IDC_BITRATE_VSIZE, config->desired_size) - frame_compensate;
+			
+			config->bitrate = 
+						config_get_uint(hDlg, IDC_BITRATE_VRATE, config->bitrate) - bitrate_compensate;
+		}
 		break;
 
 	case IDD_ZONE :
@@ -1653,6 +1667,7 @@ static void main_mode(HWND hDlg, CONFIG * config)
 
 	EnableDlgWindow(hDlg, IDC_BITRATE_S, target_en);
 	EnableDlgWindow(hDlg, IDC_BITRATE, target_en);
+	EnableDlgWindow(hDlg, IDC_BITRATE_ADV, target_en);
 
 	EnableDlgWindow(hDlg, IDC_BITRATE_MIN, target_en_slider);
 	EnableDlgWindow(hDlg, IDC_BITRATE_MAX, target_en_slider);
