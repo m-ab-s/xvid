@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation.h,v 1.1.2.4 2003-10-03 14:23:00 syskin Exp $
+ * $Id: estimation.h,v 1.1.2.5 2003-11-19 12:24:25 syskin Exp $
  *
  ****************************************************************************/
 
@@ -71,51 +71,56 @@ static const VECTOR zeroMV = { 0, 0 };
 
 typedef struct
 {
+	/* data modified by CheckCandidates */
+	int32_t iMinSAD[5];			/* smallest SADs found so far */
+	VECTOR currentMV[5];		/* best vectors found so far */
+	VECTOR currentQMV[5];		/* as above, but used during qpel search */
+	int temp[4];				/* temporary space */
+	unsigned int dir;			/* 'direction', set when better vector is found */
+	int chromaX, chromaY, chromaSAD; /* info to make ChromaSAD faster */
+	VECTOR currentQMV2;			/* extra vector for SubpelRefine_fast */
+	int32_t iMinSAD2;			/* extra SAD value for SubpelRefine_fast */
+
 	/* general fields */
-	int max_dx, min_dx, max_dy, min_dy;
-	uint32_t rounding;
-	VECTOR predMV;
-	VECTOR * currentMV;
-	VECTOR * currentQMV;
-	VECTOR * currentQMV2;
-	int32_t * iMinSAD;
-	int32_t * iMinSAD2;
-	const uint8_t * RefP[6]; /* N, V, H, HV, cU, cV */
-	const uint8_t * CurU;
-	const uint8_t * CurV;
-	uint8_t * RefQ;
-	const uint8_t * Cur;
-	uint32_t lambda16;
-	uint32_t lambda8;
-	uint32_t iEdgedWidth;
-	uint32_t iFcode;
-	int * temp;
-	unsigned int * dir;
-	int qpel, qpel_precision;
-	int chroma;
-	int rrv;
+	int max_dx, min_dx, max_dy, min_dy; /* maximum range */
+	uint32_t rounding;			/* rounding type in use */
+	VECTOR predMV;				/* vector which predicts current vector */
+	const uint8_t * RefP[6];	/* reference pictures - N, V, H, HV, cU, cV */
+	const uint8_t * Cur;		/* current picture */
+	const uint8_t *CurU, *CurV;	/* current picture - chroma planes */
+	
+	uint8_t * RefQ;				/* temporary space for interpolations */
+	uint32_t lambda16;			/* how much vector bits weight */
+	uint32_t lambda8;			/* as above - for inter4v mode */
+	uint32_t iEdgedWidth;		/* picture's stride */
+	uint32_t iFcode;			/* current fcode */
+	
+	int qpel;					/* if we're coding in qpel mode */
+	int qpel_precision;			/* if X and Y are in qpel precision (refinement probably) */
+	int chroma;					/* should we include chroma SAD? */
+	int rrv;					/* are we using reduced resolution? */
 
 	/* fields for interpolate and direct modes */
-	const uint8_t * b_RefP[6]; /* N, V, H, HV, cU, cV */
-	VECTOR bpredMV;
-	uint32_t bFcode;
+	const uint8_t * b_RefP[6];	/* backward reference pictures - N, V, H, HV, cU, cV */
+	VECTOR bpredMV;				/* backward prediction - used interpolate mode only */
+	uint32_t bFcode;			/* backward fcode - used as above */
 
 	/* fields for direct mode */
-	VECTOR directmvF[4];
-	VECTOR directmvB[4];
-	const VECTOR * referencemv;
+	VECTOR directmvF[4];		/* scaled reference vectors */
+	VECTOR directmvB[4];		/* as above */
+	const VECTOR * referencemv; /* pointer to not-scaled reference vectors */
 
 	/* BITS/R-D stuff */
-	int16_t * dctSpace;
-	uint32_t iQuant;
-	uint32_t quant_type;
-	int * cbp;
-	const uint16_t * scan_table;
+	int16_t * dctSpace;			/* temporary space for dct */
+	uint32_t iQuant;			/* current quant */
+	uint32_t quant_type;		/* current quant type */
+	unsigned int cbp[2];					/* CBP of the best vector found so far + cbp for inter4v search */
+	const uint16_t * scan_table; /* current scan table */
 
 } SearchData;
 
 typedef void(CheckFunc)(const int x, const int y,
-						const SearchData * const Data,
+						SearchData * const Data,
 						const unsigned int Direction);
 
 CheckFunc CheckCandidate16no4v; /* shared between p-vop and b-vop search */
@@ -129,7 +134,7 @@ xvid_me_interpolate16x16qpel(const int x, const int y, const uint32_t dir,
 							const SearchData * const data);
 
 int32_t
-xvid_me_ChromaSAD(const int dx, const int dy, const SearchData * const data);
+xvid_me_ChromaSAD(const int dx, const int dy, SearchData * const data);
 
 int
 xvid_me_SkipDecisionP(const IMAGE * current, const IMAGE * reference,
@@ -138,13 +143,13 @@ xvid_me_SkipDecisionP(const IMAGE * current, const IMAGE * reference,
 
 #define iDiamondSize 2
 typedef void
-MainSearchFunc(int x, int y, const SearchData * const Data,
+MainSearchFunc(int x, int y, SearchData * const Data,
 			   int bDirection, CheckFunc * const CheckCandidate);
 
 MainSearchFunc xvid_me_DiamondSearch, xvid_me_AdvDiamondSearch, xvid_me_SquareSearch;
 
 void
-xvid_me_SubpelRefine(const SearchData * const data, CheckFunc * const CheckCandidate);
+xvid_me_SubpelRefine(SearchData * const data, CheckFunc * const CheckCandidate);
 
 void
 xvid_me_ModeDecision_RD(SearchData * const Data,

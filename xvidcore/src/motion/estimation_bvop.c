@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_bvop.c,v 1.1.2.4 2003-11-16 15:32:37 edgomez Exp $
+ * $Id: estimation_bvop.c,v 1.1.2.5 2003-11-19 12:24:25 syskin Exp $
  *
  ****************************************************************************/
 
@@ -42,7 +42,7 @@
 
 static int32_t
 ChromaSAD2(const int fx, const int fy, const int bx, const int by,
-			const SearchData * const data)
+			SearchData * const data)
 {
 	int sad;
 	const uint32_t stride = data->iEdgedWidth/2;
@@ -88,28 +88,39 @@ ChromaSAD2(const int fx, const int fy, const int bx, const int by,
 }
 
 static void
-CheckCandidateInt(const int xf, const int yf, const SearchData * const data, const unsigned int Direction)
+CheckCandidateInt(const int x, const int y, SearchData * const data, const unsigned int Direction)
 {
-	int32_t sad, xb, yb, xcf, ycf, xcb, ycb;
+	int32_t sad, xf, yf, xb, yb, xcf, ycf, xcb, ycb;
 	uint32_t t;
+	
 	const uint8_t *ReferenceF, *ReferenceB;
 	VECTOR *current;
 
-	if ((xf > data->max_dx) || (xf < data->min_dx) ||
-		(yf > data->max_dy) || (yf < data->min_dy))
+	if ((x > data->max_dx) || (x < data->min_dx) ||
+		(y > data->max_dy) || (y < data->min_dy))
 		return;
 
+	if (Direction == 1) { /* x and y mean forward vector */
+		VECTOR backward = data->qpel_precision ? data->currentQMV[1] : data->currentMV[1];
+		xb = backward.x;
+		yb = backward.y;
+		xf = x; yf = y;
+	} else { /* x and y mean backward vector */
+		VECTOR forward = data->qpel_precision ? data->currentQMV[0] : data->currentMV[0];
+		xf = forward.x;
+		yf = forward.y;
+		xb = x; yb = y;
+	}
+	
 	if (!data->qpel_precision) {
 		ReferenceF = GetReference(xf, yf, data);
-		xb = data->currentMV[1].x; yb = data->currentMV[1].y;
 		ReferenceB = GetReferenceB(xb, yb, 1, data);
-		current = data->currentMV;
+		current = data->currentMV + Direction - 1;
 		xcf = xf; ycf = yf;
 		xcb = xb; ycb = yb;
 	} else {
 		ReferenceF = xvid_me_interpolate16x16qpel(xf, yf, 0, data);
-		xb = data->currentQMV[1].x; yb = data->currentQMV[1].y;
-		current = data->currentQMV;
+		current = data->currentQMV + Direction - 1;
 		ReferenceB = xvid_me_interpolate16x16qpel(xb, yb, 1, data);
 		xcf = xf/2; ycf = yf/2;
 		xcb = xb/2; ycb = yb/2;
@@ -128,14 +139,14 @@ CheckCandidateInt(const int xf, const int yf, const SearchData * const data, con
 							(ycb >> 1) + roundtab_79[ycb & 0x3], data);
 
 	if (sad < *(data->iMinSAD)) {
-		*(data->iMinSAD) = sad;
-		current->x = xf; current->y = yf;
-		*data->dir = Direction;
+		*data->iMinSAD = sad;
+		current->x = x; current->y = y;
+		data->dir = Direction;
 	}
 }
 
 static void
-CheckCandidateDirect(const int x, const int y, const SearchData * const data, const unsigned int Direction)
+CheckCandidateDirect(const int x, const int y, SearchData * const data, const unsigned int Direction)
 {
 	int32_t sad = 0, xcf = 0, ycf = 0, xcb = 0, ycb = 0;
 	uint32_t k;
@@ -189,14 +200,14 @@ CheckCandidateDirect(const int x, const int y, const SearchData * const data, co
 							(ycb >> 3) + roundtab_76[ycb & 0xf], data);
 
 	if (sad < *(data->iMinSAD)) {
-		*(data->iMinSAD) = sad;
+		data->iMinSAD[0] = sad;
 		data->currentMV->x = x; data->currentMV->y = y;
-		*data->dir = Direction;
+		data->dir = Direction;
 	}
 }
 
 static void
-CheckCandidateDirectno4v(const int x, const int y, const SearchData * const data, const unsigned int Direction)
+CheckCandidateDirectno4v(const int x, const int y, SearchData * const data, const unsigned int Direction)
 {
 	int32_t sad, xcf, ycf, xcb, ycb;
 	const uint8_t *ReferenceF;
@@ -244,12 +255,12 @@ CheckCandidateDirectno4v(const int x, const int y, const SearchData * const data
 	if (sad < *(data->iMinSAD)) {
 		*(data->iMinSAD) = sad;
 		data->currentMV->x = x; data->currentMV->y = y;
-		*data->dir = Direction;
+		data->dir = Direction;
 	}
 }
 
 void
-CheckCandidate16no4v(const int x, const int y, const SearchData * const data, const unsigned int Direction)
+CheckCandidate16no4v(const int x, const int y, SearchData * const data, const unsigned int Direction)
 {
 	int32_t sad, xc, yc;
 	const uint8_t * Reference;
@@ -283,7 +294,7 @@ CheckCandidate16no4v(const int x, const int y, const SearchData * const data, co
 	if (sad < *(data->iMinSAD)) {
 		*(data->iMinSAD) = sad;
 		current->x = x; current->y = y;
-		*data->dir = Direction;
+		data->dir = Direction;
 	}
 }
 
@@ -291,7 +302,7 @@ static __inline VECTOR
 ChoosePred(const MACROBLOCK * const pMB, const uint32_t mode)
 {
 /* the stupidiest function ever */
-	return (mode == MODE_FORWARD) ? pMB->mvs[0] : pMB->b_mvs[0];
+	return (mode == MODE_FORWARD ? pMB->mvs[0] : pMB->b_mvs[0]);
 }
 
 static void __inline
@@ -354,7 +365,7 @@ SearchBF(	const IMAGE * const pRef,
 	*Data->iMinSAD = MV_MAX_ERROR;
 	Data->iFcode = iFcode;
 	Data->qpel_precision = 0;
-	Data->temp[5] = Data->temp[6] = Data->temp[7] = 256*4096; /* reset chroma-sad cache */
+	Data->chromaX = Data->chromaX = Data->chromaSAD = 256*4096; /* reset chroma-sad cache */
 
 	Data->RefP[0] = pRef->y + (x + Data->iEdgedWidth*y) * 16;
 	Data->RefP[2] = pRefH + (x + Data->iEdgedWidth*y) * 16;
@@ -385,7 +396,7 @@ SearchBF(	const IMAGE * const pRef,
 		else MainSearchPtr = xvid_me_DiamondSearch;
 
 	if (*Data->iMinSAD > 512) {
-		unsigned int mask = make_mask(pmv, 7, *Data->dir);
+		unsigned int mask = make_mask(pmv, 7, Data->dir);
 		MainSearchPtr(Data->currentMV->x, Data->currentMV->y, Data, mask, CheckCandidate16no4v);
 	}
 
@@ -611,6 +622,32 @@ SearchDirect(const IMAGE * const f_Ref,
 	return skip_sad;
 }
 
+
+static void set_range(int * range, SearchData * Data)
+{
+	Data->min_dx = range[0];
+	Data->max_dx = range[1];
+	Data->min_dy = range[2];
+	Data->max_dy = range[3];
+}
+
+static void
+SubpelRefine_dir(SearchData * const data, CheckFunc * const CheckCandidate, const int dir)
+{
+/* Do a half-pel or q-pel refinement */
+	const VECTOR centerMV = data->qpel_precision ? 
+		data->currentQMV[dir-1] : data->currentMV[dir-1];
+
+	CHECK_CANDIDATE(centerMV.x, centerMV.y - 1, dir);
+	CHECK_CANDIDATE(centerMV.x + 1, centerMV.y - 1, dir);
+	CHECK_CANDIDATE(centerMV.x + 1, centerMV.y, dir);
+	CHECK_CANDIDATE(centerMV.x + 1, centerMV.y + 1, dir);
+	CHECK_CANDIDATE(centerMV.x, centerMV.y + 1, dir);
+	CHECK_CANDIDATE(centerMV.x - 1, centerMV.y + 1, dir);
+	CHECK_CANDIDATE(centerMV.x - 1, centerMV.y, dir);
+	CHECK_CANDIDATE(centerMV.x - 1, centerMV.y - 1, dir);
+}
+
 static void
 SearchInterpolate(const IMAGE * const f_Ref,
 				const uint8_t * const f_RefH,
@@ -629,100 +666,103 @@ SearchInterpolate(const IMAGE * const f_Ref,
 				const VECTOR * const b_predMV,
 				MACROBLOCK * const pMB,
 				int32_t * const best_sad,
-				SearchData * const fData)
+				SearchData * const Data)
 
 {
 	int i, j;
-	SearchData bData;
+	int b_range[4], f_range[4];
 
-	fData->qpel_precision = 0;
-	memcpy(&bData, fData, sizeof(SearchData)); /* quick copy of common data */
-	*fData->iMinSAD = 4096*256;
-	bData.currentMV++; bData.currentQMV++;
-	fData->iFcode = bData.bFcode = fcode; fData->bFcode = bData.iFcode = bcode;
+	Data->qpel_precision = 0;
+	*Data->iMinSAD = 4096*256;
+	Data->iFcode = fcode; Data->bFcode = bcode;
 
-	i = (x + y * fData->iEdgedWidth) * 16;
+	i = (x + y * Data->iEdgedWidth) * 16;
 
-	bData.b_RefP[0] = fData->RefP[0] = f_Ref->y + i;
-	bData.b_RefP[2] = fData->RefP[2] = f_RefH + i;
-	bData.b_RefP[1] = fData->RefP[1] = f_RefV + i;
-	bData.b_RefP[3] = fData->RefP[3] = f_RefHV + i;
-	bData.RefP[0] = fData->b_RefP[0] = b_Ref->y + i;
-	bData.RefP[2] = fData->b_RefP[2] = b_RefH + i;
-	bData.RefP[1] = fData->b_RefP[1] = b_RefV + i;
-	bData.RefP[3] = fData->b_RefP[3] = b_RefHV + i;
-	bData.b_RefP[4] = fData->RefP[4] = f_Ref->u + (x + (fData->iEdgedWidth/2) * y) * 8;
-	bData.b_RefP[5] = fData->RefP[5] = f_Ref->v + (x + (fData->iEdgedWidth/2) * y) * 8;
-	bData.RefP[4] = fData->b_RefP[4] = b_Ref->u + (x + (fData->iEdgedWidth/2) * y) * 8;
-	bData.RefP[5] = fData->b_RefP[5] = b_Ref->v + (x + (fData->iEdgedWidth/2) * y) * 8;
-	bData.dir = fData->dir;
+	Data->RefP[0] = f_Ref->y + i;
+	Data->RefP[2] = f_RefH + i;
+	Data->RefP[1] = f_RefV + i;
+	Data->RefP[3] = f_RefHV + i;
+	Data->b_RefP[0] = b_Ref->y + i;
+	Data->b_RefP[2] = b_RefH + i;
+	Data->b_RefP[1] = b_RefV + i;
+	Data->b_RefP[3] = b_RefHV + i;
+	Data->RefP[4] = f_Ref->u + (x + (Data->iEdgedWidth/2) * y) * 8;
+	Data->RefP[5] = f_Ref->v + (x + (Data->iEdgedWidth/2) * y) * 8;
+	Data->b_RefP[4] = b_Ref->u + (x + (Data->iEdgedWidth/2) * y) * 8;
+	Data->b_RefP[5] = b_Ref->v + (x + (Data->iEdgedWidth/2) * y) * 8;
 
-	bData.bpredMV = fData->predMV = *f_predMV;
-	fData->bpredMV = bData.predMV = *b_predMV;
-	fData->currentMV[0] = fData->currentMV[2];
+	Data->predMV = *f_predMV;
+	Data->bpredMV = *b_predMV;
 
-	get_range(&fData->min_dx, &fData->max_dx, &fData->min_dy, &fData->max_dy, x, y, 4, pParam->width, pParam->height, fcode - fData->qpel, 1, 0);
-	get_range(&bData.min_dx, &bData.max_dx, &bData.min_dy, &bData.max_dy, x, y, 4, pParam->width, pParam->height, bcode - fData->qpel, 1, 0);
+	Data->currentMV[0] = Data->currentMV[2]; /* forward search left its vector here */
 
-	if (fData->currentMV[0].x > fData->max_dx) fData->currentMV[0].x = fData->max_dx;
-	if (fData->currentMV[0].x < fData->min_dx) fData->currentMV[0].x = fData->min_dx;
-	if (fData->currentMV[0].y > fData->max_dy) fData->currentMV[0].y = fData->max_dy;
-	if (fData->currentMV[0].y < fData->min_dy) fData->currentMV[0].y = fData->min_dy;
+	get_range(f_range, f_range+1, f_range+2, f_range+3, x, y, 4, pParam->width, pParam->height, fcode - Data->qpel, 1, 0);
+	get_range(b_range, b_range+1, b_range+2, b_range+3, x, y, 4, pParam->width, pParam->height, bcode - Data->qpel, 1, 0);
 
-	if (fData->currentMV[1].x > bData.max_dx) fData->currentMV[1].x = bData.max_dx;
-	if (fData->currentMV[1].x < bData.min_dx) fData->currentMV[1].x = bData.min_dx;
-	if (fData->currentMV[1].y > bData.max_dy) fData->currentMV[1].y = bData.max_dy;
-	if (fData->currentMV[1].y < bData.min_dy) fData->currentMV[1].y = bData.min_dy;
+	if (Data->currentMV[0].x > f_range[1]) Data->currentMV[0].x = f_range[1];
+	if (Data->currentMV[0].x < f_range[0]) Data->currentMV[0].x = f_range[0];
+	if (Data->currentMV[0].y > f_range[3]) Data->currentMV[0].y = f_range[3];
+	if (Data->currentMV[0].y < f_range[2]) Data->currentMV[0].y = f_range[2];
 
-	CheckCandidateInt(fData->currentMV[0].x, fData->currentMV[0].y, fData, 255);
+	if (Data->currentMV[1].x > b_range[1]) Data->currentMV[1].x = b_range[1];
+	if (Data->currentMV[1].x < b_range[0]) Data->currentMV[1].x = b_range[0];
+	if (Data->currentMV[1].y > b_range[3]) Data->currentMV[1].y = b_range[3];
+	if (Data->currentMV[1].y < b_range[2]) Data->currentMV[1].y = b_range[2];
+
+	set_range(f_range, Data);
+
+	CheckCandidateInt(Data->currentMV[0].x, Data->currentMV[0].y, Data, 1);
 
 	/* diamond */
 	do {
-		*fData->dir = 255;
+		Data->dir = 0;
 		/* forward MV moves */
-		i = fData->currentMV[0].x; j = fData->currentMV[0].y;
+		i = Data->currentMV[0].x; j = Data->currentMV[0].y;
 
-		CheckCandidateInt(i + 1, j, fData, 0);
-		CheckCandidateInt(i, j + 1, fData, 0);
-		CheckCandidateInt(i - 1, j, fData, 0);
-		CheckCandidateInt(i, j - 1, fData, 0);
+		CheckCandidateInt(i + 1, j, Data, 1);
+		CheckCandidateInt(i, j + 1, Data, 1);
+		CheckCandidateInt(i - 1, j, Data, 1);
+		CheckCandidateInt(i, j - 1, Data, 1);
 
 		/* backward MV moves */
-		i = fData->currentMV[1].x; j = fData->currentMV[1].y;
-		fData->currentMV[2] = fData->currentMV[0];
-		CheckCandidateInt(i + 1, j, &bData, 0);
-		CheckCandidateInt(i, j + 1, &bData, 0);
-		CheckCandidateInt(i - 1, j, &bData, 0);
-		CheckCandidateInt(i, j - 1, &bData, 0);
+		set_range(b_range, Data);
+		i = Data->currentMV[1].x; j = Data->currentMV[1].y;
 
-	} while (!(*fData->dir));
+		CheckCandidateInt(i + 1, j, Data, 2);
+		CheckCandidateInt(i, j + 1, Data, 2);
+		CheckCandidateInt(i - 1, j, Data, 2);
+		CheckCandidateInt(i, j - 1, Data, 2);
+
+		set_range(f_range, Data);
+
+	} while (Data->dir != 0);
 
 	/* qpel refinement */
-	if (fData->qpel) {
-		if (*fData->iMinSAD > *best_sad + 500) return;
-		fData->qpel_precision = bData.qpel_precision = 1;
-		get_range(&fData->min_dx, &fData->max_dx, &fData->min_dy, &fData->max_dy, x, y, 4, pParam->width, pParam->height, fcode, 2, 0);
-		get_range(&bData.min_dx, &bData.max_dx, &bData.min_dy, &bData.max_dy, x, y, 4, pParam->width, pParam->height, bcode, 2, 0);
-		fData->currentQMV[2].x = fData->currentQMV[0].x = 2 * fData->currentMV[0].x;
-		fData->currentQMV[2].y = fData->currentQMV[0].y = 2 * fData->currentMV[0].y;
-		fData->currentQMV[1].x = 2 * fData->currentMV[1].x;
-		fData->currentQMV[1].y = 2 * fData->currentMV[1].y;
-		xvid_me_SubpelRefine(fData, CheckCandidateInt);
-		if (*fData->iMinSAD > *best_sad + 300) return;
-		fData->currentQMV[2] = fData->currentQMV[0];
-		xvid_me_SubpelRefine(&bData, CheckCandidateInt);
+	if (Data->qpel) {
+		if (*Data->iMinSAD > *best_sad + 500) return;
+		Data->qpel_precision = 1;
+		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4, pParam->width, pParam->height, fcode, 2, 0);
+		
+		Data->currentQMV[0].x = 2 * Data->currentMV[0].x;
+		Data->currentQMV[0].y = 2 * Data->currentMV[0].y;
+		Data->currentQMV[1].x = 2 * Data->currentMV[1].x;
+		Data->currentQMV[1].y = 2 * Data->currentMV[1].y;
+		SubpelRefine_dir(Data, CheckCandidateInt, 1);
+		if (*Data->iMinSAD > *best_sad + 300) return;
+		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4, pParam->width, pParam->height, bcode, 2, 0);
+		SubpelRefine_dir(Data, CheckCandidateInt, 2);
 	}
 
-	*fData->iMinSAD += (2+3) * fData->lambda16; /* two bits are needed to code interpolate mode. */
+	*Data->iMinSAD += (2+3) * Data->lambda16; /* two bits are needed to code interpolate mode. */
 
-	if (*fData->iMinSAD < *best_sad) {
-		*best_sad = *fData->iMinSAD;
-		pMB->mvs[0] = fData->currentMV[0];
-		pMB->b_mvs[0] = fData->currentMV[1];
+	if (*Data->iMinSAD < *best_sad) {
+		*best_sad = *Data->iMinSAD;
+		pMB->mvs[0] = Data->currentMV[0];
+		pMB->b_mvs[0] = Data->currentMV[1];
 		pMB->mode = MODE_INTERPOLATE;
-		if (fData->qpel) {
-			pMB->qmvs[0] = fData->currentQMV[0];
-			pMB->b_qmvs[0] = fData->currentQMV[1];
+		if (Data->qpel) {
+			pMB->qmvs[0] = Data->currentQMV[0];
+			pMB->b_qmvs[0] = Data->currentQMV[1];
 			pMB->pmvs[1].x = pMB->qmvs[0].x - f_predMV->x;
 			pMB->pmvs[1].y = pMB->qmvs[0].y - f_predMV->y;
 			pMB->pmvs[0].x = pMB->b_qmvs[0].x - b_predMV->x;
@@ -768,21 +808,13 @@ MotionEstimationBVOP(MBParam * const pParam,
 	/* some pre-inintialized data for the rest of the search */
 
 	SearchData Data;
-	int32_t iMinSAD;
-	uint32_t dir;
-	VECTOR currentMV[3];
-	VECTOR currentQMV[3];
-	int32_t temp[8];
 	memset(&Data, 0, sizeof(SearchData));
+
 	Data.iEdgedWidth = pParam->edged_width;
-	Data.currentMV = currentMV; Data.currentQMV = currentQMV;
-	Data.iMinSAD = &iMinSAD;
 	Data.lambda16 = xvid_me_lambda_vec16[MAX(frame->quant-2, 2)];
 	Data.qpel = pParam->vol_flags & XVID_VOL_QUARTERPEL ? 1 : 0;
 	Data.rounding = 0;
 	Data.chroma = frame->motion_flags & XVID_ME_CHROMA_BVOP;
-	Data.temp = temp;
-	Data.dir = &dir;
 	Data.iQuant = frame->quant;
 
 	Data.RefQ = f_refV->u; /* a good place, also used in MC (for similar purpose) */
@@ -800,8 +832,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 			if (b_reference->coding_type != S_VOP)
 				if (b_mb->mode == MODE_NOT_CODED) {
 					pMB->mode = MODE_NOT_CODED;
-					pMB->mvs[0] = zeroMV;
-					pMB->b_mvs[0] = zeroMV;
+					pMB->mvs[0] = pMB->b_mvs[0] = zeroMV;
 					continue;
 				}
 

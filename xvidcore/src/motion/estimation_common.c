@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_common.c,v 1.1.2.1 2003-09-10 22:18:59 edgomez Exp $
+ * $Id: estimation_common.c,v 1.1.2.2 2003-11-19 12:24:25 syskin Exp $
  *
  ****************************************************************************/
 
@@ -78,15 +78,16 @@ const int xvid_me_lambda_vec16[32] =
  ****************************************************************************/
 
 int32_t
-xvid_me_ChromaSAD(const int dx, const int dy, const SearchData * const data)
+xvid_me_ChromaSAD(const int dx, const int dy, SearchData * const data)
 {
 	int sad;
 	const uint32_t stride = data->iEdgedWidth/2;
 	int offset = (dx>>1) + (dy>>1)*stride;
 	int next = 1;
 
-	if (dx == data->temp[5] && dy == data->temp[6]) return data->temp[7]; /* it has been checked recently */
-	data->temp[5] = dx; data->temp[6] = dy; /* backup */
+	if (dx == data->chromaX && dy == data->chromaY) 
+		return data->chromaSAD; /* it has been checked recently */
+	data->chromaX = dx; data->chromaY = dy; /* backup */
 
 	switch (((dx & 1) << 1) | (dy & 1))	{
 		case 0:
@@ -107,7 +108,7 @@ xvid_me_ChromaSAD(const int dx, const int dy, const SearchData * const data)
 			sad += sad8(data->CurV, data->RefQ, stride);
 			break;
 	}
-	data->temp[7] = sad; /* backup, part 2 */
+	data->chromaSAD = sad; /* backup, part 2 */
 	return sad;
 }
 
@@ -206,13 +207,13 @@ xvid_me_interpolate16x16qpel(const int x, const int y, const uint32_t dir, const
 }
 
 void
-xvid_me_AdvDiamondSearch(int x, int y, const SearchData * const data,
+xvid_me_AdvDiamondSearch(int x, int y, SearchData * const data,
 						 int bDirection, CheckFunc * const CheckCandidate)
 {
 
 /* directions: 1 - left (x-1); 2 - right (x+1), 4 - up (y-1); 8 - down (y+1) */
 
-	unsigned int * const iDirection = data->dir;
+	unsigned int * const iDirection = &data->dir;
 
 	for(;;) { /* forever */
 		*iDirection = 0;
@@ -292,10 +293,10 @@ xvid_me_AdvDiamondSearch(int x, int y, const SearchData * const data,
 }
 
 void
-xvid_me_SquareSearch(int x, int y, const SearchData * const data,
+xvid_me_SquareSearch(int x, int y, SearchData * const data,
 					 int bDirection, CheckFunc * const CheckCandidate)
 {
-	unsigned int * const iDirection = data->dir;
+	unsigned int * const iDirection = &data->dir;
 
 	do {
 		*iDirection = 0;
@@ -314,13 +315,13 @@ xvid_me_SquareSearch(int x, int y, const SearchData * const data,
 }
 
 void
-xvid_me_DiamondSearch(int x, int y, const SearchData * const data,
+xvid_me_DiamondSearch(int x, int y, SearchData * const data,
 					  int bDirection, CheckFunc * const CheckCandidate)
 {
 
 /* directions: 1 - left (x-1); 2 - right (x+1), 4 - up (y-1); 8 - down (y+1) */
 
-	unsigned int * const iDirection = data->dir;
+	unsigned int * const iDirection = &data->dir;
 
 	do {
 		*iDirection = 0;
@@ -350,7 +351,7 @@ xvid_me_DiamondSearch(int x, int y, const SearchData * const data,
 }
 
 void
-xvid_me_SubpelRefine(const SearchData * const data, CheckFunc * const CheckCandidate)
+xvid_me_SubpelRefine(SearchData * const data, CheckFunc * const CheckCandidate)
 {
 /* Do a half-pel or q-pel refinement */
 	const VECTOR centerMV = data->qpel_precision ? *data->currentQMV : *data->currentMV;

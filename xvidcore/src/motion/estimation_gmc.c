@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_gmc.c,v 1.1.2.2 2003-09-30 18:20:31 edgomez Exp $
+ * $Id: estimation_gmc.c,v 1.1.2.3 2003-11-19 12:24:25 syskin Exp $
  *
  ****************************************************************************/
 
@@ -39,7 +39,7 @@
 #include "motion_inlines.h"
 
 static void
-CheckCandidate16I(const int x, const int y, const SearchData * const data, const unsigned int Direction)
+CheckCandidate16I(const int x, const int y, SearchData * const data, const unsigned int Direction)
 {
 	int sad;
 	const uint8_t * Reference;
@@ -54,7 +54,7 @@ CheckCandidate16I(const int x, const int y, const SearchData * const data, const
 	if (sad < data->iMinSAD[0]) {
 		data->iMinSAD[0] = sad;
 		data->currentMV[0].x = x; data->currentMV[0].y = y;
-		*data->dir = Direction;
+		data->dir = Direction;
 	}
 }
 
@@ -129,20 +129,13 @@ GMEanalysis(const MBParam * const pParam,
 	const IMAGE * const pCurrent = &current->image;
 	const IMAGE * const pReference = &reference->image;
 
-	int32_t iMinSAD[5], temp[5];
-	VECTOR currentMV[5];
-	uint32_t dir;
 	SearchData Data;
 	memset(&Data, 0, sizeof(SearchData));
 
 	Data.iEdgedWidth = pParam->edged_width;
 	Data.rounding = pParam->m_rounding_type;
 
-	Data.currentMV = &currentMV[0];
-	Data.iMinSAD = &iMinSAD[0];
 	Data.iFcode = current->fcode;
-	Data.temp = temp;
-	Data.dir = &dir;
 
 	if (sadInit) (*sadInit) ();
 

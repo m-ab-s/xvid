@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: vop_type_decision.c,v 1.1.2.4 2003-11-16 15:32:38 edgomez Exp $
+ * $Id: vop_type_decision.c,v 1.1.2.5 2003-11-19 12:24:25 syskin Exp $
  *
  ****************************************************************************/
 
@@ -38,7 +38,7 @@
 #define INTRA_THRESH2	90
 
 static void
-CheckCandidate32I(const int x, const int y, const SearchData * const data, const unsigned int Direction)
+CheckCandidate32I(const int x, const int y, SearchData * const data, const unsigned int Direction)
 {
 	/* maximum speed */
 	int32_t sad;
@@ -52,7 +52,7 @@ CheckCandidate32I(const int x, const int y, const SearchData * const data, const
 	if (sad < *(data->iMinSAD)) {
 		*(data->iMinSAD) = sad;
 		data->currentMV[0].x = x; data->currentMV[0].y = y;
-		*data->dir = Direction;
+		data->dir = Direction;
 	}
 	if (data->temp[0] < data->iMinSAD[1]) {
 		data->iMinSAD[1] = data->temp[0]; data->currentMV[1].x = x; data->currentMV[1].y = y; }
@@ -115,7 +115,7 @@ MEanalyzeMB (	const uint8_t * const pRef,
 			CheckCandidate32I(pmv[2].x, pmv[2].y, Data, 2);
 
 		if (*Data->iMinSAD > 500) { /* diamond only if needed */
-			unsigned int mask = make_mask(pmv, 3, *Data->dir);
+			unsigned int mask = make_mask(pmv, 3, Data->dir);
 			xvid_me_DiamondSearch(Data->currentMV->x, Data->currentMV->y, Data, mask, CheckCandidate32I);
 		} else simplicity++;
 
@@ -151,16 +151,9 @@ MEanalysis(	const IMAGE * const pRef,
 	int blocks = 10;
 	int complexity = 0;
 
-	int32_t iMinSAD[5], temp[5];
-	uint32_t dir;
-	VECTOR currentMV[5];
 	SearchData Data;
 	Data.iEdgedWidth = pParam->edged_width;
-	Data.currentMV = currentMV;
-	Data.iMinSAD = iMinSAD;
 	Data.iFcode = Current->fcode;
-	Data.temp = temp;
-	Data.dir = &dir;
 	Data.qpel = (pParam->vol_flags & XVID_VOL_QUARTERPEL)? 1: 0;
 	Data.qpel_precision = 0;
 

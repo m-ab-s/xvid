@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_rd_based.c,v 1.1.2.9 2003-11-13 23:11:24 edgomez Exp $
+ * $Id: estimation_rd_based.c,v 1.1.2.10 2003-11-19 12:24:25 syskin Exp $
  *
  ****************************************************************************/
 
@@ -172,14 +172,15 @@ Block_CalcBitsIntra(MACROBLOCK * pMB,
 
 
 static void
-CheckCandidateRD16(const int x, const int y, const SearchData * const data, const unsigned int Direction)
+CheckCandidateRD16(const int x, const int y, SearchData * const data, const unsigned int Direction)
 {
 
 	int16_t *in = data->dctSpace, *coeff = data->dctSpace + 64;
 	int32_t rd = 0;
 	VECTOR * current;
 	const uint8_t * ptr;
-	int i, cbp = 0, t, xc, yc;
+	int i, t, xc, yc;
+	unsigned cbp = 0;
 
 	if ( (x > data->max_dx) || (x < data->min_dx)
 		|| (y > data->max_dy) || (y < data->min_dy) ) return;
@@ -235,20 +236,20 @@ CheckCandidateRD16(const int x, const int y, const SearchData * const data, cons
 	if (rd < data->iMinSAD[0]) {
 		data->iMinSAD[0] = rd;
 		current[0].x = x; current[0].y = y;
-		*data->dir = Direction;
+		data->dir = Direction;
 		*data->cbp = cbp;
 	}
 }
 
 static void
-CheckCandidateRD8(const int x, const int y, const SearchData * const data, const unsigned int Direction)
+CheckCandidateRD8(const int x, const int y, SearchData * const data, const unsigned int Direction)
 {
 
 	int16_t *in = data->dctSpace, *coeff = data->dctSpace + 64;
 	int32_t rd;
 	VECTOR * current;
 	const uint8_t * ptr;
-	int cbp = 0;
+	unsigned int cbp = 0;
 
 	if ( (x > data->max_dx) || (x < data->min_dx)
 		|| (y > data->max_dy) || (y < data->min_dy) ) return;
@@ -269,7 +270,7 @@ CheckCandidateRD8(const int x, const int y, const SearchData * const data, const
 		*data->cbp = cbp;
 		data->iMinSAD[0] = rd;
 		current[0].x = x; current[0].y = y;
-		*data->dir = Direction;
+		data->dir = Direction;
 	}
 }
 
@@ -336,14 +337,14 @@ findRD_inter(SearchData * const Data,
 }
 
 static int
-findRD_inter4v(const SearchData * const Data,
+findRD_inter4v(SearchData * const Data,
 				MACROBLOCK * const pMB, const MACROBLOCK * const pMBs,
 				const int x, const int y,
 				const MBParam * const pParam, const uint32_t MotionFlags,
 				const VECTOR * const backup)
 {
 
-	int cbp = 0, bits = 0, t = 0, i;
+	unsigned int cbp = 0, bits = 0, t = 0, i;
 	SearchData Data2, *Data8 = &Data2;
 	int sumx = 0, sumy = 0;
 	int16_t *in = Data->dctSpace, *coeff = Data->dctSpace + 64;
@@ -353,9 +354,9 @@ findRD_inter4v(const SearchData * const Data,
 
 	for (i = 0; i < 4; i++) { /* for all luma blocks */
 
-		Data8->iMinSAD = Data->iMinSAD + i + 1;
-		Data8->currentMV = Data->currentMV + i + 1;
-		Data8->currentQMV = Data->currentQMV + i + 1;
+		*Data8->iMinSAD = *(Data->iMinSAD + i + 1);
+		*Data8->currentMV = *(Data->currentMV + i + 1);
+		*Data8->currentQMV = *(Data->currentQMV + i + 1);
 		Data8->Cur = Data->Cur + 8*((i&1) + (i>>1)*Data->iEdgedWidth);
 		Data8->RefP[0] = Data->RefP[0] + 8*((i&1) + (i>>1)*Data->iEdgedWidth);
 		Data8->RefP[2] = Data->RefP[2] + 8*((i&1) + (i>>1)*Data->iEdgedWidth);
@@ -480,12 +481,12 @@ findRD_inter4v(const SearchData * const Data,
 }
 
 static int
-findRD_intra(const SearchData * const Data, MACROBLOCK * pMB,
+findRD_intra(SearchData * const Data, MACROBLOCK * pMB,
 			 const int x, const int y, const int mb_width)
 {
-	int cbp[2] = {0, 0}, bits[2], i;
-	int bits1 = BITS_MULT*1, bits2 = BITS_MULT*1; /* this one is ac/dc prediction flag bit */
-	int distortion = 0;
+	unsigned int cbp[2] = {0, 0}, bits[2], i;
+	unsigned int bits1 = BITS_MULT*1, bits2 = BITS_MULT*1; /* this one is ac/dc prediction flag bit */
+	unsigned int distortion = 0;
 
 	int16_t *in = Data->dctSpace, * coeff = Data->dctSpace + 64, * dqcoeff = Data->dctSpace + 128;
 	const uint32_t iQuant = Data->iQuant;
@@ -536,10 +537,10 @@ findRD_intra(const SearchData * const Data, MACROBLOCK * pMB,
 
 
 static int
-findRD_gmc(const SearchData * const Data, const IMAGE * const vGMC, const int x, const int y)
+findRD_gmc(SearchData * const Data, const IMAGE * const vGMC, const int x, const int y)
 {
 	int bits = BITS_MULT*1; /* this one is mcsel */
-	int cbp = 0, i;
+	unsigned int cbp = 0, i;
 	int16_t *in = Data->dctSpace, * coeff = Data->dctSpace + 64;
 
 	for(i = 0; i < 4; i++) {
@@ -587,10 +588,9 @@ xvid_me_ModeDecision_RD(SearchData * const Data,
 	int inter4v = (VopFlags & XVID_VOP_INTER4V) && (pMB->dquant == 0);
 	const uint32_t iQuant = pMB->quant;
 
-	int min_rd, intra_rd, i, cbp, c[2] = {0, 0};
+	int min_rd, intra_rd, i, cbp;
 	VECTOR backup[5], *v;
 	Data->iQuant = iQuant;
-	Data->cbp = c;
 	Data->scan_table = VopFlags & XVID_VOP_ALTERNATESCAN ?
 						scan_tables[2] : scan_tables[0];
 
@@ -694,7 +694,7 @@ xvid_me_ModeDecision_Fast(SearchData * const Data,
 	const uint32_t iQuant = pMB->quant;
 	const int skip_possible = (coding_type == P_VOP) && (pMB->dquant == 0);
     int sad;
-	int min_rd = -1, intra_rd, i, cbp = 63, c[2] = {0, 0};
+	int min_rd = -1, intra_rd, i, cbp = 63;
 	VECTOR backup[5], *v;
 	int sad_backup[5];
 	int InterBias = MV16_INTER_BIAS;
@@ -748,7 +748,6 @@ xvid_me_ModeDecision_Fast(SearchData * const Data,
 		}
 	} else { /* Rate-Distortion INTER<->INTER4V */
 		Data->iQuant = iQuant;
-		Data->cbp = c;
 		v = Data->qpel ? Data->currentQMV : Data->currentMV;
 
 		/* final skip decision, a.k.a. "the vector you found, really that good?" */
@@ -849,7 +848,6 @@ xvid_me_ModeDecision_Fast(SearchData * const Data,
 	} else { /* Rate-Distortion INTRA<->INTER */
 		if(min_rd < 0) {
 			Data->iQuant = iQuant;
-			Data->cbp = c;
 			v = Data->qpel ? Data->currentQMV : Data->currentMV;
 
 			for (i = 0; i < 5; i++) {
