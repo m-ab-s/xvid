@@ -1535,7 +1535,7 @@ SearchInterpolate(const uint8_t * const f_Ref,
 	bData.RefV = fData->bRefV = b_RefV + (x + y * iEdgedWidth) * 16;
 	bData.RefHV = fData->bRefHV = b_RefHV + (x + y * iEdgedWidth) * 16;
 	bData.RefQ = fData->RefQ;
-	fData->qpel_precision = bData.qpel_precision = 0;
+	fData->qpel_precision = bData.qpel_precision = 0; bData.qpel = fData->qpel;
 	bData.rounding = 0;
 
 	bData.bpredMV = fData->predMV = *f_predMV;
@@ -1546,14 +1546,14 @@ SearchInterpolate(const uint8_t * const f_Ref,
 	get_range(&bData.min_dx, &bData.max_dx, &bData.min_dy, &bData.max_dy, x, y, 16, pParam->width, pParam->height, bcode, pParam->m_quarterpel);
 
 	if (fData->currentMV[0].x > fData->max_dx) fData->currentMV[0].x = fData->max_dx;
-	if (fData->currentMV[0].x < fData->min_dx) fData->currentMV[0].x = fData->min_dy;
-	if (fData->currentMV[0].y > fData->max_dy) fData->currentMV[0].y = fData->max_dx;
-	if (fData->currentMV[0].y > fData->min_dy) fData->currentMV[0].y = fData->min_dy;
+	if (fData->currentMV[0].x < fData->min_dx) fData->currentMV[0].x = fData->min_dx;
+	if (fData->currentMV[0].y > fData->max_dy) fData->currentMV[0].y = fData->max_dy;
+	if (fData->currentMV[0].y < fData->min_dy) fData->currentMV[0].y = fData->min_dy;
 
 	if (fData->currentMV[1].x > bData.max_dx) fData->currentMV[1].x = bData.max_dx;
-	if (fData->currentMV[1].x < bData.min_dx) fData->currentMV[1].x = bData.min_dy;
-	if (fData->currentMV[1].y > bData.max_dy) fData->currentMV[1].y = bData.max_dx;
-	if (fData->currentMV[1].y > bData.min_dy) fData->currentMV[1].y = bData.min_dy;
+	if (fData->currentMV[1].x < bData.min_dx) fData->currentMV[1].x = bData.min_dx;
+	if (fData->currentMV[1].y > bData.max_dy) fData->currentMV[1].y = bData.max_dy;
+	if (fData->currentMV[1].y < bData.min_dy) fData->currentMV[1].y = bData.min_dy;
 
 	CheckCandidateInt(fData->currentMV[0].x, fData->currentMV[0].y, 255, &iDirection, fData);
 
@@ -1582,6 +1582,7 @@ SearchInterpolate(const uint8_t * const f_Ref,
 	*fData->iMinSAD +=  2 * fData->lambda16; // two bits are needed to code interpolate mode.
 
 	if (fData->qpel) {
+		CheckCandidate = CheckCandidateInt;
 		fData->qpel_precision = bData.qpel_precision = 1;
 		get_range(&fData->min_dx, &fData->max_dx, &fData->min_dy, &fData->max_dy, x, y, 16, pParam->width, pParam->height, fcode, 0);
 		get_range(&bData.min_dx, &bData.max_dx, &bData.min_dy, &bData.max_dy, x, y, 16, pParam->width, pParam->height, bcode, 0);
