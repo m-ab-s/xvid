@@ -262,8 +262,8 @@ section .text
 ;===========================================================================
 
 align ALIGN
-cglobal quant4_intra_mmx
-quant4_intra_mmx
+cglobal quant_mpeg_intra_mmx
+quant_mpeg_intra_mmx:
 
 		push	ecx
 		push	esi
@@ -478,8 +478,8 @@ align ALIGN
 ;===========================================================================
 
 align ALIGN
-cglobal quant4_inter_mmx
-		quant4_inter_mmx
+cglobal quant_mpeg_inter_mmx
+quant_mpeg_inter_mmx:
 
 		push	ecx
 		push	esi
@@ -717,8 +717,8 @@ align ALIGN
   ;********************************************************************
 
 align 16
-cglobal dequant4_intra_mmx
-dequant4_intra_mmx:
+cglobal dequant_mpeg_intra_mmx
+dequant_mpeg_intra_mmx:
 
   mov edx, [esp+4]  ; data
   mov ecx, [esp+8]  ; coeff
@@ -814,8 +814,8 @@ align 16
     ; It's mixed with the extraction of the absolute value.
 
 align 16
-cglobal dequant4_inter_mmx
-dequant4_inter_mmx:
+cglobal dequant_mpeg_inter_mmx
+dequant_mpeg_inter_mmx:
 
   mov    edx, [esp+ 4]        ; data
   mov    ecx, [esp+ 8]        ; coeff

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: qpel.c,v 1.1.4.4 2003-10-01 23:23:01 edgomez Exp $
+ * $Id: qpel.c,v 1.1.4.5 2003-10-07 13:02:35 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -253,9 +253,9 @@ static void Init_FIR_Table(int16_t Tab[][4],
 
 void xvid_Init_QP()
 {
+#ifdef ARCH_IS_IA32
 	int i;
 
-#ifdef ARCH_IS_IA32
 	for(i=0; i<256; ++i) {
 		xvid_Expand_mmx[i][0] = i;
 		xvid_Expand_mmx[i][1] = i;

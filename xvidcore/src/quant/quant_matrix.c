@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: quant_matrix.c,v 1.13.2.1 2003-06-09 13:55:19 edgomez Exp $
+ * $Id: quant_matrix.c,v 1.13.2.2 2003-10-07 13:02:35 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -29,11 +29,15 @@
 #define FIX(X)   (((X)==1) ? 0xFFFF : ((1UL << 16) / (X) + 1))
 #define FIXL(X)    ((1UL << 16) / (X) - 1)
 
-uint8_t custom_intra_matrix = 0;
-uint8_t custom_inter_matrix = 0;
+static uint8_t custom_intra_matrix = 0;
+static uint8_t custom_inter_matrix = 0;
 
-uint8_t default_intra_matrix[64] = {
-	8, 17, 18, 19, 21, 23, 25, 27,
+/*****************************************************************************
+ * Default matrices
+ ****************************************************************************/
+
+static const uint8_t default_intra_matrix[64] = {
+	 8, 17, 18, 19, 21, 23, 25, 27,
 	17, 18, 19, 21, 23, 25, 27, 28,
 	20, 21, 22, 23, 24, 26, 28, 30,
 	21, 22, 23, 24, 26, 28, 30, 32,
@@ -43,8 +47,19 @@ uint8_t default_intra_matrix[64] = {
 	27, 28, 30, 32, 35, 38, 41, 45
 };
 
+static const uint8_t default_inter_matrix[64] = {
+	16, 17, 18, 19, 20, 21, 22, 23,
+	17, 18, 19, 20, 21, 22, 23, 24,
+	18, 19, 20, 21, 22, 23, 24, 25,
+	19, 20, 21, 22, 23, 24, 26, 27,
+	20, 21, 22, 23, 25, 26, 27, 28,
+	21, 22, 23, 24, 26, 27, 28, 30,
+	22, 23, 24, 26, 27, 28, 30, 31,
+	23, 24, 25, 27, 28, 30, 31, 33
+};
+
 int16_t intra_matrix[64] = {
-	8, 17, 18, 19, 21, 23, 25, 27,
+	 8, 17, 18, 19, 21, 23, 25, 27,
 	17, 18, 19, 21, 23, 25, 27, 28,
 	20, 21, 22, 23, 24, 26, 28, 30,
 	21, 22, 23, 24, 26, 28, 30, 32,
@@ -77,7 +92,7 @@ uint16_t inter_matrix_fixfix[64] = {
 };
 
 uint16_t intra_matrix1[64] = {
-	8>>1, 17>>1, 18>>1, 19>>1, 21>>1, 23>>1, 25>>1, 27>>1,
+	 8>>1, 17>>1, 18>>1, 19>>1, 21>>1, 23>>1, 25>>1, 27>>1,
 	17>>1, 18>>1, 19>>1, 21>>1, 23>>1, 25>>1, 27>>1, 28>>1,
 	20>>1, 21>>1, 22>>1, 23>>1, 24>>1, 26>>1, 28>>1, 30>>1,
 	21>>1, 22>>1, 23>>1, 24>>1, 26>>1, 28>>1, 30>>1, 32>>1,
@@ -121,17 +136,6 @@ uint16_t inter_matrix_fixl[64] = {
 	FIXL(23), FIXL(24), FIXL(25), FIXL(27), FIXL(28), FIXL(30), FIXL(31), FIXL(33)
 };
 
-uint8_t default_inter_matrix[64] = {
-	16, 17, 18, 19, 20, 21, 22, 23,
-	17, 18, 19, 20, 21, 22, 23, 24,
-	18, 19, 20, 21, 22, 23, 24, 25,
-	19, 20, 21, 22, 23, 24, 26, 27,
-	20, 21, 22, 23, 25, 26, 27, 28,
-	21, 22, 23, 24, 26, 27, 28, 30,
-	22, 23, 24, 26, 27, 28, 30, 31,
-	23, 24, 25, 27, 28, 30, 31, 33
-};
-
 int16_t inter_matrix[64] = {
 	16, 17, 18, 19, 20, 21, 22, 23,
 	17, 18, 19, 20, 21, 22, 23, 24,
@@ -142,6 +146,7 @@ int16_t inter_matrix[64] = {
 	22, 23, 24, 26, 27, 28, 30, 31,
 	23, 24, 25, 27, 28, 30, 31, 33
 };
+
 uint16_t inter_matrix1[64] = {
 	16>>1, 17>>1, 18>>1, 19>>1, 20>>1, 21>>1, 22>>1, 23>>1,
 	17>>1, 18>>1, 19>>1, 20>>1, 21>>1, 22>>1, 23>>1, 24>>1,
@@ -188,32 +193,32 @@ set_inter_matrix_status(uint8_t status)
 	custom_inter_matrix = status;
 }
 
-int16_t *
+const int16_t *
 get_intra_matrix(void)
 {
 	return intra_matrix;
 }
 
-int16_t *
+const int16_t *
 get_inter_matrix(void)
 {
 	return inter_matrix;
 }
 
-uint8_t *
+const uint8_t *
 get_default_intra_matrix(void)
 {
 	return default_intra_matrix;
 }
 
-uint8_t *
+const uint8_t *
 get_default_inter_matrix(void)
 {
 	return default_inter_matrix;
 }
 
 uint8_t
-set_intra_matrix(uint8_t * matrix)
+set_intra_matrix(const uint8_t * matrix)
 {
 	int i, change = 0;
 
@@ -235,7 +240,7 @@ set_intra_matrix(uint8_t * matrix)
 
 
 uint8_t
-set_inter_matrix(uint8_t * matrix)
+set_inter_matrix(const uint8_t * matrix)
 {
 	int i, change = 0;
 

@@ -19,7 +19,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: quantize4_xmm.asm,v 1.2.2.1 2003-07-16 22:59:15 edgomez Exp $
+; * $Id: quantize_mpeg_xmm.asm,v 1.1.2.1 2003-10-07 13:02:35 edgomez Exp $
 ; *
 ; *************************************************************************/
 ;/**************************************************************************
@@ -194,8 +194,8 @@ section .text
 ;===========================================================================
 
 align ALIGN
-cglobal quant4_intra_xmm
-quant4_intra_xmm
+cglobal quant_mpeg_intra_xmm
+quant_mpeg_intra_xmm:
 	mov	eax, [esp  + 8]		; data
 	mov	ecx, [esp  + 12]	; quant
 	mov	edx, [esp  + 4]		; coeff
@@ -402,8 +402,8 @@ align 8
 ;===========================================================================
 
 align ALIGN
-cglobal quant4_inter_xmm
-quant4_inter_xmm
+cglobal quant_mpeg_inter_xmm
+quant_mpeg_inter_xmm:
 	mov	eax, [esp  + 8]		; data
 	mov	ecx, [esp  + 12]	; quant
 	mov	edx, [esp  + 4]		; coeff
@@ -652,8 +652,8 @@ align 8
 %endmacro
 
 align 16
-cglobal dequant4_intra_3dne
-dequant4_intra_3dne:
+cglobal dequant_mpeg_intra_3dne
+dequant_mpeg_intra_3dne:
 	mov eax, [esp+12] ; quant
 	mov ecx, [esp+8]  ; coeff
 	movq mm7, [mmx_mul_quant  + eax*8 - 8]
@@ -722,8 +722,8 @@ align 4
     ; It's mixed with the extraction of the absolute value.
 
 align 16
-cglobal dequant4_inter_3dne
-dequant4_inter_3dne:
+cglobal dequant_mpeg_inter_3dne
+dequant_mpeg_inter_3dne:
 	mov    edx, [esp+ 4]        ; data
 	mov    ecx, [esp+ 8]        ; coeff
 	mov    eax, [esp+12]        ; quant

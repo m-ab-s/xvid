@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.39 2003-10-03 16:57:55 edgomez Exp $
+ * $Id: xvid.h,v 1.27.2.40 2003-10-07 13:02:35 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -217,7 +217,6 @@ typedef struct {
 #define XVID_GBL_INIT    0 /* initialize xvidcore; must be called before using xvid_decore, or xvid_encore) */
 #define XVID_GBL_INFO    1 /* return some info about xvidcore, and the host computer */
 #define XVID_GBL_CONVERT 2 /* colorspace conversion utility */
-#define XVID_GBL_TEST    3 /* testing.. */
 
 int xvid_global(void *handle, int opt, void *param1, void *param2);
 

@@ -19,36 +19,43 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: quant_mpeg4.c,v 1.9.2.2 2003-06-09 13:55:25 edgomez Exp $
+ * $Id: quant_mpeg.c,v 1.1.2.1 2003-10-07 13:02:35 edgomez Exp $
  *
  ****************************************************************************/
 
 #include "../global.h"
-#include "quant_mpeg4.h"
+#include "quant.h"
 #include "quant_matrix.h"
 
-/* function pointers */
-quant_intraFuncPtr quant4_intra;
-quant_intraFuncPtr dequant4_intra;
-dequant_interFuncPtr dequant4_inter;
-quant_interFuncPtr quant4_inter;
+/*****************************************************************************
+ * Global function pointers
+ ****************************************************************************/
 
+/* Quant */
+quant_intraFuncPtr quant_mpeg_intra;
+quant_interFuncPtr quant_mpeg_inter;
 
-#define VM18P    3
-#define VM18Q    4
+/* DeQuant */
+quant_intraFuncPtr dequant_mpeg_intra;
+quant_interFuncPtr dequant_mpeg_inter;
 
+/*****************************************************************************
+ * Local data
+ ****************************************************************************/
 
-/*
- * divide-by-multiply table
- * need 17 bit shift (16 causes slight errors when q > 19)
- */
+#define VM18P 3
+#define VM18Q 4
 
-#define SCALEBITS    17
-#define FIX(X)        ((1UL << SCALEBITS) / (X) + 1)
+/* divide-by-multiply table
+ * needs 17 bit shift (16 causes slight errors when q > 19) */
 
-static const uint32_t multipliers[32] = {
-	0, FIX(2), FIX(4), FIX(6),
-	FIX(8), FIX(10), FIX(12), FIX(14),
+#define SCALEBITS 17
+#define FIX(X)	  ((1UL << SCALEBITS) / (X) + 1)
+
+static const uint32_t multipliers[32] =
+{
+	0,       FIX(2),  FIX(4),  FIX(6),
+	FIX(8),	 FIX(10), FIX(12), FIX(14),
 	FIX(16), FIX(18), FIX(20), FIX(22),
 	FIX(24), FIX(26), FIX(28), FIX(30),
 	FIX(32), FIX(34), FIX(36), FIX(38),
@@ -57,6 +64,10 @@ static const uint32_t multipliers[32] = {
 	FIX(56), FIX(58), FIX(60), FIX(62)
 };
 
+/*****************************************************************************
+ * Function definitions
+ ****************************************************************************/
+
 /* quantize intra-block
  *
  * const int32_t quantd = DIV_DIV(VM18P*quant, VM18Q);
@@ -64,58 +75,97 @@ static const uint32_t multipliers[32] = {
  * coeff[i] = (level + quantd) / quant2;
  */
 
-void
-quant4_intra_c(int16_t * coeff,
-			   const int16_t * data,
-			   const uint32_t quant,
-			   const uint32_t dcscalar)
+uint32_t
+quant_mpeg_intra_c(int16_t * coeff,
+				   const int16_t * data,
+				   const uint32_t quant,
+				   const uint32_t dcscalar)
 {
 	const uint32_t quantd = ((VM18P * quant) + (VM18Q / 2)) / VM18Q;
 	const uint32_t mult = multipliers[quant];
-	uint32_t i;
-	int16_t *intra_matrix;
-
-	intra_matrix = get_intra_matrix();
+	const int16_t *intra_matrix = get_intra_matrix();
+	uint32_t sum = 0;
+	int i;
 
 	coeff[0] = DIV_DIV(data[0], (int32_t) dcscalar);
+	sum += coeff[0];
 
 	for (i = 1; i < 64; i++) {
 		if (data[i] < 0) {
 			uint32_t level = -data[i];
 
 			level = ((level << 4) + (intra_matrix[i] >> 1)) / intra_matrix[i];
-			level = ((level + quantd) * mult) >> 17;
+			level = ((level + quantd) * mult) >> SCALEBITS;
+			sum += level;
 			coeff[i] = -(int16_t) level;
 		} else if (data[i] > 0) {
 			uint32_t level = data[i];
 
 			level = ((level << 4) + (intra_matrix[i] >> 1)) / intra_matrix[i];
-			level = ((level + quantd) * mult) >> 17;
+			level = ((level + quantd) * mult) >> SCALEBITS;
+			sum += level;
 			coeff[i] = level;
 		} else {
 			coeff[i] = 0;
 		}
 	}
+
+	return(sum);
 }
 
+/* quantize inter-block
+ *
+ * level = DIV_DIV(16 * data[i], default_intra_matrix[i]);
+ * coeff[i] = (level + quantd) / quant2;
+ * sum += abs(level);
+ */
 
+uint32_t
+quant_mpeg_inter_c(int16_t * coeff,
+				   const int16_t * data,
+				   const uint32_t quant)
+{
+	const uint32_t mult = multipliers[quant];
+	const int16_t *inter_matrix = get_inter_matrix();
+	uint32_t sum = 0;
+	int i;
 
-/*
- * dequantize intra-block & clamp to [-2048,2047]
+	for (i = 0; i < 64; i++) {
+		if (data[i] < 0) {
+			uint32_t level = -data[i];
+
+			level = ((level << 4) + (inter_matrix[i] >> 1)) / inter_matrix[i];
+			level = (level * mult) >> 17;
+			sum += level;
+			coeff[i] = -(int16_t) level;
+		} else if (data[i] > 0) {
+			uint32_t level = data[i];
+
+			level = ((level << 4) + (inter_matrix[i] >> 1)) / inter_matrix[i];
+			level = (level * mult) >> 17;
+			sum += level;
+			coeff[i] = level;
+		} else {
+			coeff[i] = 0;
+		}
+	}
+
+	return(sum);
+}
+
+/* dequantize intra-block & clamp to [-2048,2047]
  *
  * data[i] = (coeff[i] * default_intra_matrix[i] * quant2) >> 4;
  */
 
-void
-dequant4_intra_c(int16_t * data,
-				 const int16_t * coeff,
-				 const uint32_t quant,
-				 const uint32_t dcscalar)
+uint32_t
+dequant_mpeg_intra_c(int16_t * data,
+					 const int16_t * coeff,
+					 const uint32_t quant,
+					 const uint32_t dcscalar)
 {
-	uint32_t i;
-	int16_t *intra_matrix;
-
-	intra_matrix = get_intra_matrix();
+	const int16_t *intra_matrix = get_intra_matrix();
+	int i;
 
 	data[0] = coeff[0] * dcscalar;
 	if (data[0] < -2048) {
@@ -132,75 +182,30 @@ dequant4_intra_c(int16_t * data,
 
 			level = (level * intra_matrix[i] * quant) >> 3;
 			data[i] = (level <= 2048 ? -(int16_t) level : -2048);
-		} else					/* if (coeff[i] > 0) */
-		{
+		} else {
 			uint32_t level = coeff[i];
 
 			level = (level * intra_matrix[i] * quant) >> 3;
 			data[i] = (level <= 2047 ? level : 2047);
 		}
 	}
+
+	return(0);
 }
-
-
-
-/* quantize inter-block
- *
- * level = DIV_DIV(16 * data[i], default_intra_matrix[i]);
- * coeff[i] = (level + quantd) / quant2;
- * sum += abs(level);
-*/
-
-uint32_t
-quant4_inter_c(int16_t * coeff,
-			   const int16_t * data,
-			   const uint32_t quant)
-{
-	const uint32_t mult = multipliers[quant];
-	uint32_t sum = 0;
-	uint32_t i;
-	int16_t *inter_matrix;
-
-	inter_matrix = get_inter_matrix();
-
-	for (i = 0; i < 64; i++) {
-		if (data[i] < 0) {
-			uint32_t level = -data[i];
-
-			level = ((level << 4) + (inter_matrix[i] >> 1)) / inter_matrix[i];
-			level = (level * mult) >> 17;
-			sum += level;
-			coeff[i] = -(int16_t) level;
-		} else if (data[i] > 0) {
-			uint32_t level = data[i];
-
-			level = ((level << 4) + (inter_matrix[i] >> 1)) / inter_matrix[i];
-			level = (level * mult) >> 17;
-			sum += level;
-			coeff[i] = level;
-		} else {
-			coeff[i] = 0;
-		}
-	}
-	return sum;
-}
-
 
 
 /* dequantize inter-block & clamp to [-2048,2047]
-  data = ((2 * coeff + SIGN(coeff)) * inter_matrix[i] * quant) / 16
-*/
+ * data = ((2 * coeff + SIGN(coeff)) * inter_matrix[i] * quant) / 16
+ */
 
-void
-dequant4_inter_c(int16_t * data,
-				 const int16_t * coeff,
-				 const uint32_t quant)
+uint32_t
+dequant_mpeg_inter_c(int16_t * data,
+					 const int16_t * coeff,
+					 const uint32_t quant)
 {
 	uint32_t sum = 0;
-	uint32_t i;
-	int16_t *inter_matrix;
-
-	inter_matrix = get_inter_matrix();
+	const int16_t *inter_matrix = get_inter_matrix();
+	int i;
 
 	for (i = 0; i < 64; i++) {
 		if (coeff[i] == 0) {
@@ -210,8 +215,7 @@ dequant4_inter_c(int16_t * data,
 
 			level = ((2 * level + 1) * inter_matrix[i] * quant) >> 4;
 			data[i] = (level <= 2048 ? -level : -2048);
-		} else					/* if (coeff[i] > 0) */
-		{
+		} else {
 			uint32_t level = coeff[i];
 
 			level = ((2 * level + 1) * inter_matrix[i] * quant) >> 4;
@@ -221,9 +225,10 @@ dequant4_inter_c(int16_t * data,
 		sum ^= data[i];
 	}
 
-	/*  mismatch control */
-
+	/*	mismatch control */
 	if ((sum & 1) == 0) {
 		data[63] ^= 1;
 	}
+
+	return(0);
 }

@@ -34,7 +34,7 @@ SRC_GENERIC = \
 	plugins/plugin_psnr.c \
 	quant/quant_h263.c \
 	quant/quant_matrix.c \
-	quant/quant_mpeg4.c \
+	quant/quant_mpeg.c \
 	utils/emms.c \
 	utils/mbtransquant.c \
 	utils/mem_align.c \
@@ -56,8 +56,8 @@ SRC_IA32 = \
 	image/x86_asm/colorspace_yuv_mmx.asm \
 	image/x86_asm/qpel_mmx.asm \
 	motion/x86_asm/sad_mmx.asm \
-	quant/x86_asm/quantize4_mmx.asm \
-	quant/x86_asm/quantize_mmx.asm \
+	quant/x86_asm/quantize_mpeg_mmx.asm \
+	quant/x86_asm/quantize_h263_mmx.asm \
 	utils/x86_asm/mem_transfer_mmx.asm	\
 	utils/x86_asm/interlacing_mmx.asm \
 	\
@@ -74,8 +74,8 @@ SRC_IA32 = \
 	dct/x86_asm/idct_3dne.asm \
 	image/x86_asm/interpolate8x8_3dne.asm \
 	motion/x86_asm/sad_3dne.asm \
-	quant/x86_asm/quantize4_xmm.asm \
-	quant/x86_asm/quantize_3dne.asm \
+	quant/x86_asm/quantize_mpeg_xmm.asm \
+	quant/x86_asm/quantize_h263_3dne.asm \
 	utils/x86_asm/mem_transfer_3dne.asm
 
 SRC_IA64 = \

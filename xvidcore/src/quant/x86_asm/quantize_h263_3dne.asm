@@ -19,7 +19,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: quantize_3dne.asm,v 1.2.2.1 2003-07-16 22:59:20 edgomez Exp $
+; * $Id: quantize_h263_3dne.asm,v 1.1.2.1 2003-10-07 13:02:35 edgomez Exp $
 ; *
 ; *************************************************************************/
 ; these 3dne functions are compatible with iSSE, but are optimized specifically for 
@@ -328,8 +328,8 @@ align 8
 
 
 align ALIGN
-cglobal quant_intra_3dne
-quant_intra_3dne:
+cglobal quant_h263_intra_3dne
+quant_h263_intra_3dne:
 
 	mov	eax, [esp + 12]		; quant
 	mov	ecx, [esp + 8]		; data
@@ -501,8 +501,8 @@ quant_intra1 3
 %endmacro
 
 align ALIGN
-cglobal quant_inter_3dne
-quant_inter_3dne
+cglobal quant_h263_inter_3dne
+quant_h263_inter_3dne:
 	mov	edx, [esp  + 4]		; coeff
 	mov	ecx, [esp  + 8]		; data
 	mov	eax, [esp  + 12]	; quant
@@ -651,8 +651,8 @@ align 4
 
 
 align ALIGN
-cglobal dequant_intra_3dne
-dequant_intra_3dne:
+cglobal dequant_h263_intra_3dne
+dequant_h263_intra_3dne:
 	mov	ecx, [esp+ 8]			; coeff
 	mov	eax, [esp+12]			; quant
 	pxor	mm0, mm0
@@ -733,8 +733,8 @@ align 8
 ;Optimized by Jaan, 30 Nov 2002
 
 align ALIGN
-cglobal dequant_inter_3dne
-dequant_inter_3dne:
+cglobal dequant_h263_inter_3dne
+dequant_h263_inter_3dne:
 	mov	ecx, [esp+ 8]			; coeff
 	mov	eax, [esp+12]			; quant
 	pxor	mm0, mm0

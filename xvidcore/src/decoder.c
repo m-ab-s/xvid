@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.14 2003-10-03 15:49:21 syskin Exp $
+ * $Id: decoder.c,v 1.49.2.15 2003-10-07 13:02:35 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -40,8 +40,7 @@
 #include "bitstream/bitstream.h"
 #include "bitstream/mbcoding.h"
 
-#include "quant/quant_h263.h"
-#include "quant/quant_mpeg4.h"
+#include "quant/quant.h"
 #include "dct/idct.h"
 #include "dct/fdct.h"
 #include "utils/mem_transfer.h"
@@ -327,9 +326,9 @@ decoder_mbintra(DECODER * dec,
 
 		start_timer();
 		if (dec->quant_type == 0) {
-			dequant_intra(&data[i * 64], &block[i * 64], iQuant, iDcScaler);
+			dequant_h263_intra(&data[i * 64], &block[i * 64], iQuant, iDcScaler);
 		} else {
-			dequant4_intra(&data[i * 64], &block[i * 64], iQuant, iDcScaler);
+			dequant_mpeg_intra(&data[i * 64], &block[i * 64], iQuant, iDcScaler);
 		}
 		stop_iquant_timer();
 
@@ -533,9 +532,9 @@ decoder_mbinter(DECODER * dec,
 
 			start_timer();
 			if (dec->quant_type == 0) {
-				dequant_inter(&data[i * 64], &block[i * 64], iQuant);
+				dequant_h263_inter(&data[i * 64], &block[i * 64], iQuant);
 			} else {
-				dequant4_inter(&data[i * 64], &block[i * 64], iQuant);
+				dequant_mpeg_inter(&data[i * 64], &block[i * 64], iQuant);
 			}
 			stop_iquant_timer();
 
@@ -658,9 +657,9 @@ decoder_mbgmc(DECODER * dec,
 
 			start_timer();
 			if (dec->quant_type == 0) {
-				dequant_inter(&data[i * 64], &block[i * 64], iQuant);
+				dequant_h263_inter(&data[i * 64], &block[i * 64], iQuant);
 			} else {
-				dequant4_inter(&data[i * 64], &block[i * 64], iQuant);
+				dequant_mpeg_inter(&data[i * 64], &block[i * 64], iQuant);
 			}
 			stop_iquant_timer();
 
@@ -1205,9 +1204,9 @@ decoder_bf_mbinter(DECODER * dec,
 
 			start_timer();
 			if (dec->quant_type == 0) {
-				dequant_inter(&data[i * 64], &block[i * 64], iQuant);
+				dequant_h263_inter(&data[i * 64], &block[i * 64], iQuant);
 			} else {
-				dequant4_inter(&data[i * 64], &block[i * 64], iQuant);
+				dequant_mpeg_inter(&data[i * 64], &block[i * 64], iQuant);
 			}
 			stop_iquant_timer();
 
@@ -1445,9 +1444,9 @@ decoder_bf_interpolate_mbinter(DECODER * dec,
 
 			start_timer();
 			if (dec->quant_type == 0) {
-				dequant_inter(&data[i * 64], &block[i * 64], iQuant);
+				dequant_h263_inter(&data[i * 64], &block[i * 64], iQuant);
 			} else {
-				dequant4_inter(&data[i * 64], &block[i * 64], iQuant);
+				dequant_mpeg_inter(&data[i * 64], &block[i * 64], iQuant);
 			}
 			stop_iquant_timer();
 

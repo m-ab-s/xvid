@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbtransquant.c,v 1.21.2.17 2003-10-01 23:23:01 edgomez Exp $
+ * $Id: mbtransquant.c,v 1.21.2.18 2003-10-07 13:02:35 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -39,8 +39,7 @@
 #include "../bitstream/zigzag.h"
 #include "../dct/fdct.h"
 #include "../dct/idct.h"
-#include "../quant/quant_mpeg4.h"
-#include "../quant/quant_h263.h"
+#include "../quant/quant.h"
 #include "../encoder.h"
 
 #include "../image/reduced.h"
@@ -126,10 +125,10 @@ MBQuantIntra(const MBParam * pParam,
 	int mpeg;
 	int scaler_lum, scaler_chr;
 
-	quanth263_intraFuncPtr const quant[2] =
+	quant_intraFuncPtr const quant[2] =
 		{
-			(quanth263_intraFuncPtr)quant_intra,
-			(quanth263_intraFuncPtr)quant4_intra
+			quant_h263_intra,
+			quant_mpeg_intra
 		};
 
 	mpeg = !!(pParam->vol_flags & XVID_VOL_MPEGQUANT);
@@ -157,10 +156,10 @@ MBDeQuantIntra(const MBParam * pParam,
 	int mpeg;
 	int scaler_lum, scaler_chr;
 
-	quanth263_intraFuncPtr const dequant[2] =
+	quant_intraFuncPtr const dequant[2] =
 		{
-			(quanth263_intraFuncPtr)dequant_intra,
-			(quanth263_intraFuncPtr)dequant4_intra
+			dequant_h263_intra,
+			dequant_mpeg_intra
 		};
 
 	mpeg = !!(pParam->vol_flags & XVID_VOL_MPEGQUANT);
@@ -214,16 +213,16 @@ MBQuantInter(const MBParam * pParam,
 	int sum;
 	int code_block, mpeg;
 
-	quanth263_interFuncPtr const quant[2] =
+	quant_interFuncPtr const quant[2] =
 		{
-			(quanth263_interFuncPtr)quant_inter,
-			(quanth263_interFuncPtr)quant4_inter
+			quant_h263_inter,
+			quant_mpeg_inter
 		};
 
 	trellis_func_ptr_t const trellis[2] =
 		{
-			(trellis_func_ptr_t)dct_quantize_trellis_h263_c,
-			(trellis_func_ptr_t)dct_quantize_trellis_mpeg_c
+			dct_quantize_trellis_h263_c,
+			dct_quantize_trellis_mpeg_c
 		};
 
 	mpeg = !!(pParam->vol_flags & XVID_VOL_MPEGQUANT);
@@ -277,10 +276,10 @@ MBDeQuantInter(const MBParam * pParam,
 {
 	int mpeg;
 
-	quanth263_interFuncPtr const dequant[2] =
+	quant_interFuncPtr const dequant[2] =
 		{
-			(quanth263_interFuncPtr)dequant_inter,
-			(quanth263_interFuncPtr)dequant4_inter
+			dequant_h263_inter,
+			dequant_mpeg_inter
 		};
 
 	mpeg = !!(pParam->vol_flags & XVID_VOL_MPEGQUANT);
@@ -362,6 +361,7 @@ MBTrans16to8(const MBParam * const pParam,
 	uint32_t cst;
 	int vop_reduced;
 	const IMAGE * const pCurrent = &frame->image;
+
 	/* Array of function pointers, indexed by [vop_reduced<<1+add] */
 	transfer_operation_16to8_t  * const functions[4] =
 		{
@@ -449,10 +449,8 @@ MBTransQuantInter(const MBParam * const pParam,
 	uint8_t cbp;
 	uint32_t limit;
 
-	/*
-	 * There is no MBTrans8to16 for Inter block, that's done in motion compensation
-	 * already
-	 */
+	/* There is no MBTrans8to16 for Inter block, that's done in motion compensation
+	 * already */
 
 	/* Perform DCT (and field decision) */
 	MBfDCT(pParam, frame, pMB, x_pos, y_pos, data);
@@ -490,10 +488,8 @@ MBTransQuantInterBVOP(const MBParam * pParam,
 	uint8_t cbp;
 	uint32_t limit;
 
-	/*
-	 * There is no MBTrans8to16 for Inter block, that's done in motion compensation
-	 * already
-	 */
+	/* There is no MBTrans8to16 for Inter block, that's done in motion compensation
+	 * already */
 
 	/* Perform DCT (and field decision) */
 	MBfDCT(pParam, frame, pMB, x_pos, y_pos, data);
@@ -511,8 +507,8 @@ MBTransQuantInterBVOP(const MBParam * pParam,
 	 * History comment:
 	 * We don't have to DeQuant, iDCT and Transfer back data for B-frames.
 	 *
-	 * BUT some plugins require the original frame to be passed so we have
-	 * to take care of that here
+	 * BUT some plugins require the rebuilt original frame to be passed so we
+	 * have to take care of that here
 	 */
 	if((pParam->plugin_flags & XVID_REQORIGINAL)) {
 
@@ -637,29 +633,12 @@ MBFrameToField(int16_t data[6 * 64])
 	MOVLINE(LINE(3, 3), tmp);
 }
 
-
-
-
-
 /*****************************************************************************
  *               Trellis based R-D optimal quantization
  *
  *   Trellis Quant code (C) 2003 Pascal Massimino skal(at)planet-d.net
  *
  ****************************************************************************/
-
-
-#if 0
-static int
-dct_quantize_trellis_mpeg_c(int16_t *const Out,
-							const int16_t *const In,
-							int Q,
-							const uint16_t * const Zigzag,
-							int Non_Zero)
-{
-	return 63;
-}
-#endif
 
 /*----------------------------------------------------------------------------
  *

@@ -1036,14 +1036,14 @@ SOURCE=..\..\src\prediction\mbprediction.c
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\src\quant\x86_asm\quantize4_mmx.asm
+SOURCE=..\..\src\quant\x86_asm\quantize_mpeg_mmx.asm
 
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Release
-InputPath=..\..\src\quant\x86_asm\quantize4_mmx.asm
-InputName=quantize4_mmx
+InputPath=..\..\src\quant\x86_asm\quantize_mpeg_mmx.asm
+InputName=quantize_mpeg_mmx
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
@@ -1054,8 +1054,8 @@ InputName=quantize4_mmx
 
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Debug
-InputPath=..\..\src\quant\x86_asm\quantize4_mmx.asm
-InputName=quantize4_mmx
+InputPath=..\..\src\quant\x86_asm\quantize_mpeg_mmx.asm
+InputName=quantize_mpeg_mmx
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
@@ -1067,14 +1067,14 @@ InputName=quantize4_mmx
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\src\quant\x86_asm\quantize4_xmm.asm
+SOURCE=..\..\src\quant\x86_asm\quantize_mpeg_xmm.asm
 
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Release
-InputPath=..\..\src\quant\x86_asm\quantize4_xmm.asm
-InputName=quantize4_xmm
+InputPath=..\..\src\quant\x86_asm\quantize_mpeg_xmm.asm
+InputName=quantize_mpeg_xmm
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
@@ -1085,8 +1085,8 @@ InputName=quantize4_xmm
 
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Debug
-InputPath=..\..\src\quant\x86_asm\quantize4_xmm.asm
-InputName=quantize4_xmm
+InputPath=..\..\src\quant\x86_asm\quantize_mpeg_xmm.asm
+InputName=quantize_mpeg_xmm
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
@@ -1098,14 +1098,14 @@ InputName=quantize4_xmm
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\src\quant\x86_asm\quantize_3dne.asm
+SOURCE=..\..\src\quant\x86_asm\quantize_h263_3dne.asm
 
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Release
-InputPath=..\..\src\quant\x86_asm\quantize_3dne.asm
-InputName=quantize_3dne
+InputPath=..\..\src\quant\x86_asm\quantize_h263_3dne.asm
+InputName=quantize_h263_3dne
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
@@ -1116,8 +1116,8 @@ InputName=quantize_3dne
 
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Debug
-InputPath=..\..\src\quant\x86_asm\quantize_3dne.asm
-InputName=quantize_3dne
+InputPath=..\..\src\quant\x86_asm\quantize_h263_3dne.asm
+InputName=quantize_h263_3dne
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
@@ -1129,14 +1129,14 @@ InputName=quantize_3dne
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\src\quant\x86_asm\quantize_mmx.asm
+SOURCE=..\..\src\quant\x86_asm\quantize_h263_mmx.asm
 
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Release
-InputPath=..\..\src\quant\x86_asm\quantize_mmx.asm
-InputName=quantize_mmx
+InputPath=..\..\src\quant\x86_asm\quantize_h263_mmx.asm
+InputName=quantize_h263_mmx
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
@@ -1147,8 +1147,8 @@ InputName=quantize_mmx
 
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Debug
-InputPath=..\..\src\quant\x86_asm\quantize_mmx.asm
-InputName=quantize_mmx
+InputPath=..\..\src\quant\x86_asm\quantize_h263_mmx.asm
+InputName=quantize_h263_mmx
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
@@ -1164,15 +1164,11 @@ InputName=quantize_mmx
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\src\quant\quant_h263.h
+SOURCE=..\..\src\quant\quant.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\src\quant\quant_matrix.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\src\quant\quant_mpeg4.h
 # End Source File
 # End Group
 # Begin Source File
@@ -1185,7 +1181,7 @@ SOURCE=..\..\src\quant\quant_matrix.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\src\quant\quant_mpeg4.c
+SOURCE=..\..\src\quant\quant_mpeg.c
 # End Source File
 # End Group
 # Begin Group "utils"

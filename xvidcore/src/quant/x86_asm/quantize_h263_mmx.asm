@@ -286,8 +286,8 @@ section .text
 ;===========================================================================
 
 align ALIGN
-cglobal quant_intra_mmx
-quant_intra_mmx
+cglobal quant_h263_intra_mmx
+quant_h263_intra_mmx:
 
 		push	ecx
 		push	esi
@@ -391,8 +391,8 @@ align ALIGN
 ;===========================================================================
 
 align ALIGN
-cglobal quant_intra_sse2
-quant_intra_sse2
+cglobal quant_h263_intra_sse2
+quant_h263_intra_sse2:
 
 		push	esi
 		push	edi
@@ -495,8 +495,8 @@ align 16
 ;===========================================================================
 
 align ALIGN
-cglobal quant_inter_mmx
-		quant_inter_mmx
+cglobal quant_h263_inter_mmx
+quant_h263_inter_mmx:
 
 		push	ecx
 		push	esi
@@ -600,8 +600,8 @@ align ALIGN
 ;===========================================================================
 
 align 16
-cglobal quant_inter_sse2
-		quant_inter_sse2
+cglobal quant_h263_inter_sse2
+quant_h263_inter_sse2:
 
 		push	esi
 		push	edi
@@ -716,8 +716,8 @@ align 16
   ; Hence, final clamp really is [-2048,2047]
 
 align ALIGN
-cglobal dequant_intra_mmx
-dequant_intra_mmx:
+cglobal dequant_h263_intra_mmx
+dequant_h263_intra_mmx:
 
   mov    edx, [esp+ 4]        ; data
   mov    ecx, [esp+ 8]        ; coeff
@@ -793,8 +793,8 @@ align ALIGN
   ; saturating using 'pminsw' (saves 2 cycles/loop => ~5% faster)
 
 align ALIGN
-cglobal dequant_intra_xmm
-dequant_intra_xmm:
+cglobal dequant_h263_intra_xmm
+dequant_h263_intra_xmm:
 
   mov    edx, [esp+ 4]        ; data
   mov    ecx, [esp+ 8]        ; coeff
@@ -865,8 +865,8 @@ align ALIGN
 ;
 ;===========================================================================
 align ALIGN
-cglobal dequant_intra_sse2
-dequant_intra_sse2:
+cglobal dequant_h263_intra_sse2
+dequant_h263_intra_sse2:
 	mov edx, [esp+ 4]        ; data
 	mov ecx, [esp+ 8]        ; coeff
 	mov eax, [esp+12]        ; quant
@@ -941,8 +941,8 @@ align ALIGN
 ;===========================================================================
 
 align ALIGN
-cglobal dequant_inter_mmx
-dequant_inter_mmx:
+cglobal dequant_h263_inter_mmx
+dequant_h263_inter_mmx:
 
   mov    edx, [esp+ 4]        ; data
   mov    ecx, [esp+ 8]        ; coeff
@@ -1004,8 +1004,8 @@ align ALIGN
   ; except that we're saturating using 'pminsw' (saves 2 cycles/loop)
 
 align ALIGN
-cglobal dequant_inter_xmm
-dequant_inter_xmm:
+cglobal dequant_h263_inter_xmm
+dequant_h263_inter_xmm:
 
   mov    edx, [esp+ 4]        ; data
   mov    ecx, [esp+ 8]        ; coeff
@@ -1061,8 +1061,8 @@ align ALIGN
 ;
 ;===========================================================================
 align ALIGN
-cglobal dequant_inter_sse2
-dequant_inter_sse2
+cglobal dequant_h263_inter_sse2
+dequant_h263_inter_sse2:
 	mov edx, [esp + 4]	; data
 	mov ecx, [esp + 8]	; coeff
 	mov eax, [esp + 12]	; quant

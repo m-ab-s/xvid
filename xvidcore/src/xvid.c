@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.15 2003-10-01 23:23:01 edgomez Exp $
+ * $Id: xvid.c,v 1.45.2.16 2003-10-07 13:02:35 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -39,8 +39,7 @@
 #include "image/reduced.h"
 #include "utils/mem_transfer.h"
 #include "utils/mbfunctions.h"
-#include "quant/quant_h263.h"
-#include "quant/quant_mpeg4.h"
+#include "quant/quant.h"
 #include "motion/motion.h"
 #include "motion/sad.h"
 #include "utils/emms.h"
@@ -53,7 +52,6 @@ unsigned int xvid_debug = 0; /* xvid debug mask */
 #endif
 
 #if defined(ARCH_IS_IA32)
-
 #if defined(_MSC_VER)
 #	include <windows.h>
 #else
@@ -189,15 +187,15 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	xvid_Init_QP();
 
 	/* Quantization functions */
-	quant_intra   = quant_intra_c;
-	dequant_intra = dequant_intra_c;
-	quant_inter   = quant_inter_c;
-	dequant_inter = dequant_inter_c;
+	quant_h263_intra   = quant_h263_intra_c;
+	quant_h263_inter   = quant_h263_inter_c;
+	dequant_h263_intra = dequant_h263_intra_c;
+	dequant_h263_inter = dequant_h263_inter_c;
 
-	quant4_intra   = quant4_intra_c;
-	dequant4_intra = dequant4_intra_c;
-	quant4_inter   = quant4_inter_c;
-	dequant4_inter = dequant4_inter_c;
+	quant_mpeg_intra   = quant_mpeg_intra_c;
+	quant_mpeg_inter   = quant_mpeg_inter_c;
+	dequant_mpeg_intra = dequant_mpeg_intra_c;
+	dequant_mpeg_inter = dequant_mpeg_inter_c;
 
 	/* Block transfer related functions */
 	transfer_8to16copy = transfer_8to16copy_c;
@@ -230,7 +228,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	interpolate8x8_avg2 = interpolate8x8_avg2_c;
 	interpolate8x8_avg4 = interpolate8x8_avg4_c;
 
-	/* reduced resoltuion */
+	/* reduced resolution */
 	copy_upsampled_8x8_16to8 = xvid_Copy_Upsampled_8x8_16To8_C;
 	add_upsampled_8x8_16to8 = xvid_Add_Upsampled_8x8_16To8_C;
 	vfilter_31 = xvid_VFilter_31_C;
@@ -318,15 +316,15 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		xvid_QP_Add_Funcs = &xvid_QP_Add_Funcs_mmx;
 
 		/* Quantization related functions */
-		quant_intra   = quant_intra_mmx;
-		dequant_intra = dequant_intra_mmx;
-		quant_inter   = quant_inter_mmx;
-		dequant_inter = dequant_inter_mmx;
+		quant_h263_intra   = quant_h263_intra_mmx;
+		quant_h263_inter   = quant_h263_inter_mmx;
+		dequant_h263_intra = dequant_h263_intra_mmx;
+		dequant_h263_inter = dequant_h263_inter_mmx;
 
-		quant4_intra   = quant4_intra_mmx;
-		dequant4_intra = dequant4_intra_mmx;
-		quant4_inter   = quant4_inter_mmx;
-		dequant4_inter = dequant4_inter_mmx;
+		quant_mpeg_intra   = quant_mpeg_intra_mmx;
+		quant_mpeg_inter   = quant_mpeg_inter_mmx;
+		dequant_mpeg_intra = dequant_mpeg_intra_mmx;
+		dequant_mpeg_inter = dequant_mpeg_inter_mmx;
 
 		/* Block related functions */
 		transfer_8to16copy = transfer_8to16copy_mmx;
@@ -413,11 +411,11 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		add_upsampled_8x8_16to8 = xvid_Add_Upsampled_8x8_16To8_xmm;
 
 		/* Quantization */
-		quant4_intra = quant4_intra_xmm;
-		quant4_inter = quant4_inter_xmm;
+		quant_mpeg_intra = quant_mpeg_intra_xmm;
+		quant_mpeg_inter = quant_mpeg_inter_xmm;
 
-		dequant_intra = dequant_intra_xmm;
-		dequant_inter = dequant_inter_xmm;
+		dequant_h263_intra = dequant_h263_intra_xmm;
+		dequant_h263_inter = dequant_h263_inter_xmm;
 
 		/* Buffer transfer */
 		transfer_8to16sub2 = transfer_8to16sub2_xmm;
@@ -459,12 +457,12 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		transfer8x8_copy = transfer8x8_copy_3dne;
 
 		/* Quantization */
-		dequant4_intra = dequant4_intra_3dne;
-		dequant4_inter = dequant4_inter_3dne;
-		quant_intra = quant_intra_3dne;
-		quant_inter = quant_inter_3dne;
-		dequant_intra = dequant_intra_3dne;
-		dequant_inter = dequant_inter_3dne;
+		quant_h263_intra = quant_h263_intra_3dne;
+		quant_h263_inter = quant_h263_inter_3dne;
+		dequant_mpeg_intra = dequant_mpeg_intra_3dne;
+		dequant_mpeg_inter = dequant_mpeg_inter_3dne;
+		dequant_h263_intra = dequant_h263_intra_3dne;
+		dequant_h263_inter = dequant_h263_inter_3dne;
 
 		/* ME functions */
 		calc_cbp = calc_cbp_3dne;
@@ -487,10 +485,10 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		calc_cbp = calc_cbp_sse2;
 
 		/* Quantization */
-		quant_intra   = quant_intra_sse2;
-		dequant_intra = dequant_intra_sse2;
-		quant_inter   = quant_inter_sse2;
-		dequant_inter = dequant_inter_sse2;
+		quant_h263_intra   = quant_h263_intra_sse2;
+		quant_h263_inter   = quant_h263_inter_sse2;
+		dequant_h263_intra = dequant_h263_intra_sse2;
+		dequant_h263_inter = dequant_h263_inter_sse2;
 
 		/* ME; slower than xmm */
 		sad16    = sad16_sse2;
@@ -517,10 +515,10 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	  sad8 = sad8_ia64;
 	  dev16 = dev16_ia64;
 /*	  Halfpel8_Refine = Halfpel8_Refine_ia64; */
-	  quant_intra = quant_intra_ia64;
-	  dequant_intra = dequant_intra_ia64;
-	  quant_inter = quant_inter_ia64;
-	  dequant_inter = dequant_inter_ia64;
+	  quant_h263_intra = quant_h263_intra_ia64;
+	  quant_h263_inter = quant_h263_inter_ia64;
+	  dequant_h263_intra = dequant_h263_intra_ia64;
+	  dequant_h263_inter = dequant_h263_inter_ia64;
 	  transfer_8to16copy = transfer_8to16copy_ia64;
 	  transfer_16to8copy = transfer_16to8copy_ia64;
 	  transfer_8to16sub = transfer_8to16sub_ia64;
@@ -616,373 +614,6 @@ xvid_gbl_convert(xvid_gbl_convert_t* convert)
 	return 0;
 }
 
-
-
-void fill8(uint8_t * block, int size, int value)
-{
-	int i;
-	for (i = 0; i < size; i++)
-		block[i] = value;
-}
-
-void fill16(int16_t * block, int size, int value)
-{
-	int i;
-	for (i = 0; i < size; i++)
-		block[i] = value;
-}
-
-#define RANDOM(min,max) min + (rand() % (max-min))
-
-void random8(uint8_t * block, int size, int min, int max)
-{
-	int i;
-	for (i = 0; i < size; i++)
-		block[i] = RANDOM(min,max);
-}
-
-void random16(int16_t * block, int size, int min, int max)
-{
-	int i;
-	for (i = 0; i < size; i++)
-		block[i] = RANDOM(min,max);
-}
-
-int compare16(const int16_t * blockA, const int16_t * blockB, int size)
-{
-	int i;
-	for (i = 0; i < size; i++)
-		if (blockA[i] != blockB[i])
-			return 1;
-
-	return 0;
-}
-
-int diff16(const int16_t * blockA, const int16_t * blockB, int size)
-{
-	int i, diff = 0;
-	for (i = 0; i < size; i++)
-		diff += abs(blockA[i]-blockB[i]);
-	return diff;
-}
-
-
-#define XVID_TEST_RANDOM	0x00000001	/* random input data */
-#define XVID_TEST_VERBOSE	0x00000002	/* verbose error output */
-
-
-#define TEST_FORWARD	0x00000001	/* intra */
-#define TEST_FDCT  (TEST_FORWARD)
-#define TEST_IDCT  (0)
-
-static int test_transform(void * funcA, void * funcB, const char * nameB,
-				   int test, int flags)
-{
-	int i;
-	int64_t timeSTART;
-	int64_t timeA = 0;
-	int64_t timeB = 0;
-	DECLARE_ALIGNED_MATRIX(arrayA, 1, 64, int16_t, CACHE_LINE);
-	DECLARE_ALIGNED_MATRIX(arrayB, 1, 64, int16_t, CACHE_LINE);
-	int min, max;
-	int count = 0;
-
-	int tmp;
-	int min_error = 0x10000*64;
-	int max_error = 0;
-
-
-	if ((test & TEST_FORWARD))	/* forward */
-	{
-		min = -256;
-		max = 255;
-	}else{		/* inverse */
-		min = -2048;
-		max = 2047;
-	}
-
-	for (i = 0; i < 64*64; i++)
-	{
-		if ((flags & XVID_TEST_RANDOM))
-		{
-			random16(arrayA, 64, min, max);
-		}else{
-			fill16(arrayA, 64, i);
-		}
-		memcpy(arrayB, arrayA, 64*sizeof(int16_t));
-
-		if ((test & TEST_FORWARD))
-		{
-			timeSTART = read_counter();
-			((fdctFunc*)funcA)(arrayA);
-			timeA += read_counter() - timeSTART;
-
-			timeSTART = read_counter();
-			((fdctFunc*)funcB)(arrayB);
-			timeB += read_counter() - timeSTART;
-		}
-		else
-		{
-			timeSTART = read_counter();
-			((idctFunc*)funcA)(arrayA);
-			timeA += read_counter() - timeSTART;
-
-			timeSTART = read_counter();
-			((idctFunc*)funcB)(arrayB);
-			timeB += read_counter() - timeSTART;
-		}
-
-		tmp = diff16(arrayA, arrayB, 64) / 64;
-		if (tmp > max_error)
-			max_error = tmp;
-		if (tmp < min_error)
-			min_error = tmp;
-
-		count++;
-	}
-
-	/* print the "average difference" of best/worst transforms */
-	printf("%s:\t%i\t(min_error:%i, max_error:%i)\n", nameB, (int)(timeB / count), min_error, max_error);
-
-	return 0;
-}
-
-
-#define TEST_QUANT	0x00000001	/* forward quantization */
-#define TEST_INTRA	0x00000002	/* intra */
-#define TEST_QUANT_INTRA	(TEST_QUANT|TEST_INTRA)
-#define TEST_QUANT_INTER	(TEST_QUANT)
-#define TEST_DEQUANT_INTRA	(TEST_INTRA)
-#define TEST_DEQUANT_INTER	(0)
-
-static int test_quant(void * funcA, void * funcB, const char * nameB,
-			   int test, int flags)
-{
-	int q,i;
-	int64_t timeSTART;
-	int64_t timeA = 0;
-	int64_t timeB = 0;
-	int retA = 0, retB = 0;
-	DECLARE_ALIGNED_MATRIX(arrayX, 1, 64, int16_t, CACHE_LINE);
-	DECLARE_ALIGNED_MATRIX(arrayA, 1, 64, int16_t, CACHE_LINE);
-	DECLARE_ALIGNED_MATRIX(arrayB, 1, 64, int16_t, CACHE_LINE);
-	int min, max;
-	int count = 0;
-	int errors = 0;
-
-	if ((test & TEST_QUANT))	/* quant */
-	{
-		min = -2048;
-		max = 2047;
-	}else{		/* dequant */
-		min = -256;
-		max = 255;
-	}
-
-	for (q = 1; q <= 31; q++)	/* quantizer */
-	{
-		for (i = min; i < max; i++)	/* input coeff */
-		{
-			if ((flags & XVID_TEST_RANDOM))
-			{
-				random16(arrayX, 64, min, max);
-			}else{
-				fill16(arrayX, 64, i);
-			}
-
-			if ((test & TEST_INTRA))	/* intra */
-			{
-				timeSTART = read_counter();
-				((quanth263_intraFunc*)funcA)(arrayA, arrayX, q, q);
-				timeA += read_counter() - timeSTART;
-
-				timeSTART = read_counter();
-				((quanth263_intraFunc*)funcB)(arrayB, arrayX, q, q);
-				timeB += read_counter() - timeSTART;
-			}
-			else	/* inter */
-			{
-				timeSTART = read_counter();
-				retA = ((quanth263_interFunc*)funcA)(arrayA, arrayX, q);
-				timeA += read_counter() - timeSTART;
-
-				timeSTART = read_counter();
-				retB = ((quanth263_interFunc*)funcB)(arrayB, arrayX, q);
-				timeB += read_counter() - timeSTART;
-			}
-
-			/* compare return value from quant_inter, and compare (de)quantiz'd arrays */
-			if ( ((test&TEST_QUANT) && !(test&TEST_INTRA) && retA != retB ) ||
-				compare16(arrayA, arrayB, 64))
-			{
-				errors++;
-				if ((flags & XVID_TEST_VERBOSE))
-					printf("%s error: q=%i, i=%i\n", nameB, q, i);
-			}
-
-			count++;
-		}
-	}
-
-	printf("%s:\t%i", nameB, (int)(timeB / count));
-	if (errors>0)
-		printf("\t(%i errors out of %i)", errors, count);
-	printf("\n");
-
-	return 0;
-}
-
-
-
-int xvid_init_test(int flags)
-{
-#if defined(ARCH_IS_IA32)
-	int cpu_flags;
-#endif
-
-	printf("XviD tests\n\n");
-
-#if defined(ARCH_IS_IA32)
-	cpu_flags = detect_cpu_flags();
-#endif
-
-	idct_int32_init();
-	emms();
-
-	srand(time(0));
-
-	/* fDCT test */
-	printf("--- fdct ---\n");
-		test_transform(fdct_int32, fdct_int32, "c", TEST_FDCT, flags);
-
-#if defined(ARCH_IS_IA32)
-	if (cpu_flags & XVID_CPU_MMX)
-		test_transform(fdct_int32, fdct_mmx, "mmx", TEST_FDCT, flags);
-	if (cpu_flags & XVID_CPU_SSE2)
-		test_transform(fdct_int32, fdct_sse2, "sse2", TEST_FDCT, flags);
-#endif
-
-	/* iDCT test */
-	printf("\n--- idct ---\n");
-		test_transform(idct_int32, idct_int32, "c", TEST_IDCT, flags);
-
-#if defined(ARCH_IS_IA32)
-	if (cpu_flags & XVID_CPU_MMX)
-		test_transform(idct_int32, idct_mmx, "mmx", TEST_IDCT, flags);
-	if (cpu_flags & XVID_CPU_MMXEXT)
-		test_transform(idct_int32, idct_xmm, "xmm", TEST_IDCT, flags);
-	if (cpu_flags & XVID_CPU_3DNOWEXT)
-		test_transform(idct_int32, idct_3dne, "3dne", TEST_IDCT, flags);
-	if (cpu_flags & XVID_CPU_SSE2)
-		test_transform(idct_int32, idct_sse2, "sse2", TEST_IDCT, flags);
-#endif
-
-	/* Intra quantization test */
-	printf("\n--- quant intra ---\n");
-		test_quant(quant_intra_c, quant_intra_c, "c", TEST_QUANT_INTRA, flags);
-
-#if defined(ARCH_IS_IA32)
-	if (cpu_flags & XVID_CPU_MMX)
-		test_quant(quant_intra_c, quant_intra_mmx, "mmx", TEST_QUANT_INTRA, flags);
-	if (cpu_flags & XVID_CPU_3DNOWEXT)
-		test_quant(quant_intra_c, quant_intra_3dne, "3dne", TEST_QUANT_INTRA, flags);
-	if (cpu_flags & XVID_CPU_SSE2)
-		test_quant(quant_intra_c, quant_intra_sse2, "sse2", TEST_QUANT_INTRA, flags);
-#endif
-
-	/* Inter quantization test */
-	printf("\n--- quant inter ---\n");
-		test_quant(quant_inter_c, quant_inter_c, "c", TEST_QUANT_INTER, flags);
-
-#if defined(ARCH_IS_IA32)
-	if (cpu_flags & XVID_CPU_MMX)
-		test_quant(quant_inter_c, quant_inter_mmx, "mmx", TEST_QUANT_INTER, flags);
-	if (cpu_flags & XVID_CPU_3DNOWEXT)
-		test_quant(quant_inter_c, quant_inter_3dne, "3dne", TEST_QUANT_INTER, flags);
-	if (cpu_flags & XVID_CPU_SSE2)
-		test_quant(quant_inter_c, quant_inter_sse2, "sse2", TEST_QUANT_INTER, flags);
-#endif
-
-	/* Intra dequantization test */
-	printf("\n--- dequant intra ---\n");
-		test_quant(dequant_intra_c, dequant_intra_c, "c", TEST_DEQUANT_INTRA, flags);
-
-#if defined(ARCH_IS_IA32)
-	if (cpu_flags & XVID_CPU_MMX)
-		test_quant(dequant_intra_c, dequant_intra_mmx, "mmx", TEST_DEQUANT_INTRA, flags);
-	if (cpu_flags & XVID_CPU_MMXEXT)
-		test_quant(dequant_intra_c, dequant_intra_xmm, "xmm", TEST_DEQUANT_INTRA, flags);
-	if (cpu_flags & XVID_CPU_3DNOWEXT)
-		test_quant(dequant_intra_c, dequant_intra_3dne, "3dne", TEST_DEQUANT_INTRA, flags);
-	if (cpu_flags & XVID_CPU_SSE2)
-		test_quant(dequant_intra_c, dequant_intra_sse2, "sse2", TEST_DEQUANT_INTRA, flags);
-#endif
-
-	/* Inter dequantization test */
-	printf("\n--- dequant inter ---\n");
-		test_quant(dequant_inter_c, dequant_inter_c, "c", TEST_DEQUANT_INTER, flags);
-
-#if defined(ARCH_IS_IA32)
-	if (cpu_flags & XVID_CPU_MMX)
-		test_quant(dequant_inter_c, dequant_inter_mmx, "mmx", TEST_DEQUANT_INTER, flags);
-	if (cpu_flags & XVID_CPU_MMXEXT)
-		test_quant(dequant_inter_c, dequant_inter_xmm, "xmm", TEST_DEQUANT_INTER, flags);
-	if (cpu_flags & XVID_CPU_3DNOWEXT)
-		test_quant(dequant_inter_c, dequant_inter_3dne, "3dne", TEST_DEQUANT_INTER, flags);
-	if (cpu_flags & XVID_CPU_SSE2)
-		test_quant(dequant_inter_c, dequant_inter_sse2, "sse2", TEST_DEQUANT_INTER, flags);
-#endif
-
-	/* Intra quantization test */
-	printf("\n--- quant4 intra ---\n");
-		test_quant(quant4_intra_c, quant4_intra_c, "c", TEST_QUANT_INTRA, flags);
-
-#if defined(ARCH_IS_IA32)
-	if (cpu_flags & XVID_CPU_MMX)
-		test_quant(quant4_intra_c, quant4_intra_mmx, "mmx", TEST_QUANT_INTRA, flags);
-	if (cpu_flags & XVID_CPU_MMXEXT)
-		test_quant(quant4_intra_c, quant4_intra_xmm, "xmm", TEST_QUANT_INTRA, flags);
-#endif
-
-	/* Inter quantization test */
-	printf("\n--- quant4 inter ---\n");
-		test_quant(quant4_inter_c, quant4_inter_c, "c", TEST_QUANT_INTER, flags);
-
-#if defined(ARCH_IS_IA32)
-	if (cpu_flags & XVID_CPU_MMX)
-		test_quant(quant4_inter_c, quant4_inter_mmx, "mmx", TEST_QUANT_INTER, flags);
-	if (cpu_flags & XVID_CPU_MMXEXT)
-		test_quant(quant4_inter_c, quant4_inter_xmm, "xmm", TEST_QUANT_INTER, flags);
-#endif
-
-	/* Intra dequantization test */
-	printf("\n--- dequant4 intra ---\n");
-		test_quant(dequant4_intra_c, dequant4_intra_c, "c", TEST_DEQUANT_INTRA, flags);
-
-#if defined(ARCH_IS_IA32)
-	if (cpu_flags & XVID_CPU_MMX)
-		test_quant(dequant4_intra_c, dequant4_intra_mmx, "mmx", TEST_DEQUANT_INTRA, flags);
-	if (cpu_flags & XVID_CPU_3DNOWEXT)
-		test_quant(dequant4_intra_c, dequant4_intra_3dne, "3dne", TEST_DEQUANT_INTRA, flags);
-#endif
-
-	/* Inter dequantization test */
-	printf("\n--- dequant4 inter ---\n");
-		test_quant(dequant4_inter_c, dequant4_inter_c, "c", TEST_DEQUANT_INTER, flags);
-
-#if defined(ARCH_IS_IA32)
-	if (cpu_flags & XVID_CPU_MMX)
-		test_quant(dequant4_inter_c, dequant4_inter_mmx, "mmx", TEST_DEQUANT_INTER, flags);
-	if (cpu_flags & XVID_CPU_3DNOWEXT)
-		test_quant(dequant4_inter_c, dequant4_inter_3dne, "3dne", TEST_DEQUANT_INTER, flags);
-#endif
-
-	emms();
-
-	return 0;
-}
-
-
 /*****************************************************************************
  * XviD Global Entry point
  *
@@ -1011,11 +642,6 @@ xvid_global(void *handle,
 		case XVID_GBL_CONVERT :
 			return xvid_gbl_convert((xvid_gbl_convert_t*)param1);
 
-		case XVID_GBL_TEST :
-		{
-			ptr_t flags = (ptr_t)param1;
-			return xvid_init_test((int)flags);
-		}
 		default :
 			return XVID_ERR_FAIL;
 	}

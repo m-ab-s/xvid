@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.44 2003-10-03 16:57:55 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.45 2003-10-07 13:02:35 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1082,7 +1082,7 @@ repeat:
 
 	if ((pEnc->current->vop_flags & XVID_VOP_DEBUG)) {
 		image_printf(&pEnc->current->image, pEnc->mbParam.edged_width, pEnc->mbParam.height, 5, 5,
-			"%i  st:%i  if:%i", pEnc->current->frame_num, pEnc->current->stamp, pEnc->iFrameNum);
+			"%d  st:%lld  if:%d", pEnc->current->frame_num, pEnc->current->stamp, pEnc->iFrameNum);
 	}
 
 	/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

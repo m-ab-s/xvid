@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_rd_based.c,v 1.1.2.6 2003-10-03 16:57:55 edgomez Exp $
+ * $Id: estimation_rd_based.c,v 1.1.2.7 2003-10-07 13:02:35 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -40,8 +40,7 @@
 #include "motion.h"
 #include "sad.h"
 #include "../bitstream/zigzag.h"
-#include "../quant/quant_mpeg4.h"
-#include "../quant/quant_h263.h"
+#include "../quant/quant.h"
 #include "../bitstream/vlc_codes.h"
 #include "../dct/fdct.h"
 #include "motion_inlines.h"
@@ -65,15 +64,15 @@ Block_CalcBits(	int16_t * const coeff,
 
 	fdct(data);
 
-	if (quant_type) sum = quant_inter(coeff, data, quant);
-	else sum = quant4_inter(coeff, data, quant);
+	if (quant_type) sum = quant_h263_inter(coeff, data, quant);
+	else sum = quant_mpeg_inter(coeff, data, quant);
 
 	if (sum > 0) {
 		*cbp |= 1 << (5 - block);
 		bits = BITS_MULT * CodeCoeffInter_CalcBits(coeff, scan_table);
 
-		if (quant_type) dequant_inter(dqcoeff, coeff, quant);
-		else dequant4_inter(dqcoeff, coeff, quant);
+		if (quant_type) dequant_h263_inter(dqcoeff, coeff, quant);
+		else dequant_mpeg_inter(dqcoeff, coeff, quant);
 
 		for (i = 0; i < 64; i++)
 			distortion += (data[i] - dqcoeff[i])*(data[i] - dqcoeff[i]);
@@ -105,8 +104,8 @@ Block_CalcBitsIntra(int16_t * const coeff,
 	fdct(data);
 	data[0] -= 1024;
 
-	if (quant_type) quant_intra(coeff, data, quant, iDcScaler);
-	else quant4_intra(coeff, data, quant, iDcScaler);
+	if (quant_type) quant_h263_intra(coeff, data, quant, iDcScaler);
+	else quant_mpeg_intra(coeff, data, quant, iDcScaler);
 
 	b_dc = coeff[0];
 	if (block < 4) {
@@ -121,8 +120,8 @@ Block_CalcBitsIntra(int16_t * const coeff,
 	else bits += BITS_MULT*dcc_tab[coeff[0] + 255].len;
 
 	coeff[0] = b_dc;
-	if (quant_type) dequant_intra(dqcoeff, coeff, quant, iDcScaler);
-	else dequant4_intra(dqcoeff, coeff, quant, iDcScaler);
+	if (quant_type) dequant_h263_intra(dqcoeff, coeff, quant, iDcScaler);
+	else dequant_mpeg_intra(dqcoeff, coeff, quant, iDcScaler);
 
 	for (i = 0; i < 64; i++)
 		distortion += (data[i] - dqcoeff[i])*(data[i] - dqcoeff[i]);
