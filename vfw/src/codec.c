@@ -584,6 +584,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	}
 
 	frame.bquant = 0;
+	frame.bframe_threshold = 0;
 
 //	OutputDebugString(" ");
 	switch (xvid_encore(codec->ehandle, XVID_ENC_ENCODE, &frame, &stats)) 
