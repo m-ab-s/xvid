@@ -140,6 +140,10 @@ typedef struct
 	int credits_start_size;
 	int credits_end_size;
 
+#ifdef _SMP
+	int num_threads;
+#endif
+
 //	char build[50];
 	DWORD cpu;
 	float fquant;

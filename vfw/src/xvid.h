@@ -37,7 +37,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.5 2002-06-23 03:59:49 suxen_drol Exp $
+*  $Id: xvid.h,v 1.6 2002-07-12 12:26:55 suxen_drol Exp $
 *
 *****************************************************************************/
 
@@ -245,6 +245,9 @@ extern "C" {
 		int max_quantizer;		/* the upper limit of the quantizer */
 		int min_quantizer;		/* the lower limit of the quantizer */
 		int max_key_interval;	/* the maximum interval between key frames */
+#ifdef _SMP
+		int num_threads;		/* number of threads */
+#endif
 #ifdef BFRAMES
 		int global;				/* global/debug options */
 		int max_bframes;		/* max sequential bframes (0=disable bframes) */
