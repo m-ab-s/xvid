@@ -58,7 +58,7 @@ void interpolate8x8_avg2_c(uint8_t *dst, const uint8_t *src1, const uint8_t *src
     int32_t i;
 	const int32_t round = 1 - rounding;
 
-    for(i = 0; i < 8; i++)
+    for(i = 0; i < 9; i++)
     {
         dst[0] = (src1[0] + src2[0] + round) >> 1;
         dst[1] = (src1[1] + src2[1] + round) >> 1;
@@ -196,7 +196,7 @@ void interpolate16x16_lowpass_h_c(uint8_t *dst, uint8_t *src, int32_t stride, in
     int32_t i;
 	uint8_t round_add = 16 - rounding;
 
-    for(i = 0; i < 16; i++)
+    for(i = 0; i < 17; i++)
     {
 
         dst[0] = CLIP(((7 * ((src[0]<<1) - src[2]) +  23 * src[1] + 3 * src[3] - src[4] + round_add) >> 5), 0, 255);
@@ -228,7 +228,7 @@ void interpolate8x8_lowpass_h_c(uint8_t *dst, uint8_t *src, int32_t stride, int3
     int32_t i;
 	uint8_t round_add = 16 - rounding;
 
-    for(i = 0; i < 8; i++)
+    for(i = 0; i < 9; i++)
     {
 
         dst[0] = CLIP(((7 * ((src[0]<<1) - src[2]) + 23 * src[1] + 3 * src[3] - src[4] + round_add) >> 5), 0, 255);
@@ -285,7 +285,7 @@ void interpolate16x16_lowpass_v_c(uint8_t *dst, uint8_t *src, int32_t stride, in
     int32_t i;
 	uint8_t round_add = 16 - rounding;
 
-    for(i = 0; i < 16; i++)
+    for(i = 0; i < 17; i++)
     {
         int32_t src0 = src[0];
         int32_t src1 = src[stride];
@@ -335,7 +335,7 @@ void interpolate8x8_lowpass_v_c(uint8_t *dst, uint8_t *src, int32_t stride, int3
     int32_t i;
 	uint8_t round_add = 16 - rounding;
 
-    for(i = 0; i < 8; i++)
+    for(i = 0; i < 9; i++)
     {
         int32_t src0 = src[0];
         int32_t src1 = src[stride];
