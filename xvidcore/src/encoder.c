@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.18 2003-04-02 20:43:56 edgomez Exp $
+ *  $Id: encoder.c,v 1.95.2.19 2003-04-27 21:18:49 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -151,11 +151,16 @@ enc_create(xvid_enc_create_t * create)
     if (pEnc->mbParam.fincr>0)
 	    simplify_time(&pEnc->mbParam.fincr, &pEnc->mbParam.fbase);
 
-    /* plugin */
-    pEnc->num_plugins = create->num_plugins;
-    pEnc->plugins = xvid_malloc(sizeof(xvid_enc_plugin_t) * pEnc->num_plugins, CACHE_LINE);
-    if (pEnc->plugins == NULL)
-        goto xvid_err_memory0;
+    /* plugins */
+    if(create->num_plugins > 0) {
+		pEnc->num_plugins = create->num_plugins;
+		pEnc->plugins = xvid_malloc(sizeof(xvid_enc_plugin_t) * pEnc->num_plugins, CACHE_LINE);
+		if (pEnc->plugins == NULL)
+			goto xvid_err_memory0;
+	} else {
+		pEnc->num_plugins = 0;
+		pEnc->plugins = NULL;
+	}
 
     for (n=0; n<pEnc->num_plugins;n++) {
         xvid_plg_create_t pcreate;
@@ -598,8 +603,7 @@ enc_destroy(Encoder * pEnc)
     }
 
 
-    if (pEnc->num_plugins>0)
-    {
+    if (pEnc->num_plugins>0) {
         xvid_plg_destroy_t pdestroy;
         memset(&pdestroy, 0, sizeof(xvid_plg_destroy_t));
 
