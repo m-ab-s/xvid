@@ -753,7 +753,7 @@ MotionEstimation(MBParam * const pParam,
 	Data.iFcode = current->fcode;
 	Data.rounding = pParam->m_rounding_type;
 	Data.qpel = pParam->m_quarterpel;
-	Data.chroma = current->global_flags & ( PMV_CHROMA16 | PMV_CHROMA8 );
+	Data.chroma = current->motion_flags & ( PMV_CHROMA16 | PMV_CHROMA8 );
 	Data.rrv = current->global_flags & XVID_REDUCED;
 
 	if ((current->global_flags & XVID_REDUCED)) {
