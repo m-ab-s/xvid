@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.c,v 1.42.2.2 2004-05-03 23:28:29 edgomez Exp $
+ * $Id: bitstream.c,v 1.42.2.3 2004-05-28 21:40:11 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -547,7 +547,7 @@ BitstreamReadHeaders(Bitstream * bs,
 #endif
 
 			if (dec->time_inc_resolution > 0) {
-				dec->time_inc_bits = log2bin(dec->time_inc_resolution-1);
+				dec->time_inc_bits = MAX(log2bin(dec->time_inc_resolution-1), 1);
 			} else {
 #if 0
 				dec->time_inc_bits = 0;
