@@ -133,11 +133,11 @@ int BitstreamReadHeaders(Bitstream * bs,
 
 void BitstreamWriteVolHeader(Bitstream * const bs,
 							 const MBParam * pParam,
-							 const FRAMEINFO * frame);
+							 const FRAMEINFO * const frame);
 
 void BitstreamWriteVopHeader(Bitstream * const bs,
 							 const MBParam * pParam,
-							 const FRAMEINFO * frame,
+							 const FRAMEINFO * const frame,
 							 int vop_coded);
 
 void BitstreamWriteUserData(Bitstream * const bs, 

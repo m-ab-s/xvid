@@ -41,6 +41,7 @@
   *                                                                            *
   *  Revision history:                                                         *
   *                                                                            *
+  *  28.10.2002	GMC support - gruel											   *
   *  04.10.2002	qpel support - Isibaar										   *
   *  11.07.2002 add VOP width & height return to dec when dec->width           *
   *             or dec->height is 0  (for use in examples/ex1.c)               *
@@ -68,6 +69,7 @@
 #include "bitstream.h"
 #include "zigzag.h"
 #include "../quant/quant_matrix.h"
+#include "mbcoding.h"
 
 
 static uint32_t __inline
@@ -579,7 +581,7 @@ BitstreamReadHeaders(Bitstream * bs,
 
 			// fix a little bug by MinChen <chenm002@163.com>
 			if ((dec->shape != VIDOBJLAY_SHAPE_BINARY_ONLY) &&
-				(coding_type == P_VOP)) {
+				( (coding_type == P_VOP) || (coding_type == S_VOP) ) ) {
 				*rounding = BitstreamGetBit(bs);	// rounding_type
 				DPRINTF(DPRINTF_HEADER, "rounding %i", *rounding);
 			}
@@ -702,8 +704,13 @@ bs_put_matrix(Bitstream * bs,
 void
 BitstreamWriteVolHeader(Bitstream * const bs,
 						const MBParam * pParam,
-						const FRAMEINFO * frame)
+						const FRAMEINFO * const frame)
 {
+	int vol_ver_id=1;
+
+	if ( (pParam->m_quarterpel) || (frame->global_flags & XVID_GMC) )
+		vol_ver_id = 2;
+	
 	// video object_start_code & vo_id
 	BitstreamPad(bs);
 	BitstreamPutBits(bs, VO_START_CODE, 27);
@@ -716,15 +723,15 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	BitstreamPutBit(bs, 0);		// random_accessible_vol
 	BitstreamPutBits(bs, 0, 8);	// video_object_type_indication
 
-	if (pParam->m_quarterpel == 0)
+	if (vol_ver_id == 1)
 	{
 		BitstreamPutBit(bs, 0);				// is_object_layer_identified (0=not given)
 	}
 	else
 	{
 		BitstreamPutBit(bs, 1);		// is_object_layer_identified
-		BitstreamPutBits(bs, 2, 4);	// vol_ver_id == 2
-		BitstreamPutBits(bs, 0, 3); // vol_ver_priority = 0 ??
+		BitstreamPutBits(bs, vol_ver_id, 4);	// vol_ver_id == 2
+		BitstreamPutBits(bs, 4, 3); // vol_ver_priority (1==lowest, 7==highest) ??
 	}
 
 	BitstreamPutBits(bs, 1, 4);	// aspect_ratio_info (1=1:1)
@@ -732,11 +739,9 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	BitstreamPutBit(bs, 1);	// vol_control_parameters
 	BitstreamPutBits(bs, 1, 2);	// chroma_format 1="4:2:0"
 
-#ifdef BFRAMES
 	if (pParam->max_bframes > 0) {
 		BitstreamPutBit(bs, 0);	// low_delay
 	} else
-#endif
 	{
 		BitstreamPutBit(bs, 1);	// low_delay
 	}
@@ -751,21 +756,12 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	   25fps        res=25      inc=1
 	   29.97fps res=30000   inc=1001
 	 */
-#ifdef BFRAMES
 	BitstreamPutBits(bs, pParam->fbase, 16);
-#else
-	BitstreamPutBits(bs, pParam->fbase, 16);
-#endif
 
 	WRITE_MARKER();
 
-#ifdef BFRAMES
 	BitstreamPutBit(bs, 1);		// fixed_vop_rate = 1
 	BitstreamPutBits(bs, pParam->fincr, log2bin(pParam->fbase));	// fixed_vop_time_increment
-#else
-	BitstreamPutBit(bs, 1);		// fixed_vop_rate = 1
-	BitstreamPutBits(bs, pParam->fincr, log2bin(pParam->fbase));	// fixed_vop_time_increment
-#endif
 
 	WRITE_MARKER();
 	BitstreamPutBits(bs, pParam->width, 13);	// width
@@ -776,16 +772,23 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	BitstreamPutBit(bs, frame->global_flags & XVID_INTERLACING);	// interlace
 	BitstreamPutBit(bs, 1);		// obmc_disable (overlapped block motion compensation)
 
-	if (pParam->m_quarterpel == 0)
-	{
-		BitstreamPutBit(bs, 0);		// sprite_enable
+	if (vol_ver_id != 1) 
+	{	if (frame->global_flags & XVID_GMC)
+		{	BitstreamPutBits(bs, 2, 2);		// sprite_enable=='GMC'
+			BitstreamPutBits(bs, 2, 6);		// no_of_sprite_warping_points
+			BitstreamPutBits(bs, 3, 2);		// sprite_warping_accuracy 0==1/2, 1=1/4, 2=1/8, 3=1/16
+			BitstreamPutBit(bs, 0);			// sprite_brightness_change (not supported)
+
+/* currently we use no_of_sprite_warping_points==2, sprite_warping_accuracy==3 
+   for DivX5 compatability */
+
+		} else
+			BitstreamPutBits(bs, 0, 2);		// sprite_enable==off
 	}
 	else
-	{
-		BitstreamPutBits(bs, 0, 2);		// sprite_enable
-	}
+		BitstreamPutBit(bs, 0);		// sprite_enable==off
 
-	BitstreamPutBit(bs, 0);		// not_in_bit
+	BitstreamPutBit(bs, 0);		// not_8_bit
 
 	// quant_type   0=h.263  1=mpeg4(quantizer tables)
 	BitstreamPutBit(bs, pParam->m_quant_type);
@@ -803,37 +806,35 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 
 	}
 
-	if (pParam->m_quarterpel)
-	{
-		BitstreamPutBit(bs, 1);
+	if (vol_ver_id != 1) {
+		if (pParam->m_quarterpel)
+			BitstreamPutBit(bs, 1);	 	//  quarterpel 
+		else
+			BitstreamPutBit(bs, 0);		// no quarterpel
 	}
 
 	BitstreamPutBit(bs, 1);		// complexity_estimation_disable
 	BitstreamPutBit(bs, 1);		// resync_marker_disable
 	BitstreamPutBit(bs, 0);		// data_partitioned
 
-	if (pParam->m_quarterpel)
+	if (vol_ver_id != 1) 
 	{
 		BitstreamPutBit(bs, 0);		// newpred_enable
 		BitstreamPutBit(bs, 0);		// reduced_resolution_vop_enabled
 	}
-
+	
 	BitstreamPutBit(bs, 0);		// scalability
+
 }
 
 
 /*
   write vop header
-
-  NOTE: doesnt handle bother with time_base & time_inc
-  time_base = n seconds since last resync (eg. last iframe)
-  time_inc = nth of a second since last resync
-  (decoder uses these values to determine precise time since last resync)
 */
 void
 BitstreamWriteVopHeader(Bitstream * const bs,
 						const MBParam * pParam,
-						const FRAMEINFO * frame,
+						const FRAMEINFO * const frame,
 						int vop_coded)
 {
 	uint32_t i;
@@ -843,31 +844,19 @@ BitstreamWriteVopHeader(Bitstream * const bs,
 
 	BitstreamPutBits(bs, frame->coding_type, 2);
 
-#ifdef BFRAMES
 	for (i = 0; i < frame->seconds; i++) {
 		BitstreamPutBit(bs, 1);
 	}
 	BitstreamPutBit(bs, 0);
-#else
-	for (i = 0; i < frame->seconds; i++) {
-		BitstreamPutBit(bs, 1);
-	}
-	BitstreamPutBit(bs, 0);
-//	BitstreamPutBits(bs, 0, 1);
-#endif
 
 	WRITE_MARKER();
 
 	// time_increment: value=nth_of_sec, nbits = log2(resolution)
-#ifdef BFRAMES
+
 	BitstreamPutBits(bs, frame->ticks, log2bin(pParam->fbase));
 	/*DPRINTF("[%i:%i] %c\n", frame->seconds, frame->ticks,
 			frame->coding_type == I_VOP ? 'I' : frame->coding_type ==
 			P_VOP ? 'P' : 'B');*/
-#else
-	BitstreamPutBits(bs, frame->ticks, log2bin(pParam->fbase));
-//	BitstreamPutBits(bs, 1, 1);
-#endif
 
 	WRITE_MARKER();
 
@@ -878,7 +867,7 @@ BitstreamWriteVopHeader(Bitstream * const bs,
 
 	BitstreamPutBits(bs, 1, 1);	// vop_coded
 
-	if (frame->coding_type == P_VOP)
+	if ( (frame->coding_type == P_VOP) || (frame->coding_type == S_VOP) )
 		BitstreamPutBits(bs, frame->rounding_type, 1);
 
 	BitstreamPutBits(bs, 0, 3);	// intra_dc_vlc_threshold
@@ -887,7 +876,32 @@ BitstreamWriteVopHeader(Bitstream * const bs,
 		BitstreamPutBit(bs, (frame->global_flags & XVID_TOPFIELDFIRST));
 		BitstreamPutBit(bs, (frame->global_flags & XVID_ALTERNATESCAN));
 	}
+	
+	if (frame->coding_type == S_VOP) {
+		if (1)	{		// no_of_sprite_warping_points>=1
+			if (pParam->m_quarterpel)
+				bs_put_spritetrajectory(bs, frame->GMC_MV.x/2 ); // du[0] 
+			else
+				bs_put_spritetrajectory(bs, frame->GMC_MV.x ); // du[0] 
+			WRITE_MARKER();
+			
+			if (pParam->m_quarterpel)
+				bs_put_spritetrajectory(bs, frame->GMC_MV.y/2 ); // dv[0] 
+			else
+				bs_put_spritetrajectory(bs, frame->GMC_MV.y ); // dv[0] 
+			WRITE_MARKER();
+		}
+/* GMC is halfpel in bitstream, even though GMC_MV was pseudo-qpel (2*halfpel) */
 
+		if (2) {		// no_of_sprite_warping_points>=2 (for DivX5 compat)
+			bs_put_spritetrajectory(bs, 0 );
+			WRITE_MARKER();
+			bs_put_spritetrajectory(bs, 0 );
+			WRITE_MARKER();
+		}
+		// no support for brightness_change!
+	}
+	
 	BitstreamPutBits(bs, frame->quant, 5);	// quantizer
 
 	if (frame->coding_type != I_VOP)
@@ -897,7 +911,6 @@ BitstreamWriteVopHeader(Bitstream * const bs,
 		BitstreamPutBits(bs, frame->bcode, 3);	// backward_fixed_code
 
 }
-
 
 void 
 BitstreamWriteUserData(Bitstream * const bs, 

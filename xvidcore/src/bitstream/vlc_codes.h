@@ -215,6 +215,15 @@ static char max_run[4][256] = {
  * encoder tables                                                 *
  ******************************************************************/
 
+static VLC sprite_trajectory_code[32768];
+
+static VLC sprite_trajectory_len[15] = {
+	{ 0x00 , 2}, 
+	{ 0x02 , 3}, { 0x03, 3}, { 0x04, 3}, { 0x05, 3}, { 0x06, 3}, 
+	{ 0x0E , 4}, { 0x1E, 5}, { 0x3E, 6}, { 0x7F, 7}, { 0xFE, 8},
+	{ 0x1FE, 9}, {0x3FE,10}, {0x7FE,11}, {0xFFE,12} };
+
+
 /* DCT coefficients. Four tables, two for last = 0, two for last = 1.
    the sign bit must be added afterwards. */
 

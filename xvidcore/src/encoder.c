@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.13 2002-10-17 19:10:57 Isibaar Exp $
+ *  $Id: encoder.c,v 1.76.2.14 2002-11-02 15:52:30 chl Exp $
  *
  ****************************************************************************/
 
@@ -54,10 +54,8 @@
 #include "global.h"
 #include "utils/timer.h"
 #include "image/image.h"
-#ifdef BFRAMES
 #include "image/font.h"
 #include "motion/sad.h"
-#endif
 #include "motion/motion.h"
 #include "bitstream/cbp.h"
 #include "utils/mbfunctions.h"
@@ -1509,6 +1507,7 @@ FrameCodeI(Encoder * pEnc,
 	pEnc->iFrameNum = 0;
 	pEnc->mbParam.m_rounding_type = 1;
 	pEnc->current->rounding_type = pEnc->mbParam.m_rounding_type;
+  	pEnc->current->quarterpel =  pEnc->mbParam.m_quarterpel;
 	pEnc->current->coding_type = I_VOP;
 
 	BitstreamWriteVolHeader(bs, &pEnc->mbParam, pEnc->current);
@@ -1600,6 +1599,7 @@ FrameCodeP(Encoder * pEnc,
 
 	pEnc->mbParam.m_rounding_type = 1 - pEnc->mbParam.m_rounding_type;
 	pEnc->current->rounding_type = pEnc->mbParam.m_rounding_type;
+  	pEnc->current->quarterpel =  pEnc->mbParam.m_quarterpel;
 	pEnc->current->fcode = pEnc->mbParam.m_fcode;
 
 	if (!force_inter)
@@ -1619,6 +1619,12 @@ FrameCodeP(Encoder * pEnc,
 		stop_inter_timer();
 	}
 
+	if (pEnc->current->global_flags & XVID_GMC) {
+		printf("Global Motion = %d %d quarterpel=%d\n", pEnc->current->GMC_MV.x, pEnc->current->GMC_MV.y,pEnc->current->quarterpel);
+		pEnc->current->coding_type = S_VOP;
+	} else
+		pEnc->current->coding_type = P_VOP;
+	
 	start_timer();
 	if (pEnc->current->global_flags & XVID_HINTEDME_SET) {
 		HintedMESet(pEnc, &bIntra);
@@ -1630,17 +1636,18 @@ FrameCodeP(Encoder * pEnc,
 
 	} else {
 
-	bIntra =
-		MotionEstimation(&pEnc->mbParam, pEnc->current, pEnc->reference,
+		bIntra =
+			MotionEstimation(&pEnc->mbParam, pEnc->current, pEnc->reference,
                          &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV,
                          iLimit);
-			
 	}
 	stop_motion_timer();
 
 	if (bIntra == 1) return FrameCodeI(pEnc, bs, pBits);
 
-	pEnc->current->coding_type = P_VOP;
+	if ( (pEnc->current->GMC_MV.x == 0) && (pEnc->current->GMC_MV.y == 0) )
+			pEnc->current->coding_type = P_VOP;		/* no global motion -> no GMC */
+
 
 	if (vol_header)
 		BitstreamWriteVolHeader(bs, &pEnc->mbParam, pEnc->current);
@@ -1719,40 +1726,52 @@ FrameCodeP(Encoder * pEnc,
 							(pMB->dquant == NO_CHANGE);
 
 			if(pEnc->mbParam.m_quarterpel)
-				skip_possible &= (pMB->qmvs[0].x == 0) & (pMB->qmvs[0].y == 0);
+			{	skip_possible &= (pMB->qmvs[0].x == pEnc->current->GMC_MV.x) & (pMB->qmvs[0].y == pEnc->current->GMC_MV.y);
+			}
 			else
-				skip_possible &= (pMB->mvs[0].x == 0) & (pMB->mvs[0].y == 0);
+			{	skip_possible &= (pMB->mvs[0].x == pEnc->current->GMC_MV.x) & (pMB->mvs[0].y == pEnc->current->GMC_MV.y);
+			}
+			
+			if ( (pMB->mode == MODE_NOT_CODED) || (skip_possible)) {
 
-			if ((pMB->mode == MODE_NOT_CODED) || (skip_possible)) {
-/* This is a candidate for SKIPping, but check intermediate B-frames first */
+/* This is a candidate for SKIPping, but for P-VOPs check intermediate B-frames first */
+				int bSkip = 1; 
 
-				int bSkip = 1;
-				pMB->mode = MODE_NOT_CODED;
-				
-				for (k=pEnc->bframenum_head; k< pEnc->bframenum_tail; k++)
-				{		
-					int iSAD;
-					iSAD = sad16(pEnc->reference->image.y + 16*y*pEnc->mbParam.edged_width + 16*x,
-								pEnc->bframes[k]->image.y + 16*y*pEnc->mbParam.edged_width + 16*x,
+				if (pEnc->current->coding_type == P_VOP)	/* special rule for P-VOP's SKIP */
+					for (k=pEnc->bframenum_head; k< pEnc->bframenum_tail; k++)
+					{
+						int iSAD;
+						iSAD = sad16(pEnc->reference->image.y + 16*y*pEnc->mbParam.edged_width + 16*x,
+									pEnc->bframes[k]->image.y + 16*y*pEnc->mbParam.edged_width + 16*x,
 								pEnc->mbParam.edged_width,BFRAME_SKIP_THRESHHOLD);
-					if (iSAD >= BFRAME_SKIP_THRESHHOLD * pMB->quant)
-					{	bSkip = 0; 
-						break;
+						if (iSAD >= BFRAME_SKIP_THRESHHOLD * pMB->quant)
+						{	bSkip = 0; 
+							break;
+						}
 					}
-				}
-				if (!bSkip) 
-				{	
+					
+				if (!bSkip)
+				{
 					VECTOR predMV;
-					if(pEnc->mbParam.m_quarterpel)
+					if(pEnc->mbParam.m_quarterpel) {
 						predMV = get_qpmv2(pEnc->current->mbs, pEnc->mbParam.mb_width, 0, x, y, 0);
-					else
+						pMB->pmvs[0].x = pMB->qmvs[0].x - predMV.x;  /* with GMC, qmvs doesn't have to be (0,0)! */
+						pMB->pmvs[0].y = pMB->qmvs[0].y - predMV.y; 
+					}
+					else {
 						predMV = get_pmv2(pEnc->current->mbs, pEnc->mbParam.mb_width, 0, x, y, 0);
-					pMB->pmvs[0].x = -predMV.x; pMB->pmvs[0].y = -predMV.y;
+						pMB->pmvs[0].x = pMB->mvs[0].x - predMV.x; /* with GMC, mvs doesn't have to be (0,0)! */
+						pMB->pmvs[0].y = pMB->mvs[0].y - predMV.y; 
+					}
 					pMB->mode = MODE_INTER;
 					pMB->cbp = 0;
 					MBCoding(pEnc->current, pMB, qcoeff, bs, &pEnc->sStat);
 				}
-				else MBSkip(bs);
+				else 
+				{
+					pMB->mode = MODE_NOT_CODED;
+					MBSkip(bs);
+				}
 			
 			} else {
 				if (pEnc->current->global_flags & XVID_GREYSCALE)
@@ -1814,6 +1833,7 @@ FrameCodeP(Encoder * pEnc,
 		pEnc->current->quant = pEnc->reference->quant;
 		pEnc->current->motion_flags = pEnc->reference->motion_flags;
 		pEnc->current->rounding_type = pEnc->reference->rounding_type;
+	  	pEnc->current->quarterpel =  pEnc->reference->quarterpel;
 		pEnc->current->fcode = pEnc->reference->fcode;
 		pEnc->current->bcode = pEnc->reference->bcode;
 		image_copy(&pEnc->current->image, &pEnc->reference->image, pEnc->mbParam.edged_width, pEnc->mbParam.height);
@@ -1852,6 +1872,8 @@ FrameCodeB(Encoder * pEnc,
 		fp=fopen("C:\\XVIDDBGE.TXT","w");
 	}
 #endif
+
+  	frame->quarterpel =  pEnc->mbParam.m_quarterpel;
 
 	// forward 
 	image_setedges(f_ref, pEnc->mbParam.edged_width,

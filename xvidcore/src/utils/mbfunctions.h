@@ -188,7 +188,7 @@ void MBFrameToField(int16_t data[6 * 64]);	/* de-interlace vertical Y blocks */
 void MBSkip(Bitstream * bs);  /* just the bitstream. Since MB is skipped, no info is needed */
 
 
-void MBCoding(const FRAMEINFO * frame,	/* <-- the parameter for coding of the bitstream */
+void MBCoding(const FRAMEINFO * const frame,	/* <-- the parameter for coding of the bitstream */
 
 			  MACROBLOCK * pMB,	/* <-- Info of the MB to be coded */
 

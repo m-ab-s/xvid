@@ -119,41 +119,38 @@ MBMotionCompensation(MACROBLOCK * const mb,
 					 const uint32_t quarterpel,
 					 const uint32_t rounding)
 {
-	if (mb->mode == MODE_NOT_CODED) {
-		transfer8x8_copy(cur->y + 16 * (i + j * edged_width),
-							ref->y + 16 * (i + j * edged_width),
-							edged_width);
-		transfer8x8_copy(cur->y + 16 * (i + j * edged_width) + 8,
-							ref->y + 16 * (i + j * edged_width) + 8,
-							edged_width);
-		transfer8x8_copy(cur->y + 16 * (i + j * edged_width) + 8 * edged_width,
-							ref->y + 16 * (i + j * edged_width) + 8 * edged_width,
-							edged_width);
-		transfer8x8_copy(cur->y + 16 * (i + j * edged_width) + 8 * (edged_width+1),
-							ref->y + 16 * (i + j * edged_width) + 8 * (edged_width+1),
-							edged_width);
+	if (mb->mode == MODE_NOT_CODED || mb->mode == MODE_INTER || mb->mode == MODE_INTER_Q) {
 
-		transfer8x8_copy(cur->u + 8 * (i + j * edged_width/2),
-							ref->u + 8 * (i + j * edged_width/2),
-							edged_width / 2);
-		transfer8x8_copy(cur->v + 8 * (i + j * edged_width/2),
-							ref->v + 8 * (i + j * edged_width/2),
-							edged_width / 2);
-		return;
-	}
+		int32_t dx = (quarterpel ? mb->qmvs[0].x : mb->mvs[0].x);
+		int32_t dy = (quarterpel ? mb->qmvs[0].y : mb->mvs[0].y);
 
-	if (mb->mode == MODE_INTER || mb->mode == MODE_INTER_Q) {
-		int32_t dx = mb->mvs[0].x;
-		int32_t dy = mb->mvs[0].y;
-
-		if(quarterpel) {
-			dx = mb->qmvs[0].x;
-			dy = mb->qmvs[0].y;
+		if ( (mb->mode == MODE_NOT_CODED) && (dx==0) && (dy==0) ) {	/* quick copy */
+			transfer8x8_copy(cur->y + 16 * (i + j * edged_width),
+								ref->y + 16 * (i + j * edged_width),
+								edged_width);
+			transfer8x8_copy(cur->y + 16 * (i + j * edged_width) + 8,
+								ref->y + 16 * (i + j * edged_width) + 8,
+								edged_width);
+			transfer8x8_copy(cur->y + 16 * (i + j * edged_width) + 8 * edged_width,
+								ref->y + 16 * (i + j * edged_width) + 8 * edged_width,
+								edged_width);
+			transfer8x8_copy(cur->y + 16 * (i + j * edged_width) + 8 * (edged_width+1),
+								ref->y + 16 * (i + j * edged_width) + 8 * (edged_width+1),
+								edged_width);
+	
+			transfer8x8_copy(cur->u + 8 * (i + j * edged_width/2),
+								ref->u + 8 * (i + j * edged_width/2),
+								edged_width / 2);
+			transfer8x8_copy(cur->v + 8 * (i + j * edged_width/2),
+								ref->v + 8 * (i + j * edged_width/2),
+								edged_width / 2);
+			return;
 		}
+	/* quick MODE_NOT_CODED for GMC with MV!=(0,0) is still needed */
 
 		compensate16x16_interpolate(&dct_codes[0 * 64], cur->y, ref->y, refh->y,
-							  refv->y, refhv->y, 16 * i, 16 * j, dx,
-							  dy, edged_width, quarterpel, rounding);
+						  refv->y, refhv->y, 16 * i, 16 * j, dx,
+						  dy, edged_width, quarterpel, rounding);
 
 		if (quarterpel)
 		{
@@ -224,7 +221,6 @@ MBMotionCompensation(MACROBLOCK * const mb,
 							cur->v + 8 * j * edged_width / 2 + 8 * i,
 					  		interpolate8x8_switch2(refv->u, ref->v, 8 * i, 8 * j,
 													dx, dy, edged_width / 2, rounding),
-
 							edged_width / 2);
 	}
 }

@@ -754,14 +754,13 @@ SkipMacroblockP(MACROBLOCK *pMB, const int32_t sad)
 	pMB->mode = MODE_NOT_CODED;
 	pMB->mvs[0].x = pMB->mvs[1].x = pMB->mvs[2].x = pMB->mvs[3].x = 0;
 	pMB->mvs[0].y = pMB->mvs[1].y = pMB->mvs[2].y = pMB->mvs[3].y = 0;
-
 	pMB->qmvs[0].x = pMB->qmvs[1].x = pMB->qmvs[2].x = pMB->qmvs[3].x = 0;
 	pMB->qmvs[0].y = pMB->qmvs[1].y = pMB->qmvs[2].y = pMB->qmvs[3].y = 0;
 
 	pMB->sad16 = pMB->sad8[0] = pMB->sad8[1] = pMB->sad8[2] = pMB->sad8[3] = sad;
 }
 
-bool
+bool 
 MotionEstimation(MBParam * const pParam,
 				 FRAMEINFO * const current,
 				 FRAMEINFO * const reference,
@@ -823,13 +822,16 @@ MotionEstimation(MBParam * const pParam,
 				pMB->quant = quant;
 			}
 
-//initial skip decision
+/* initial skip decision */
+/* no early skip for GMC (global vector = skip vector is unknown!)  */
 
-			if (pMB->dquant == NO_CHANGE && sad00 < pMB->quant * INITIAL_SKIP_THRESH)
-				if (SkipDecisionP(pCurrent, pRef, x, y, pParam->edged_width, pMB->quant)) {
-					SkipMacroblockP(pMB, sad00);
-					continue;
-				}
+			if (current->coding_type == P_VOP)	{ /* no fast SKIP for S(GMC)-VOPs */
+				if (pMB->dquant == NO_CHANGE && sad00 < pMB->quant * INITIAL_SKIP_THRESH)
+					if (SkipDecisionP(pCurrent, pRef, x, y, pParam->edged_width, pMB->quant)) {
+						SkipMacroblockP(pMB, sad00);
+						continue;
+					}
+			}
 
 			SearchP(pRef->y, pRefH->y, pRefV->y, pRefHV->y, qimage, pCurrent, x,
 						y, current->motion_flags, pMB->quant,
@@ -837,13 +839,15 @@ MotionEstimation(MBParam * const pParam,
 						current->global_flags & XVID_INTER4V, pMB);
 
 /* final skip decision, a.k.a. "the vector you found, really that good?" */
-			if (pMB->dquant == NO_CHANGE && sad00 < pMB->quant * MAX_SAD00_FOR_SKIP
+			if (current->coding_type == P_VOP)	{ 
+				if ( (pMB->dquant == NO_CHANGE) && (sad00 < pMB->quant * MAX_SAD00_FOR_SKIP)
 				&& ((100*pMB->sad16)/(sad00+1) > FINAL_SKIP_THRESH) )
-				if (SkipDecisionP(pCurrent, pRef, x, y, pParam->edged_width, pMB->quant)) {
-					SkipMacroblockP(pMB, sad00);
-					continue;
-				}
-	
+					if (SkipDecisionP(pCurrent, pRef, x, y, pParam->edged_width, pMB->quant)) {
+						SkipMacroblockP(pMB, sad00);
+						continue;
+					}
+			}
+				
 /* finally, intra decision */
 
 			InterBias = MV16_INTER_BIAS;
@@ -872,7 +876,13 @@ MotionEstimation(MBParam * const pParam,
 		}
 	}
 	free(qimage);
-	return 0;
+
+	if (current->coding_type == S_VOP)	/* first GMC step only for S(GMC)-VOPs */
+		current->GMC_MV = GlobalMotionEst( pMBs, pParam, current->fcode );	
+	else
+		current->GMC_MV = zeroMV;
+
+	return 0; 
 }
 
 
@@ -1630,8 +1640,8 @@ MotionEstimationBVOP(MBParam * const pParam,
 			MACROBLOCK * const pMB = frame->mbs + i + j * pParam->mb_width;
 			const MACROBLOCK * const b_mb = b_mbs + i + j * pParam->mb_width;
 
-/* special case, if collocated block is SKIPed: encoding is forward (0,0), cpb=0 without further ado */
-			if (b_mb->mode == MODE_NOT_CODED) {
+/* special case, if collocated block is SKIPed in P-VOP: encoding is forward (0,0), cpb=0 without further ado */
+			if ( (b_mb->mode == MODE_NOT_CODED) ) {
 				pMB->mode = MODE_NOT_CODED;
 				continue;
 			}
@@ -2120,4 +2130,58 @@ FindFcode(	const MBParam * const pParam,
 
 	for (i = 1; (max > 32 << (i - 1)); i++);
 	return i;
+}
+
+
+/* Global Motion Estimation, (C) 2002 by sysKin */
+/* calculate global translation from local (halfpel) motion field */
+
+static VECTOR
+GlobalMotionEst(const MACROBLOCK * const pMBs, const MBParam * const pParam, const uint32_t iFcode)
+{
+
+	int count, bestcount = 0;
+	int x, y;
+	VECTOR gmc;
+	int step, min_x, max_x, min_y, max_y;
+	uint32_t mx, my;
+
+	min_x = min_y = -32<<iFcode;
+	max_x = max_y = 32<<iFcode;
+
+	for (step = 32; step >= 2; step /= 2) {
+		bestcount = 0;
+		for (y = min_y; y <= max_y; y += step)
+			for (x = min_x ; x <= max_x; x += step) {
+				count = 0;
+				//for all macroblocks
+				for (my = 1; my < pParam->mb_height-1; my++)
+					for (mx = 1; mx < pParam->mb_width-1; mx++) {
+						const MACROBLOCK *pMB = &pMBs[mx + my * pParam->mb_width];
+						VECTOR mv;
+						
+						if (pMB->mode == MODE_INTRA || pMB->mode == MODE_NOT_CODED) 
+							continue;
+	
+						mv = pMB->mvs[0];
+						if ( ABS(mv.x - x) <= step && ABS(mv.y - y) <= step ) 	/* GMC translation is always halfpel-res */
+							count++;
+					}
+				if (count >= bestcount) { bestcount = count; gmc.x = x; gmc.y = y; }
+			}
+		min_x = gmc.x - step;
+		max_x = gmc.x + step;
+		min_y = gmc.y - step;
+		max_y = gmc.y + step;
+
+	}
+	if (pParam->m_quarterpel) {
+		gmc.x *= 2;
+		gmc.y *= 2;	/* we store the halfpel value as pseudo-qpel to make comparison easier */
+	}
+	
+	if (bestcount < (pParam->mb_height-2)*(pParam->mb_width-2)/10) 
+		gmc.x = gmc.y = 0; //no camara pan, no GMC
+
+	return gmc;
 }

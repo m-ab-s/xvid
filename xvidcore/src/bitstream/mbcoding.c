@@ -41,6 +41,7 @@
   *																			   *	
   *  Revision history:                                                         *
   *                                                                            *
+  *  28.10.2002	GMC support - gruel											   *
   *  28.06.2002 added check_resync_marker()                                    *
   *  14.04.2002 bframe encoding												   *
   *  08.03.2002 initial version; isibaar					                   *
@@ -66,6 +67,23 @@ VLC inter_table[524032];
 
 VLC DCT3Dintra[4096];
 VLC DCT3Dinter[4096];
+
+/* not really MB related, but VLCs are only available here */
+void inline bs_put_spritetrajectory(Bitstream * bs,
+			  const int val)
+{
+	const int code = sprite_trajectory_code[val+16384].code;
+	const int len = sprite_trajectory_code[val+16384].len;
+	const int code2 = sprite_trajectory_len[len].code;
+	const int len2 = sprite_trajectory_len[len].len;
+
+//	printf("GMC=%d Code/Len  = %d / %d ",val, code,len);
+//	printf("Code2 / Len2 = %d / %d \n",code2,len2);
+
+	BitstreamPutBits(bs, code2, len2);
+	if (len) BitstreamPutBits(bs, code, len);
+}
+
 
 void
 init_vlc_tables(void)
@@ -183,6 +201,28 @@ init_vlc_tables(void)
 	DCT3D[0] = DCT3Dinter;
 	DCT3D[1] = DCT3Dintra;
 
+
+/* init sprite_trajectory tables */
+/* even if GMC is not specified (it might be used later...) */
+
+	sprite_trajectory_code[0+16384].code = 0;
+	sprite_trajectory_code[0+16384].len = 0;
+	for (k=0;k<14;k++)
+	{
+		int limit = (1<<k);
+
+		for (i=-(2*limit-1); i<= -limit; i++)
+		{
+			sprite_trajectory_code[i+16384].code = (2*limit-1)+i;
+			sprite_trajectory_code[i+16384].len = k+1;
+		}
+
+		for (i=limit; i<= 2*limit-1; i++)
+		{
+			sprite_trajectory_code[i+16384].code = i; 
+			sprite_trajectory_code[i+16384].len = k+1;
+		}
+	}
 }
 
 static __inline void
@@ -281,7 +321,7 @@ CodeCoeff(Bitstream * bs,
 
 
 static __inline void
-CodeBlockIntra(const FRAMEINFO * frame,
+CodeBlockIntra(const FRAMEINFO * const frame,
 			   const MACROBLOCK * pMB,
 			   int16_t qcoeff[6 * 64],
 			   Bitstream * bs,
@@ -347,7 +387,7 @@ CodeBlockIntra(const FRAMEINFO * frame,
 
 
 static void
-CodeBlockInter(const FRAMEINFO * frame,
+CodeBlockInter(const FRAMEINFO * const frame,
 			   const MACROBLOCK * pMB,
 			   int16_t qcoeff[6 * 64],
 			   Bitstream * bs,
@@ -356,6 +396,7 @@ CodeBlockInter(const FRAMEINFO * frame,
 
 	int32_t i;
 	uint32_t bits, mcbpc, cbpy;
+	int mcsel=0;
 
 	mcbpc = (pMB->mode & 7) | ((pMB->cbp & 3) << 3);
 	cbpy = 15 - (pMB->cbp >> 2);
@@ -363,6 +404,18 @@ CodeBlockInter(const FRAMEINFO * frame,
 	// write mcbpc
 	BitstreamPutBits(bs, mcbpc_inter_tab[mcbpc].code,
 					 mcbpc_inter_tab[mcbpc].len);
+
+	if ( (frame->coding_type == S_VOP) && (pMB->mode == MODE_INTER || pMB->mode == MODE_INTER_Q) )
+	{
+		if (frame->quarterpel) {
+			if ( (pMB->qmvs[0].x == frame->GMC_MV.x) && (pMB->qmvs[0].y == frame->GMC_MV.y) )
+				mcsel=1;
+		} else {
+			if ( (pMB->mvs[0].x == frame->GMC_MV.x) && (pMB->mvs[0].y == frame->GMC_MV.y) )
+				mcsel=1;	
+		}
+		BitstreamPutBit(bs, mcsel);		// mcsel: '0'=local motion, '1'=GMC
+	}
 
 	// write cbpy
 	BitstreamPutBits(bs, cbpy_tab[cbpy].code, cbpy_tab[cbpy].len);
@@ -390,11 +443,12 @@ CodeBlockInter(const FRAMEINFO * frame,
 			}
 		}
 	}
-	// code motion vector(s)
-	for (i = 0; i < (pMB->mode == MODE_INTER4V ? 4 : 1); i++) {
-		CodeVector(bs, pMB->pmvs[i].x, frame->fcode, pStat);
-		CodeVector(bs, pMB->pmvs[i].y, frame->fcode, pStat);
-	}
+	// code motion vector(s) if motion is local 
+	if (mcsel==0)
+		for (i = 0; i < (pMB->mode == MODE_INTER4V ? 4 : 1); i++) {
+			CodeVector(bs, pMB->pmvs[i].x, frame->fcode, pStat);
+			CodeVector(bs, pMB->pmvs[i].y, frame->fcode, pStat);
+		}
 
 	bits = BitstreamPos(bs);
 
@@ -411,22 +465,19 @@ CodeBlockInter(const FRAMEINFO * frame,
 
 	bits = BitstreamPos(bs) - bits;
 	pStat->iTextBits += bits;
-
 }
 
 
 void
-MBCoding(const FRAMEINFO * frame,
+MBCoding(const FRAMEINFO * const frame,
 		 MACROBLOCK * pMB,
 		 int16_t qcoeff[6 * 64],
 		 Bitstream * bs,
 		 Statistics * pStat)
 {
-
-	if (frame->coding_type == P_VOP) {
-			BitstreamPutBit(bs, 0);	// coded
-	}
-
+	if (frame->coding_type != I_VOP)  
+			BitstreamPutBit(bs, 0);	// not_coded
+			
 	if (pMB->mode == MODE_INTRA || pMB->mode == MODE_INTRA_Q)
 		CodeBlockIntra(frame, pMB, qcoeff, bs, pStat);
 	else

@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.18.2.3 2002-10-05 21:35:35 Isibaar Exp $
+ *  $Id: encoder.h,v 1.18.2.4 2002-11-02 15:52:30 chl Exp $
  *
  ****************************************************************************/
 
@@ -70,7 +70,8 @@ typedef enum
 {
 	I_VOP = 0,
 	P_VOP = 1,
-	B_VOP = 2
+	B_VOP = 2,
+	S_VOP = 3
 }
 VOP_TYPE;
 
@@ -96,9 +97,7 @@ typedef struct
 	int num_threads;
 #endif
 
-#ifdef BFRAMES
 	int max_bframes;
-#endif
 
 	/* rounding type; alternate 0-1 after each interframe */
 	/* 1 <= fixed_code <= 4
@@ -126,6 +125,7 @@ typedef struct
 
 	VOP_TYPE coding_type;
 	uint32_t rounding_type;
+	uint32_t quarterpel;
 	uint32_t fcode;
 	uint32_t bcode;
 
@@ -136,7 +136,7 @@ typedef struct
 	IMAGE image;
 
 	MACROBLOCK *mbs;
-
+	VECTOR GMC_MV;
 }
 FRAMEINFO;
 
@@ -176,7 +176,6 @@ typedef struct
 	IMAGE vInterHV;
 	IMAGE vInterHVf;
 
-#ifdef BFRAMES
 	/* constants */
 	int global;
 	int bquant_ratio;
@@ -200,7 +199,6 @@ typedef struct
 	int bframenum_dx50bvop;
 
 	int m_framenum; /* debug frame num counter; unlike iFrameNum, does not reset at ivop */
-#endif
 
 	Statistics sStat;
 	RateControl rate_control;
