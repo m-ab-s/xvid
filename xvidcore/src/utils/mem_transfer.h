@@ -33,7 +33,7 @@
  *
  *  - Sun Jun 16 00:12:49 2002 Added legal header
  *                             Cosmetic
- *  $Id: mem_transfer.h,v 1.8 2002-06-23 19:48:06 edgomez Exp $
+ *  $Id: mem_transfer.h,v 1.8.2.1 2002-12-08 05:30:26 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -152,5 +152,29 @@ extern TRANSFER8X8_COPY_PTR transfer8x8_copy;
 TRANSFER8X8_COPY transfer8x8_copy_c;
 TRANSFER8X8_COPY transfer8x8_copy_mmx;
 TRANSFER8X8_COPY transfer8x8_copy_ia64;
+
+
+static __inline void
+transfer16x16_copy(uint8_t * const dst,
+					const uint8_t * const src,
+					const uint32_t stride)
+{
+	transfer8x8_copy(dst, src, stride);
+	transfer8x8_copy(dst + 8, src + 8, stride);
+	transfer8x8_copy(dst + 8*stride, src + 8*stride, stride);
+	transfer8x8_copy(dst + 8*stride + 8, src + 8*stride + 8, stride);
+}
+
+static __inline void
+transfer32x32_copy(uint8_t * const dst,
+					const uint8_t * const src,
+					const uint32_t stride)
+{
+	transfer16x16_copy(dst, src, stride);
+	transfer16x16_copy(dst + 16, src + 16, stride);
+	transfer16x16_copy(dst + 16*stride, src + 16*stride, stride);
+	transfer16x16_copy(dst + 16*stride + 16, src + 16*stride + 16, stride);
+}
+
 
 #endif
