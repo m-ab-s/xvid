@@ -52,7 +52,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: encoder.c,v 1.90 2003-02-04 22:00:44 edgomez Exp $
+ * $Id: encoder.c,v 1.90.2.3 2003-07-28 12:39:23 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -210,7 +210,7 @@ encoder_create(XVID_ENC_PARAM * pParam)
 	/* 1 keyframe each 10 seconds */
 
 	if (pParam->max_key_interval <= 0)
-		pParam->max_key_interval = 10 * pParam->fincr / pParam->fbase;
+		pParam->max_key_interval = 10 * pParam->fbase / pParam->fincr;
 
 	pEnc = (Encoder *) xvid_malloc(sizeof(Encoder), CACHE_LINE);
 	if (pEnc == NULL)
@@ -543,9 +543,14 @@ encoder_encode(Encoder * pEnc,
 
 	}
 
-	BitstreamPutBits(&bs, 0xFFFF, 16);
-	BitstreamPutBits(&bs, 0xFFFF, 16);
-	BitstreamPad(&bs);
+	/* Fix from CVS_HEAD (2003-03-17)
+	 *
+	 * Relic from OpenDivX - now disabled
+	 *
+	 * BitstreamPutBits(&bs, 0xFFFF, 16);
+	 * BitstreamPutBits(&bs, 0xFFFF, 16);
+	 */
+	BitstreamPadAlways(&bs); /* next_start_code() at the end of Video Object Plane */
 	pFrame->length = BitstreamLength(&bs);
 
 	if (pResult) {

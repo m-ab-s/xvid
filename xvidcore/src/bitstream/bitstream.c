@@ -50,7 +50,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: bitstream.c,v 1.37 2002-12-15 01:21:12 edgomez Exp $
+ * $Id: bitstream.c,v 1.37.2.1 2003-07-28 12:39:27 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -703,7 +703,7 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	BitstreamPutBits(bs, 0, 4);
 
 	BitstreamPutBit(bs, 0);		/* random_accessible_vol */
-	BitstreamPutBits(bs, 0, 8);	/* video_object_type_indication */
+	BitstreamPutBits(bs, 1, 8);	/* video_object_type_indication "Video ID" == 00000001 */
 	BitstreamPutBit(bs, 0);		/* is_object_layer_identified (0=not given) */
 	BitstreamPutBits(bs, 1, 4);	/* aspect_ratio_info (1=1:1) */
 
@@ -741,7 +741,7 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	BitstreamPutBit(bs, frame->global_flags & XVID_INTERLACING);	/* interlace */
 	BitstreamPutBit(bs, 1);		/* obmc_disable (overlapped block motion compensation) */
 	BitstreamPutBit(bs, 0);		/* sprite_enable */
-	BitstreamPutBit(bs, 0);		/* not_in_bit */
+	BitstreamPutBit(bs, 0);		/* not_8_bit */
 
 	/* quant_type   0=h.263  1=mpeg4(quantizer tables) */
 	BitstreamPutBit(bs, pParam->m_quant_type);
@@ -763,6 +763,8 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	BitstreamPutBit(bs, 1);		/* resync_marker_disable */
 	BitstreamPutBit(bs, 0);		/* data_partitioned */
 	BitstreamPutBit(bs, 0);		/* scalability */
+
+	BitstreamPadAlways(bs);		/* next_start_code() */
 }
 
 
