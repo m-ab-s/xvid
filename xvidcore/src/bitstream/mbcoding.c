@@ -580,6 +580,50 @@ CodeCoeffIntra_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag)
 	return bits;
 }
 
+int
+CodeCoeffInter_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag)
+{
+	uint32_t i, run, prev_run, len;
+	int32_t level, prev_level, level_shifted;
+	int bits = 0;
+
+	i	= 0;
+	run = 0;
+
+	while (!(level = qcoeff[zigzag[i++]]))
+		run++;
+
+	prev_level = level;
+	prev_run   = run;
+	run = 0;
+
+	while (i < 64) {
+		if ((level = qcoeff[zigzag[i++]]) != 0) {
+			level_shifted = prev_level + 32;
+			if (!(level_shifted & -64))
+				len	 = coeff_VLC[0][0][level_shifted][prev_run].len;
+			else
+				len  = 30;
+
+			bits += len;
+			prev_level = level;
+			prev_run   = run;
+			run = 0;
+		}
+		else
+			run++;
+	}
+
+	level_shifted = prev_level + 32;
+	if (!(level_shifted & -64))
+		len	 = coeff_VLC[0][1][level_shifted][prev_run].len;
+	else
+		len  = 30;
+	bits += len;
+
+	return bits;
+}
+
 
 #endif
 
