@@ -770,6 +770,7 @@ static void adv_init(HWND hDlg, int idd, CONFIG * config)
 		SendDlgItemMessage(hDlg, IDC_BITRATE_ARATE, CB_ADDSTRING, 0, (LPARAM)"224");
 		SendDlgItemMessage(hDlg, IDC_BITRATE_ARATE, CB_ADDSTRING, 0, (LPARAM)"256");
 		SendDlgItemMessage(hDlg, IDC_BITRATE_ARATE, CB_ADDSTRING, 0, (LPARAM)"384");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_ARATE, CB_ADDSTRING, 0, (LPARAM)"448");
 		SendDlgItemMessage(hDlg, IDC_BITRATE_ARATE, CB_ADDSTRING, 0, (LPARAM)"512");
 		break;
 
@@ -1269,10 +1270,10 @@ static void adv_download(HWND hDlg, int idd, CONFIG * config)
 			int bitrate_compensate = (int)(24 * video_fps_list[config->fps].value) / 125;
 
 			config->desired_size = 
-						config_get_uint(hDlg, IDC_BITRATE_VSIZE, config->desired_size) - frame_compensate;
+						config_get_uint(hDlg, IDC_BITRATE_VSIZE, config->desired_size) + frame_compensate;
 			
 			config->bitrate = 
-						config_get_uint(hDlg, IDC_BITRATE_VRATE, config->bitrate) - bitrate_compensate;
+						config_get_uint(hDlg, IDC_BITRATE_VRATE, config->bitrate) + bitrate_compensate;
 		}
 		break;
 
