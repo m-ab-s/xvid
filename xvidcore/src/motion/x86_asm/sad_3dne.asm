@@ -38,7 +38,7 @@
 bits 32
 
 %macro cglobal 1 
-	%if 1
+	%ifdef PREFIX
 		global _%1 
 		%define %1 _%1
 	%else
