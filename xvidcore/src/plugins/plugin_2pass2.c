@@ -25,7 +25,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.16 2003-05-29 12:38:44 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.17 2003-05-29 13:53:17 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -599,6 +599,9 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	 */
 	if (capped_to_max_framesize == 0)
 		rc->last_quant[s->type-1] = data->quant;
+
+	/* Force frame type */
+	data->type = s->type;
 
 	return 0;
 }
