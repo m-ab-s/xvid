@@ -36,7 +36,7 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 IDD_RC_2PASS1 DIALOG DISCARDABLE  0, 0, 212, 212
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "1st Pass"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     EDITTEXT        IDC_STATS,72,6,106,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_STATS_BROWSE,182,7,22,12
@@ -54,7 +54,7 @@ END
 IDD_MOTION DIALOG DISCARDABLE  0, 0, 212, 212
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Motion"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     COMBOBOX        IDC_MOTION,112,19,76,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
@@ -82,7 +82,7 @@ END
 IDD_MAIN DIALOGEX 0, 0, 225, 255
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "XviD Configuration"
-FONT 8, "MS Sans Serif", 0, 0, 0x1
+FONT 8, "MS Shell Dlg"
 BEGIN
     COMBOBOX        IDC_PROFILE,88,16,91,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
@@ -102,9 +102,9 @@ BEGIN
     PUSHBUTTON      "Add",IDC_ADD,16,182,36,12
     PUSHBUTTON      "Remove",IDC_REMOVE,56,182,36,12
     PUSHBUTTON      "Zone Options...",IDC_EDIT,155,182,57,12
-    PUSHBUTTON      "Advanced Options...",IDC_ADVANCED,69,210,84,12
-    PUSHBUTTON      "Load Defaults",IDC_DEFAULTS,4,238,64,13
-    PUSHBUTTON      "Decoder Options",IDC_DECODER,80,238,64,13
+    PUSHBUTTON      "Advanced Options...",IDC_ADVANCED,71,210,84,12
+    PUSHBUTTON      "Load Defaults",IDC_DEFAULTS,7,238,64,13
+    PUSHBUTTON      "Decoder Options",IDC_DECODER,81,238,64,13
     DEFPUSHBUTTON   "OK",IDOK,156,238,64,13
     GROUPBOX        "Main Settings",IDC_STATIC,7,3,212,202
     LTEXT           "Encoding type:",IDC_STATIC,14,34,70,12,SS_CENTERIMAGE
@@ -118,7 +118,7 @@ END
 IDD_QUANT DIALOG DISCARDABLE  0, 0, 212, 212
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Quantization"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     EDITTEXT        IDC_MINIQUANT,120,18,76,12,ES_AUTOHSCROLL | ES_NUMBER
     EDITTEXT        IDC_MAXIQUANT,120,34,76,12,ES_AUTOHSCROLL | ES_NUMBER
@@ -146,7 +146,7 @@ END
 IDD_RC_2PASS2 DIALOG DISCARDABLE  0, 0, 212, 212
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "2nd Pass"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     EDITTEXT        IDC_STATS,72,6,112,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_STATS_BROWSE,189,7,15,11
@@ -183,7 +183,7 @@ END
 IDD_DEBUG DIALOG DISCARDABLE  0, 0, 212, 212
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Debug"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "Automatically detect optimizations",IDC_CPU_AUTO,"Button",
                     BS_AUTORADIOBUTTON | WS_GROUP,16,20,121,10
@@ -218,7 +218,7 @@ END
 IDD_QUANTMATRIX DIALOG DISCARDABLE  0, 0, 288, 149
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Custom quantization matrix"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,172,128,47,13
     EDITTEXT        IDC_QINTRA00,8,16,15,11,ES_AUTOHSCROLL | ES_NUMBER | 
@@ -486,7 +486,7 @@ END
 IDD_ABOUT DIALOG DISCARDABLE  0, 0, 192, 165
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "XviD MPEG4 Video Codec"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     CTEXT           "GPL'ed MPEG4 video codec demonstration.\nFor educational purposes only.",
                     IDC_STATIC,12,112,168,20
@@ -504,7 +504,7 @@ END
 IDD_RC_CBR DIALOG DISCARDABLE  0, 0, 212, 212
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "CBR"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     EDITTEXT        IDC_CBR_REACTIONDELAY,108,12,76,12,ES_AUTOHSCROLL | 
                     ES_NUMBER
@@ -520,7 +520,7 @@ END
 IDD_PROFILE DIALOG DISCARDABLE  0, 0, 212, 212
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Profile"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     GROUPBOX        "",IDC_STATIC,8,120,196,86
     LTEXT           "Profile @ Level:",IDC_STATIC,8,10,52,8
@@ -557,7 +557,7 @@ END
 IDD_ZONE DIALOG DISCARDABLE  0, 0, 212, 194
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Zone"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     EDITTEXT        IDC_ZONE_FRAME,104,6,80,12,ES_AUTOHSCROLL | ES_NUMBER
     PUSHBUTTON      "<-",IDC_ZONE_FETCH,188,6,16,12
@@ -587,7 +587,7 @@ END
 IDD_LEVEL DIALOG DISCARDABLE  0, 0, 212, 215
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Level"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     COMBOBOX        IDC_LEVEL_PROFILE,84,8,116,76,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
@@ -616,7 +616,7 @@ END
 IDD_DEC DIALOG DISCARDABLE  0, 0, 212, 212
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Decoder Options"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     CONTROL         "Deblocking Y",IDC_DEC_DY,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,21,25,63,13
@@ -631,7 +631,7 @@ END
 IDD_STATUS DIALOGEX 0, 0, 325, 220
 STYLE DS_MODALFRAME | WS_MINIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "XviD Status"
-FONT 8, "MS Sans Serif", 0, 0, 0x1
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "",IDC_STATUS_GRAPH,"Static",SS_OWNERDRAW | SS_NOTIFY,4,
                     4,187,108
@@ -760,7 +760,7 @@ END
 IDD_AR DIALOGEX 0, 0, 211, 215
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Aspect Ratio"
-FONT 8, "MS Sans Serif", 0, 0, 0x1
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "Pixel Aspect Ratio",IDC_PAR,"Button",BS_AUTORADIOBUTTON,
                     13,7,73,10,WS_EX_TRANSPARENT
@@ -943,7 +943,7 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDC_INTERLACING         "Enables interlaced frame support - only use if your source contains interlacing artifacts (i.e. fields instead of progressive frames)"
+    IDC_INTERLACING         "Encodes frames as interlaced - only use if your source contains interlacing artifacts (i.e. fields instead of progressive frames)"
     IDC_OVERDEG             "How much of the overflow the codec can eat into during oversized sections\nLarger values will prevent oversized files better, but will also spoil quantizer distribution more."
     IDC_MAXBFRAMES          "Maximum number of sequential B-frames."
     IDC_BQUANTRATIO         "Ratio used to calculate the b-frame quantizer.\n\nBVOP quant = (AVG(past VOP quant, future VOP quant) * quant ratio + quant offset)"
@@ -956,7 +956,6 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDC_DX50BVOP            "Closes every group-of-pictures before encoding new keyframe."
     IDC_FRAMEDROP           "Frame dropping ratio. 0 = no frame dropping .. 100 = drop all frames."
     IDC_KFREDUCTION         "Reduction of bitrate for the first consecutive i-frames. The last i-frame will get treated normally."
     IDC_GMC                 "Use Global Motion Compensation."
@@ -974,6 +973,8 @@ BEGIN
     IDC_MAXIQUANT           "Maximum quantizer allowed for I-frames. Only functional in 2-pass second pass."
     IDC_MINPQUANT           "Minimum quantizer allowed for P-frames."
     IDC_MAXPQUANT           "Maximum quantizer allowed for P-frames."
+    IDC_MINBQUANT           "Minimum quantizer allowed for B-frames, BEFORE ratio/offset scalling"
+    IDC_MAXBQUANT           "Maximum quantizer allowed for B-frames, BEFORE ratio/offset scalling"
     IDC_QUANTMATRIX         "Define your own MPEG quantization matrices.  Quantization type must be set to ""Custom"" to affect encoding."
     IDC_KFBOOST             "A value of 20 will give 20% more bits to every I-frame"
     IDC_MINKEY              "If keyframes are close together, it might be useful to decrease the bitrate of all keyframes except the last one.\nUse this to define how close must keyframes be to be reduced."
@@ -1002,7 +1003,7 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDC_QPEL                "Use Quarter PixEL resolution for encoding for a more precise motion estimation"
+    IDC_QPEL                "Use Quarter PixEL resolution for encoding for a more precise motion compensation"
     IDC_CHROMAME            "Use chroma information to detect motion (slower)."
     IDC_BQUANTOFFSET        "B-frame quantizer offset from last p-frame quantizer; refer to b-frame quant ratio (above)"
     IDC_VHQ                 "VHQ enables an additional search process to increase quality (much slower)."
@@ -1020,6 +1021,7 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     IDC_PROFILE_PROFILE     "Restrict the usage of MPEG-4 tools and limit the encoded bitrate such that bitstreams are compatible with hardware decoders."
+    IDC_BVOP_THRESHOLD      "Change the amount of b-frames in this zone. Recommended values are between -20 (almost no b-vops) and 30 (many b-vops).\nThe hardcoded maximum in profile/level will never be exceeded"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -1036,12 +1038,16 @@ BEGIN
     IDC_LEVEL_VCV           "Video Complexity Verifier (VCV):\nThe maximum macroblocks decoded per second."
     IDC_LEVEL_VBV           "Video Buffer Verifier (VBV):\n\nThe maximum size of the video decoder buffer. The encoded bitstream but not overflow or underflow this buffer."
     IDC_LEVEL_BITRATE       "Maximum instantaneous bitrate."
-    IDC_BITRATE             "The target AVI bitrate, or file size.\nImportant: This is NOT the same as target average video bitrate or file size"
+    IDC_BITRATE             "The target AVI bitrate, file size, or quantizer."
+    IDC_ZONE_BVOPTHRESHOLD_S 
+                            "Change the amount of b-frames in this zone. Recommended values are between -20 (almost no b-vops) and 30 (many b-vops).\nThe hardcoded maximum in profile/level will never be exceeded"
+    IDC_TRELLISQUANT        "Advanced, high quality quantization mode"
     IDC_BITRATE_S           "Toggle between quantizer, target bitrate, target file size"
 END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
+    IDC_TURBO               "Faster motion estimation for b-frames and quarterpel"
     IDC_BITRATE_TSIZE       "Target file or media size"
 END
 
@@ -1054,6 +1060,19 @@ BEGIN
     IDC_BITRATE_VSIZE       "Calculated video file size"
     IDC_BITRATE_ARATE       "Audio bitrate (kilobits-per-second)"
     IDC_BITRATE_ASELECT     "Select file size from existing audio file"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_CLOSEDGOV           "Closes every group-of-pictures before encoding new keyframe."
+    IDC_ZONE_WEIGHT         "Change quality of this zone relative to other zones. It's not recommended to go below 0,2"
+    IDC_ZONE_QUANT          "Fix this zone's quality to desired quant"
+    IDC_ZONE_GREYSCALE      "Don't code colour information in this zone. You also have to force a keyframe, or old colour information will stay"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_ZONE_FORCEIVOP      "Force a keyframe at the beginnig of the zone"
 END
 
 #endif    // Neutral resources
@@ -1077,7 +1096,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_AUS
 IDD_BITRATE DIALOG DISCARDABLE  0, 0, 212, 212
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Bitrate Calculator"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Shell Dlg"
 BEGIN
     COMBOBOX        IDC_BITRATE_TSIZE,95,5,75,64,CBS_DROPDOWN | WS_VSCROLL | 
                     WS_TABSTOP
