@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbtransquant.c,v 1.21.2.21 2003-11-30 16:13:16 edgomez Exp $
+ * $Id: mbtransquant.c,v 1.21.2.22 2003-12-01 10:46:40 syskin Exp $
  *
  ****************************************************************************/
 
@@ -372,11 +372,6 @@ MBTrans16to8(const MBParam * const pParam,
 
 	transfer_operation_16to8_t *transfer_op = NULL;
 
-	if (pMB->field_dct) {
-		next_block = stride;
-		stride *= 2;
-	}
-
 	/* Makes this vars booleans */
 	vop_reduced = !!(frame->vop_flags & XVID_VOP_REDUCED);
 
@@ -384,6 +379,11 @@ MBTrans16to8(const MBParam * const pParam,
 	pY_Cur = pCurrent->y + (y_pos << (4+vop_reduced)) * stride  + (x_pos << (4+vop_reduced));
 	pU_Cur = pCurrent->u + (y_pos << (3+vop_reduced)) * stride2 + (x_pos << (3+vop_reduced));
 	pV_Cur = pCurrent->v + (y_pos << (3+vop_reduced)) * stride2 + (x_pos << (3+vop_reduced));
+
+	if (pMB->field_dct) {
+		next_block = stride;
+		stride *= 2;
+	}
 
 	/* Block size */
 	cst = 8<<vop_reduced;
