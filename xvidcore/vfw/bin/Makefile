@@ -9,7 +9,7 @@
 # Requires GNU Make because of shell expansion performed at a bad time with
 # other make programs (even using := variable assignments)
 #
-# $Id: Makefile,v 1.1.2.3 2004-01-02 23:24:49 edgomez Exp $
+# $Id: Makefile,v 1.1.2.4 2004-03-31 19:10:24 edgomez Exp $
 ##############################################################################
 
 include sources.inc
@@ -43,7 +43,7 @@ CFLAGS += -ffast-math
 # Compiler flags for linking stage
 ##############################################################################
 
-LDFLAGS += -L$(LOCAL_XVID_BUILDTREE)
+# LDFLAGS +=
 
 ##############################################################################
 # Rules
@@ -85,7 +85,7 @@ $(LIBSO): $(BUILD_DIR) $(OBJECTS)
 			-mno-cygwin -shared -Wl,-dll,--out-implib,$@.a,--enable-stdcall-fixup \
 			-o $@ \
 			$(OBJECTS) driverproc.def \
-			-lxvidcore -lgdi32 -lwinmm -lcomdlg32 -lcomctl32
+			-lgdi32 -lwinmm -lcomdlg32 -lcomctl32
 
 clean:
 	@echo "  Cl: Object files and target lib"
