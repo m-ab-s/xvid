@@ -26,6 +26,7 @@ LIBDIR = /usr/local/lib
 ifeq ($(CC),ecc)
     CFLAGS+= -O9 -ip
     CFLAGS+= -I/opt/intel/compiler50/ia32/include -I/opt/intel/compiler50/ia32/substitute_headers/
+    SRC_IA64 := $(SRC_IA64:_gcc.s=_ecc.s)
 
 else
     CFLAGS += -Wall -O9 -funroll-loops -ffast-math

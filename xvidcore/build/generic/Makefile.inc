@@ -97,16 +97,9 @@ SRC_IA64 = \
 	$(SRCDIR)/motion/ia64_asm/sad_ia64.s \
 	$(SRCDIR)/motion/ia64_asm/halfpel8_refine_ia64.s \
 	$(SRCDIR)/quant/ia64_asm/quant_h263_ia64.s \
-	$(SRCDIR)/utils/ia64_asm/mem_transfer_ia64.s
-
-ifeq ($(CC),ecc)
-SRC_IA64 += \
-	$(SRCDIR)/dct/ia64_asm/idct_ia64_ecc.s 
-else
-SRC_IA64 += \
+	$(SRCDIR)/utils/ia64_asm/mem_transfer_ia64.s \
 	$(SRCDIR)/dct/ia64_asm/idct_ia64_gcc.s 
-endif
-
+# note: Makefile.ia64 will replace idct_ia64_gcc.c with idct_ia64_ecc.s when using ecc compiler
 
 DIRS_IA64 = \
 	$(SRCDIR)/dct/ia64_asm/*.o \
