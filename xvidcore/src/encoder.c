@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.60 2003-12-19 10:55:58 syskin Exp $
+ * $Id: encoder.c,v 1.95.2.61 2003-12-19 11:16:51 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1121,7 +1121,7 @@ repeat:
 
 	pEnc->current->fincr = pEnc->mbParam.fincr>0 ? pEnc->mbParam.fincr : frame->fincr;
 	inc_frame_num(pEnc);
-	pEnc->current->vol_flags = pEnc->mbParam.vol_flags;
+	pEnc->current->vol_flags = frame->vol_flags;
 	pEnc->current->vop_flags = frame->vop_flags;
 	pEnc->current->motion_flags = frame->motion;
 	pEnc->current->fcode = pEnc->mbParam.m_fcode;
@@ -1155,6 +1155,9 @@ repeat:
 							  (pEnc->bframes) ? pEnc->bframes[pEnc->bframenum_head]->mbs: NULL);
 		}
 	}
+
+	if (type != I_VOP) 
+		pEnc->current->vol_flags = pEnc->mbParam.vol_flags; /* don't allow VOL changes here */
 
 	/* bframes buffer overflow check */
 	if (type == B_VOP && pEnc->bframenum_tail >= pEnc->mbParam.max_bframes) {
