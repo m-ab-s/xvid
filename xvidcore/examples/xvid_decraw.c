@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_decraw.c,v 1.7.2.1 2003-03-11 23:39:47 edgomez Exp $
+ * $Id: xvid_decraw.c,v 1.7.2.2 2003-03-26 10:29:10 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -96,6 +96,18 @@ static int dec_main(unsigned char *istream,
 static int dec_stop();
 static void usage();
 
+
+const char * type2str(int type)
+{
+    if (type==XVID_TYPE_IVOP)
+        return "I";
+    if (type==XVID_TYPE_PVOP)
+        return "P";
+    if (type==XVID_TYPE_BVOP)
+        return "B";
+    return "S";
+}
+
 /*****************************************************************************
  *        Main program
  ****************************************************************************/
@@ -105,9 +117,7 @@ int main(int argc, char *argv[])
 	unsigned char *mp4_buffer = NULL;
 	unsigned char *mp4_ptr    = NULL;
 	unsigned char *out_buffer = NULL;
-	unsigned char *type       = NULL;
 	int still_left_in_buffer;
-	int delayed_frames;
 	xvid_dec_stats_t xvid_dec_stats;
 	
 	double totaldectime;
@@ -204,7 +214,6 @@ int main(int argc, char *argv[])
 	totaldectime = 0;
 	totalsize = 0;
 	filenr = 0;
-	delayed_frames = 0;
 	mp4_ptr = mp4_buffer;
 
 	do {
@@ -229,7 +238,7 @@ int main(int argc, char *argv[])
 			mp4_ptr = mp4_buffer; 
 
 			/* read new data */
-			if(feof(in_file))
+            if(feof(in_file))
 				break;
 
 			still_left_in_buffer = fread(mp4_buffer + rest,
@@ -272,42 +281,18 @@ int main(int argc, char *argv[])
 				totalsize += used_bytes;
 			}
 
-		}while(xvid_dec_stats.type != XVID_TYPE_IVOP &&
-			   xvid_dec_stats.type != XVID_TYPE_PVOP &&
-			   xvid_dec_stats.type != XVID_TYPE_BVOP &&
-			   xvid_dec_stats.type != XVID_TYPE_SVOP &&
-			   still_left_in_buffer > 0);
+		}while(xvid_dec_stats.type <= 0 && still_left_in_buffer > 0);
 
 		/* Negative buffer would mean we went too far */
-		if(still_left_in_buffer < 0) break;
+        if(still_left_in_buffer <= 0)
+            break;
 		
-		/* Skip when decoder is buffering images because of bframes */
-		if(xvid_dec_stats.type == XVID_TYPE_NOTHING) {
-			delayed_frames++;
-			continue;
-		}
-
-		/* Updated data - Count only usefull decode time */
+    	/* Updated data - Count only usefull decode time */
 		totaldectime += dectime;
 
-		/* Prints some decoding stats */
-		switch(xvid_dec_stats.type) {
-		case XVID_TYPE_IVOP:
-			type = "I";
-			break;
-		case XVID_TYPE_PVOP:
-			type = "P";
-			break;
-		case XVID_TYPE_BVOP:
-			type = "B";
-			break;
-		case XVID_TYPE_SVOP:
-			type = "S";
-			break;
-		}
-				
-		printf("Frame %5d: type = %s, dectime(ms) =%6.1f, length(bytes) =%7d\n",
-			   filenr, type, dectime, used_bytes);
+			
+        printf("Frame %5d: type = %s, dectime(ms) =%6.1f, length(bytes) =%7d\n",
+			   filenr, type2str(xvid_dec_stats.type), dectime, used_bytes);
 			
 		/* Save individual mpeg4 stream if required */
 		if(ARG_SAVEMPEGSTREAM) {
@@ -344,23 +329,28 @@ int main(int argc, char *argv[])
  *     Flush decoder buffers
  ****************************************************************************/
 
-	while(delayed_frames--) {
+	do {
 
 		/* Fake vars */
 		int used_bytes;
 		double dectime;
 
-		/* Decode frame */
-		dectime = msecond();
-		used_bytes = dec_main(NULL, out_buffer, -1, &xvid_dec_stats);
-		dectime = msecond() - dectime;
+        do {
+		    dectime = msecond();
+		    used_bytes = dec_main(NULL, out_buffer, -1, &xvid_dec_stats);
+		    dectime = msecond() - dectime;
+        }while(used_bytes>=0 && xvid_dec_stats.type <= 0);
+
+        if (used_bytes < 0) {   /* XVID_ERR_END */
+            break;
+        }
 
 		/* Updated data - Count only usefull decode time */
 		totaldectime += dectime;
 
 		/* Prints some decoding stats */
-		printf("Frame %5d: dectime(ms) =%6.1f, length(bytes) =%7d\n", 
-			   filenr, dectime, used_bytes);
+        printf("Frame %5d: type = %s, dectime(ms) =%6.1f, length(bytes) =%7d\n",
+			   filenr, type2str(xvid_dec_stats.type), dectime, used_bytes);
 			
 		/* Save output frame if required */
 		if (ARG_SAVEDECOUTPUT) {
@@ -374,7 +364,7 @@ int main(int argc, char *argv[])
 
 		filenr++;
 
-	}
+	}while(1);
 	
 /*****************************************************************************
  *     Calculate totals and averages for output, print results

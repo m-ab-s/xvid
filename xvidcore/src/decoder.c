@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.2 2003-03-16 12:04:13 suxen_drol Exp $
+ * $Id: decoder.c,v 1.49.2.3 2003-03-26 10:29:51 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -1754,18 +1754,21 @@ decoder_decode(DECODER * dec,
 
 	if (frame->length < 0)	/* decoder flush */
 	{
+        int ret;
 		/* if  not decoding "low_delay/packed", and this isn't low_delay and
 		    we have a reference frame, then outout the reference frame */
-		if (!(dec->low_delay_default && dec->packed_mode) && !dec->low_delay && dec->frames>0)
-		{
+		if (!(dec->low_delay_default && dec->packed_mode) && !dec->low_delay && dec->frames>0) {
 			decoder_output(dec, &dec->refn[0], dec->last_mbs, frame, stats, dec->last_coding_type);
+            dec->frames = 0;
+            ret = 0;
         }else{
             if (stats) stats->type = XVID_TYPE_NOTHING;
+            ret = XVID_ERR_END;
         }
 
 		emms();
 		stop_global_timer();
-		return 0;
+		return ret;
 	}
 
 	BitstreamInit(&bs, frame->bitstream, frame->length);
