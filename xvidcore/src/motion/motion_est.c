@@ -155,13 +155,13 @@ Interpolate8x8qpel(const int x, const int y, const int block, const int dir, con
 	case 1: // x halfpel, y qpel - top or bottom during qpel refinement
 		ref2 = GetReference(halfpel_x, y - halfpel_y, dir, data);
 		ref2 += 8 * (block&1) + 8 * (block>>1) * iEdgedWidth;
-		interpolate8x8_avg2(Reference, ref1, ref2, iEdgedWidth, rounding);
+		interpolate8x8_avg2(Reference, ref1, ref2, iEdgedWidth, rounding, 8);
 		break;
 
 	case 2: // x qpel, y halfpel - left or right during qpel refinement
 		ref2 = GetReference(x - halfpel_x, halfpel_y, dir, data);
 		ref2 += 8 * (block&1) + 8 * (block>>1) * iEdgedWidth;
-		interpolate8x8_avg2(Reference, ref1, ref2, iEdgedWidth, rounding);
+		interpolate8x8_avg2(Reference, ref1, ref2, iEdgedWidth, rounding, 8);
 		break;
 
 	default: // x and y in qpel resolution - the "corners" (top left/right and
@@ -195,18 +195,18 @@ Interpolate16x16qpel(const int x, const int y, const int dir, const SearchData *
 		return (uint8_t *) GetReference(halfpel_x, halfpel_y, dir, data);
 	case 1: // x halfpel, y qpel - top or bottom during qpel refinement
 		ref2 = GetReference(halfpel_x, y - halfpel_y, dir, data);
-		interpolate8x8_avg2(Reference, ref1, ref2, iEdgedWidth, rounding);
-		interpolate8x8_avg2(Reference+8, ref1+8, ref2+8, iEdgedWidth, rounding);
-		interpolate8x8_avg2(Reference+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, iEdgedWidth, rounding);
-		interpolate8x8_avg2(Reference+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, iEdgedWidth, rounding);
+		interpolate8x8_avg2(Reference, ref1, ref2, iEdgedWidth, rounding, 8);
+		interpolate8x8_avg2(Reference+8, ref1+8, ref2+8, iEdgedWidth, rounding, 8);
+		interpolate8x8_avg2(Reference+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, iEdgedWidth, rounding, 8);
+		interpolate8x8_avg2(Reference+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, iEdgedWidth, rounding, 8);
 		break;
 
 	case 2: // x qpel, y halfpel - left or right during qpel refinement
 		ref2 = GetReference(x - halfpel_x, halfpel_y, dir, data);		
-		interpolate8x8_avg2(Reference, ref1, ref2, iEdgedWidth, rounding);
-		interpolate8x8_avg2(Reference+8, ref1+8, ref2+8, iEdgedWidth, rounding);
-		interpolate8x8_avg2(Reference+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, iEdgedWidth, rounding);
-		interpolate8x8_avg2(Reference+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, iEdgedWidth, rounding);
+		interpolate8x8_avg2(Reference, ref1, ref2, iEdgedWidth, rounding, 8);
+		interpolate8x8_avg2(Reference+8, ref1+8, ref2+8, iEdgedWidth, rounding, 8);
+		interpolate8x8_avg2(Reference+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, iEdgedWidth, rounding, 8);
+		interpolate8x8_avg2(Reference+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, iEdgedWidth, rounding, 8);
 		break;
 
 	default: // x and y in qpel resolution - the "corners" (top left/right and
