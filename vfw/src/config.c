@@ -63,9 +63,10 @@
 #include <pthread.h>
 #endif
 
+#include <xvid.h>	// XviD API
+
 #include "codec.h"
 #include "config.h"
-#include "..\..\xvidcore\src\xvid.h" // cpu masks
 #include "resource.h"
 
 
