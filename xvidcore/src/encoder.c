@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.10 2003-03-20 08:04:18 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.95.2.11 2003-03-22 13:49:49 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1846,7 +1846,7 @@ FrameCodeB(Encoder * pEnc,
 				continue;
 			}
 
-			if (mb->mode != MODE_DIRECT_NONE_MV) {
+			if (mb->mode != MODE_DIRECT_NONE_MV || pEnc->mbParam.plugin_flags & XVID_REQORIGINAL) {
 				MBMotionCompensationBVOP(&pEnc->mbParam, mb, x, y, &frame->image,
 									 f_ref, &pEnc->f_refh, &pEnc->f_refv,
 									 &pEnc->f_refhv, b_ref, &pEnc->vInterH,
@@ -1856,8 +1856,8 @@ FrameCodeB(Encoder * pEnc,
 				if (mb->mode == MODE_DIRECT_NO4V) mb->mode = MODE_DIRECT;
 				mb->quant = frame->quant;
 			
-				mb->cbp =
-					MBTransQuantInterBVOP(&pEnc->mbParam, frame, mb, x, y,  dct_codes, qcoeff);
+				if (mb->mode != MODE_DIRECT_NONE_MV)
+					mb->cbp = MBTransQuantInterBVOP(&pEnc->mbParam, frame, mb, x, y,  dct_codes, qcoeff);
 
 				if ( (mb->mode == MODE_DIRECT) && (mb->cbp == 0)
 					&& (mb->pmvs[3].x == 0) && (mb->pmvs[3].y == 0) ) {
