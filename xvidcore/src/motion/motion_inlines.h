@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_inlines.h,v 1.1.2.2 2003-09-29 13:43:40 syskin Exp $
+ * $Id: motion_inlines.h,v 1.1.2.3 2003-09-29 16:58:37 syskin Exp $
  *
  ****************************************************************************/
 
@@ -78,7 +78,7 @@ static const int mvtab[64] = {
 	10, 11, 11, 11, 11, 11, 11, 12,
 	12, 12, 12, 12, 12, 12, 12, 12,
 	12, 12, 12, 12, 12, 12, 12, 12,
-	12, 12, 12, 12, 12, 12, 12, 12,
+	12, 12, 12, 12, 12, 12, 12, 12
 };
 
 static __inline uint32_t
