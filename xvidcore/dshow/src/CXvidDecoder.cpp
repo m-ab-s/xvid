@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.2 2004-03-22 23:35:11 edgomez Exp $
+ * $Id: CXvidDecoder.cpp,v 1.2.2.1 2004-04-14 02:43:34 syskin Exp $
  *
  ****************************************************************************/
 
@@ -713,7 +713,7 @@ HRESULT CXvidDecoder::Transform(IMediaSample *pIn, IMediaSample *pOut)
 	m_frame.general = XVID_LOWDELAY;
 
 	if (pIn->IsDiscontinuity() == S_OK)
-		m_frame.general = XVID_DISCONTINUITY;
+		m_frame.general |= XVID_DISCONTINUITY;
 
 	if (g_config.nDeblock_Y)
 		m_frame.general |= XVID_DEBLOCKY;
