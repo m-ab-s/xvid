@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.18 2003-04-19 11:26:47 chl Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.19 2003-04-27 19:53:09 chl Exp $
  *
  ****************************************************************************/
 
@@ -52,32 +52,35 @@
  ****************************************************************************/
 
 static xvid_motion_t const motion_presets[] = {
-	0,
-	XVID_ME_HALFPELREFINE16,
-	XVID_ME_HALFPELREFINE16,
-	XVID_ME_HALFPELREFINE16 | XVID_ME_HALFPELREFINE8,
+	0,																			/* 0 */
+	XVID_ME_HALFPELREFINE16,													/* 1 */
+	XVID_ME_HALFPELREFINE16,													/* 2 */
+	XVID_ME_HALFPELREFINE16 | XVID_ME_HALFPELREFINE8,							/* 3 */
+	XVID_ME_HALFPELREFINE16 | XVID_ME_HALFPELREFINE8,							/* 4 */
 	XVID_ME_HALFPELREFINE16 | XVID_ME_HALFPELREFINE8 | XVID_ME_EXTSEARCH16 |
-		XVID_ME_USESQUARES16,
+		XVID_ME_USESQUARES16,													/* 5 */
 	XVID_ME_HALFPELREFINE16 | XVID_ME_HALFPELREFINE8 | XVID_ME_EXTSEARCH16 |
-		XVID_ME_USESQUARES16 | XVID_ME_CHROMA16 | XVID_ME_CHROMA8,
+		XVID_ME_USESQUARES16 | XVID_ME_CHROMA16 | XVID_ME_CHROMA8,				/* 6 */
 };
 
 static xvid_vol_t const vol_presets[] = {
-	XVID_VOL_MPEGQUANT,
-	0,
-	0,
-	XVID_VOL_QUARTERPEL,
-	XVID_VOL_QUARTERPEL | XVID_VOL_GMC,
-	0
+	XVID_VOL_MPEGQUANT,															/* 0 */
+	0,																			/* 1 */
+	0,																			/* 2 */
+	0,																			/* 3 */
+	0,																			/* 4 */
+	XVID_VOL_QUARTERPEL | XVID_VOL_GMC,											/* 5 */
+	0																			/* 6 */
 };
 
 static xvid_vop_t const vop_presets[] = {
-	XVID_VOP_DYNAMIC_BFRAMES,
-	XVID_VOP_DYNAMIC_BFRAMES,
-	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL,
-	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL | XVID_VOP_INTER4V,
-	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL | XVID_VOP_INTER4V | XVID_VOP_HQACPRED,
-	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL | XVID_VOP_HQACPRED |
+	XVID_VOP_DYNAMIC_BFRAMES,																/* 0 */
+	XVID_VOP_DYNAMIC_BFRAMES,																/* 1 */
+	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL,											/* 2 */
+	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL | XVID_VOP_INTER4V, 						/* 3 */
+	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL | XVID_VOP_INTER4V | XVID_VOP_TRELLISQUANT, /* 4 */
+	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL | XVID_VOP_INTER4V | XVID_VOP_HQACPRED, 	/* 5 */
+	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL | XVID_VOP_HQACPRED |						/* 6 */
 		XVID_VOP_MODEDECISION_BITS
 };
 
@@ -96,7 +99,7 @@ static char *ARG_PASS1 = 0;
 static char *ARG_PASS2 = 0;
 static int ARG_PASS2_BITRATE = 0;
 static float ARG_QUANTI = 0.0f;
-static int ARG_QUALITY = 5;
+static int ARG_QUALITY = 3;
 static float ARG_FRAMERATE = 25.00f;
 static int ARG_MAXFRAMENR = ABS_MAXFRAMENR;
 static char *ARG_INPUTFILE = NULL;
@@ -283,7 +286,7 @@ main(int argc,
 		ARG_INPUTTYPE = 1;		/* pgm */
 	}
 
-	if (ARG_QUALITY < 0 || ARG_QUALITY > 5) {
+	if (ARG_QUALITY < 0 || ARG_QUALITY > 6) {
 		fprintf(stderr, "Wrong Quality\n");
 		return (-1);
 	}
