@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.12 2003-03-25 11:01:48 suxen_drol Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.13 2003-03-25 22:53:57 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -56,8 +56,10 @@ static xvid_motion_t const motion_presets[] = {
 	PMV_HALFPELREFINE16,
 	PMV_HALFPELREFINE16,
 	PMV_HALFPELREFINE16 | PMV_HALFPELREFINE8,
-	PMV_HALFPELREFINE16 | PMV_HALFPELREFINE8 | PMV_EXTSEARCH16 | PMV_USESQUARES16,
-	PMV_HALFPELREFINE16 | PMV_HALFPELREFINE8 | PMV_EXTSEARCH16 | PMV_USESQUARES16 | PMV_CHROMA16 | PMV_CHROMA8,
+	PMV_HALFPELREFINE16 | PMV_HALFPELREFINE8 | PMV_EXTSEARCH16 |
+		PMV_USESQUARES16,
+	PMV_HALFPELREFINE16 | PMV_HALFPELREFINE8 | PMV_EXTSEARCH16 |
+		PMV_USESQUARES16 | PMV_CHROMA16 | PMV_CHROMA8,
 };
 
 static xvid_vol_t const vol_presets[] = {
@@ -75,7 +77,8 @@ static xvid_vop_t const vop_presets[] = {
 	XVID_DYNAMIC_BFRAMES | XVID_HALFPEL,
 	XVID_DYNAMIC_BFRAMES | XVID_HALFPEL | XVID_INTER4V,
 	XVID_DYNAMIC_BFRAMES | XVID_HALFPEL | XVID_INTER4V | XVID_HQACPRED,
-	XVID_DYNAMIC_BFRAMES | XVID_HALFPEL | XVID_HQACPRED | XVID_MODEDECISION_BITS
+	XVID_DYNAMIC_BFRAMES | XVID_HALFPEL | XVID_HQACPRED |
+		XVID_MODEDECISION_BITS
 };
 
 /*****************************************************************************
@@ -89,9 +92,9 @@ static int ARG_STATS = 0;
 static int ARG_DUMP = 0;
 static int ARG_LUMIMASKING = 0;
 static int ARG_BITRATE = 0;
-static char * ARG_PASS1 = 0;
-static char * ARG_PASS2 = 0;
-static int ARG_QUANTI = 0;
+static char *ARG_PASS1 = 0;
+static char *ARG_PASS2 = 0;
+static float ARG_QUANTI = 0.0f;
 static int ARG_QUALITY = 5;
 static float ARG_FRAMERATE = 25.00f;
 static int ARG_MAXFRAMENR = ABS_MAXFRAMENR;
@@ -214,8 +217,8 @@ main(int argc,
 		} else if (strcmp("-pass2", argv[i]) == 0 && i < argc - 2) {
 			i++;
 			ARG_PASS1 = argv[i];
-            i++;
-            ARG_PASS2 = argv[i];
+			i++;
+			ARG_PASS2 = argv[i];
 		} else if (strcmp("-max_bframes", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_MAXBFRAMES = atoi(argv[i]);
@@ -250,7 +253,7 @@ main(int argc,
 			ARG_MAXFRAMENR = atoi(argv[i]);
 		} else if (strcmp("-quant", argv[i]) == 0 && i < argc - 1) {
 			i++;
-			ARG_QUANTI = atoi(argv[i]);
+			ARG_QUANTI = (float) atof(argv[i]);
 		} else if (strcmp("-save", argv[i]) == 0) {
 			ARG_SAVEMPEGSTREAM = 1;
 		} else if (strcmp("-debug", argv[i]) == 0) {
@@ -390,11 +393,8 @@ main(int argc,
 
 		/* Write the Frame statistics */
 
-		printf("%5d: key=%i, time=%6.0f, length=%7d",
-			   !result ? input_num : -1,
-			   key,
-			   (float) enctime,
-			   (int) m4v_size);
+		printf("%5d: key=%i, time=%6.0f, length=%7d", !result ? input_num : -1,
+			   key, (float) enctime, (int) m4v_size);
 
 		if (stats_type > 0) {	/* !XVID_TYPE_NOTHING */
 
@@ -423,13 +423,12 @@ main(int argc,
 
 			if (ARG_STATS) {
 				printf(", psnr y = %2.2f, psnr u = %2.2f, psnr v = %2.2f",
-					   SSE2PSNR(sse[0], XDIM, YDIM),
-					   SSE2PSNR(sse[1], XDIM/2, YDIM/2),
-					   SSE2PSNR(sse[2], XDIM/2, YDIM/2));
+					   SSE2PSNR(sse[0], XDIM, YDIM), SSE2PSNR(sse[1], XDIM / 2,
+															  YDIM / 2),
+					   SSE2PSNR(sse[2], XDIM / 2, YDIM / 2));
 			}
 
 		}
-
 #undef SSE2PSNR
 
 		printf("\n");
@@ -563,17 +562,19 @@ usage()
 	fprintf(stderr, "Output options:\n");
 	fprintf(stderr, " -dump    : save decoder output\n");
 	fprintf(stderr, " -save    : save mpeg4 raw stream\n");
-	fprintf(stderr,	" -o string: output filename\n");
+	fprintf(stderr, " -o string: output filename\n");
 	fprintf(stderr, "\n");
-	fprintf(stderr, "Bitrate options:\n");
-	fprintf(stderr,	" -bitrate       integer: target bitrate (>0 | default=900kbit)\n");
-	fprintf(stderr,	" -quant         integer: fixed quantizer (disables -b setting)\n");
+	fprintf(stderr, "BFrames options:\n");
 	fprintf(stderr, " -max_bframes   integer: max bframes (default=0)\n");
 	fprintf(stderr,	" -bquant_ratio  integer: bframe quantizer ratio (default=150)\n");
 	fprintf(stderr,	" -bquant_offset integer: bframe quantizer offset (default=100)\n");
-	fprintf(stderr, " -framerate     float  : target framerate (>0)\n");
-    fprintf(stderr,	" -pass1 filename      : stats filename\n");
-    fprintf(stderr,	" -pass2 filename1 filename2    : stats amd scaled-stats filename\n");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "Rate control options:\n");
+	fprintf(stderr, " -framerate float               : target framerate (>0 | default=25.0)\n");
+	fprintf(stderr,	" -bitrate   integer             : bitrate -- for CBR/VBR pass2\n");
+	fprintf(stderr,	" -quant     float               : quantizer -- for \"Fixed\" quantizer RC\n");
+	fprintf(stderr, " -pass1     filename            : stats filename\n");
+	fprintf(stderr,	" -pass2     filename1 filename2 : first pass stats and scaled stats filename\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Other options\n");
 	fprintf(stderr, " -asm            : use assembly optmized code\n");
@@ -581,7 +582,7 @@ usage()
 	fprintf(stderr, " -packed         : packed mode\n");
 	fprintf(stderr, " -lumimasking    : use lumimasking algorithm\n");
 	fprintf(stderr, " -stats          : print stats about encoded frames\n");
-	fprintf(stderr, " -debug          : print all MB quantizers\n");
+	fprintf(stderr, " -debug          : print all MB dquants\n");
 	fprintf(stderr, " -help           : prints this help message\n");
 }
 
@@ -716,10 +717,11 @@ static int
 enc_init(int use_assembler)
 {
 	int xerr;
-    xvid_plugin_cbr_t cbr;
-    xvid_plugin_2pass1_t rc2pass1;
-    xvid_plugin_2pass2_t rc2pass2;
-    xvid_enc_plugin_t plugins[6];
+	xvid_plugin_cbr_t cbr;
+	xvid_plugin_2pass1_t rc2pass1;
+	xvid_plugin_2pass2_t rc2pass2;
+	xvid_plugin_fixed_t rcfixed;
+	xvid_enc_plugin_t plugins[7];
 	xvid_gbl_init_t xvid_gbl_init;
 	xvid_enc_create_t xvid_enc_create;
 
@@ -764,37 +766,47 @@ enc_init(int use_assembler)
 	xvid_enc_create.plugins = plugins;
 	xvid_enc_create.num_plugins = 0;
 
-    if (ARG_BITRATE) {
-        cbr.version = XVID_VERSION;
-        memset(&cbr, 0, sizeof(xvid_plugin_cbr_t));
-        cbr.bitrate = ARG_BITRATE;
+	if (ARG_BITRATE) {
+		cbr.version = XVID_VERSION;
+		memset(&cbr, 0, sizeof(xvid_plugin_cbr_t));
+		cbr.bitrate = ARG_BITRATE;
 
-        plugins[xvid_enc_create.num_plugins].func = xvid_plugin_cbr;
+		plugins[xvid_enc_create.num_plugins].func = xvid_plugin_cbr;
 		plugins[xvid_enc_create.num_plugins].param = &cbr;
 		xvid_enc_create.num_plugins++;
-    }
+	}
 
-    if (ARG_PASS1 && ARG_PASS2) {
-        rc2pass2.version = XVID_VERSION;
-        memset(&rc2pass2, 0, sizeof(xvid_plugin_2pass2_t));
-        rc2pass2.filename1 = ARG_PASS1;
-        rc2pass2.filename2 = ARG_PASS2;
+	if (ARG_QUANTI) {
+		rcfixed.version = XVID_VERSION;
+		/* We will use a 1/10 precision, just to make sure it works */
+		rcfixed.quant_base = 10;
+		rcfixed.quant_increment = (int) (ARG_QUANTI * 10);
 
-        plugins[xvid_enc_create.num_plugins].func = xvid_plugin_2pass2;
+		plugins[xvid_enc_create.num_plugins].func = xvid_plugin_fixed;
+		plugins[xvid_enc_create.num_plugins].param = &rcfixed;
+		xvid_enc_create.num_plugins++;
+	}
+
+	if (ARG_PASS1 && ARG_PASS2) {
+		rc2pass2.version = XVID_VERSION;
+		memset(&rc2pass2, 0, sizeof(xvid_plugin_2pass2_t));
+		rc2pass2.filename1 = ARG_PASS1;
+		rc2pass2.filename2 = ARG_PASS2;
+
+		plugins[xvid_enc_create.num_plugins].func = xvid_plugin_2pass2;
 		plugins[xvid_enc_create.num_plugins].param = &rc2pass2;
 		xvid_enc_create.num_plugins++;
-    } else if (ARG_PASS1) {
-        rc2pass1.version = XVID_VERSION;
-        memset(&rc2pass1, 0, sizeof(xvid_plugin_2pass1_t));
-        rc2pass1.filename = ARG_PASS1;
+	} else if (ARG_PASS1) {
+		rc2pass1.version = XVID_VERSION;
+		memset(&rc2pass1, 0, sizeof(xvid_plugin_2pass1_t));
+		rc2pass1.filename = ARG_PASS1;
 
-        plugins[xvid_enc_create.num_plugins].func = xvid_plugin_2pass1;
+		plugins[xvid_enc_create.num_plugins].func = xvid_plugin_2pass1;
 		plugins[xvid_enc_create.num_plugins].param = &rc2pass1;
 		xvid_enc_create.num_plugins++;
-    }
+	}
 
-
-    if (ARG_LUMIMASKING) {
+	if (ARG_LUMIMASKING) {
 		plugins[xvid_enc_create.num_plugins].func = xvid_plugin_lumimasking;
 		plugins[xvid_enc_create.num_plugins].param = NULL;
 		xvid_enc_create.num_plugins++;
@@ -837,8 +849,12 @@ enc_init(int use_assembler)
 
 	/* Global encoder options */
 	xvid_enc_create.global = 0;
-	if (ARG_PACKED)	xvid_enc_create.global |=XVID_PACKED;
-	if (ARG_STATS)  xvid_enc_create.global |=XVID_EXTRASTATS_ENABLE;
+
+	if (ARG_PACKED)
+		xvid_enc_create.global |=XVID_PACKED;
+
+	if (ARG_STATS)
+		xvid_enc_create.global |=XVID_EXTRASTATS_ENABLE;
 
 	/* I use a small value here, since will not encode whole movies, but short clips */
 	xerr = xvid_encore(NULL, XVID_ENC_CREATE, &xvid_enc_create, NULL);
@@ -905,8 +921,8 @@ enc_main(unsigned char *image,
 	/* Frame type -- let core decide for us */
 	xvid_enc_frame.type = XVID_TYPE_AUTO;
 
-	/* Force the right quantizer */
-	xvid_enc_frame.quant = ARG_QUANTI;
+	/* Force the right quantizer -- It is internally managed by RC plugins */
+	xvid_enc_frame.quant = 0;
 
 	/* Set up motion estimation flags */
 	xvid_enc_frame.motion = motion_presets[ARG_QUALITY];
