@@ -5,8 +5,12 @@
 #include "IXvidDecoder.h"
 
 
-#define DEBUG(X) 
-// OutputDebugString(X)
+#if defined(_DEBUG)
+#define DEBUG(X) OutputDebugString(X)
+#else
+#define DEBUG(X)
+#endif
+
 
 #define XVID_NAME_L		L"XviD MPEG-4 Video Decoder"
 

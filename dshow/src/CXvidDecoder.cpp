@@ -290,6 +290,16 @@ HRESULT CXvidDecoder::CheckInputType(const CMediaType * mtIn)
 
 /* get list of supported output colorspaces */
 
+#define ENABLE_IYUV
+#define ENABLE_YV12
+#define ENABLE_YUY2
+#define ENABLE_UYVY
+#define ENABLE_YVYU
+#define ENABLE_RGB32
+#define ENABLE_RGB24
+#define ENABLE_RGB565
+#define ENABLE_RGB555
+
 HRESULT CXvidDecoder::GetMediaType(int iPosition, CMediaType *mtOut)
 {
 	DEBUG("GetMediaType");
@@ -318,54 +328,78 @@ HRESULT CXvidDecoder::GetMediaType(int iPosition, CMediaType *mtOut)
 
 	switch(iPosition)
 	{
-	case 0	:
+	case 0 :
+#ifdef ENABLE_IYUV
+		vih->bmiHeader.biCompression = MEDIASUBTYPE_IYUV.Data1;
+		vih->bmiHeader.biBitCount = 12;
+		mtOut->SetSubtype(&MEDIASUBTYPE_IYUV);
+		break;
+#endif
+
+	case 1:
+#ifdef ENABLE_YV12
 		vih->bmiHeader.biCompression = MEDIASUBTYPE_YV12.Data1;
 		vih->bmiHeader.biBitCount = 12;
 		mtOut->SetSubtype(&MEDIASUBTYPE_YV12);
 		break;
+#endif
 	
-	case 1:
+	case 2:
+#ifdef ENABLE_YUY2
 		vih->bmiHeader.biCompression = MEDIASUBTYPE_YUY2.Data1;
 		vih->bmiHeader.biBitCount = 16;
 		mtOut->SetSubtype(&MEDIASUBTYPE_YUY2);
 		break;
+#endif
 
-	case 2:
+	case 3:
+#ifdef ENABLE_YVYU
 		vih->bmiHeader.biCompression = MEDIASUBTYPE_YVYU.Data1;
 		vih->bmiHeader.biBitCount = 16;
 		mtOut->SetSubtype(&MEDIASUBTYPE_YVYU);
 		break;
+#endif
 
-	case 3:
+	case 4:
+#ifdef ENABLE_UYVY
 		vih->bmiHeader.biCompression = MEDIASUBTYPE_UYVY.Data1;
 		vih->bmiHeader.biBitCount = 16;
 		mtOut->SetSubtype(&MEDIASUBTYPE_UYVY);
 		break;
+#endif
 
-	case 4:
+	case 5:
+#ifdef ENABLE_RGB32
 		vih->bmiHeader.biCompression = BI_RGB;
 		vih->bmiHeader.biBitCount = 32;
 		mtOut->SetSubtype(&MEDIASUBTYPE_RGB32);
 		break;
+#endif
 
-	case 5:
+	case 6:
+#ifdef ENABLE_RGB24
 		vih->bmiHeader.biCompression = BI_RGB;
 		vih->bmiHeader.biBitCount = 24;	
 		mtOut->SetSubtype(&MEDIASUBTYPE_RGB24);
 		break;
+#endif
 
-	case 6:
+	case 7:
+#ifdef ENABLE_RGB555
 		vih->bmiHeader.biCompression = BI_RGB;
 		vih->bmiHeader.biBitCount = 16;	
 		mtOut->SetSubtype(&MEDIASUBTYPE_RGB555);
 		break;
+#endif
 
-	case 7:
+	case 8:
+#ifdef ENABLE_RGB565
 		vih->bmiHeader.biCompression = BI_RGB;
 		vih->bmiHeader.biBitCount = 16;	
 		mtOut->SetSubtype(&MEDIASUBTYPE_RGB565);
 		break;
-		
+#endif
+
 	default :
 		return VFW_S_NO_MORE_ITEMS;
 	}
@@ -385,7 +419,12 @@ HRESULT CXvidDecoder::GetMediaType(int iPosition, CMediaType *mtOut)
 
 HRESULT CXvidDecoder::ChangeColorspace(GUID subtype, GUID formattype, void * format)
 {
-	if (subtype == MEDIASUBTYPE_YV12)
+	if (subtype == MEDIASUBTYPE_IYUV)
+	{
+		DEBUG("IYUV");
+		m_frame.colorspace = XVID_CSP_I420;
+	}
+	else if (subtype == MEDIASUBTYPE_YV12)
 	{
 		DEBUG("YV12");
 		m_frame.colorspace = XVID_CSP_YV12;
@@ -439,11 +478,13 @@ HRESULT CXvidDecoder::ChangeColorspace(GUID subtype, GUID formattype, void * for
 	{
 		VIDEOINFOHEADER * vih = (VIDEOINFOHEADER * )format;
 		m_frame.stride = vih->bmiHeader.biWidth;
+		// dev-api-3: m_frame.stride = (((vih->bmiHeader.biWidth * vih->bmiHeader.biBitCount) + 31) & ~31) >> 3;
 	}
 	else if (formattype == FORMAT_VideoInfo2)
 	{
 		VIDEOINFOHEADER2 * vih2 = (VIDEOINFOHEADER2 * )format;
 		m_frame.stride = vih2->bmiHeader.biWidth;
+		// dev-api-3: m_frame.stride = (((vih2->bmiHeader.biWidth * vih2->bmiHeader.biBitCount) + 31) & ~31) >> 3;
 	}
 	else
 	{
