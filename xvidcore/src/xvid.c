@@ -37,7 +37,7 @@
  *  - 22.12.2001  API change: added xvid_init() - Isibaar
  *  - 16.12.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: xvid.c,v 1.33.2.6 2002-10-05 21:33:39 Isibaar Exp $
+ *  $Id: xvid.c,v 1.33.2.7 2002-10-06 07:05:50 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -252,6 +252,8 @@ xvid_init(void *handle,
 	yv12_to_rgb565 = yv12_to_rgb565_c;
 	yv12_to_rgb24  = yv12_to_rgb24_c;
 	yv12_to_rgb32  = yv12_to_rgb32_c;
+	yv12_to_abgr  = yv12_to_abgr_c;
+	yv12_to_rgba  = yv12_to_rgba_c;
 	yv12_to_yuv    = yv12_to_yuv_c;
 	yv12_to_yuyv   = yv12_to_yuyv_c;
 	yv12_to_uyvy   = yv12_to_uyvy_c;

@@ -52,6 +52,8 @@ color_outputFuncPtr yv12_to_rgb555;
 color_outputFuncPtr yv12_to_rgb565;
 color_outputFuncPtr yv12_to_rgb24;
 color_outputFuncPtr yv12_to_rgb32;
+color_outputFuncPtr yv12_to_abgr;
+color_outputFuncPtr yv12_to_rgba;
 color_outputFuncPtr yv12_to_yuv;
 color_outputFuncPtr yv12_to_yuyv;
 color_outputFuncPtr yv12_to_uyvy;
@@ -604,10 +606,10 @@ yv12_to_rgb555_c(uint8_t * dst,
 				 int width,
 				 int height)
 {
-	const uint32_t dst_dif = 4 * dst_stride - 2 * width;
+	const uint32_t dst_dif = 2 * dst_stride - 2 * width;
 	int32_t y_dif = 2 * y_stride - width;
 
-	uint8_t *dst2 = dst + 2 * dst_stride;
+	uint8_t *dst2 = dst + dst_stride;
 	uint8_t *y_src2 = y_src + y_stride;
 	uint32_t x, y;
 
@@ -703,10 +705,10 @@ yv12_to_rgb565_c(uint8_t * dst,
 				 int width,
 				 int height)
 {
-	const uint32_t dst_dif = 4 * dst_stride - 2 * width;
+	const uint32_t dst_dif = 2 * dst_stride - 2 * width;
 	int32_t y_dif = 2 * y_stride - width;
 
-	uint8_t *dst2 = dst + 2 * dst_stride;
+	uint8_t *dst2 = dst + dst_stride;
 	uint8_t *y_src2 = y_src + y_stride;
 	uint32_t x, y;
 
@@ -783,202 +785,103 @@ yv12_to_rgb565_c(uint8_t * dst,
 }
 
 
-
-/* yuv 4:2:0 planar -> rgb24 */
-
-void
-yv12_to_rgb24_c(uint8_t * dst,
-				int dst_stride,
-				uint8_t * y_src,
-				uint8_t * u_src,
-				uint8_t * v_src,
-				int y_stride,
-				int uv_stride,
-				int width,
-				int height)
-{
-	const uint32_t dst_dif = 6 * dst_stride - 3 * width;
-	int32_t y_dif = 2 * y_stride - width;
-
-	uint8_t *dst2 = dst + 3 * dst_stride;
-	uint8_t *y_src2 = y_src + y_stride;
-	uint32_t x, y;
-
-	if (height < 0) {			// flip image?
-		height = -height;
-		y_src += (height - 1) * y_stride;
-		y_src2 = y_src - y_stride;
-		u_src += (height / 2 - 1) * uv_stride;
-		v_src += (height / 2 - 1) * uv_stride;
-		y_dif = -width - 2 * y_stride;
-		uv_stride = -uv_stride;
-	}
-
-	for (y = height / 2; y; y--) {
-		// process one 2x2 block per iteration
-		for (x = 0; x < (uint32_t) width / 2; x++) {
-			int u, v;
-			int b_u, g_uv, r_v, rgb_y;
-			int r, g, b;
-
-			u = u_src[x];
-			v = v_src[x];
-
-			b_u = B_U_tab[u];
-			g_uv = G_U_tab[u] + G_V_tab[v];
-			r_v = R_V_tab[v];
-
-			rgb_y = RGB_Y_tab[*y_src];
-			b = (rgb_y + b_u) >> SCALEBITS_OUT;
-			g = (rgb_y - g_uv) >> SCALEBITS_OUT;
-			r = (rgb_y + r_v) >> SCALEBITS_OUT;
-			dst[0] = MAX(0, MIN(255, b));
-			dst[1] = MAX(0, MIN(255, g));
-			dst[2] = MAX(0, MIN(255, r));
-
-			y_src++;
-			rgb_y = RGB_Y_tab[*y_src];
-			b = (rgb_y + b_u) >> SCALEBITS_OUT;
-			g = (rgb_y - g_uv) >> SCALEBITS_OUT;
-			r = (rgb_y + r_v) >> SCALEBITS_OUT;
-			dst[3] = MAX(0, MIN(255, b));
-			dst[4] = MAX(0, MIN(255, g));
-			dst[5] = MAX(0, MIN(255, r));
-			y_src++;
-
-			rgb_y = RGB_Y_tab[*y_src2];
-			b = (rgb_y + b_u) >> SCALEBITS_OUT;
-			g = (rgb_y - g_uv) >> SCALEBITS_OUT;
-			r = (rgb_y + r_v) >> SCALEBITS_OUT;
-			dst2[0] = MAX(0, MIN(255, b));
-			dst2[1] = MAX(0, MIN(255, g));
-			dst2[2] = MAX(0, MIN(255, r));
-			y_src2++;
-
-			rgb_y = RGB_Y_tab[*y_src2];
-			b = (rgb_y + b_u) >> SCALEBITS_OUT;
-			g = (rgb_y - g_uv) >> SCALEBITS_OUT;
-			r = (rgb_y + r_v) >> SCALEBITS_OUT;
-			dst2[3] = MAX(0, MIN(255, b));
-			dst2[4] = MAX(0, MIN(255, g));
-			dst2[5] = MAX(0, MIN(255, r));
-			y_src2++;
-
-			dst += 6;
-			dst2 += 6;
-		}
-
-		dst += dst_dif;
-		dst2 += dst_dif;
-
-		y_src += y_dif;
-		y_src2 += y_dif;
-
-		u_src += uv_stride;
-		v_src += uv_stride;
-	}
+#define MAKE_YV12_TO_RGB_C(NAME,SIZE,C1,C2,C3,C4) \
+void yv12_to_##NAME##_c(uint8_t * dst,		\
+				int dst_stride,		\
+				uint8_t * y_src,	\
+				uint8_t * u_src,	\
+				uint8_t * v_src,	\
+				int y_stride,		\
+				int uv_stride,		\
+				int width,			\
+				int height)			\
+{	\
+	const uint8_t a = 0;		/* alpha = 0 */		\
+	const uint32_t dst_dif = 2 * dst_stride - (SIZE) * width;	\
+	int32_t y_dif = 2 * y_stride - width;	\
+	uint8_t *dst2 = dst + dst_stride;	\
+	uint8_t *y_src2 = y_src + y_stride;	\
+	uint32_t x, y;	\
+\
+	if (height < 0) {			/* flip image? */	\
+		height = -height;							\
+		y_src += (height - 1) * y_stride;			\
+		y_src2 = y_src - y_stride;					\
+		u_src += (height / 2 - 1) * uv_stride;		\
+		v_src += (height / 2 - 1) * uv_stride;		\
+		y_dif = -width - 2 * y_stride;				\
+		uv_stride = -uv_stride;						\
+	}	\
+	/* process one 2x2 block per iteration */		\
+	for (y = height/2; y; y--) {					\
+													\
+		for (x = 0; x < (uint32_t)width/2; x++) {	\
+			int u, v;								\
+			int b_u, g_uv, r_v, rgb_y;				\
+			int r, g, b;							\
+\
+			u = u_src[x];							\
+			v = v_src[x];							\
+			b_u = B_U_tab[u];						\
+			g_uv = G_U_tab[u] + G_V_tab[v];			\
+			r_v = R_V_tab[v];						\
+\
+			rgb_y = RGB_Y_tab[*y_src];				\
+			b = MAX(0, MIN(255, (rgb_y + b_u) >> SCALEBITS_OUT));	\
+			g = MAX(0, MIN(255, (rgb_y - g_uv) >> SCALEBITS_OUT));	\
+			r = MAX(0, MIN(255, (rgb_y + r_v) >> SCALEBITS_OUT));	\
+			dst[0] = (C1);							\
+			dst[1] = (C2);							\
+			dst[2] = (C3);							\
+			if ((SIZE)>3) dst[3] = (C4);			\
+			y_src++;								\
+\
+			rgb_y = RGB_Y_tab[*y_src];				\
+			b = MAX(0, MIN(255, (rgb_y + b_u) >> SCALEBITS_OUT));	\
+			g = MAX(0, MIN(255, (rgb_y - g_uv) >> SCALEBITS_OUT));	\
+			r = MAX(0, MIN(255, (rgb_y + r_v) >> SCALEBITS_OUT));	\
+			dst[(SIZE)+0] = (C1);							\
+			dst[(SIZE)+1] = (C2);							\
+			dst[(SIZE)+2] = (C3);							\
+			if ((SIZE)>3) dst[(SIZE)+3] = (C4);			\
+			y_src++;								\
+\
+			rgb_y = RGB_Y_tab[*y_src2];				\
+			b = MAX(0, MIN(255, (rgb_y + b_u) >> SCALEBITS_OUT));	\
+			g = MAX(0, MIN(255, (rgb_y - g_uv) >> SCALEBITS_OUT));	\
+			r = MAX(0, MIN(255, (rgb_y + r_v) >> SCALEBITS_OUT));	\
+			dst2[0] = (C1);							\
+			dst2[1] = (C2);							\
+			dst2[2] = (C3);							\
+			if ((SIZE)>3) dst2[3] = (C4);			\
+			y_src2++;								\
+\
+			rgb_y = RGB_Y_tab[*y_src2];				\
+			b = MAX(0, MIN(255, (rgb_y + b_u) >> SCALEBITS_OUT));	\
+			g = MAX(0, MIN(255, (rgb_y - g_uv) >> SCALEBITS_OUT));	\
+			r = MAX(0, MIN(255, (rgb_y + r_v) >> SCALEBITS_OUT));	\
+			dst2[(SIZE)+0] = (C1);							\
+			dst2[(SIZE)+1] = (C2);							\
+			dst2[(SIZE)+2] = (C3);							\
+			if ((SIZE)>3) dst2[(SIZE)+3] = (C4);			\
+			y_src2++;								\
+\
+			dst += 2*(SIZE);			\
+			dst2 += 2*(SIZE);			\
+		}						\
+		dst += dst_dif;					\
+		dst2 += dst_dif;				\
+		y_src += y_dif;					\
+		y_src2 += y_dif;				\
+		u_src += uv_stride;				\
+		v_src += uv_stride;				\
+	}		\
 }
 
-
-
-/* yuv 4:2:0 planar -> rgb32 */
-
-void
-yv12_to_rgb32_c(uint8_t * dst,
-				int dst_stride,
-				uint8_t * y_src,
-				uint8_t * v_src,
-				uint8_t * u_src,
-				int y_stride,
-				int uv_stride,
-				int width,
-				int height)
-{
-	const uint32_t dst_dif = 8 * dst_stride - 4 * width;
-	int32_t y_dif = 2 * y_stride - width;
-
-	uint8_t *dst2 = dst + 4 * dst_stride;
-	uint8_t *y_src2 = y_src + y_stride;
-	uint32_t x, y;
-
-	if (height < 0) {			// flip image?
-		height = -height;
-		y_src += (height - 1) * y_stride;
-		y_src2 = y_src - y_stride;
-		u_src += (height / 2 - 1) * uv_stride;
-		v_src += (height / 2 - 1) * uv_stride;
-		y_dif = -width - 2 * y_stride;
-		uv_stride = -uv_stride;
-	}
-
-	for (y = height / 2; y; y--) {
-		// process one 2x2 block per iteration
-		for (x = 0; x < (uint32_t) width / 2; x++) {
-			int u, v;
-			int b_u, g_uv, r_v, rgb_y;
-			int r, g, b;
-
-			u = u_src[x];
-			v = v_src[x];
-
-			b_u = B_U_tab[u];
-			g_uv = G_U_tab[u] + G_V_tab[v];
-			r_v = R_V_tab[v];
-
-			rgb_y = RGB_Y_tab[*y_src];
-			b = (rgb_y + b_u) >> SCALEBITS_OUT;
-			g = (rgb_y - g_uv) >> SCALEBITS_OUT;
-			r = (rgb_y + r_v) >> SCALEBITS_OUT;
-			dst[0] = MAX(0, MIN(255, r));
-			dst[1] = MAX(0, MIN(255, g));
-			dst[2] = MAX(0, MIN(255, b));
-			dst[3] = 0;
-
-			y_src++;
-			rgb_y = RGB_Y_tab[*y_src];
-			b = (rgb_y + b_u) >> SCALEBITS_OUT;
-			g = (rgb_y - g_uv) >> SCALEBITS_OUT;
-			r = (rgb_y + r_v) >> SCALEBITS_OUT;
-			dst[4] = MAX(0, MIN(255, r));
-			dst[5] = MAX(0, MIN(255, g));
-			dst[6] = MAX(0, MIN(255, b));
-			dst[7] = 0;
-			y_src++;
-
-			rgb_y = RGB_Y_tab[*y_src2];
-			b = (rgb_y + b_u) >> SCALEBITS_OUT;
-			g = (rgb_y - g_uv) >> SCALEBITS_OUT;
-			r = (rgb_y + r_v) >> SCALEBITS_OUT;
-			dst2[0] = MAX(0, MIN(255, r));
-			dst2[1] = MAX(0, MIN(255, g));
-			dst2[2] = MAX(0, MIN(255, b));
-			dst2[3] = 0;
-			y_src2++;
-
-			rgb_y = RGB_Y_tab[*y_src2];
-			b = (rgb_y + b_u) >> SCALEBITS_OUT;
-			g = (rgb_y - g_uv) >> SCALEBITS_OUT;
-			r = (rgb_y + r_v) >> SCALEBITS_OUT;
-			dst2[4] = MAX(0, MIN(255, r));
-			dst2[5] = MAX(0, MIN(255, g));
-			dst2[6] = MAX(0, MIN(255, b));
-			dst2[7] = 0;
-			y_src2++;
-
-			dst += 8;
-			dst2 += 8;
-		}
-
-		dst += dst_dif;
-		dst2 += dst_dif;
-
-		y_src += y_dif;
-		y_src2 += y_dif;
-
-		u_src += uv_stride;
-		v_src += uv_stride;
-	}
-}
+MAKE_YV12_TO_RGB_C(rgb24,3, b,g,r,0)		/* yuv420 -> bgr */
+MAKE_YV12_TO_RGB_C(rgb32,4, b,g,r,a)		/* yuv420 -> bgra */
+MAKE_YV12_TO_RGB_C(abgr, 4, a,b,g,r)		/* yuv420 -> abgr */
+MAKE_YV12_TO_RGB_C(rgba, 4, r,g,b,a)		/* yuv420 -> rgba */
 
 
 
@@ -1043,7 +946,7 @@ yv12_to_yuyv_c(uint8_t * dst,
 			   int width,
 			   int height)
 {
-	const uint32_t dst_dif = 2 * (dst_stride - width);
+	const uint32_t dst_dif = dst_stride - (2 * width);
 	uint32_t x, y;
 
 	if (height < 0) {
@@ -1087,7 +990,7 @@ yv12_to_uyvy_c(uint8_t * dst,
 			   int width,
 			   int height)
 {
-	const uint32_t dst_dif = 2 * (dst_stride - width);
+	const uint32_t dst_dif = dst_stride - (2 * width);
 	uint32_t x, y;
 
 	if (height < 0) {

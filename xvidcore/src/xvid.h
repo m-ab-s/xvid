@@ -28,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.1 2002-10-05 21:34:04 Isibaar Exp $
+*  $Id: xvid.h,v 1.17.2.2 2002-10-06 07:05:50 suxen_drol Exp $
 *
 *****************************************************************************/
 
@@ -56,7 +56,7 @@ extern "C" {
 
 
 /* Colorspaces */
-#define XVID_CSP_RGB24 	0
+#define XVID_CSP_RGB24 	0		/* [b|g|r] */
 #define XVID_CSP_YV12	1
 #define XVID_CSP_YUY2	2
 #define XVID_CSP_UYVY	3
@@ -66,7 +66,12 @@ extern "C" {
 #define XVID_CSP_USER	12
 #define XVID_CSP_EXTERN      1004  // per slice rendering
 #define XVID_CSP_YVYU	1002
-#define XVID_CSP_RGB32 	1000
+#define XVID_CSP_RGB32 	1000	/* [b|g|r|a] */
+#define XVID_CSP_ABGR	1006	/* [a|b|g|r] */
+#define XVID_CSP_RGBA	1005	/* [r|g|b|a] */
+
+
+
 #define XVID_CSP_NULL 	9999
 
 #define XVID_CSP_VFLIP	0x80000000	// flip mask

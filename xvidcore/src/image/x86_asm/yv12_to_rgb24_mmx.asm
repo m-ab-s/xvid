@@ -33,7 +33,7 @@
 ;  13.12.2001 initial version  (Isibaar)
 ;  23.07.2002 Thread safe version (edgomez)
 ;
-; $Id: yv12_to_rgb24_mmx.asm,v 1.2 2002-07-23 15:36:59 edgomez Exp $
+; $Id: yv12_to_rgb24_mmx.asm,v 1.2.2.1 2002-10-06 07:05:51 suxen_drol Exp $
 ; 
 ;------------------------------------------------------------------------------
 ;------------------------------------------------------------------------------
@@ -144,14 +144,11 @@ yv12_to_rgb24_mmx:
 	sub ebx, ebp			; y_src2 -> ebx
 
 	mov ecx, [esp + 24 + localsize]	; dst_stride -> ecx
-	mov edx, ecx
-	add ecx, edx
-	shl edx, 2
-	add ecx, edx			; 6 * dst_stride -> ecx
-	mov edx, ecx
+	shl ecx, 1
+	mov edx, ecx				; 2 * dst_stride -> ecx
 	sub ecx, esi
 	shl esi, 1
-	sub ecx, esi			; 6 * dst_stride - 3 * width -> ecx
+	sub ecx, esi				; 2 * dst_stride - 3 * width -> ecx
 
 	mov [dst_dif], ecx
 
@@ -209,14 +206,11 @@ dont_flip:
 	add ebx, ebp			; y_src2 -> ebp
 
 	mov ecx, [esp + 24 + localsize]	; dst_stride -> ecx
-	mov edx, ecx
-	add ecx, edx
-	shl edx, 2
-	add ecx, edx			; 6 * dst_stride -> ecx
-	mov edx, ecx
+	shl ecx, 1
+	mov edx, ecx				; 2 * dst_stride -> ecx
 	sub ecx, esi
 	shl esi, 1
-	sub ecx, esi			; 6 * dst_stride - 3 * width -> ecx
+	sub ecx, esi			; 2 * dst_stride - 3 * width -> ecx
 
 	mov [dst_dif], ecx
 

@@ -549,6 +549,29 @@ image_output(IMAGE * image,
 		height = -height;
 	}
 
+	// --- xvid 2.1 compatiblity patch ---
+	// --- remove when xvid_dec_frame->stride equals real stride
+	if ((csp & ~XVID_CSP_VFLIP) == XVID_CSP_RGB555 ||
+		(csp & ~XVID_CSP_VFLIP) == XVID_CSP_RGB565 ||
+		(csp & ~XVID_CSP_VFLIP) == XVID_CSP_YUY2 ||
+		(csp & ~XVID_CSP_VFLIP) == XVID_CSP_YVYU ||
+		(csp & ~XVID_CSP_VFLIP) == XVID_CSP_UYVY)
+	{
+		dst_stride *= 2;
+	} 
+	else if ((csp & ~XVID_CSP_VFLIP) == XVID_CSP_RGB24)
+	{
+		dst_stride *= 3;
+	}
+	else if ((csp & ~XVID_CSP_VFLIP) == XVID_CSP_RGB32 ||
+		(csp & ~XVID_CSP_VFLIP) == XVID_CSP_ABGR ||
+		(csp & ~XVID_CSP_VFLIP) == XVID_CSP_RGBA)
+	{
+		dst_stride *= 4;
+	}
+	// ^--- xvid 2.1 compatiblity fix ---^
+
+	
 	switch (csp & ~XVID_CSP_VFLIP) {
 	case XVID_CSP_RGB555:
 		yv12_to_rgb555(dst, dst_stride, image->y, image->u, image->v,
@@ -567,6 +590,16 @@ image_output(IMAGE * image,
 
 	case XVID_CSP_RGB32:
 		yv12_to_rgb32(dst, dst_stride, image->y, image->u, image->v,
+					  edged_width, edged_width / 2, width, height);
+		return 0;
+
+	case XVID_CSP_ABGR:
+		yv12_to_abgr(dst, dst_stride, image->y, image->u, image->v,
+					  edged_width, edged_width / 2, width, height);
+		return 0;
+
+	case XVID_CSP_RGBA:
+		yv12_to_rgba(dst, dst_stride, image->y, image->u, image->v,
 					  edged_width, edged_width / 2, width, height);
 		return 0;
 

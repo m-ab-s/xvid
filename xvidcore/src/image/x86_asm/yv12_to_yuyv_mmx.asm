@@ -81,7 +81,7 @@ yv12_to_yuyv_mmx
 		mov ebx, [esp + 20 + 32]	; width
 		mov eax, [esp + 20 + 8]		; dst_stride
 		sub eax, ebx				; 
-		add eax, eax				; eax = 2*(dst_stride - width)
+		sub eax, ebx				; eax = dst_stride - (2 * width)
 		push eax					; [esp + 4] = dst_dif
 						; STACK BASE = 24
 
@@ -224,7 +224,7 @@ yv12_to_uyvy_mmx
 		mov ebx, [esp + 20 + 32]	; width
 		mov eax, [esp + 20 + 8]		; dst_stride
 		sub eax, ebx				; 
-		add eax, eax				; eax = 2*(dst_stride - width)
+		sub eax, ebx				; eax = dst_stride - (2 * width)
 		push eax					; [esp + 4] = dst_dif
 						; STACK BASE = 24
 
