@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.28 2003-12-21 19:41:53 Isibaar Exp $
+ * $Id: decoder.c,v 1.49.2.29 2004-01-24 14:14:15 syskin Exp $
  *
  ****************************************************************************/
 
@@ -900,6 +900,7 @@ decoder_pframe(DECODER * dec,
 
 			} else if (gmc_warp) {	/* a not coded S(GMC)-VOP macroblock */
 				mb->mode = MODE_NOT_CODED_GMC;
+				mb->quant = quant;
 				decoder_mbgmc(dec, mb, x, y, fcode, 0x00, bs, rounding);
 
 				if(dec->out_frm && cp_mb > 0) {
@@ -909,6 +910,7 @@ decoder_pframe(DECODER * dec,
 				st_mb = x+1;
 			} else {	/* not coded P_VOP macroblock */
 				mb->mode = MODE_NOT_CODED;
+				mb->quant = quant;
 
 				mb->mvs[0].x = mb->mvs[1].x = mb->mvs[2].x = mb->mvs[3].x = 0;
 				mb->mvs[0].y = mb->mvs[1].y = mb->mvs[2].y = mb->mvs[3].y = 0;
