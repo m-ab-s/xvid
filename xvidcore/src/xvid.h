@@ -28,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.23 2003-01-13 14:33:24 chl Exp $
+*  $Id: xvid.h,v 1.17.2.24 2003-01-14 10:30:39 chl Exp $
 *
 *****************************************************************************/
 
@@ -59,7 +59,7 @@ extern "C" {
  * doesnt hurt but not increasing it could cause difficulty for decoders in the
  * future
  */
-#define XVID_BS_VERSION "0007"
+#define XVID_BS_VERSION "0008"
 
 
 /* Error codes */

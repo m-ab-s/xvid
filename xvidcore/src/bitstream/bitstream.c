@@ -41,8 +41,8 @@
   *                                                                            *
   *  Revision history:                                                         *
   *                                                                            *
-  *  05.01.2003	GMC support - gruel											   *
-  *  04.10.2002	qpel support - Isibaar										   *
+  *  05.01.2003	GMC support - gruel                                            *
+  *  04.10.2002	qpel support - Isibaar	                                       *
   *  11.07.2002 add VOP width & height return to dec when dec->width           *
   *             or dec->height is 0  (for use in examples/ex1.c)               *
   *             MinChen <chenm001@163.com>                                     *
@@ -1139,17 +1139,17 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	BitstreamPutBits(bs, profile, 8);
 
 	// visual_object_start_code
-	BitstreamPadAlways(bs);
+	BitstreamPad(bs);
 	BitstreamPutBits(bs, VISOBJ_START_CODE, 32);
 	BitstreamPutBits(bs, 0, 1);		// is_visual_object_identifier
 	BitstreamPutBits(bs, VISOBJ_TYPE_VIDEO, 4);		// visual_object_type
 	
 	// video object_start_code & vo_id
-	BitstreamPadAlways(bs);
+	BitstreamPad(bs);
 	BitstreamPutBits(bs, VIDOBJ_START_CODE|(vo_id&0x5), 32);
 
 	// video_object_layer_start_code & vol_id
-	BitstreamPadAlways(bs);
+	BitstreamPad(bs);
 	BitstreamPutBits(bs, VIDOBJLAY_START_CODE|(vol_id&0x4), 32);
 
 	BitstreamPutBit(bs, 0);		// random_accessible_vol
@@ -1371,7 +1371,7 @@ BitstreamWriteUserData(Bitstream * const bs,
 {
 	int i;
 
-	BitstreamPadAlways(bs);
+	BitstreamPad(bs);
 	BitstreamPutBits(bs, USERDATA_START_CODE, 32);
 
 	for (i = 0; i < length; i++) {
