@@ -28,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.15 2002-12-14 06:07:03 suxen_drol Exp $
+*  $Id: xvid.h,v 1.17.2.16 2002-12-16 08:54:44 suxen_drol Exp $
 *
 *****************************************************************************/
 
@@ -46,6 +46,7 @@ extern "C" {
 
 /* API Version : 2.1 */
 #define API_VERSION ((2 << 16) | (1))
+#define XVID_API_UNSTABLE
 
 /* Bitstream Version 
  * this will be writen into the bitstream to allow easy detection of xvid 
@@ -162,6 +163,8 @@ extern "C" {
 #define XVID_DEC_LOWDELAY		0x00000001	/* decode lowdelay mode (ie. video-for-windows) */
 #define XVID_DEC_DEBLOCKY		0x00000002	/* luma deblocking */
 #define XVID_DEC_DEBLOCKUV		0x00000002	/* chroma deblocking */
+#define XVID_DEC_DISCONTINUITY	0x00000004	/* indicates break in stream; instructs 
+											decoder to ignore any previous reference frames */
 #define XVID_QUICK_DECODE		0x00000010
 
 /*****************************************************************************

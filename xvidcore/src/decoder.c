@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.22 2002-12-14 09:39:42 suxen_drol Exp $
+ *  $Id: decoder.c,v 1.37.2.23 2002-12-16 08:54:44 suxen_drol Exp $
  *
  *************************************************************************/
 
@@ -1651,6 +1651,9 @@ decoder_decode(DECODER * dec,
 	dec->low_delay_default = (frame->general & XVID_DEC_LOWDELAY);
 	dec->out_frm = (frame->colorspace == XVID_CSP_EXTERN) ? frame->image : NULL;
 
+	if ((frame->general & XVID_DEC_DISCONTINUITY))
+		dec->frames = 0;
+
 	if (frame->length < 0)	/* decoder flush */
 	{
 		/* if  not decoding "low_delay/packed", and this isn't low_delay and
@@ -1835,6 +1838,7 @@ done :
 		{
 			/* output the recently decoded frame */
 			decoder_output(dec, &dec->refn[0], dec->last_mbs, frame, dec->last_reduced_resolution);
+			output = 1;
 		}
 		else
 		{
@@ -1846,7 +1850,6 @@ done :
 
 			decoder_output(dec, &dec->cur, NULL, frame, 1 /*disable pp*/);	
 		}
-		output = 1;
 	}
 
 	frame->length = BitstreamPos(&bs) / 8;
