@@ -37,7 +37,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.7 2002-07-21 03:46:13 suxen_drol Exp $
+*  $Id: xvid.h,v 1.8 2002-08-01 12:56:28 chl Exp $
 *
 *****************************************************************************/
 
@@ -214,6 +214,10 @@ extern "C" {
 #define XVID_ME_FULLSEARCH		0x00040000
 #define XVID_ME_PMVFAST			0x00080000
 #define XVID_ME_EPZS			0x00100000
+
+
+#define XVID_GREYSCALE			0x01000000	/* enable greyscale only mode (even for */
+#define XVID_GRAYSCALE			0x01000000      /* color input material chroma is ignored) */
 
 
 /* Flags for XVID_ENC_FRAME.motion */

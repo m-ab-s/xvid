@@ -88,6 +88,9 @@ typedef struct
 	int min_key_interval;
 	int lum_masking;
 	int interlacing;
+//added by koepi for gruel's greyscale_mode
+	int greyscale;
+// end of koepi's additions
 #ifdef BFRAMES
 	int max_bframes;
 	int bquant_ratio;
