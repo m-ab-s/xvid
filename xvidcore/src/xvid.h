@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.49 2003-12-06 10:56:10 chl Exp $
+ * $Id: xvid.h,v 1.27.2.50 2003-12-10 01:01:31 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -246,6 +246,8 @@ typedef struct {
 /* general flags */
 #define XVID_LOWDELAY      (1<<0) /* lowdelay mode  */
 #define XVID_DISCONTINUITY (1<<1) /* indicates break in stream */
+#define XVID_DEBLOCKY	   (1<<2) /* perform luma deblocking */
+#define XVID_DEBLOCKUV     (1<<3) /* perform chroma deblocking */
 
 typedef struct {
 	int version;
