@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.17 2003-05-12 12:29:08 suxen_drol Exp $
+ * $Id: xvid.h,v 1.27.2.18 2003-05-15 13:00:37 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -517,7 +517,6 @@ typedef enum {
                                               color input material chroma is ignored) */
     XVID_VOP_HQACPRED           = 0x00000080, /* 20030209: high quality ac prediction */
     XVID_VOP_MODEDECISION_BITS  = 0x00000100, /* enable DCT-ME and use it for mode decision */
-    XVID_VOP_DYNAMIC_BFRAMES    = 0x00000200,
 
         /* only valid for vol_flags|=XVID_VOL_INTERLACING */
     XVID_VOP_TOPFIELDFIRST      = 0x00000400, /* set top-field-first flag  */

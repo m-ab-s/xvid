@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.21 2003-05-12 12:27:32 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.95.2.22 2003-05-15 12:58:26 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -1079,20 +1079,12 @@ repeat:
 			type = MEanalysis(&pEnc->reference->image, pEnc->current,
 					&pEnc->mbParam, pEnc->mbParam.iMaxKeyInterval,
 					pEnc->iFrameNum, pEnc->bframenum_tail, xFrame->bframe_threshold);
-
-            if (type == B_VOP && !(pEnc->current->vop_flags & XVID_VOP_DYNAMIC_BFRAMES)) {
-                type = P_VOP;   /* disable dynamic bframes */
-            }
 		}
 	}
 
     /* bframes buffer overflow check */
-    if (type != I_VOP) {
-        if (pEnc->bframenum_tail >= pEnc->mbParam.max_bframes) {
-            type = P_VOP;
-        }else{
-            type = B_VOP;
-        }
+    if (type == B_VOP && pEnc->bframenum_tail >= pEnc->mbParam.max_bframes) {
+        type = P_VOP;
     }
 
 	pEnc->iFrameNum++;
