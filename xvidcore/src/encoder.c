@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.11 2003-03-22 13:49:49 syskin Exp $
+ *  $Id: encoder.c,v 1.95.2.12 2003-03-23 04:01:48 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -597,12 +597,22 @@ enc_destroy(Encoder * pEnc)
         xvid_free(pEnc->temp_dquants);
     }
 
-    for (i=0; i<pEnc->num_plugins;i++) {
-        if (pEnc->plugins[i].func) {
-            pEnc->plugins[i].func(pEnc->plugins[i].param, XVID_PLG_DESTROY, 0, 0);
+
+    if (pEnc->num_plugins>0)
+    {
+        xvid_plg_destroy_t pdestroy;
+        memset(&pdestroy, 0, sizeof(xvid_plg_destroy_t));
+
+        pdestroy.version = XVID_VERSION;
+        pdestroy.num_frames = pEnc->m_framenum;
+
+        for (i=0; i<pEnc->num_plugins;i++) {
+            if (pEnc->plugins[i].func) {
+                pEnc->plugins[i].func(pEnc->plugins[i].param, XVID_PLG_DESTROY, &pdestroy, 0);
+            }
         }
+        xvid_free(pEnc->plugins);
     }
-    xvid_free(pEnc->plugins);
 
 	xvid_free(pEnc);
 
@@ -631,7 +641,7 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
     data.mb_height = pEnc->mbParam.mb_height;
     data.fincr = frame->fincr;
     data.fbase = pEnc->mbParam.fbase;
-
+    
     data.reference.csp = XVID_CSP_USER;
     data.reference.plane[0] = pEnc->reference->image.y;
     data.reference.plane[1] = pEnc->reference->image.u;
@@ -996,12 +1006,15 @@ repeat:
 	 * init pEnc->current fields
 	 * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
 
+	inc_frame_num(pEnc);
+
     pEnc->current->fincr = pEnc->mbParam.fincr>0 ? pEnc->mbParam.fincr : frame->fincr; 
     pEnc->current->vol_flags = pEnc->mbParam.vol_flags;
     pEnc->current->vop_flags = frame->vop_flags;
 	pEnc->current->motion_flags = frame->motion;
 	pEnc->current->fcode = pEnc->mbParam.m_fcode;
 	pEnc->current->bcode = pEnc->mbParam.m_fcode;
+
 
     if ((xFrame->vop_flags & XVID_CHROMAOPT)) {
 	    image_chroma_optimize(&pEnc->current->image, 
@@ -1046,7 +1059,6 @@ repeat:
         }
     }
 
-	inc_frame_num(pEnc);
 	pEnc->iFrameNum++;
 
 	if ((pEnc->current->vop_flags & XVID_DEBUG)) {

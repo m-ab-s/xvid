@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.10 2003-03-20 17:59:07 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.11 2003-03-23 04:01:32 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -88,7 +88,8 @@ static xvid_vop_t const vop_presets[] = {
 static int ARG_STATS = 0;
 static int ARG_DUMP = 0;
 static int ARG_LUMIMASKING = 0;
-static int ARG_BITRATE = 900;
+static int ARG_BITRATE = 0;
+static char * ARG_PASS1 = 0;
 static int ARG_QUANTI = 0;
 static int ARG_QUALITY = 5;
 static float ARG_FRAMERATE = 25.00f;
@@ -206,6 +207,9 @@ main(int argc,
 		} else if (strcmp("-bitrate", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_BITRATE = atoi(argv[i]);
+		} else if (strcmp("-pass1", argv[i]) == 0 && i < argc - 1) {
+			i++;
+			ARG_PASS1 = argv[i];
 		} else if (strcmp("-max_bframes", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_MAXBFRAMES = atoi(argv[i]);
@@ -270,11 +274,6 @@ main(int argc,
 
 	if (ARG_QUALITY < 0 || ARG_QUALITY > 5) {
 		fprintf(stderr, "Wrong Quality\n");
-		return (-1);
-	}
-
-	if (ARG_BITRATE <= 0 && ARG_QUANTI == 0) {
-		fprintf(stderr, "Wrong Bitrate\n");
 		return (-1);
 	}
 
@@ -385,7 +384,7 @@ main(int argc,
 
 		/* Write the Frame statistics */
 
-		printf("%5d: key=%i, time(ms)=%6.1f, length=%7d",
+		printf("%5d: key=%i, time=%6.0f, length=%7d",
 			   !result ? input_num : -1,
 			   key,
 			   (float) enctime,
@@ -567,6 +566,7 @@ usage()
 	fprintf(stderr,	" -bquant_ratio  integer: bframe quantizer ratio (default=150)\n");
 	fprintf(stderr,	" -bquant_offset integer: bframe quantizer offset (default=100)\n");
 	fprintf(stderr, " -framerate     float  : target framerate (>0)\n");
+    fprintf(stderr,	" -pass1         string: fisrt pass stats file\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Other options\n");
 	fprintf(stderr, " -asm            : use assembly optmized code\n");
@@ -703,14 +703,15 @@ rawenc_debug(void *handle,
 
 #define FRAMERATE_INCR 1001
 
+
 /* Initialize encoder for first use, pass all needed parameters to the codec */
 static int
 enc_init(int use_assembler)
 {
 	int xerr;
-
-	xvid_enc_plugin_t plugins[3];
-
+    xvid_plugin_cbr_t cbr;
+    xvid_plugin_2pass1_t rc2pass1;
+    xvid_enc_plugin_t plugins[5];
 	xvid_gbl_init_t xvid_gbl_init;
 	xvid_enc_create_t xvid_enc_create;
 
@@ -754,6 +755,26 @@ enc_init(int use_assembler)
 
 	xvid_enc_create.plugins = plugins;
 	xvid_enc_create.num_plugins = 0;
+
+    if (ARG_BITRATE) {
+        cbr.version = XVID_VERSION;
+        memset(&cbr, 0, sizeof(xvid_plugin_cbr_t));
+        cbr.bitrate = ARG_BITRATE;
+
+        plugins[xvid_enc_create.num_plugins].func = xvid_plugin_cbr;
+		plugins[xvid_enc_create.num_plugins].param = &cbr;
+		xvid_enc_create.num_plugins++;
+    }
+
+    if (ARG_PASS1) {
+        rc2pass1.version = XVID_VERSION;
+        memset(&rc2pass1, 0, sizeof(xvid_plugin_2pass1_t));
+        rc2pass1.filename = ARG_PASS1;
+
+        plugins[xvid_enc_create.num_plugins].func = xvid_plugin_2pass1;
+		plugins[xvid_enc_create.num_plugins].param = &rc2pass1;
+		xvid_enc_create.num_plugins++;
+    }
 
 	if (ARG_LUMIMASKING) {
 		plugins[xvid_enc_create.num_plugins].func = xvid_plugin_lumimasking;

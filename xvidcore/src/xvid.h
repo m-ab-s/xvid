@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.9 2003-03-16 12:04:14 suxen_drol Exp $
+ * $Id: xvid.h,v 1.27.2.10 2003-03-23 04:01:49 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -302,6 +302,14 @@ typedef struct
 {
     int version;
 
+    int num_frames;          /* [out] totlal frame encoded */
+} xvid_plg_destroy_t;
+
+
+typedef struct
+{
+    int version;
+
     int width;              /* [out] */
     int height;             /* [out] */
     int mb_width;           /* [out] */
@@ -358,9 +366,44 @@ typedef struct
     void * param;
 } xvid_enc_plugin_t;
 
+
+
+xvid_plugin_func xvid_plugin_fixed;   /* fixed quantizer control */
+xvid_plugin_func xvid_plugin_cbr;   /* constant bitrate control */
+xvid_plugin_func xvid_plugin_2pass1;   /* 2pass rate control: pass 1 */
+
+xvid_plugin_func xvid_plugin_lumimasking;  /* lumimasking */
+
 xvid_plugin_func xvid_plugin_psnr;  /* write psnr values to stdout */
 xvid_plugin_func xvid_plugin_dump;  /* dump before and after yuvpgms */
-xvid_plugin_func xvid_plugin_lumimasking;  /* lumimasking */
+
+
+typedef struct
+{
+    int version;
+    int quant_increment;
+    int quant_base;
+} xvid_plugin_fixed_t;
+
+
+typedef struct
+{
+    int version;
+    int bitrate;
+    int max_quantizer;
+    int min_quantizer;
+    int reaction_delay_factor;
+    int averaging_period;
+    int buffer;
+} xvid_plugin_cbr_t;
+
+
+typedef struct {
+    int version;
+    char * filename;
+} xvid_plugin_2pass1_t;
+
+
 
 
 /*****************************************************************************
