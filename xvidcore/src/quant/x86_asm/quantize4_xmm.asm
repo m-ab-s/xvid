@@ -576,18 +576,18 @@ align 8
 		movq mm6,[mmx_div + ecx * 8 - 8] ; divs for q<=16
 		pmulhuw mm0,[inter_matrix_fix + 8*esi+112] ;correction
 		pmulhuw mm3,[inter_matrix_fix + 8*esi+120]
+		paddw mm2,[ebx+8]   ;sum		
 		paddw mm5,mm0 ;final result
 		paddw mm7,mm3
 		movq mm0,[edi]
 		movq mm3,[edi]
-		mov esp,esp
 		pmulhuw	mm5, mm6		; mm0 = (mm0 / 2Q) >> 16
 		pmulhuw	mm7, mm6		;  (level ) / quant (0<quant<32)
 		add esi,byte 2
-		paddw 	mm2,mm5 ;sum += x1
-		movq 	[ebx],mm7 ;store x2		
 		psrlw   mm5, 1			; (level ) / (2*quant)
+		paddw 	mm2,mm5 ;sum += x1
 		psrlw   mm7, 1		
+		movq 	[ebx],mm7 ;store x2		
 		pxor	mm5, mm1		; mm0 *= sign(mm0)
 		pxor	mm7, mm4		;
 		psubw	mm5, mm1		; undisplace
