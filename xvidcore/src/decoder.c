@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.4 2002-10-11 00:44:49 Isibaar Exp $
+ *  $Id: decoder.c,v 1.37.2.5 2002-10-11 15:07:32 Isibaar Exp $
  *
  *************************************************************************/
 
@@ -1385,10 +1385,8 @@ decoder_decode(DECODER * dec,
 
 	BitstreamInit(&bs, frame->bitstream, frame->length);
 
-	if(BitstreamShowBits(&bs, 8) == 0x7f) {
-		BitstreamGetBits(&bs, 8);
-		return XVID_ERR_FAIL;
-	}
+	if(BitstreamShowBits(&bs, 8) == 0x7f)
+		return XVID_ERR_OK;
 
 	// add by chenm001 <chenm001@163.com>
 	// for support B-frame to reference last 2 frame
