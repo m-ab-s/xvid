@@ -18,7 +18,6 @@ SRC_GENERIC = \
 	$(SRCDIR)/image/qpel.c \
 	$(SRCDIR)/motion/motion_comp.c \
 	$(SRCDIR)/motion/motion_est.c \
-	$(SRCDIR)/motion/smp_motion_est.c \
 	$(SRCDIR)/motion/sad.c \
 	$(SRCDIR)/motion/gmc.c \
 	$(SRCDIR)/prediction/mbprediction.c \
