@@ -4,7 +4,7 @@
 #include <windows.h>
 #include <vfw.h>
 #include "config.h"
-#include <xvid.h>
+#include "xvid.h"
 
 #define DEBUG(X)
 // OutputDebugString(X)
@@ -103,6 +103,7 @@ typedef struct
 
 	int keyframe_locations[20480];
 	int max_framesize;
+	int minpsize, minisize;
 	double movie_curve;
 	double credits_start_curve;
 	double credits_end_curve;
