@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.57 2003-12-12 09:58:40 syskin Exp $
+ * $Id: encoder.c,v 1.95.2.58 2003-12-12 14:16:40 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -846,20 +846,65 @@ set_timecodes(FRAMEINFO* pCur,FRAMEINFO *pRef, int32_t time_base)
 {
 
 	pCur->ticks = (int32_t)pCur->stamp % time_base;
-		pCur->seconds =  ((int32_t)pCur->stamp / time_base)	- ((int32_t)pRef->stamp / time_base) ;
+	pCur->seconds =  ((int32_t)pCur->stamp / time_base)	- ((int32_t)pRef->stamp / time_base) ;
 
-		/* HEAVY DEBUG OUTPUT remove when timecodes prove to be stable */
-
-/*		fprintf(stderr,"WriteVop:   %d - %d \n",
+#if 0 	/* HEAVY DEBUG OUTPUT */
+	fprintf(stderr,"WriteVop:   %d - %d \n",
 			((int32_t)pCur->stamp / time_base), ((int32_t)pRef->stamp / time_base));
-		fprintf(stderr,"set_timecodes: VOP %1d   stamp=%lld ref_stamp=%lld  base=%d\n",
+	fprintf(stderr,"set_timecodes: VOP %1d   stamp=%lld ref_stamp=%lld  base=%d\n",
 			pCur->coding_type, pCur->stamp, pRef->stamp, time_base);
-		fprintf(stderr,"set_timecodes: VOP %1d   seconds=%d   ticks=%d   (ref-sec=%d  ref-tick=%d)\n",
+	fprintf(stderr,"set_timecodes: VOP %1d   seconds=%d   ticks=%d   (ref-sec=%d  ref-tick=%d)\n",
 			pCur->coding_type, pCur->seconds, pCur->ticks, pRef->seconds, pRef->ticks);
-
-*/
+#endif
 }
 
+static int
+gcd(int a, int b)
+{
+	int r ;
+
+	if (b > a) {
+		r = a;
+		a = b;
+		b = r;
+	}
+
+	while ((r = a % b)) {
+		a = b;
+		b = r;
+	}
+	return b;
+}
+
+static void
+simplify_par(int *par_width, int *par_height)
+{
+
+	int _par_width  = (!*par_width)  ? 1 : (*par_width<0)  ? -*par_width:  *par_width;
+	int _par_height = (!*par_height) ? 1 : (*par_height<0) ? -*par_height: *par_height;
+	int divisor = gcd(_par_width, _par_height);
+
+	_par_width  /= divisor;
+	_par_height /= divisor;
+
+	/* 2^8 precision maximum */
+	if (_par_width>255 || _par_height>255) {
+		float div;
+		emms();
+		if (_par_width>_par_height)
+			div = (float)_par_width/255;
+		else
+			div = (float)_par_height/255;
+
+		_par_width  = (int)((float)_par_width/div);
+		_par_height = (int)((float)_par_height/div);
+	}
+
+	*par_width = _par_width;
+	*par_height = _par_height;
+
+	return;
+}
 
 
 /*****************************************************************************
@@ -1222,10 +1267,9 @@ repeat:
 
 		/* ---- update vol flags at IVOP ----------- */
 		pEnc->current->vol_flags = pEnc->mbParam.vol_flags = frame->vol_flags;
+
+		/* Aspect ratio */
 		switch(frame->par) {
-		case 0:
-			pEnc->mbParam.par = XVID_PAR_11_VGA;
-			break;
 		case XVID_PAR_11_VGA:
 		case XVID_PAR_43_PAL:
 		case XVID_PAR_43_NTSC:
@@ -1235,11 +1279,16 @@ repeat:
 			pEnc->mbParam.par = frame->par;
 			break;
 		default:
-			pEnc->mbParam.par = XVID_PAR_EXT;
+			pEnc->mbParam.par = XVID_PAR_11_VGA;
 			break;
 		}
-		pEnc->mbParam.par_width = (frame->par_width)?frame->par_width:1;
-		pEnc->mbParam.par_height = (frame->par_height)?frame->par_height:1;
+
+		/* For extended PAR only, we try to sanityse/simplify par values */
+		if (pEnc->mbParam.par == XVID_PAR_EXT) {
+			pEnc->mbParam.par_width  = frame->par_width;
+			pEnc->mbParam.par_height = frame->par_height;
+			simplify_par(&pEnc->mbParam.par_width, &pEnc->mbParam.par_height);
+		}
 
 		if ((pEnc->mbParam.vol_flags & XVID_VOL_MPEGQUANT)) {
 			if (frame->quant_intra_matrix != NULL)
