@@ -1583,7 +1583,7 @@ static BOOL adv_dialog(HWND hParent, CONFIG * config, const int * dlgs, int size
 	}
 
 	psh.dwSize = sizeof(PROPSHEETHEADER);
-	psh.dwFlags = PSH_PROPSHEETPAGE | PSH_NOAPPLYNOW | PSH_NOCONTEXTHELP;
+	psh.dwFlags = PSH_PROPSHEETPAGE | PSH_NOAPPLYNOW;
 	psh.hwndParent = hParent;
 	psh.hInstance = g_hInst;
 	psh.pszCaption = (LPSTR) "XviD Configuration";
