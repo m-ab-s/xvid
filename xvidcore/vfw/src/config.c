@@ -73,6 +73,8 @@
 #define CheckDlg(hwnd,idc,value) CheckDlgButton(hwnd,idc, value?BST_CHECKED:BST_UNCHECKED)
 #define EnableDlgWindow(hwnd,idc,state) EnableWindow(GetDlgItem(hwnd,idc),state)
 
+static void zones_update(HWND hDlg, CONFIG * config);
+
 HINSTANCE g_hInst;
 HWND g_hTooltip;
 

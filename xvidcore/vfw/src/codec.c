@@ -268,11 +268,11 @@ const char type2char(int type)
 int vfw_debug(void *handle,
 			 int opt,
 			 void *param1,
-			 void **param2)
+			 void *param2)
 {
 	switch (opt) {
 	case XVID_PLG_CREATE:
-		*param2 = NULL;
+		*((void**)param2) = NULL;
 	case XVID_PLG_INFO:
 	case XVID_PLG_DESTROY:
 	case XVID_PLG_BEFORE:
@@ -849,7 +849,13 @@ LRESULT decompress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO 
 	return ICERR_OK;
 }
 
-#define REG_GET_N(X, Y, Z) { int size=sizeof(int);if(RegQueryValueEx(hKey, X, 0, 0, (LPBYTE)&Y, &size) != ERROR_SUCCESS) {Y=Z;} }
+#define REG_GET_N(X, Y, Z) \
+{ \
+	DWORD size = sizeof(int); \
+	if (RegQueryValueEx(hKey, X, 0, 0, (LPBYTE)&Y, &size) != ERROR_SUCCESS) { \
+		Y=Z; \
+	} \
+}while(0)
 
 LRESULT decompress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiOutput)
 {
