@@ -53,11 +53,13 @@
 (*CheckCandidate)((const int)(X),(const int)(Y), (D), &iDirection, data ); }
 
 static __inline int
-d_mv_bits(int x, int y, const uint32_t iFcode, const int qpel, const int rrv)
+d_mv_bits(int x, int y, const VECTOR pred, const uint32_t iFcode, const int qpel, const int rrv)
 {
 	int xb, yb;
 	if (qpel) { x *= 2; y *= 2;}
 	else if (rrv) { x = RRV_MV_SCALEDOWN(x); y = RRV_MV_SCALEDOWN(y); }
+	x = pred.x - x;
+	y = pred.y - y;
 	
 	if (x == 0) xb = 1;
 	else {
@@ -246,7 +248,7 @@ CheckCandidate16(const int x, const int y, const int Direction, int * const dir,
 		current = data->currentMV;
 		xc = x; yc = y;
 	}
-	t = d_mv_bits(x - data->predMV.x, y - data->predMV.y, data->iFcode, data->qpel && !data->qpel_precision, 0);
+	t = d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel && !data->qpel_precision, 0);
 	
 	data->temp[0] = sad16v(data->Cur, Reference, data->iEdgedWidth, data->temp + 1);
 
@@ -282,7 +284,7 @@ CheckCandidate32(const int x, const int y, const int Direction, int * const dir,
 		|| ( y > data->max_dy) || (y < data->min_dy)) return;
 
 	Reference = GetReference(x, y, 0, data);
-	t = d_mv_bits(x - data->predMV.x, y - data->predMV.y, data->iFcode, 0, 1);
+	t = d_mv_bits(x, y, data->predMV, data->iFcode, 0, 1);
 
 	data->temp[0] = sad32v_c(data->Cur, Reference, data->iEdgedWidth, data->temp + 1);
 
@@ -325,7 +327,7 @@ CheckCandidate16no4v(const int x, const int y, const int Direction, int * const 
 		Reference = GetReference(x, y, 0, data);
 		current = data->currentMV;
 	}
-	t = d_mv_bits(x - data->predMV.x, y - data->predMV.y, data->iFcode,
+	t = d_mv_bits(x, y, data->predMV, data->iFcode,
 					data->qpel && !data->qpel_precision && !data->rrv, data->rrv);
 	
 	sad = sad16(data->Cur, Reference, data->iEdgedWidth, 256*4096);
@@ -379,8 +381,8 @@ CheckCandidateInt(const int xf, const int yf, const int Direction, int * const d
 		current = data->currentMV;
 	}
 
-	t = d_mv_bits(xf - data->predMV.x, yf - data->predMV.y, data->iFcode, data->qpel && !data->qpel_precision, 0)
-		 + d_mv_bits(xb - data->bpredMV.x, yb - data->bpredMV.y, data->iFcode, data->qpel && !data->qpel_precision, 0);
+	t = d_mv_bits(xf, yf, data->predMV, data->iFcode, data->qpel && !data->qpel_precision, 0)
+		 + d_mv_bits(xb, yb, data->bpredMV, data->iFcode, data->qpel && !data->qpel_precision, 0);
 	
 	sad = sad16bi(data->Cur, ReferenceF, ReferenceB, data->iEdgedWidth);
 	sad += (data->lambda16 * t * sad)/1000;
@@ -399,6 +401,7 @@ CheckCandidateDirect(const int x, const int y, const int Direction, int * const 
 	const uint8_t *ReferenceF;
 	const uint8_t *ReferenceB;
 	VECTOR mvs, b_mvs;
+	const VECTOR zeroMV={0,0};
 
 	if (( x > 31) || ( x < -32) || ( y > 31) || (y < -32)) return;
 
@@ -431,7 +434,7 @@ CheckCandidateDirect(const int x, const int y, const int Direction, int * const 
 		if (sad > *(data->iMinSAD)) return;
 	}
 
-	sad += (data->lambda16 * d_mv_bits(x, y, 1, 0, 0) * sad)/1000;
+	sad += (data->lambda16 * d_mv_bits(x, y, zeroMV, 1, 0, 0) * sad)/1000;
 
 	if (sad < *(data->iMinSAD)) {
 		*(data->iMinSAD) = sad;
@@ -446,6 +449,7 @@ CheckCandidateDirectno4v(const int x, const int y, const int Direction, int * co
 	const uint8_t *ReferenceF;
 	const uint8_t *ReferenceB;
 	VECTOR mvs, b_mvs;
+	const VECTOR zeroMV = {0,0};
 
 	if (( x > 31) || ( x < -32) || ( y > 31) || (y < -32)) return;
 
@@ -472,7 +476,7 @@ CheckCandidateDirectno4v(const int x, const int y, const int Direction, int * co
 	ReferenceB = Interpolate16x16qpel(b_mvs.x, b_mvs.y, 1, data);
 
 	sad = sad16bi(data->Cur, ReferenceF, ReferenceB, data->iEdgedWidth);
-	sad += (data->lambda16 * d_mv_bits(x, y, 1, 0, 0) * sad)/1000;
+	sad += (data->lambda16 * d_mv_bits(x, y, zeroMV, 1, 0, 0) * sad)/1000;
 
 	if (sad < *(data->iMinSAD)) {
 		*(data->iMinSAD) = sad;
@@ -493,7 +497,7 @@ CheckCandidate8(const int x, const int y, const int Direction, int * const dir, 
 	else Reference =  GetReference(x, y, 0, data);
 
 	sad = sad8(data->Cur, Reference, data->iEdgedWidth);
-	t = d_mv_bits(x - data->predMV.x, y - data->predMV.y, data->iFcode, data->qpel && !data->qpel_precision, 0);
+	t = d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel && !data->qpel_precision, 0);
 
 	sad += (data->lambda8 * t * (sad+NEIGH_8X8_BIAS))/100;
 
@@ -997,7 +1001,7 @@ SearchP(const IMAGE * const pRef,
 	if (pParam->m_quarterpel) Data->predMV = get_qpmv2(pMBs, pParam->mb_width, 0, x, y, 0);
 	else Data->predMV = pmv[0];
 
-	i = d_mv_bits(Data->predMV.x, Data->predMV.y, Data->iFcode, 0, 0);
+	i = d_mv_bits(0, 0, Data->predMV, Data->iFcode, 0, 0);
 	Data->iMinSAD[0] = pMB->sad16 + (Data->lambda16 * i * pMB->sad16)/1000;
 	Data->iMinSAD[1] = pMB->sad8[0] + (Data->lambda8 * i * (pMB->sad8[0]+NEIGH_8X8_BIAS))/100;
 	Data->iMinSAD[2] = pMB->sad8[1];
@@ -1172,14 +1176,14 @@ Search8(const SearchData * const OldData,
 
 	if(pParam->m_quarterpel) {
 		Data->predMV = get_qpmv2(pMBs, pParam->mb_width, 0, x/2, y/2, block);
-		if (block != 0)	i = d_mv_bits(	Data->currentQMV->x - Data->predMV.x, 
-										Data->currentQMV->y - Data->predMV.y, Data->iFcode, 0, 0);
+		if (block != 0)	i = d_mv_bits(	Data->currentQMV->x, Data->currentQMV->y,
+										Data->predMV, Data->iFcode, 0, 0);
 
 	} else {
 		Data->predMV = get_pmv2(pMBs, pParam->mb_width, 0, x/2, y/2, block);
 		if (block != 0) {
-			if (block != 0)	i = d_mv_bits(	Data->currentMV->x - Data->predMV.x, 
-											Data->currentMV->y - Data->predMV.y, Data->iFcode, 0, Data->rrv);
+			if (block != 0)	i = d_mv_bits(	Data->currentMV->x, Data->currentMV->y,
+											Data->predMV, Data->iFcode, 0, Data->rrv);
 		}
 	}
 
