@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.1 2003-02-22 08:49:44 suxen_drol Exp $
+ * $Id: xvid.h,v 1.27.2.3 2003-03-10 00:43:31 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -283,6 +283,7 @@ typedef enum
 /* vol-based flags */
 typedef enum {
     XVID_MPEGQUANT          = 0x00000001,
+	XVID_H263QUANT          = 0x00000002,
     XVID_QUARTERPEL	        = 0x00000004,	/* enable quarterpel: frames will encoded as quarterpel */
     XVID_GMC			    = 0x00000008,	/* enable GMC; frames will be checked for gmc suitability */
     XVID_REDUCED_ENABLE	    = 0x00000010,	/* enable reduced resolution vops: frames will be checked for rrv suitability */
@@ -449,8 +450,6 @@ xvid_enc_frame_t;
 /* XVID_ENC_ENCODE param2 (optional)
 	xvid_enc_stats_t describes individual frame details 
 	
-	when bframes>0, you must pass _two_ of these to xvid_encore()
-	ie. xstats[2]; xvid_encore(..., xstats)
 	coding_type==XVID_TYPE_NOTHING if the stats are not given 
 */
 typedef struct {
