@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass1.c,v 1.1.2.13 2003-12-20 15:38:13 syskin Exp $
+ * $Id: plugin_2pass1.c,v 1.1.2.14 2003-12-20 22:22:26 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -34,6 +34,9 @@
 #include "../image/image.h"
 
 
+/* This preprocessor constant controls wheteher or not, first pass is done
+ * using fast ME routines to speed up the 2pass process at the expense of
+ * less precise first pass stats */
 #define FAST1PASS
 
 
@@ -128,6 +131,9 @@ static int rc_2pass1_before(rc_2pass1_t * rc, xvid_plg_data_t * data)
 {
 	 if (data->quant <= 0) {
 		if (data->zone && data->zone->mode == XVID_ZONE_QUANT) {
+			/* We disable no options in quant zones, as their implementation is
+			 * based on the fact we do first pass exactly the same way as the
+			 * second one to have exact zone size */
 			rc->fq_error += (double)data->zone->increment / (double)data->zone->base;
 			data->quant = (int)rc->fq_error;
 			rc->fq_error -= data->quant;
@@ -135,16 +141,36 @@ static int rc_2pass1_before(rc_2pass1_t * rc, xvid_plg_data_t * data)
 			data->quant = 2;
 
 #ifdef FAST1PASS
+			/* Given the fact our 2pass algorithm is based on very simple
+			 * rules, we can disable some options that are too CPU intensive
+			 * and do not provide the 2nd pass any benefit */
 
-			data->motion_flags &= ~(XVID_ME_CHROMA_PVOP + XVID_ME_CHROMA_BVOP + XVID_ME_USESQUARES16
-									+ XVID_ME_ADVANCEDDIAMOND16 + XVID_ME_EXTSEARCH16);
-			
-			data->motion_flags |= XVID_ME_FAST_MODEINTERPOLATE + XVID_ME_SKIP_DELTASEARCH
-									+ XVID_ME_FASTREFINE16 + XVID_ME_BFRAME_EARLYSTOP;
+			/* First disable some motion flags */
+			data->motion_flags &= ~XVID_ME_CHROMA_PVOP;
+			data->motion_flags &= ~XVID_ME_CHROMA_BVOP;
+			data->motion_flags &= ~XVID_ME_USESQUARES16;
+			data->motion_flags &= ~XVID_ME_ADVANCEDDIAMOND16;
+			data->motion_flags &= ~XVID_ME_EXTSEARCH16;
 
-			data->vop_flags &= ~(XVID_VOP_MODEDECISION_RD + XVID_VOP_FAST_MODEDECISION_RD
-								+ XVID_VOP_TRELLISQUANT + XVID_VOP_INTER4V + XVID_VOP_HQACPRED);
+			/* And enable fast replacements */
+			data->motion_flags |= XVID_ME_FAST_MODEINTERPOLATE;
+			data->motion_flags |= XVID_ME_SKIP_DELTASEARCH;
+			data->motion_flags |= XVID_ME_FASTREFINE16;
+			data->motion_flags |= XVID_ME_BFRAME_EARLYSTOP;
 
+			/* Now VOP flags (no fast replacements) */
+			data->vop_flags &= ~XVID_VOP_MODEDECISION_RD;
+			data->vop_flags &= ~XVID_VOP_FAST_MODEDECISION_RD;
+			data->vop_flags &= ~XVID_VOP_TRELLISQUANT;
+			data->vop_flags &= ~XVID_VOP_INTER4V;
+			data->vop_flags &= ~XVID_VOP_HQACPRED;
+
+			/* Finnaly VOL flags
+			 *
+			 * NB: Qpel cannot be disable because this option really changes
+			 *     too much the texture data compressibility, and thus the
+			 *     second pass gets confused by too much impredictability
+			 *     of frame sizes, and actually hurts quality */
 			data->vol_flags &= ~XVID_VOL_GMC;
 #endif
 		}
