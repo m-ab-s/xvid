@@ -14,25 +14,6 @@
 #define SIGN(X) (((X)>0)?1:-1)
 
 
-// decode an inter macroblock
-
-static void
-rrv_mv_scaleup(VECTOR * mv)
-{
-	if (mv->x > 0) {
-		mv->x = 2*mv->x - 1;
-	} else if (mv->x < 0) {
-		mv->x = 2*mv->x + 1;
-	}
-
-	if (mv->y > 0) {
-		mv->y = 2*mv->y - 1;
-	} else if (mv->y < 0) {
-		mv->y = 2*mv->y + 1;
-	}
-}
-
-
 static __inline void
 compensate16x16_interpolate(int16_t * const dct_codes,
 			  			    uint8_t * const cur,
@@ -52,105 +33,24 @@ compensate16x16_interpolate(int16_t * const dct_codes,
 	
 	if (reduced_resolution)
 	{
+		const uint8_t * reference;
+		x*=2; y*=2;
 
-		/* XXX: todo */
-
-		VECTOR mv;
-		int i,j;
-		uint8_t tmp[18*18];
-
-		x*=2;
-		y*=2;
-
-		mv.x = dx;
-		mv.y = dy;
-		rrv_mv_scaleup(&mv);
-
-		interpolate32x32_switch(
-			refv, ref, x, y, mv.x, mv.y, stride, rounding);
-
-		for (j = 0; j < 32; j++)
-		for (i = 0; i < 32; i++)
-			cur[(y+j)*stride + x + i] -= refv[(y+j)*stride + x + i];
-
-		filter_18x18_to_8x8(dct_codes,     cur + y*stride + x, stride);
-		filter_18x18_to_8x8(dct_codes+64,  cur + y*stride + x + 16, stride);
-		filter_18x18_to_8x8(dct_codes+128, cur + (y+16)*stride + x, stride);
-		filter_18x18_to_8x8(dct_codes+192, cur + (y+16)*stride + x + 16, stride);
-
-		/*
-		for (j = 0; j < 16; j++)
-		for (i = 0; i < 16; i++)
-			tmp[(j+1)*18 + i+1] = refv[ (y+j)*stride + x+i];
-
-		for (i = 1; i < 17; i++)
-		{
-			tmp[ 0*18 + i] = tmp[ 1*18 + i];
-			tmp[17*18 + i] = tmp[16*18 + i];
-		}
-
-		for (i = 0; i < 18; i++)
-		{
-			tmp[ i*18 + 0] = tmp[i*18 + 1];
-			tmp[ i*18 + 17] = tmp[i*18 + 16];
-		}
-		filter_18x18_to_8x8(dct_codes, tmp, 18);
-
-
-		for (j = 0; j < 16; j++)
-		for (i = 0; i < 16; i++)
-			tmp[(j+1)*18 + i+1] = refv[ (y+j)*stride + x+i + 16];
-
-		for (i = 1; i < 17; i++)
-		{
-			tmp[ 0*18 + i] = tmp[ 1*18 + i];
-			tmp[17*18 + i] = tmp[16*18 + i];
-		}
-
-		for (i = 0; i < 18; i++)
-		{
-			tmp[ i*18 + 0] = tmp[i*18 + 1];
-			tmp[ i*18 + 17] = tmp[i*18 + 16];
-		}
-		filter_18x18_to_8x8(dct_codes+64, tmp, 18);
-
-		for (j = 0; j < 16; j++)
-		for (i = 0; i < 16; i++)
-			tmp[(j+1)*18 + i+1] = refv[ (y+16+j)*stride + x+i];
-
-		for (i = 1; i < 17; i++)
-		{
-			tmp[ 0*18 + i] = tmp[ 1*18 + i];
-			tmp[17*18 + i] = tmp[16*18 + i];
-		}
-
-		for (i = 0; i < 18; i++)
-		{
-			tmp[ i*18 + 0] = tmp[i*18 + 1];
-			tmp[ i*18 + 17] = tmp[i*18 + 16];
-		}
-		filter_18x18_to_8x8(dct_codes+128, tmp, 18);
-
-		for (j = 0; j < 16; j++)
-		for (i = 0; i < 16; i++)
-			tmp[(j+1)*18 + i+1] = refv[ (y+16+j)*stride + x+i + 16];
-
-		for (i = 1; i < 17; i++)
-		{
-			tmp[ 0*18 + i] = tmp[ 1*18 + i];
-			tmp[17*18 + i] = tmp[16*18 + i];
-		}
-
-		for (i = 0; i < 18; i++)
-		{
-			tmp[ i*18 + 0] = tmp[i*18 + 1];
-			tmp[ i*18 + 17] = tmp[i*18 + 16];
-		}
-		filter_18x18_to_8x8(dct_codes+192, tmp, 18);
-		*/
+		reference = get_ref(ref, refh, refv, refhv, x, y, 1, dx, dy, stride);
 		
-	
-		//memset(dct_codes, 0, sizeof(uint16_t) * 64 * 4);
+		filter_18x18_to_8x8(dct_codes, cur+y*stride + x, stride);
+		filter_diff_18x18_to_8x8(dct_codes, reference, stride);
+
+		filter_18x18_to_8x8(dct_codes+64, cur+y*stride + x + 16, stride);
+		filter_diff_18x18_to_8x8(dct_codes+64, reference + 16, stride);
+
+		filter_18x18_to_8x8(dct_codes+128, cur+(y+16)*stride + x, stride);
+		filter_diff_18x18_to_8x8(dct_codes+128, reference + 16*stride, stride);
+
+		filter_18x18_to_8x8(dct_codes+192, cur+(y+16)*stride + x + 16, stride);
+		filter_diff_18x18_to_8x8(dct_codes+192, reference + 16*stride + 16, stride);
+
+		transfer32x32_copy(cur + y*stride + x, reference, stride);
 
 	}else{
 		if(quarterpel) {
@@ -169,16 +69,8 @@ compensate16x16_interpolate(int16_t * const dct_codes,
 		}
 		else
 		{
-			const uint8_t * reference;
+			const uint8_t * reference = get_ref(ref, refh, refv, refhv, x, y, 1, dx, dy, stride);
 
-			switch (((dx & 1) << 1) + (dy & 1))	// ((dx%2)?2:0)+((dy%2)?1:0)
-			{
-			case 0:	reference = ref + ((y + dy / 2) * stride + x + dx / 2); break;
-			case 1:	reference = refv + ((y + (dy-1) / 2) * stride + x + dx / 2); break;
-			case 2: reference = refh + ((y + dy / 2) * stride + x + (dx-1) / 2); break;
-			default:					// case 3:
-				reference = refhv + ((y + (dy-1) / 2) * stride + x + (dx-1) / 2); break;
-			}
 			transfer_8to16sub(dct_codes, cur + y * stride + x,
 								  reference, stride);
 			transfer_8to16sub(dct_codes+64, cur + y * stride + x + 8,
@@ -198,8 +90,8 @@ compensate8x8_interpolate(int16_t * const dct_codes,
 						  const uint8_t * const refh,
 						  const uint8_t * const refv,
 						  const uint8_t * const refhv,
-						  const uint32_t x,
-						  const uint32_t y,
+						  uint32_t x,
+						  uint32_t y,
 						  const int32_t dx,
 						  const int32_t dy,
 						  const uint32_t stride,
@@ -209,7 +101,16 @@ compensate8x8_interpolate(int16_t * const dct_codes,
 {
 	if (reduced_resolution)
 	{
-		// XXX: todo
+		const uint8_t * reference;
+		x*=2; y*=2;
+
+		reference = get_ref(ref, refh, refv, refhv, x, y, 1, dx, dy, stride);
+
+		filter_18x18_to_8x8(dct_codes, cur+y*stride + x, stride);
+		filter_diff_18x18_to_8x8(dct_codes, reference, stride);
+		
+		transfer16x16_copy(cur + y*stride + x, reference, stride);
+
 	} else {
 		
 		if(quarterpel) {
@@ -221,16 +122,8 @@ compensate8x8_interpolate(int16_t * const dct_codes,
 		}
 		else
 		{
-			const uint8_t * reference;
+			const uint8_t * reference = get_ref(ref, refh, refv, refhv, x, y, 1, dx, dy, stride);
 
-			switch (((dx & 1) << 1) + (dy & 1))	// ((dx%2)?2:0)+((dy%2)?1:0)
-			{
-			case 0:	reference = ref + ((y + dy / 2) * stride + x + dx / 2); break;
-			case 1:	reference = refv + ((y + (dy-1) / 2) * stride + x + dx / 2); break;
-			case 2: reference = refh + ((y + dy / 2) * stride + x + (dx-1) / 2); break;
-			default:					// case 3:
-				reference = refhv + ((y + (dy-1) / 2) * stride + x + (dx-1) / 2); break;
-			}
 			transfer_8to16sub(dct_codes, cur + y * stride + x,
 								  reference, stride);
 		}
@@ -275,6 +168,12 @@ MBMotionCompensation(MACROBLOCK * const mb,
 		}
 	/* quick MODE_NOT_CODED for GMC with MV!=(0,0) is still needed */
 
+		if (reduced_resolution)
+		{
+			dx = RRV_MV_SCALEUP(dx);
+			dy = RRV_MV_SCALEUP(dy);
+		}
+
 		compensate16x16_interpolate(&dct_codes[0 * 64], cur->y, ref->y, refh->y,
 						  refv->y, refhv->y, 16 * i, 16 * j, dx, dy,
 						  edged_width, quarterpel, reduced_resolution, rounding);
@@ -288,10 +187,27 @@ MBMotionCompensation(MACROBLOCK * const mb,
 		dx = (dx >> 1) + roundtab_79[dx & 0x3];
 		dy = (dy >> 1) + roundtab_79[dy & 0x3];
 
-		/* uv-block-based compensation */
+		/* uv-block-based compensation
+			XXX: rrv doesnt work with 16x16 block-based intepolation.
+			we need to use 18x18-block interpolation */
 		if (reduced_resolution)
 		{
-			// XXX: todo
+			const stride = edged_width/2;
+			uint8_t * current, * reference;
+ 			
+			current = cur->u + 16*j*stride + 16*i;
+			reference = refv->u + 16*j*stride + 16*i;
+			interpolate16x16_switch(refv->u, ref->u, 16*i, 16*j, dx, dy, stride, rounding);
+			filter_18x18_to_8x8(dct_codes + 4*64, current, stride);
+			filter_diff_18x18_to_8x8(dct_codes + 4*64, reference, stride);
+			transfer16x16_copy(current, reference, stride);
+
+			current = cur->v + 16*j*stride + 16*i;
+			reference = refv->v + 16*j*stride + 16*i;
+			interpolate16x16_switch(refv->v, ref->v, 16*i, 16*j, dx, dy, stride, rounding);
+			filter_18x18_to_8x8(dct_codes + 5*64, current, stride);
+			filter_diff_18x18_to_8x8(dct_codes + 5*64, reference, stride);
+			transfer16x16_copy(current, reference, stride);
 		}else{
 			transfer_8to16sub(&dct_codes[4 * 64],
 								cur->u + 8 * j * edged_width / 2 + 8 * i,
@@ -307,32 +223,36 @@ MBMotionCompensation(MACROBLOCK * const mb,
 		}
 
 	} else {					// mode == MODE_INTER4V
+		int i;
 		int32_t sum, dx, dy;
-		VECTOR *mvs;
+		VECTOR mvs[4];
 
 		if(quarterpel)
-			mvs = mb->qmvs;
+			for (i = 0; i < 4; i++)	mvs[i] = mb->qmvs[i];
 		else
-			mvs = mb->mvs;
+			for (i = 0; i < 4; i++)	mvs[i] = mb->mvs[i];
 
 		if (reduced_resolution)
 		{
-			///XXX: todo
-		}else{
-
-			compensate8x8_interpolate(&dct_codes[0 * 64], cur->y, ref->y, refh->y,
-							  refv->y, refhv->y, 16 * i, 16 * j, mvs[0].x,
-							  mvs[0].y, edged_width, quarterpel, reduced_resolution, rounding);
-			compensate8x8_interpolate(&dct_codes[1 * 64], cur->y, ref->y, refh->y,
-								  refv->y, refhv->y, 16 * i + 8, 16 * j,
-								  mvs[1].x, mvs[1].y, edged_width, quarterpel, reduced_resolution, rounding);
-			compensate8x8_interpolate(&dct_codes[2 * 64], cur->y, ref->y, refh->y,
-								  refv->y, refhv->y, 16 * i, 16 * j + 8,
-								  mvs[2].x, mvs[2].y, edged_width, quarterpel, reduced_resolution, rounding);
-			compensate8x8_interpolate(&dct_codes[3 * 64], cur->y, ref->y, refh->y,
-								  refv->y, refhv->y, 16 * i + 8, 16 * j + 8,
-								  mvs[3].x, mvs[3].y, edged_width, quarterpel, reduced_resolution, rounding);
+			for (i = 0; i < 4; i++)
+			{
+				mvs[i].x = RRV_MV_SCALEUP(mvs[i].x);
+				mvs[i].y = RRV_MV_SCALEUP(mvs[i].y);
+			}
 		}
+
+		compensate8x8_interpolate(&dct_codes[0 * 64], cur->y, ref->y, refh->y,
+						  refv->y, refhv->y, 16 * i, 16 * j, mvs[0].x,
+						  mvs[0].y, edged_width, quarterpel, reduced_resolution, rounding);
+		compensate8x8_interpolate(&dct_codes[1 * 64], cur->y, ref->y, refh->y,
+							  refv->y, refhv->y, 16 * i + 8, 16 * j,
+							  mvs[1].x, mvs[1].y, edged_width, quarterpel, reduced_resolution, rounding);
+		compensate8x8_interpolate(&dct_codes[2 * 64], cur->y, ref->y, refh->y,
+							  refv->y, refhv->y, 16 * i, 16 * j + 8,
+							  mvs[2].x, mvs[2].y, edged_width, quarterpel, reduced_resolution, rounding);
+		compensate8x8_interpolate(&dct_codes[3 * 64], cur->y, ref->y, refh->y,
+							  refv->y, refhv->y, 16 * i + 8, 16 * j + 8,
+							  mvs[3].x, mvs[3].y, edged_width, quarterpel, reduced_resolution, rounding);
 
 		if(quarterpel)
 			sum = (mvs[0].x / 2) + (mvs[1].x / 2) + (mvs[2].x / 2) + (mvs[3].x / 2);
@@ -348,10 +268,29 @@ MBMotionCompensation(MACROBLOCK * const mb,
 
 		dy = (sum >> 3) + roundtab_76[sum & 0xf];
 
-		/* uv-block-based compensation */
+
+		/* uv-block-based compensation
+			XXX: rrv doesnt work with 16x16 block-based intepolation.
+			we need to use 18x18-block interpolation */
 		if (reduced_resolution)
 		{
-			//XXX: todo
+			const stride = edged_width/2;
+			uint8_t * current, * reference;
+ 			
+			current = cur->u + 16*j*stride + 16*i;
+			reference = refv->u + 16*j*stride + 16*i;
+			interpolate16x16_switch(refv->u, ref->u, 16*i, 16*j, dx, dy, stride, rounding);
+			filter_18x18_to_8x8(dct_codes + 4*64, current, stride);
+			filter_diff_18x18_to_8x8(dct_codes + 4*64, reference, stride);
+			transfer16x16_copy(current, reference, stride);
+
+			current = cur->v + 16*j*stride + 16*i;
+			reference = refv->v + 16*j*stride + 16*i;
+			interpolate16x16_switch(refv->v, ref->v, 16*i, 16*j, dx, dy, stride, rounding);
+			filter_18x18_to_8x8(dct_codes + 5*64, current, stride);
+			filter_diff_18x18_to_8x8(dct_codes + 5*64, reference, stride);
+			transfer16x16_copy(current, reference, stride);
+
 		}else{
 			transfer_8to16sub(&dct_codes[4 * 64],
 								cur->u + 8 * j * edged_width / 2 + 8 * i,

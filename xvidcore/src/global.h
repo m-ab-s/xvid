@@ -22,6 +22,14 @@
 #define MODE_DIRECT_NONE_MV	4
 #define MODE_DIRECT_NO4V	5
 
+typedef struct
+{
+	uint8_t *y;
+	uint8_t *u;
+	uint8_t *v;
+}
+IMAGE;
+
 
 typedef struct
 {

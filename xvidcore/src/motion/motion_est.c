@@ -708,6 +708,9 @@ MotionEstimation(MBParam * const pParam,
 
 	const VECTOR zeroMV = { 0, 0 };
 
+	int mb_width = pParam->mb_width;
+	int mb_height = pParam->mb_height;
+
 	uint32_t x, y;
 	uint32_t iIntra = 0;
 	int32_t InterBias, quant = current->quant, sad00;
@@ -729,6 +732,12 @@ MotionEstimation(MBParam * const pParam,
 	Data.qpel = pParam->m_quarterpel;
 	Data.chroma = current->global_flags & XVID_ME_COLOUR;
 
+	if ((current->global_flags & XVID_REDUCED))
+	{
+		mb_width = (pParam->width + 31) / 32;
+		mb_height = (pParam->height + 31) / 32;
+	}
+
 	if((qimage = (uint8_t *) malloc(32 * pParam->edged_width)) == NULL)
 		return 1; // allocate some mem for qpel interpolated blocks
 				  // somehow this is dirty since I think we shouldn't use malloc outside
@@ -736,8 +745,8 @@ MotionEstimation(MBParam * const pParam,
 	Data.RefQ = qimage;
 	if (sadInit) (*sadInit) ();
 
-	for (y = 0; y < pParam->mb_height; y++)	{
-		for (x = 0; x < pParam->mb_width; x++)	{
+	for (y = 0; y < mb_height; y++)	{
+		for (x = 0; x < mb_width; x++)	{
 			MACROBLOCK *pMB = &pMBs[x + y * pParam->mb_width];
 			
 			pMB->sad16 
@@ -2053,6 +2062,9 @@ MEanalysis(	const IMAGE * const pRef,
 			int intraCount, //number of non-I frames after last I frame; 0 if we force P/B frame
 			int bCount) // number if B frames in a row
 {
+	int mb_width = pParam->mb_width;
+	int mb_height = pParam->mb_height;
+
 	uint32_t x, y, intra = 0;
 	int sSAD = 0;
 	MACROBLOCK * const pMBs = Current->mbs;
@@ -2068,6 +2080,13 @@ MEanalysis(	const IMAGE * const pRef,
 	Data.iFcode = Current->fcode;
 	CheckCandidate = CheckCandidate16no4vI;
 
+	if ((Current->global_flags & XVID_REDUCED))
+	{
+		mb_width = (pParam->width + 31) / 32;
+		mb_height = (pParam->height + 31) / 32;
+	}
+
+
 	if (intraCount < 10) // we're right after an I frame
 		IntraThresh += 4 * (intraCount - 10) * (intraCount - 10);
 	else
@@ -2080,8 +2099,8 @@ MEanalysis(	const IMAGE * const pRef,
 
 	if (sadInit) (*sadInit) ();
 
-	for (y = 1; y < pParam->mb_height-1; y++) {
-		for (x = 1; x < pParam->mb_width-1; x++) {
+	for (y = 1; y < mb_height-1; y++) {
+		for (x = 1; x < mb_width-1; x++) {
 			int sad, dev;
 			MACROBLOCK *pMB = &pMBs[x + y * pParam->mb_width];
 
@@ -2093,13 +2112,13 @@ MEanalysis(	const IMAGE * const pRef,
 							  pParam->edged_width);
 				if (dev + IntraThresh < sad) {
 					pMB->mode = MODE_INTRA;
-					if (++intra > (pParam->mb_height-2)*(pParam->mb_width-2)/2) return 2;  // I frame
+					if (++intra > (mb_height-2)*(mb_width-2)/2) return 2;  // I frame
 				}
 			}
 			sSAD += sad;
 		}
 	}
-	sSAD /= (pParam->mb_height-2)*(pParam->mb_width-2);
+	sSAD /= (mb_height-2)*(mb_width-2);
 	if (sSAD > InterThresh ) return 1; //P frame
 	emms();
 	return 0; // B frame
@@ -2110,11 +2129,22 @@ int
 FindFcode(	const MBParam * const pParam,
 			const FRAMEINFO * const current)
 {
+	int mb_width = pParam->mb_width;
+	int mb_height = pParam->mb_height;
+
 	uint32_t x, y;
 	int max = 0, min = 0, i;
 
-	for (y = 0; y < pParam->mb_height; y++) {
-		for (x = 0; x < pParam->mb_width; x++) {
+
+	if ((current->global_flags & XVID_REDUCED))
+	{
+		mb_width = (pParam->width + 31) / 32;
+		mb_height = (pParam->height + 31) / 32;
+	}
+
+
+	for (y = 0; y < mb_height; y++) {
+		for (x = 0; x < mb_width; x++) {
 		
 			MACROBLOCK *pMB = &current->mbs[x + y * pParam->mb_width];
 			for(i = 0; i < (pMB->mode == MODE_INTER4V ? 4:1); i++) {

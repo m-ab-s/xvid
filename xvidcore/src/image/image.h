@@ -2,19 +2,11 @@
 #define _IMAGE_H_
 
 #include "../portab.h"
+#include "../global.h"
 #include "colorspace.h"
 #include "../xvid.h"
 
 #define EDGE_SIZE  64
-
-
-typedef struct
-{
-	uint8_t *y;
-	uint8_t *u;
-	uint8_t *v;
-}
-IMAGE;
 
 void init_image(uint32_t cpu_flags);
 
@@ -93,5 +85,11 @@ float image_mad(const IMAGE * img1,
 
 void
 output_slice(IMAGE * cur, int edged_width, int width, XVID_DEC_PICTURE* out_frm, int mbx, int mby,int mbl);
+
+
+void
+image_deblock_rrv(IMAGE * img, int edgeg_width,
+				const MACROBLOCK * mbs, int mb_width, int mb_height, int mb_stride);
+
 
 #endif							/* _IMAGE_H_ */

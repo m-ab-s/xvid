@@ -59,6 +59,7 @@
 #include "image.h"
 #include "colorspace.h"
 #include "interpolate8x8.h"
+#include "reduced.h"
 #include "../divx4.h"
 #include "../utils/mem_align.h"
 
@@ -1054,4 +1055,69 @@ output_slice(IMAGE * cur, int std, int width, XVID_DEC_PICTURE* out_frm, int mbx
     dV += out_frm->stride_v;
     sV += std2;
   }
+}
+
+
+/* reduced resolution deblocking filter */
+void
+image_deblock_rrv(IMAGE * img, int edged_width,
+				const MACROBLOCK * mbs, int mb_width, int mb_height, int mb_stride)
+{
+	const int edged_width2 = edged_width /2;
+	int i,j;
+
+	/* horizontal deblocking */
+
+	for (j = 1; j < mb_height*2; j++)	// luma: j,i in block units
+	for (i = 0; i < mb_width*2; i++)
+	{
+		if (mbs[(j-1)/2*mb_stride + (i/2)].mode != MODE_NOT_CODED ||
+			mbs[(j+0)/2*mb_stride + (i/2)].mode != MODE_NOT_CODED)
+		{
+			xvid_HFilter_31_C(img->y + (j*16 - 1)*edged_width + i*16,
+							  img->y + (j*16 + 0)*edged_width + i*16, 2);
+		}
+	}
+
+	for (j = 1; j < mb_height; j++)	// chroma
+	for (i = 0; i < mb_width; i++)
+	{
+		if (mbs[(j-1)*mb_stride + i].mode != MODE_NOT_CODED || 
+			mbs[(j+0)*mb_stride + i].mode != MODE_NOT_CODED)
+		{
+			hfilter_31(img->u + (j*16 - 1)*edged_width2 + i*16,
+					   img->u + (j*16 + 0)*edged_width2 + i*16, 2);
+			hfilter_31(img->v + (j*16 - 1)*edged_width2 + i*16,
+					   img->v + (j*16 + 0)*edged_width2 + i*16, 2);
+		}
+	}
+
+	/* vertical deblocking */
+
+	for (j = 0; j < mb_height*2; j++)		// luma: i,j in block units
+	for (i = 1; i < mb_width*2; i++)
+	{
+		if (mbs[(j/2)*mb_stride + (i-1)/2].mode != MODE_NOT_CODED ||
+			mbs[(j/2)*mb_stride + (i+0)/2].mode != MODE_NOT_CODED)
+		{
+			vfilter_31(img->y + (j*16)*edged_width + i*16 - 1,
+					   img->y + (j*16)*edged_width + i*16 + 0,
+					   edged_width, 2);
+		}
+	}
+
+	for (j = 0; j < mb_height; j++)	// chroma
+	for (i = 1; i < mb_width; i++)
+	{
+		if (mbs[j*mb_stride + i - 1].mode != MODE_NOT_CODED ||
+			mbs[j*mb_stride + i + 0].mode != MODE_NOT_CODED) 
+		{
+			vfilter_31(img->u + (j*16)*edged_width2 + i*16 - 1,
+					   img->u + (j*16)*edged_width2 + i*16 + 0,
+					   edged_width2, 2);
+			vfilter_31(img->v + (j*16)*edged_width2 + i*16 - 1,
+					   img->v + (j*16)*edged_width2 + i*16 + 0,
+					   edged_width2, 2);
+		}
+	}
 }

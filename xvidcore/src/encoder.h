@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.18.2.7 2002-12-09 10:47:05 suxen_drol Exp $
+ *  $Id: encoder.h,v 1.18.2.8 2002-12-10 11:13:50 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -46,7 +46,6 @@
 #include "xvid.h"
 #include "portab.h"
 #include "global.h"
-#include "image/image.h"
 #include "utils/ratecontrol.h"
 
 /*****************************************************************************

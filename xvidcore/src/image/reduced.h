@@ -43,4 +43,8 @@ extern FILTER_DIFF_18X18_TO_8X8 * filter_diff_18x18_to_8x8;
 extern FILTER_DIFF_18X18_TO_8X8 xvid_Filter_Diff_18x18_To_8x8_C;
 extern FILTER_DIFF_18X18_TO_8X8 xvid_Filter_Diff_18x18_To_8x8_mmx;
 
+
+/* rrv motion vector scale-up */
+#define RRV_MV_SCALEUP(a)	( (a)>0 ? 2*(a)-1 : (a)<0 ? 2*(a)+1 : (a) )
+
 #endif /* _REDUCED_H_ */

@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.26 2002-12-09 10:47:05 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.76.2.27 2002-12-10 11:13:50 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -1590,6 +1590,11 @@ FrameCodeI(Encoder * pEnc,
 			stop_coding_timer();
 		}
 
+	if ((pEnc->current->global_flags & XVID_REDUCED))
+	{
+		image_deblock_rrv(&pEnc->current->image, pEnc->mbParam.edged_width, 
+			pEnc->current->mbs, mb_width, mb_height, pEnc->mbParam.mb_width);
+	}
 	emms();
 
 	*pBits = BitstreamPos(bs) - *pBits;
@@ -1632,13 +1637,10 @@ FrameCodeP(Encoder * pEnc,
 
 	if ((pEnc->current->global_flags & XVID_REDUCED))
 	{
-		// mb_width = (pEnc->mbParam.width + 31) / 32;
-		// mb_height = (pEnc->mbParam.height + 31) / 32;
-
-		/* XXX: reduced resoltion not yet supported */
-		pEnc->current->global_flags &= ~XVID_REDUCED;	
+		mb_width = (pEnc->mbParam.width + 31) / 32;
+		mb_height = (pEnc->mbParam.height + 31) / 32;
 	}
-	
+
 
 	start_timer();
 	image_setedges(pRef, pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
@@ -1834,6 +1836,12 @@ FrameCodeP(Encoder * pEnc,
 		}
 	}
 
+	if ((pEnc->current->global_flags & XVID_REDUCED))
+	{
+		image_deblock_rrv(&pEnc->current->image, pEnc->mbParam.edged_width, 
+			pEnc->current->mbs, mb_width, mb_height, pEnc->mbParam.mb_width);
+	}
+
 	emms();
 
 	if (pEnc->current->global_flags & XVID_HINTEDME_GET) {
@@ -1899,8 +1907,9 @@ FrameCodeP(Encoder * pEnc,
 		image_dump_yuvpgm(&pEnc->reference->image, 
 			pEnc->mbParam.edged_width,
 			pEnc->mbParam.width, pEnc->mbParam.height, s);
-	}
+	} 
 	*/
+
 
 	*pBits = BitstreamPos(bs) - *pBits;
 

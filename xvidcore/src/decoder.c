@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.17 2002-12-09 10:47:05 suxen_drol Exp $
+ *  $Id: decoder.c,v 1.37.2.18 2002-12-10 11:13:50 suxen_drol Exp $
  *
  *************************************************************************/
 
@@ -389,24 +389,6 @@ decoder_mbintra(DECODER * dec,
 
 // decode an inter macroblock
 
-static void
-rrv_mv_scaleup(VECTOR * mv)
-{
-	if (mv->x > 0) {
-		mv->x = 2*mv->x - 1;
-	} else if (mv->x < 0) {
-		mv->x = 2*mv->x + 1;
-	}
-
-	if (mv->y > 0) {
-		mv->y = 2*mv->y - 1;
-	} else if (mv->y < 0) {
-		mv->y = 2*mv->y + 1;
-	}
-}
-
-
-
 void
 decoder_mbinter(DECODER * dec,
 				const MACROBLOCK * pMB,
@@ -431,26 +413,22 @@ decoder_mbinter(DECODER * dec,
 	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
 
 	int uv_dx, uv_dy;
-	VECTOR mv[4];
-
-	for (i = 0; i < 4; i++)
-	{
-		mv[i] = pMB->mvs[i];
-		//DPRINTF(DPRINTF_MB, "mv[%i]   orig=%i,%i   local=%i", i, pMB->mvs[i].x, pMB->mvs[i].y,						mv[i].x, mv[i].y);
-	}
+	VECTOR mv[4];	/* local copy of mvs */
 
 	if (reduced_resolution) {
 		pY_Cur = dec->cur.y + (y_pos << 5) * stride + (x_pos << 5);
 		pU_Cur = dec->cur.u + (y_pos << 4) * stride2 + (x_pos << 4);
 		pV_Cur = dec->cur.v + (y_pos << 4) * stride2 + (x_pos << 4);
-		rrv_mv_scaleup(&mv[0]);
-		rrv_mv_scaleup(&mv[1]);
-		rrv_mv_scaleup(&mv[2]);
-		rrv_mv_scaleup(&mv[3]);
+		for (i = 0; i < 4; i++)	{
+			mv[i].x = RRV_MV_SCALEUP(pMB->mvs[i].x);
+			mv[i].y = RRV_MV_SCALEUP(pMB->mvs[i].y);
+		}
 	}else{
 		pY_Cur = dec->cur.y + (y_pos << 4) * stride + (x_pos << 4);
 		pU_Cur = dec->cur.u + (y_pos << 3) * stride2 + (x_pos << 3);
 		pV_Cur = dec->cur.v + (y_pos << 3) * stride2 + (x_pos << 3);
+		for (i = 0; i < 4; i++)
+			mv[i] = pMB->mvs[i];
 	}
 
 	if (pMB->mode == MODE_INTER || pMB->mode == MODE_INTER_Q) {
@@ -1751,69 +1729,10 @@ xxx:
 	}
 
 
-	/* reduced resolution deblocking filter */
-
 	if (reduced_resolution)
 	{
-		const int rmb_width = (dec->width + 31) / 32;
-		const int rmb_height = (dec->height + 31) / 32;
-		const int edged_width2 = dec->edged_width /2;
-		int i,j;
-
-		/* horizontal deblocking */
-
-		for (j = 1; j < rmb_height*2; j++)	// luma: j,i in block units
-		for (i = 0; i < rmb_width*2; i++)
-		{
-			if (dec->mbs[(j-1)/2*dec->mb_width + (i/2)].mode != MODE_NOT_CODED ||
-				dec->mbs[(j+0)/2*dec->mb_width + (i/2)].mode != MODE_NOT_CODED)
-			{
-				xvid_HFilter_31_C(dec->cur.y + (j*16 - 1)*dec->edged_width + i*16,
-							      dec->cur.y + (j*16 + 0)*dec->edged_width + i*16, 2);
-			}
-		}
-
-		for (j = 1; j < rmb_height; j++)	// chroma
-		for (i = 0; i < rmb_width; i++)
-		{
-			if (dec->mbs[(j-1)*dec->mb_width + i].mode != MODE_NOT_CODED || 
-				dec->mbs[(j+0)*dec->mb_width + i].mode != MODE_NOT_CODED)
-			{
-				hfilter_31(dec->cur.u + (j*16 - 1)*edged_width2 + i*16,
-								  dec->cur.u + (j*16 + 0)*edged_width2 + i*16, 2);
-				hfilter_31(dec->cur.v + (j*16 - 1)*edged_width2 + i*16,
-								  dec->cur.v + (j*16 + 0)*edged_width2 + i*16, 2);
-			}
-		}
-
-		/* vertical deblocking */
-
-		for (j = 0; j < rmb_height*2; j++)		// luma: i,j in block units
-		for (i = 1; i < rmb_width*2; i++)
-		{
-			if (dec->mbs[(j/2)*dec->mb_width + (i-1)/2].mode != MODE_NOT_CODED ||
-				dec->mbs[(j/2)*dec->mb_width + (i+0)/2].mode != MODE_NOT_CODED)
-			{
-				vfilter_31(dec->cur.y + (j*16)*dec->edged_width + i*16 - 1,
-							      dec->cur.y + (j*16)*dec->edged_width + i*16 + 0,
-								  dec->edged_width, 2);
-			}
-		}
-
-		for (j = 0; j < rmb_height; j++)	// chroma
-		for (i = 1; i < rmb_width; i++)
-		{
-			if (dec->mbs[j*dec->mb_width + i - 1].mode != MODE_NOT_CODED ||
-				dec->mbs[j*dec->mb_width + i + 0].mode != MODE_NOT_CODED) 
-			{
-				vfilter_31(dec->cur.u + (j*16)*edged_width2 + i*16 - 1,
-								  dec->cur.u + (j*16)*edged_width2 + i*16 + 0,
-								  edged_width2, 2);
-				vfilter_31(dec->cur.v + (j*16)*edged_width2 + i*16 - 1,
-								  dec->cur.v + (j*16)*edged_width2 + i*16 + 0,
-								  edged_width2, 2);
-			}
-		}
+		image_deblock_rrv(&dec->cur, dec->edged_width, dec->mbs,
+			(dec->width + 31) / 32, (dec->height + 31) / 32, dec->mb_width);
 	}
 
 	BitstreamByteAlign(&bs);
