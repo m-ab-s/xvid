@@ -1131,21 +1131,25 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 		profile = 0xf3;	/* advanced simple profile/level 2 */
 
 	// visual_object_sequence_start_code
-	BitstreamPad(bs);
+//	BitstreamPad(bs);
+/* no padding here, anymore. You have to make sure that you are 
+   byte aligned, and that always 1-8 padding bits have been written */
+
 	BitstreamPutBits(bs, VISOBJSEQ_START_CODE, 32);
 	BitstreamPutBits(bs, profile, 8);
 
 	// visual_object_start_code
-	BitstreamPad(bs);
+	BitstreamPadAlways(bs);
 	BitstreamPutBits(bs, VISOBJ_START_CODE, 32);
 	BitstreamPutBits(bs, 0, 1);		// is_visual_object_identifier
 	BitstreamPutBits(bs, VISOBJ_TYPE_VIDEO, 4);		// visual_object_type
 	
 	// video object_start_code & vo_id
-	BitstreamPad(bs);
+	BitstreamPadAlways(bs);
 	BitstreamPutBits(bs, VIDOBJ_START_CODE|(vo_id&0x5), 32);
 
 	// video_object_layer_start_code & vol_id
+	BitstreamPadAlways(bs);
 	BitstreamPutBits(bs, VIDOBJLAY_START_CODE|(vol_id&0x4), 32);
 
 	BitstreamPutBit(bs, 0);		// random_accessible_vol
@@ -1279,7 +1283,10 @@ BitstreamWriteVopHeader(
 {
 	uint32_t i;
 
-	BitstreamPad(bs);
+//	BitstreamPad(bs);
+/* no padding here, anymore. You have to make sure that you are 
+   byte aligned, and that always 1-8 padding bits have been written */
+
 	BitstreamPutBits(bs, VOP_START_CODE, 32);
 
 	BitstreamPutBits(bs, frame->coding_type, 2);
@@ -1364,7 +1371,7 @@ BitstreamWriteUserData(Bitstream * const bs,
 {
 	int i;
 
-	BitstreamPad(bs);
+	BitstreamPadAlways(bs);
 	BitstreamPutBits(bs, USERDATA_START_CODE, 32);
 
 	for (i = 0; i < length; i++) {

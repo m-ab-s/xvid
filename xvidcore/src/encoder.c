@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.36 2003-01-11 20:37:46 chl Exp $
+ *  $Id: encoder.c,v 1.76.2.37 2003-01-13 14:33:24 chl Exp $
  *
  ****************************************************************************/
 
@@ -730,7 +730,7 @@ ipvop_loop:
 			FrameCodeP(pEnc, &bs, &bits, 1, 0);
 			bframes_count = 0;
 
-			BitstreamPad(&bs);
+			BitstreamPadAlways(&bs);
 			pFrame->length = BitstreamLength(&bs);
 			pFrame->intra = 0;
 
@@ -747,7 +747,7 @@ ipvop_loop:
 		FrameCodeB(pEnc, pEnc->bframes[pEnc->bframenum_head], &bs, &bits);
 		pEnc->bframenum_head++;
 
-		BitstreamPad(&bs);
+		BitstreamPadAlways(&bs);
 		pFrame->length = BitstreamLength(&bs);
 		pFrame->intra = 2;
 
@@ -776,13 +776,14 @@ ipvop_loop:
 				pEnc->bframenum_head, pEnc->bframenum_tail,
 				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
 
-			BitstreamPad(&bs);
 
 			tmp = pEnc->current->seconds;
 			pEnc->current->seconds = 0; /* force time_base = 0 */
+
 			BitstreamWriteVopHeader(&bs, &pEnc->mbParam, pEnc->current, 0);
 			pEnc->current->seconds = tmp;
 
+			BitstreamPadAlways(&bs);
 			pFrame->length = BitstreamLength(&bs);
 			pFrame->intra = 4;
 
@@ -859,7 +860,7 @@ bvop_loop:
 				pEnc->bframenum_head, pEnc->bframenum_tail,
 				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
 
-			BitstreamPutBits(&bs, 0x7f, 8);
+		//	BitstreamPutBits(&bs, 0x7f, 8);
 			pFrame->intra = 5;
 		}
 
@@ -1089,7 +1090,7 @@ bvop_loop:
 		goto bvop_loop;
 	}
 
-	BitstreamPad(&bs);
+	BitstreamPadAlways(&bs);
 	pFrame->length = BitstreamLength(&bs);
 
 	if (pResult) {
@@ -1275,9 +1276,9 @@ encoder_encode(Encoder * pEnc,
 
 	}
 
-	BitstreamPutBits(&bs, 0xFFFF, 16);
-	BitstreamPutBits(&bs, 0xFFFF, 16);
-	BitstreamPad(&bs);
+//	BitstreamPutBits(&bs, 0xFFFF, 16);
+//	BitstreamPutBits(&bs, 0xFFFF, 16);
+	BitstreamPadAlways(&bs);
 	pFrame->length = BitstreamLength(&bs);
 
 	if (pResult) {
@@ -1468,7 +1469,7 @@ HintedMEGet(Encoder * pEnc,
 
 	if (intra) {
 		if (!hint->rawhints) {
-			BitstreamPad(&bs);
+			BitstreamPadAlways(&bs);
 			hint->hintlength = BitstreamLength(&bs);
 		}
 		return;
@@ -1574,6 +1575,8 @@ FrameCodeI(Encoder * pEnc,
 	BitstreamWriteVolHeader(bs, &pEnc->mbParam, pEnc->current);
 
 	set_timecodes(pEnc->current,pEnc->reference,pEnc->mbParam.fbase);
+
+	BitstreamPadAlways(bs);
 	BitstreamWriteVopHeader(bs, &pEnc->mbParam, pEnc->current, 1);
 
 	*pBits = BitstreamPos(bs);
@@ -1717,10 +1720,13 @@ FrameCodeP(Encoder * pEnc,
 				pEnc->current->rounding_type, pEnc->current->mbs, &pEnc->vGMC);
 
 	}
-	if (vol_header)
-		BitstreamWriteVolHeader(bs, &pEnc->mbParam, pEnc->current);
 
 	set_timecodes(pEnc->current,pEnc->reference,pEnc->mbParam.fbase);
+	if (vol_header)
+	{	BitstreamWriteVolHeader(bs, &pEnc->mbParam, pEnc->current);	
+		BitstreamPadAlways(bs);
+	}
+
 	BitstreamWriteVopHeader(bs, &pEnc->mbParam, pEnc->current, 1);
 
 	*pBits = BitstreamPos(bs);
