@@ -45,7 +45,7 @@ BEGIN
     CONTROL         "Discard first pass",IDC_DISCARD1PASS,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,127,38,69,12
     LTEXT           "Stats filename:",IDC_STATIC,8,6,52,12,SS_CENTERIMAGE
-    CTEXT           "If you don't discard first pass but keep full quality disabled,\nthe resulting 1st pass stream might not be mpeg-4 compiliant.",
+    CTEXT           "If you don't discard first pass but keep full quality disabled,\nthe resulting 1st pass stream might not be mpeg-4 compliant.",
                     IDC_STATIC,7,114,197,35
     CTEXT           "Full quality first pass is only useful if you want to keep the resulting stream.\nIt doesn't improve quality of second pass and normally should be disabled.",
                     IDC_STATIC,7,71,197,35
