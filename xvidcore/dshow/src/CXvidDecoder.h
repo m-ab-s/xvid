@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.h,v 1.1.2.6 2004-01-07 13:50:28 syskin Exp $
+ * $Id: CXvidDecoder.h,v 1.1.2.7 2004-01-30 03:21:20 syskin Exp $
  *
  ****************************************************************************/
 
@@ -64,6 +64,11 @@ DPRINTF(char *fmt, ...) { }
 #define FOURCC_XVID	mmioFOURCC('X','V','I','D')
 #define FOURCC_DIVX	mmioFOURCC('D','I','V','X')
 #define FOURCC_DX50	mmioFOURCC('D','X','5','0')
+#define FOURCC_MP4V	mmioFOURCC('m','p','4','v')
+
+#define SUPPORT_DX50		(1<<0)
+#define SUPPORT_DIVX		(1<<1)
+#define SUPPORT_MP4V		(1<<2)
 
 /* --- media uids --- */
 
@@ -73,6 +78,7 @@ DEFINE_GUID(CLSID_DIVX,		mmioFOURCC('d','i','v','x'), 0x0000, 0x0010, 0x80, 0x00
 DEFINE_GUID(CLSID_DIVX_UC,	mmioFOURCC('D','I','V','X'), 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 DEFINE_GUID(CLSID_DX50,		mmioFOURCC('d','x','5','0'), 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 DEFINE_GUID(CLSID_DX50_UC,	mmioFOURCC('D','X','5','0'), 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
+DEFINE_GUID(CLSID_MP4V,		mmioFOURCC('m','p','4','v'), 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 
 
 /* MEDIATYPE_IYUV is not always defined in the directx headers */

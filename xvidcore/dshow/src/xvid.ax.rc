@@ -79,7 +79,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 209
         TOPMARGIN, 7
-        BOTTOMMARGIN, 194
+        BOTTOMMARGIN, 228
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -90,7 +90,7 @@ END
 // Dialog
 //
 
-IDD_ABOUT DIALOG DISCARDABLE  0, 0, 216, 201
+IDD_ABOUT DIALOG DISCARDABLE  0, 0, 216, 235
 STYLE WS_CHILD
 FONT 8, "MS Sans Serif"
 BEGIN
@@ -106,16 +106,23 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,128,115,68,10
     CONTROL         "Deblocking (Y)",IDC_DEBLOCK_Y,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,23,115,63,10
-    GROUPBOX        "Output",IDC_STATIC,7,153,202,36
+    GROUPBOX        "Output",IDC_STATIC,7,151,202,32
     CONTROL         "Flip video",IDC_FLIPVIDEO,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,23,168,46,10
-    COMBOBOX        IDC_COLORSPACE,72,166,63,67,CBS_DROPDOWNLIST | 
+                    WS_TABSTOP,23,164,46,10
+    COMBOBOX        IDC_COLORSPACE,72,162,63,67,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "Reset",IDC_RESET,143,166,50,12
+    PUSHBUTTON      "Reset",IDC_RESET,143,162,50,12
     CONTROL         "Film Effect",IDC_FILMEFFECT,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,128,130,49,10
     CONTROL         "Dering",IDC_DERING,"Button",BS_AUTOCHECKBOX | 
                     WS_DISABLED | WS_TABSTOP,23,130,37,10
+    GROUPBOX        "FourCC support",IDC_STATIC,8,185,202,43
+    CONTROL         "DIVX",IDC_DIVX,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,
+                    196,89,13
+    CONTROL         "mp4v",IDC_MP4V,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    128,196,65,13
+    CONTROL         "DX50",IDC_DX50,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,23,
+                    211,89,13
 END
 
 

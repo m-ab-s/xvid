@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CAbout.cpp,v 1.1.2.6 2004-01-26 05:49:42 syskin Exp $
+ * $Id: CAbout.cpp,v 1.1.2.7 2004-01-30 03:21:20 syskin Exp $
  *
  ****************************************************************************/
 
@@ -64,6 +64,7 @@ void SaveRegistryInfo()
 	REG_SET_N("FilmEffect", PPSettings.nFilmEffect);
 	REG_SET_N("ForceColorspace", PPSettings.nForceColorspace);
 	REG_SET_N("FlipVideo", PPSettings.nFlipVideo);
+	REG_SET_N("Supported_4CC",  supported_4cc);
 
 	RegCloseKey(hKey);
 }
@@ -130,6 +131,11 @@ BOOL CAbout::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		SendMessage(GetDlgItem(hwnd, IDC_FILMEFFECT), BM_SETCHECK, PPSettings.nFilmEffect, 0);
 		SendMessage(GetDlgItem(hwnd, IDC_FLIPVIDEO), BM_SETCHECK, PPSettings.nFlipVideo, 0);
 
+		// 4CC checkbuttons
+		SendMessage(GetDlgItem(hwnd, IDC_DIVX), BM_SETCHECK, supported_4cc & SUPPORT_DIVX, 0);
+		SendMessage(GetDlgItem(hwnd, IDC_DX50), BM_SETCHECK, supported_4cc & SUPPORT_DX50, 0);
+		SendMessage(GetDlgItem(hwnd, IDC_MP4V), BM_SETCHECK, supported_4cc & SUPPORT_MP4V, 0);
+
 		// Set Date & Time of Compilation
 		DPRINTF("(%s %s)", __DATE__, __TIME__);
 		break;
@@ -173,6 +179,18 @@ BOOL CAbout::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			PPSettings.nFlipVideo = !PPSettings.nFlipVideo;
 			SaveRegistryInfo();
 			break;
+		case IDC_DIVX:
+			supported_4cc ^= SUPPORT_DIVX;
+			SaveRegistryInfo();
+			break;
+		case IDC_DX50:
+			supported_4cc ^= SUPPORT_DX50;
+			SaveRegistryInfo();
+			break;
+		case IDC_MP4V:
+			supported_4cc ^= SUPPORT_MP4V;
+			SaveRegistryInfo();
+			break;
 		}
 		break;
 	case WM_NOTIFY:
@@ -183,3 +201,4 @@ BOOL CAbout::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 	}
 	return CBasePropertyPage::OnReceiveMessage(hwnd, uMsg, wParam, lParam);
 }
+

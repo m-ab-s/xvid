@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.1.2.13 2004-01-29 07:06:04 syskin Exp $
+ * $Id: CXvidDecoder.cpp,v 1.1.2.14 2004-01-30 03:21:20 syskin Exp $
  *
  ****************************************************************************/
 
@@ -63,8 +63,9 @@
 
 // Externs defined here
 PostProcessing_Settings PPSettings;
-
+unsigned int supported_4cc;
 int rgb_flip;
+
 
 bool USE_IYUV;
 bool USE_YV12;
@@ -84,6 +85,7 @@ const AMOVIESETUP_MEDIATYPE sudInputPinTypes[] =
 	{ &MEDIATYPE_Video, &CLSID_DIVX_UC },
 	{ &MEDIATYPE_Video, &CLSID_DX50 },
 	{ &MEDIATYPE_Video, &CLSID_DX50_UC },
+	{ &MEDIATYPE_Video, &CLSID_MP4V },
 };
 
 const AMOVIESETUP_MEDIATYPE sudOutputPinTypes[] =
@@ -258,6 +260,7 @@ CXvidDecoder::CXvidDecoder(LPUNKNOWN punk, HRESULT *phr) :
 	REG_GET_N("FilmEffect", PPSettings.nFilmEffect, 0)
 	REG_GET_N("ForceColorspace", PPSettings.nForceColorspace, 0)
 	REG_GET_N("FlipVideo",  PPSettings.nFlipVideo, 0)
+	REG_GET_N("Supported_4CC",  supported_4cc, 0)
 
 	RegCloseKey(hKey);
 
@@ -368,10 +371,16 @@ HRESULT CXvidDecoder::CheckInputType(const CMediaType * mtIn)
 
 	switch(hdr->biCompression)
 	{
+
+	
+	case FOURCC_DIVX :
+		if (!(supported_4cc & SUPPORT_DIVX)) return VFW_E_TYPE_NOT_ACCEPTED;
+		else break;
+	case FOURCC_DX50 :
+		if (!(supported_4cc & SUPPORT_DX50)) return VFW_E_TYPE_NOT_ACCEPTED;
 	case FOURCC_XVID :
-//	case FOURCC_DIVX :
-//	case FOURCC_DX50 :
 		break;
+		
 
 	default :
 		DPRINTF("Unknown fourcc: 0x%08x (%c%c%c%c)",
@@ -382,7 +391,6 @@ HRESULT CXvidDecoder::CheckInputType(const CMediaType * mtIn)
 			(hdr->biCompression>>24)&0xff);
 		return VFW_E_TYPE_NOT_ACCEPTED;
 	}
-
 	return S_OK;
 }
 
@@ -761,7 +769,7 @@ repeat :
 		m_frame.general = tmp_gen;
 	}
 
-	if (stats.type == XVID_TYPE_NOTHING) {
+	if (stats.type == XVID_TYPE_NOTHING && length > 0) {
 		DPRINTF("B-Frame decoder lag");
 		return S_FALSE;
 	}

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CAbout.h,v 1.1.2.6 2004-01-26 05:49:42 syskin Exp $
+ * $Id: CAbout.h,v 1.1.2.7 2004-01-30 03:21:20 syskin Exp $
  *
  ****************************************************************************/
 
@@ -50,6 +50,7 @@ struct PostProcessing_Settings
 };
 
 extern PostProcessing_Settings PPSettings;
+extern unsigned int supported_4cc;
 
 class CAbout : public CBasePropertyPage
 {
