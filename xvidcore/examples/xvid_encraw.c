@@ -21,7 +21,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.34 2003-08-09 17:19:20 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.35 2003-08-10 13:10:09 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -1083,10 +1083,6 @@ enc_main(unsigned char *image,
 
 	/* Set up core's general features */
 	xvid_enc_frame.vop_flags = vop_presets[ARG_QUALITY];
-	if (ARG_QPEL && (xvid_enc_frame.vop_flags & XVID_ME_HALFPELREFINE16))
-		xvid_enc_frame.vop_flags |= XVID_ME_QUARTERPELREFINE16;
-	if (ARG_QPEL && (xvid_enc_frame.vop_flags & XVID_ME_HALFPELREFINE8))
-		xvid_enc_frame.vop_flags |= XVID_ME_QUARTERPELREFINE8;
 	if (ARG_GMC)
 		xvid_enc_frame.vop_flags |= XVID_ME_GME_REFINE;
 
@@ -1102,6 +1098,11 @@ enc_main(unsigned char *image,
 
 	/* Set up motion estimation flags */
 	xvid_enc_frame.motion = motion_presets[ARG_QUALITY];
+
+	if (ARG_QPEL)
+		xvid_enc_frame.motion |= XVID_ME_QUARTERPELREFINE16;
+	if (ARG_QPEL && (xvid_enc_frame.vop_flags & XVID_VOP_INTER4V))
+		xvid_enc_frame.motion |= XVID_ME_QUARTERPELREFINE8;
 
 	/* We don't use special matrices */
 	xvid_enc_frame.quant_intra_matrix = NULL;
