@@ -10,6 +10,7 @@
 #include "../image/interpolate8x8.h"
 #include "../image/reduced.h"
 #include "../utils/timer.h"
+#include "../image/qpel.h"
 #include "motion.h"
 
 #ifndef ABS
@@ -89,7 +90,7 @@ compensate16x16_interpolate(int16_t * const dct_codes,
 
 		if(quarterpel) {
 			if ((dx&3) | (dy&3)) {
-				interpolate16x16_quarterpel(tmp - y * stride - x,
+				new_interpolate16x16_quarterpel(tmp - y * stride - x,
 											(uint8_t *) ref, tmp + 32,
 											tmp + 64, tmp + 96, x, y, dx, dy, stride, rounding);
 				ptr = tmp;
@@ -151,7 +152,7 @@ compensate8x8_interpolate(	int16_t * const dct_codes,
 
 		if(quarterpel) {
 			if ((dx&3) | (dy&3)) {
-				interpolate8x8_quarterpel(tmp - y*stride - x,
+				new_interpolate8x8_quarterpel(tmp - y*stride - x,
 										(uint8_t *) ref, tmp + 32,
 										tmp + 64, tmp + 96, x, y, dx, dy, stride, rounding);
 				ptr = tmp;
@@ -417,14 +418,14 @@ MBMotionCompensationBVOP(MBParam * pParam,
 		if (quarterpel) {
 
 			if ((dx&3) | (dy&3)) {
-				interpolate16x16_quarterpel(tmp - i * 16 - j * 16 * edged_width,
+				new_interpolate16x16_quarterpel(tmp - i * 16 - j * 16 * edged_width,
 					(uint8_t *) f_ref->y, tmp + 32,
 					tmp + 64, tmp + 96, 16*i, 16*j, dx, dy, edged_width, 0);
 				ptr1 = tmp;
 			} else ptr1 = f_ref->y + (16*j + dy/4)*edged_width + 16*i + dx/4; // fullpixel position
 
 			if ((b_dx&3) | (b_dy&3)) {
-				interpolate16x16_quarterpel(tmp - i * 16 - j * 16 * edged_width + 16,
+				new_interpolate16x16_quarterpel(tmp - i * 16 - j * 16 * edged_width + 16,
 					(uint8_t *) b_ref->y, tmp + 32,
 					tmp + 64, tmp + 96, 16*i, 16*j, b_dx, b_dy, edged_width, 0);
 				ptr2 = tmp + 16;
@@ -470,7 +471,7 @@ MBMotionCompensationBVOP(MBParam * pParam,
 				b_sumx += b_dx/2; b_sumy += b_dy/2;
 
 				if ((dx&3) | (dy&3)) {
-					interpolate8x8_quarterpel(tmp - (i * 16+(k&1)*8) - (j * 16+((k>>1)*8)) * edged_width,
+					new_interpolate8x8_quarterpel(tmp - (i * 16+(k&1)*8) - (j * 16+((k>>1)*8)) * edged_width,
 						(uint8_t *) f_ref->y,
 						tmp + 32, tmp + 64, tmp + 96,
 						16*i + (k&1)*8, 16*j + (k>>1)*8, dx, dy, edged_width, 0);
@@ -478,7 +479,7 @@ MBMotionCompensationBVOP(MBParam * pParam,
 				} else ptr1 = f_ref->y + (16*j + (k>>1)*8 + dy/4)*edged_width + 16*i + (k&1)*8 + dx/4;
 
 				if ((b_dx&3) | (b_dy&3)) {
-					interpolate8x8_quarterpel(tmp - (i * 16+(k&1)*8) - (j * 16+((k>>1)*8)) * edged_width + 16,
+					new_interpolate8x8_quarterpel(tmp - (i * 16+(k&1)*8) - (j * 16+((k>>1)*8)) * edged_width + 16,
 						(uint8_t *) b_ref->y,
 						tmp + 16, tmp + 32, tmp + 48,
 						16*i + (k&1)*8, 16*j + (k>>1)*8, b_dx, b_dy, edged_width, 0);

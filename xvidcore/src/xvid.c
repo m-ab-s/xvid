@@ -17,7 +17,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45 2003-02-21 00:00:57 edgomez Exp $
+ * $Id: xvid.c,v 1.45.4.1 2003-05-03 23:23:55 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -44,6 +44,7 @@
 #include "utils/emms.h"
 #include "utils/timer.h"
 #include "bitstream/mbcoding.h"
+#include "image/qpel.h"
 
 #if defined(ARCH_IS_IA32)
 
@@ -181,6 +182,10 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 
 	init_param->cpu_flags = cpu_flags;
 
+	/* Qpel stuff */
+	xvid_QP_Funcs = &xvid_QP_Funcs_C;
+	xvid_QP_Add_Funcs = &xvid_QP_Add_Funcs_C;
+	xvid_Init_QP_mmx();
 
 	/* Initialize the function pointers */
 	idct_int32_init();
@@ -317,6 +322,11 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 	}
 
 	if ((cpu_flags & XVID_CPU_MMX)) {
+
+		/* Qpel stuff */
+		xvid_QP_Funcs = &xvid_QP_Funcs_mmx;
+		xvid_QP_Add_Funcs = &xvid_QP_Add_Funcs_mmx;
+		xvid_Init_QP_mmx();
 
 		/* Forward and Inverse Discrete Cosine Transformation functions */
 		fdct = fdct_mmx;

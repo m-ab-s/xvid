@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.99 2003-04-09 12:02:26 syskin Exp $
+ *  $Id: encoder.c,v 1.99.2.1 2003-05-03 23:24:30 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -73,12 +73,15 @@ static int FrameCodeP(Encoder * pEnc,
 					  Bitstream * bs,
 					  uint32_t * pBits,
 					  bool force_inter,
-					  bool vol_header);
+					  bool vol_header,
+					  int interpolate);
 
 static void FrameCodeB(Encoder * pEnc,
 					   FRAMEINFO * frame,
 					   Bitstream * bs,
-					   uint32_t * pBits);
+					   uint32_t * pBits,
+					   int interpolate_forward,
+					   int interpolate_backward);
 
 /*****************************************************************************
  * Local data
@@ -677,6 +680,8 @@ encoder_encode_bframes(Encoder * pEnc,
 
 	int input_valid = 1;
 	int bframes_count = 0;
+	int interpolate_forward = 1;
+	int interpolate_backward = 1;
 
 	ENC_CHECK(pEnc);
 	ENC_CHECK(pFrame);
@@ -711,8 +716,15 @@ ipvop_loop:
 
 			SWAP(FRAMEINFO *, pEnc->current, pEnc->bframes[pEnc->bframenum_tail]);
 
-			FrameCodeP(pEnc, &bs, &bits, 1, 0);
+			if (pEnc->mbParam.m_quarterpel)
+				pEnc->current->global_flags |= XVID_QUARTERPEL;
+			else
+				pEnc->current->global_flags &= ~XVID_QUARTERPEL;
+
+			FrameCodeP(pEnc, &bs, &bits, 1, 0, interpolate_backward);
 			bframes_count = 0;
+			interpolate_forward = 0;
+			interpolate_backward = 1;
 
 			BitstreamPadAlways(&bs);
 			pFrame->length = BitstreamLength(&bs);
@@ -727,6 +739,8 @@ ipvop_loop:
 				pResult->kblks = pEnc->current->sStat.kblks;
 				pResult->mblks = pEnc->current->sStat.mblks;
 				pResult->ublks = pEnc->current->sStat.ublks;
+				pResult->iblks = pEnc->current->sStat.iblks;
+				pResult->qblks = pEnc->current->sStat.qblks;
 			}
 
 			return XVID_ERR_OK;
@@ -737,8 +751,17 @@ ipvop_loop:
 				pEnc->bframenum_head, pEnc->bframenum_tail,
 				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
 
-		FrameCodeB(pEnc, pEnc->bframes[pEnc->bframenum_head], &bs, &bits);
+		if (pEnc->mbParam.m_quarterpel)
+			pEnc->current->global_flags |= XVID_QUARTERPEL;
+		else
+			pEnc->current->global_flags &= ~XVID_QUARTERPEL;
+
+		FrameCodeB(pEnc, pEnc->bframes[pEnc->bframenum_head], &bs,
+				   &bits, interpolate_forward, interpolate_backward);
 		pEnc->bframenum_head++;
+
+		interpolate_forward = 0;
+		interpolate_backward = 0;
 
 		BitstreamPadAlways(&bs);
 		pFrame->length = BitstreamLength(&bs);
@@ -750,6 +773,8 @@ ipvop_loop:
 			pResult->kblks = pEnc->current->sStat.kblks;
 			pResult->mblks = pEnc->current->sStat.mblks;
 			pResult->ublks = pEnc->current->sStat.ublks;
+			pResult->iblks = pEnc->current->sStat.iblks;
+			pResult->qblks = pEnc->current->sStat.qblks;
 		}
 
 		emms();
@@ -799,6 +824,8 @@ ipvop_loop:
 				pResult->kblks = pEnc->current->sStat.kblks;
 				pResult->mblks = pEnc->current->sStat.mblks;
 				pResult->ublks = pEnc->current->sStat.ublks;
+				pResult->iblks = pEnc->current->sStat.iblks;
+				pResult->qblks = pEnc->current->sStat.qblks;
 			}
 
 			emms();
@@ -910,6 +937,8 @@ bvop_loop:
 				pResult->kblks = 0;
 				pResult->mblks = 0;
 				pResult->ublks = 0;
+				pResult->iblks = 0;
+				pResult->qblks = 0;
 			}
 		} else {
 
@@ -919,6 +948,8 @@ bvop_loop:
 				pResult->kblks = pEnc->current->sStat.kblks;
 				pResult->mblks = pEnc->current->sStat.mblks;
 				pResult->ublks = pEnc->current->sStat.ublks;
+				pResult->iblks = pEnc->current->sStat.iblks;
+				pResult->qblks = pEnc->current->sStat.qblks;
 			}
 
 		}
@@ -1057,14 +1088,29 @@ bvop_loop:
 			if ((pEnc->mbParam.global & XVID_GLOBAL_DEBUG)) {
 				image_printf(&pEnc->current->image, pEnc->mbParam.edged_width, pEnc->mbParam.height, 5, 100, "DX50 BVOP->PVOP");
 			}
-			FrameCodeP(pEnc, &bs, &bits, 1, 0);
+
+			if (pEnc->mbParam.m_quarterpel)
+				pEnc->current->global_flags |= XVID_QUARTERPEL;
+			else
+				pEnc->current->global_flags &= ~XVID_QUARTERPEL;
+
+			FrameCodeP(pEnc, &bs, &bits, 1, 0, interpolate_backward);
 			bframes_count = 0;
 			pFrame->intra = 0;
+			interpolate_forward = 0;
+			interpolate_backward = 1;
 
 		} else {
 
+			if (pEnc->mbParam.m_quarterpel)
+				pEnc->current->global_flags |= XVID_QUARTERPEL;
+			else
+				pEnc->current->global_flags &= ~XVID_QUARTERPEL;
+
 			FrameCodeI(pEnc, &bs, &bits);
 			bframes_count = 0;
+			interpolate_forward = 1;
+			interpolate_backward = 1;
 			pFrame->intra = 1;
 
 			pEnc->bframenum_dx50bvop = -1;
@@ -1095,9 +1141,16 @@ bvop_loop:
 			image_printf(&pEnc->current->image, pEnc->mbParam.edged_width, pEnc->mbParam.height, 5, 200, "PVOP");
 		}
 
-		FrameCodeP(pEnc, &bs, &bits, 1, 0);
+		if (pEnc->mbParam.m_quarterpel)
+			pEnc->current->global_flags |= XVID_QUARTERPEL;
+		else
+			pEnc->current->global_flags &= ~XVID_QUARTERPEL;
+
+		FrameCodeP(pEnc, &bs, &bits, 1, 0, interpolate_backward);
 		bframes_count = 0;
 		pFrame->intra = 0;
+		interpolate_forward = 0;
+		interpolate_backward = 1;
 		pEnc->flush_bframes = 1;
 
 		if ((pEnc->mbParam.global & XVID_GLOBAL_PACKED) && (pEnc->bframenum_tail > 0)) {
@@ -1155,6 +1208,8 @@ bvop_loop:
 		pResult->kblks = pEnc->current->sStat.kblks;
 		pResult->mblks = pEnc->current->sStat.mblks;
 		pResult->ublks = pEnc->current->sStat.ublks;
+		pResult->iblks = pEnc->current->sStat.iblks;
+		pResult->qblks = pEnc->current->sStat.qblks;
 
 		if (pFrame->general & XVID_EXTRASTATS)
 		{	pResult->sse_y =
@@ -1208,6 +1263,7 @@ encoder_encode(Encoder * pEnc,
 	Bitstream bs;
 	uint32_t bits;
 	uint16_t write_vol_header = 0;
+	unsigned int old_qpel;
 
 	float psnr;
 	char temp[128];
@@ -1260,6 +1316,8 @@ encoder_encode(Encoder * pEnc,
 	} else {
 		pEnc->current->quant = pFrame->quant;
 	}
+
+	old_qpel = pEnc->mbParam.m_quarterpel;
 
 	if ((pEnc->current->global_flags & XVID_QUARTERPEL))
 		pEnc->mbParam.m_quarterpel = 1;
@@ -1331,13 +1389,17 @@ encoder_encode(Encoder * pEnc,
 				&& (pEnc->iFrameNum >= pEnc->mbParam.iMaxKeyInterval))) {
 			pFrame->intra = FrameCodeI(pEnc, &bs, &bits);
 		} else {
-			pFrame->intra = FrameCodeP(pEnc, &bs, &bits, 0, write_vol_header);
+			if (old_qpel != pEnc->mbParam.m_quarterpel)
+				pEnc->mbParam.m_quarterpel = old_qpel;
+			pFrame->intra = FrameCodeP(pEnc, &bs, &bits, 0, write_vol_header, 1);
 		}
 	} else {
 		if (pFrame->intra == 1) {
 			pFrame->intra = FrameCodeI(pEnc, &bs, &bits);
 		} else {
-			pFrame->intra = FrameCodeP(pEnc, &bs, &bits, 1, write_vol_header);
+			if (old_qpel != pEnc->mbParam.m_quarterpel)
+				pEnc->mbParam.m_quarterpel = old_qpel;
+			pFrame->intra = FrameCodeP(pEnc, &bs, &bits, 1, write_vol_header, 1);
 		}
 
 	}
@@ -1356,6 +1418,8 @@ encoder_encode(Encoder * pEnc,
 		pResult->kblks = pEnc->current->sStat.kblks;
 		pResult->mblks = pEnc->current->sStat.mblks;
 		pResult->ublks = pEnc->current->sStat.ublks;
+		pResult->iblks = pEnc->current->sStat.iblks;
+		pResult->qblks = pEnc->current->sStat.qblks;
 	}
 
 	emms();
@@ -1646,6 +1710,7 @@ FrameCodeI(Encoder * pEnc,
 	pEnc->current->sStat.iTextBits = 0;
 	pEnc->current->sStat.kblks = mb_width * mb_height;
 	pEnc->current->sStat.mblks = pEnc->current->sStat.ublks = 0;
+	pEnc->current->sStat.iblks = pEnc->current->sStat.qblks = 0;
 
 	for (y = 0; y < mb_height; y++)
 		for (x = 0; x < mb_width; x++) {
@@ -1701,7 +1766,8 @@ FrameCodeP(Encoder * pEnc,
 		   Bitstream * bs,
 		   uint32_t * pBits,
 		   bool force_inter,
-		   bool vol_header)
+		   bool vol_header,
+		   int interpolate)
 {
 	float fSigma;
 
@@ -1715,6 +1781,7 @@ FrameCodeP(Encoder * pEnc,
 	int x, y, k;
 	int iSearchRange;
 	int bIntra, skip_possible;
+	IMAGE *refh, *refv, *refhv;
 
 	/* IMAGE *pCurrent = &pEnc->current->image; */
 	IMAGE *pRef = &pEnc->reference->image;
@@ -1724,11 +1791,6 @@ FrameCodeP(Encoder * pEnc,
 		mb_width = (pEnc->mbParam.width + 31) / 32;
 		mb_height = (pEnc->mbParam.height + 31) / 32;
 	}
-
-	start_timer();
-	image_setedges(pRef, pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
-				   pEnc->mbParam.width, pEnc->mbParam.height);
-	stop_edges_timer();
 
 	pEnc->mbParam.m_rounding_type = 1 - pEnc->mbParam.m_rounding_type;
 	pEnc->current->rounding_type = pEnc->mbParam.m_rounding_type;
@@ -1740,14 +1802,30 @@ FrameCodeP(Encoder * pEnc,
 	else
 		iLimit = mb_width * mb_height + 1;
 
-	if ((pEnc->current->global_flags & XVID_HALFPEL)) {
+	if((interpolate) || (pEnc->current->rounding_type != 0)) {
 		start_timer();
-		image_interpolate(pRef, &pEnc->vInterH, &pEnc->vInterV,
-						  &pEnc->vInterHV, pEnc->mbParam.edged_width,
-						  pEnc->mbParam.edged_height,
-						  pEnc->mbParam.m_quarterpel,
-						  pEnc->current->rounding_type);
-		stop_inter_timer();
+		image_setedges(pRef, pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
+					   pEnc->mbParam.width, pEnc->mbParam.height);
+		stop_edges_timer();
+
+		if ((pEnc->current->global_flags & XVID_HALFPEL)) {
+			start_timer();
+			image_interpolate(pRef, &pEnc->vInterH, &pEnc->vInterV,
+							  &pEnc->vInterHV, pEnc->mbParam.edged_width,
+							  pEnc->mbParam.edged_height,
+							  pEnc->mbParam.m_quarterpel,
+							  pEnc->current->rounding_type);
+			stop_inter_timer();
+		}
+
+		refh = &pEnc->vInterH;
+		refv = &pEnc->vInterV;
+		refhv = &pEnc->vInterHV;
+	}
+	else {
+		refh = &pEnc->f_refh;
+		refv = &pEnc->f_refv;
+		refhv = &pEnc->f_refhv;
 	}
 
 	pEnc->current->coding_type = P_VOP;
@@ -1758,7 +1836,7 @@ FrameCodeP(Encoder * pEnc,
 	else
 		bIntra =
 			MotionEstimation(&pEnc->mbParam, pEnc->current, pEnc->reference,
-						 &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV,
+						 refh, refv, refhv,
 						 iLimit);
 
 	stop_motion_timer();
@@ -1793,7 +1871,8 @@ FrameCodeP(Encoder * pEnc,
 	*pBits = BitstreamPos(bs);
 
 	pEnc->current->sStat.iTextBits = pEnc->current->sStat.iMvSum = pEnc->current->sStat.iMvCount =
-		pEnc->current->sStat.kblks = pEnc->current->sStat.mblks = pEnc->current->sStat.ublks = 0;
+	pEnc->current->sStat.kblks = pEnc->current->sStat.mblks = pEnc->current->sStat.ublks = 0;
+	pEnc->current->sStat.iblks = pEnc->current->sStat.qblks = 0;
 
 
 	for (y = 0; y < mb_height; y++) {
@@ -1855,8 +1934,8 @@ FrameCodeP(Encoder * pEnc,
 
 			start_timer();
 			MBMotionCompensation(pMB, x, y, &pEnc->reference->image,
-								 &pEnc->vInterH, &pEnc->vInterV,
-								 &pEnc->vInterHV, &pEnc->vGMC,
+								 refh, refv,
+								 refhv, &pEnc->vGMC,
 								 &pEnc->current->image,
 								 dct_codes, pEnc->mbParam.width,
 								 pEnc->mbParam.height,
@@ -1894,7 +1973,17 @@ FrameCodeP(Encoder * pEnc,
 			}  else {
 				pEnc->current->sStat.ublks++;
 			}
-		
+
+			if(pEnc->mbParam.m_quarterpel) {
+				for (k = 0; k < ((pMB->mode == MODE_INTER4V) ? 4 : 1); k++) {
+					if (((pMB->qmvs[k].x % 4) != 0) || ((pMB->qmvs[k].y % 4) != 0))
+						pEnc->current->sStat.iblks++;
+	
+					if (((pMB->qmvs[k].x % 4) & 1) || ((pMB->qmvs[k].y % 4) & 1))
+						pEnc->current->sStat.qblks++;
+				}
+			}
+
 			start_timer();
 
 			/* Finished processing the MB, now check if to CODE or SKIP */
@@ -2089,7 +2178,9 @@ static void
 FrameCodeB(Encoder * pEnc,
 		   FRAMEINFO * frame,
 		   Bitstream * bs,
-		   uint32_t * pBits)
+		   uint32_t * pBits,
+		   int interpolate_forward,
+		   int interpolate_backward)
 {
 	DECLARE_ALIGNED_MATRIX(dct_codes, 6, 64, int16_t, CACHE_LINE);
 	DECLARE_ALIGNED_MATRIX(qcoeff, 6, 64, int16_t, CACHE_LINE);
@@ -2114,36 +2205,40 @@ FrameCodeB(Encoder * pEnc,
 
   	frame->quarterpel =  pEnc->mbParam.m_quarterpel;
 
-	/* forward  */
-	image_setedges(f_ref, pEnc->mbParam.edged_width,
-				   pEnc->mbParam.edged_height, pEnc->mbParam.width,
-				   pEnc->mbParam.height);
-	start_timer();
-	image_interpolate(f_ref, &pEnc->f_refh, &pEnc->f_refv, &pEnc->f_refhv,
-					  pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
-					  pEnc->mbParam.m_quarterpel, 0);
-	stop_inter_timer();
+	if ((interpolate_forward) || ((pEnc->mbParam.m_rounding_type != 1) && interpolate_backward)) {
+	
+		/* forward  */
+		image_setedges(f_ref, pEnc->mbParam.edged_width,
+					   pEnc->mbParam.edged_height, pEnc->mbParam.width,
+					   pEnc->mbParam.height);
+		start_timer();
+		image_interpolate(f_ref, &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV,
+						  pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
+						  pEnc->mbParam.m_quarterpel, 0);
+		stop_inter_timer();
+	}
 
-	/* backward */
-	image_setedges(b_ref, pEnc->mbParam.edged_width,
-				   pEnc->mbParam.edged_height, pEnc->mbParam.width,
-				   pEnc->mbParam.height);
-	start_timer();
-	image_interpolate(b_ref, &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV,
-					  pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
-					  pEnc->mbParam.m_quarterpel, 0);
-	stop_inter_timer();
+	if (interpolate_backward) {
+
+		/* backward */
+		image_setedges(b_ref, pEnc->mbParam.edged_width,
+					   pEnc->mbParam.edged_height, pEnc->mbParam.width,
+					   pEnc->mbParam.height);
+		start_timer();
+		image_interpolate(b_ref, &pEnc->f_refh, &pEnc->f_refv, &pEnc->f_refhv,
+						  pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
+						  pEnc->mbParam.m_quarterpel, 0);
+		stop_inter_timer();
+	}
 
 	start_timer();
 
 	MotionEstimationBVOP(&pEnc->mbParam, frame,
 						 ((int32_t)(pEnc->current->stamp - frame->stamp)),				/* time_bp */
 						 ((int32_t)(pEnc->current->stamp - pEnc->reference->stamp)), 	/* time_pp */
-						 pEnc->reference->mbs, f_ref,
-						 &pEnc->f_refh, &pEnc->f_refv, &pEnc->f_refhv,
-						 pEnc->current, b_ref, &pEnc->vInterH,
-						 &pEnc->vInterV, &pEnc->vInterHV);
-
+						 pEnc->reference->mbs, f_ref, &pEnc->vInterH,
+						 &pEnc->vInterV, &pEnc->vInterHV,
+						 pEnc->current, b_ref, &pEnc->f_refh, &pEnc->f_refv, &pEnc->f_refhv);
 
 	stop_motion_timer();
 	/*
@@ -2163,6 +2258,7 @@ FrameCodeB(Encoder * pEnc,
 	frame->sStat.iMvSum = 0;
 	frame->sStat.iMvCount = 0;
 	frame->sStat.kblks = frame->sStat.mblks = frame->sStat.ublks = 0;
+	frame->sStat.iblks = frame->sStat.qblks = 0;
 
 
 	for (y = 0; y < pEnc->mbParam.mb_height; y++) {
@@ -2178,9 +2274,9 @@ FrameCodeB(Encoder * pEnc,
 
 			if (mb->mode != MODE_DIRECT_NONE_MV) {
 				MBMotionCompensationBVOP(&pEnc->mbParam, mb, x, y, &frame->image,
-									 f_ref, &pEnc->f_refh, &pEnc->f_refv,
-									 &pEnc->f_refhv, b_ref, &pEnc->vInterH,
-									 &pEnc->vInterV, &pEnc->vInterHV,
+									 f_ref, &pEnc->vInterH, &pEnc->vInterV, 
+									 &pEnc->vInterHV, b_ref, &pEnc->f_refh,
+									 &pEnc->f_refv, &pEnc->f_refhv,
 									 dct_codes);
 
 				if (mb->mode == MODE_DIRECT_NO4V) mb->mode = MODE_DIRECT;

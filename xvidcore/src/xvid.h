@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.28 2003-03-04 10:55:21 syskin Exp $
+ * $Id: xvid.h,v 1.28.2.1 2003-05-03 23:23:49 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -158,6 +158,7 @@ extern "C" {
 #define XVID_DEC_LOWDELAY      0x00000001 /* decode lowdelay mode (ie. VFW) */
 #define XVID_DEC_DEBLOCKY      0x00000002 /* luma deblocking */
 #define XVID_DEC_DEBLOCKUV     0x00000008 /* chroma deblocking */
+#define XVID_DEC_DERING		   0x00000012 /* deringing */
 #define XVID_DEC_DISCONTINUITY 0x00000004 /* indicates break in stream
                                              instructs decoder to ignore any
                                              previous reference frames */
@@ -254,6 +255,7 @@ extern "C" {
 #define XVID_VALID_FLAGS        0x80000000
 
 #define XVID_CUSTOM_QMATRIX     0x00000004 /* use custom quant matrix */
+#define XVID_CARTOON_MODE		0x00000008 /* use cartoon mode */
 #define XVID_H263QUANT          0x00000010
 #define XVID_MPEGQUANT          0x00000020
 #define XVID_HALFPEL            0x00000040 /* use halfpel interpolation */
@@ -435,6 +437,8 @@ extern "C" {
 		long sse_y;  /* [out] SSE of Y */
 		long sse_u;  /* [out] SSE of Cb */
 		long sse_v;  /* [out] SSE of Cr */
+		int iblks;
+		int qblks;
 	} XVID_ENC_STATS;
 
 

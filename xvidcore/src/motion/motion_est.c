@@ -966,6 +966,15 @@ SkipMacroblockP(MACROBLOCK *pMB, const int32_t sad)
 	pMB->sad16 = pMB->sad8[0] = pMB->sad8[1] = pMB->sad8[2] = pMB->sad8[3] = sad;
 }
 
+static __inline void
+ZeroMacroblockP(MACROBLOCK *pMB, const int32_t sad)
+{
+	pMB->mode = MODE_INTER;
+	pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = zeroMV;
+	pMB->qmvs[0] = pMB->qmvs[1] = pMB->qmvs[2] = pMB->qmvs[3] = zeroMV;
+	pMB->sad16 = pMB->sad8[0] = pMB->sad8[1] = pMB->sad8[2] = pMB->sad8[3] = sad;
+}
+
 bool
 MotionEstimation(MBParam * const pParam,
 				FRAMEINFO * const current,
@@ -1063,6 +1072,12 @@ MotionEstimation(MBParam * const pParam,
 						SkipMacroblockP(pMB, sad00);
 						continue;
 					}
+			}
+
+			if ((current->global_flags & XVID_CARTOON_MODE) && 
+				(sad00 < pMB->quant * 4 * skip_thresh)) { /* favorize (0,0) vector for cartoons */
+				ZeroMacroblockP(pMB, sad00);
+				continue;
 			}
 
 			SearchP(pRef, pRefH->y, pRefV->y, pRefHV->y, pCurrent, x,

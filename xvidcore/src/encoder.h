@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.27 2003-02-15 15:22:17 edgomez Exp $
+ *  $Id: encoder.h,v 1.27.4.1 2003-05-03 23:24:25 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -129,6 +129,8 @@ typedef struct
 	int mblks;
 	int ublks;
 	int gblks;
+	int iblks;
+	int qblks;
 }
 Statistics;
 
