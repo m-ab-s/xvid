@@ -20,7 +20,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_decraw.c,v 1.10 2004-03-22 22:36:23 edgomez Exp $
+ * $Id: xvid_decraw.c,v 1.10.2.1 2004-04-07 22:02:56 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -62,7 +62,8 @@ static int YDIM = 0;
 static int ARG_SAVEDECOUTPUT = 0;
 static int ARG_SAVEMPEGSTREAM = 0;
 static char *ARG_INPUTFILE = NULL;
-
+static int CSP = XVID_CSP_I420;
+static int BPP = 1;
 
 static char filepath[256] = "./";
 static void *dec_handle = NULL;
@@ -139,6 +140,24 @@ int main(int argc, char *argv[])
 			ARG_INPUTFILE = argv[i];
 		} else if (strcmp("-m", argv[i]) == 0) {
 			ARG_SAVEMPEGSTREAM = 1;
+		} else if (strcmp("-c", argv[i]) == 0  && i < argc - 1 ) {
+			i++;
+			if (strcmp(argv[i], "rgb16") == 0) {
+				CSP = XVID_CSP_RGB555;
+				BPP = 2;
+			} else if (strcmp(argv[i], "rgb24") == 0) {
+				CSP = XVID_CSP_BGR;
+				BPP = 3;
+			} else if (strcmp(argv[i], "rgb32") == 0) {
+				CSP = XVID_CSP_BGRA;
+				BPP = 4;
+			} else if (strcmp(argv[i], "yv12") == 0) {
+				CSP = XVID_CSP_YV12;
+				BPP = 1;
+			} else {
+				CSP = XVID_CSP_I420;
+				BPP = 1;
+			}
 		} else if (strcmp("-help", argv[i]) == 0) {
 			usage();
 			return(0);
@@ -299,8 +318,8 @@ int main(int argc, char *argv[])
 				
 		/* Save output frame if required */
 		if (ARG_SAVEDECOUTPUT) {
-			sprintf(filename, "%sdec%05d.pgm", filepath, filenr);
-			if(write_pgm(filename,out_buffer)) {
+			sprintf(filename, "%sdec%05d.tga", filepath, filenr);
+			if(write_tga(filename,out_buffer)) {
 				fprintf(stderr,
 						"Error writing decoded PGM frame %s\n",
 						filename);
@@ -340,8 +359,8 @@ int main(int argc, char *argv[])
 			
 		/* Save output frame if required */
 		if (ARG_SAVEDECOUTPUT) {
-			sprintf(filename, "%sdec%05d.pgm", filepath, filenr);
-			if(write_pgm(filename, out_buffer)) {
+			sprintf(filename, "%sdec%05d.tga", filepath, filenr);
+			if(write_tga(filename, out_buffer)) {
 				fprintf(stderr,
 						"Error writing decoded PGM frame %s\n",
 						filename);
@@ -392,6 +411,7 @@ static void usage()
 	fprintf(stderr, " -asm           : use assembly optimizations (default=disabled)\n");
 	fprintf(stderr, " -i string      : input filename (default=stdin)\n");
 	fprintf(stderr, " -d             : save decoder output\n");
+	fprintf(stderr, " -c csp         : choose colorspace output (csp can be one of rgb16, rgb24, rgb32, yv12, i420)\n");
 	fprintf(stderr, " -m             : save mpeg4 raw stream to individual files\n");
 	fprintf(stderr, " -help          : This help message\n");
 	fprintf(stderr, " (* means default)\n");
@@ -421,47 +441,85 @@ msecond()
  *              output functions
  ****************************************************************************/
 
-static int
-write_pgm(char *filename,
-		  unsigned char *image)
+int write_tga(char *filename, unsigned char *image)
 {
-	int loop;
+	FILE * f;
+	char hdr[18];
 
-	unsigned char *y = image;
-	unsigned char *u = image + XDIM*YDIM;
-	unsigned char *v = image + XDIM*YDIM + XDIM/2*YDIM/2;
-
-	FILE *filehandle;
-	filehandle=fopen(filename,"w+b");
-	if (filehandle) {
-
-		/* Write header */
-		fprintf(filehandle,"P5\n\n%d %d 255\n", XDIM,YDIM*3/2);
-
-		/* Write Y data */
-		fwrite(y, 1, XDIM*YDIM, filehandle);
-
-		for(loop=0; loop<YDIM/2; loop++)
-		{
-			/* Write U scanline */
-			fwrite(u, 1, XDIM/2, filehandle);
-
-			/* Write V scanline */
-			fwrite(v, 1, XDIM/2, filehandle);
-
-			/* Update pointers */
-			u += XDIM/2;
-			v += XDIM/2;
-
-		}
-
-		/* Close file */
-		fclose(filehandle);
-
-		return(0);
+	f = fopen(filename, "wb");
+	if ( f == NULL) {
+		return -1;
 	}
-	else
-		return(1);
+
+	hdr[0]  = 0; /* ID length */
+	hdr[1]  = 0; /* Color map type */
+	hdr[2]  = (BPP>1)?2:3; /* Uncompressed true color (2) or greymap (3) */
+	hdr[3]  = 0; /* Color map specification (not used) */
+	hdr[4]  = 0; /* Color map specification (not used) */
+	hdr[5]  = 0; /* Color map specification (not used) */
+	hdr[6]  = 0; /* Color map specification (not used) */
+	hdr[7]  = 0; /* Color map specification (not used) */
+	hdr[8]  = 0; /* LSB X origin */
+	hdr[9]  = 0; /* MSB X origin */
+	hdr[10] = 0; /* LSB Y origin */
+	hdr[11] = 0; /* MSB Y origin */
+	hdr[12] = (XDIM>>0)&0xff; /* LSB Width */
+	hdr[13] = (XDIM>>8)&0xff; /* MSB Width */
+	if (BPP > 1) {
+		hdr[14] = (YDIM>>0)&0xff; /* LSB Height */
+		hdr[15] = (YDIM>>8)&0xff; /* MSB Height */
+	} else {
+		hdr[14] = ((YDIM*3)>>1)&0xff; /* LSB Height */
+		hdr[15] = ((YDIM*3)>>9)&0xff; /* MSB Height */
+	}
+	hdr[16] = BPP*8;
+	hdr[17] = 0x00 | (1<<5) /* Up to down */ | (0<<4); /* Image descriptor */
+	
+	/* Write header */
+	fwrite(hdr, 1, sizeof(hdr), f);
+
+#ifdef ARCH_IS_LITTLE_ENDIAN
+	/* write first plane */
+	fwrite(image, 1, XDIM*YDIM*BPP, f);
+#else
+	{
+		int i;
+		for (i=0; i<width*height*BPP;i+=BPP) {
+			if (BPP == 1) {
+				fputc(image+i, f);
+			} else if (BPP == 2) {
+				fputc(image+i+1, f);
+				fputc(image+i+0, f);
+			} else if (BPP == 3) {
+				fputc(image+i+2, f);
+				fputc(image+i+1, f);
+				fputc(image+i+0, f);
+			} else if (BPP == 4) {
+				fputc(image+i+3, f);
+				fputc(image+i+2, f);
+				fputc(image+i+1, f);
+				fputc(image+i+0, f);
+			}
+		}
+	}
+#endif
+
+	/* Write Y and V planes for YUV formats */
+	if (BPP == 1) {
+		int i;
+
+		/* Write the two chrominance planes */
+		for (i=0; i<YDIM/2; i++) {
+			fwrite(image+XDIM*YDIM+XDIM/2*i, 1, XDIM/2, f);
+			fwrite(image+5*XDIM*YDIM/4 + XDIM/2*i, 1, XDIM/2, f);
+		}
+	}
+
+
+	/* Close the file */
+	fclose(f);
+
+	return(0);
 }
 
 /*****************************************************************************
@@ -542,8 +600,8 @@ dec_main(unsigned char *istream,
 
 	/* Output frame structure */
 	xvid_dec_frame.output.plane[0]  = ostream;
-	xvid_dec_frame.output.stride[0] = XDIM;
-	xvid_dec_frame.output.csp       = XVID_CSP_I420;
+	xvid_dec_frame.output.stride[0] = XDIM*BPP;
+	xvid_dec_frame.output.csp = CSP;
 
 	ret = xvid_decore(dec_handle, XVID_DEC_DECODE, &xvid_dec_frame, xvid_dec_stats);
 
