@@ -18,11 +18,13 @@ XVID = 1:xvidvfw.dll, "vidc.XVID", "XviD MPEG-4 Video Codec" , , ,
 [DefaultInstall]
 CopyFiles=MPEG4.Copy.Inf,MPEG4.Copy
 Updateinis = MPEG4.Updateini
+DelReg = MPEG4.DelConfig
 addreg = MPEG4.AddReg,MPEG4.AddReg9x,MPEG4.DoReg
 MediaType = SOFTWARE
 
 [DefaultInstall.ntx86]
 CopyFiles=MPEG4.Copy.Inf,MPEG4.Copy
+DelReg = MPEG4.DelConfig
 addreg = MPEG4.AddReg,MPEG4.AddRegNT,MPEG4.DoReg
 MediaType = SOFTWARE
 
@@ -73,6 +75,9 @@ HKLM,%UnInstallPath%
 
 [MPEG4.Unregister]
 ;HKLM,Software\Microsoft\Windows\CurrentVersion\RunOnce\Setup,"Unregistering XviD Direct Show ;Decoder...",,"%11%\regsvr32.exe /s /u %11%\xvid.ax"
+
+[MPEG4.DelConfig]
+HKCU,Software\GNU\XviD
 
 [DestinationDirs]
 DefaultDestDir = 11	; LDID_SYS
