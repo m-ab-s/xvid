@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: codec.h,v 1.1.2.8 2004-01-27 11:21:11 suxen_drol Exp $
+ * $Id: codec.h,v 1.1.2.9 2004-02-09 10:14:54 suxen_drol Exp $
  *
  ****************************************************************************/
 #ifndef _CODEC_H_
@@ -69,6 +69,7 @@ typedef struct
 } CODEC;
 
 
+
 LRESULT compress_query(CODEC *, BITMAPINFO *, BITMAPINFO *);
 LRESULT compress_get_format(CODEC *, BITMAPINFO *, BITMAPINFO *);
 LRESULT compress_get_size(CODEC *, BITMAPINFO *, BITMAPINFO *);
@@ -83,12 +84,12 @@ LRESULT decompress_begin(CODEC *, BITMAPINFO *, BITMAPINFO *);
 LRESULT decompress_end(CODEC *);
 LRESULT decompress(CODEC *, ICDECOMPRESS *);
 
-HINSTANCE m_hdll;
-int (*xvid_global_func)(void *handle, int opt, void *param1, void *param2);
-int (*xvid_encore_func)(void *handle, int opt, void *param1, void *param2);
-int (*xvid_decore_func)(void *handle, int opt, void *param1, void *param2);
+extern HINSTANCE m_hdll;
+extern int (*xvid_global_func)(void *handle, int opt, void *param1, void *param2);
+extern int (*xvid_encore_func)(void *handle, int opt, void *param1, void *param2);
+extern int (*xvid_decore_func)(void *handle, int opt, void *param1, void *param2);
 
-xvid_plugin_func *xvid_plugin_single_func, 
+extern xvid_plugin_func *xvid_plugin_single_func, 
 				*xvid_plugin_2pass1_func,
 				*xvid_plugin_2pass2_func,
 				*xvid_plugin_lumimasking_func,

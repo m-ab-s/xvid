@@ -76,6 +76,8 @@ HINSTANCE g_hInst;
 HWND g_hTooltip;
 
 static int g_use_bitrate = 1;
+
+
 int pp_dy, pp_duv, pp_dr, pp_fe; /* decoder options */
 
 /* enumerates child windows, assigns tooltips */
@@ -159,17 +161,19 @@ static const named_float_t video_fps_list[] = {
 
 typedef struct {
 	char * name;
-	int value;
+	int avi_interval;		/* audio overhead intervals (milliseconds) */
+	float mkv_multiplier;	/* mkv multiplier */
 } named_int_t;
 
-/* audio overhead intervals (milliseconds) */
 
+#define NO_AUDIO	5
 static const named_int_t audio_type_list[] = {
-	{	"MP3-CBR",		1000	},
-	{	"MP3-VBR",		  24	},
-	{	"AC3",			  64	},
-	{	"DTS",			  21	},
-	{	"(None)",		   0	},
+	{	"MP3-CBR",		1000,	48000/1152/6					},
+	{	"MP3-VBR",		  24,	48000/1152/6					},
+	{	"OGG",	   /*?*/1000,	48000*(0.7F/1024 + 0.3F/180) 	},
+	{	"AC3",			  64,	48000/1536/6					},
+	{	"DTS",			  21,	/*?*/48000/1152/6				},
+	{	"(None)",		   0,	0								},
 };
 		
 
@@ -366,7 +370,7 @@ void config_reg_get(CONFIG * config)
 
 	reg.profile = 0;
 	for (i=0; i<sizeof(profiles)/sizeof(profile_t); i++) {
-		if (strcmpi(profiles[i].name, reg.profile_name) == 0) {
+		if (lstrcmpi(profiles[i].name, reg.profile_name) == 0) {
 			reg.profile = i;
 		}
 	}
@@ -721,6 +725,8 @@ static void adv_init(HWND hDlg, int idd, CONFIG * config)
 	case IDD_BITRATE :
 		SendDlgItemMessage(hDlg, IDC_BITRATE_CFORMAT, CB_ADDSTRING, 0, (LPARAM)"AVI-Legacy");
 		SendDlgItemMessage(hDlg, IDC_BITRATE_CFORMAT, CB_ADDSTRING, 0, (LPARAM)"AVI-OpenDML");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_CFORMAT, CB_ADDSTRING, 0, (LPARAM)"Matroska");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_CFORMAT, CB_ADDSTRING, 0, (LPARAM)"OGM");
 		SendDlgItemMessage(hDlg, IDC_BITRATE_CFORMAT, CB_ADDSTRING, 0, (LPARAM)"(None)");
 
 		SendDlgItemMessage(hDlg, IDC_BITRATE_TSIZE, CB_ADDSTRING, 0, (LPARAM)"665600");
@@ -870,7 +876,6 @@ static void adv_mode(HWND hDlg, int idd, CONFIG * config)
 			int audio_mode = IsDlgChecked(hDlg, IDC_BITRATE_AMODE_SIZE);
 			int audio_rate = config_get_uint(hDlg, IDC_BITRATE_ARATE, 0);
 			int audio_size = config_get_uint(hDlg, IDC_BITRATE_ASIZE, 0);
-			int audio_value;
 
 			int frames;
 			int overhead;
@@ -886,24 +891,17 @@ static void adv_mode(HWND hDlg, int idd, CONFIG * config)
 				audio_type = 0;
 			}
 
-			/* audio_value tells us the audio overhead interval (milliseconds), or
-			   zero if audio is not selected*/
-
-			audio_value = audio_type_list[audio_type].value;
-
-			EnableDlgWindow(hDlg, IDC_BITRATE_AMODE_RATE, audio_value);
-			EnableDlgWindow(hDlg, IDC_BITRATE_AMODE_SIZE, audio_value);
-			EnableDlgWindow(hDlg, IDC_BITRATE_ARATE, audio_value && !audio_mode);
-			EnableDlgWindow(hDlg, IDC_BITRATE_ASIZE, audio_value && audio_mode);
-			EnableDlgWindow(hDlg, IDC_BITRATE_ASELECT, audio_value && audio_mode);
+			EnableDlgWindow(hDlg, IDC_BITRATE_AMODE_RATE, audio_type!=NO_AUDIO);
+			EnableDlgWindow(hDlg, IDC_BITRATE_AMODE_SIZE, audio_type!=NO_AUDIO);
+			EnableDlgWindow(hDlg, IDC_BITRATE_ARATE, audio_type!=NO_AUDIO && !audio_mode);
+			EnableDlgWindow(hDlg, IDC_BITRATE_ASIZE, audio_type!=NO_AUDIO && audio_mode);
+			EnableDlgWindow(hDlg, IDC_BITRATE_ASELECT, audio_type!=NO_AUDIO && audio_mode);
 
 			/* step 1: calculate number of frames */
-
 			frames = (int)(duration * video_fps_list[fps].value);
 			
 			/* step 2: calculate audio_size (kbytes)*/
-
-			if (audio_value) {
+			if (audio_type!=NO_AUDIO) {
 				if (audio_mode==0) {
 					audio_size = (duration * audio_rate) / 8;
 				}
@@ -918,13 +916,35 @@ static void adv_mode(HWND hDlg, int idd, CONFIG * config)
 			case 1 :	/* AVI-OpenDML */
 
 				overhead = frames;
-				
-				if (audio_value) {
-					overhead += (duration * 1000) / audio_value;
+
+				if (audio_type!=NO_AUDIO) {
+					overhead += (duration * 1000) / audio_type_list[audio_type].avi_interval;
 				}
 
 				overhead *= (ctype==0) ? 24 : 16;
+
 				overhead /= 1024;
+				break;
+
+			case 2 :	/* Matroska: gknot formula */
+
+				/* common overhead */
+				overhead = 40 + 12 + 8+ 16*duration + 200 + 100*1/*one audio stream*/ + 11*duration;
+
+				/* video overhead */
+				overhead += frames*8 + (int)(frames * 4 * 0.94);
+
+				/* cue tables and menu seek entries (300k default) */
+				overhead += 300 * 1024;
+
+				/* audio */
+				overhead += (int)(duration * audio_type_list[audio_type].mkv_multiplier);
+
+				overhead /= 1024;
+				break;
+
+			case 3 :	/* OGM: inaccurate model */
+				overhead = (int)(0.0039F * (target_size - subtitle_size));
 				break;
 
 			default	:	/* (none) */
@@ -1379,7 +1399,9 @@ static BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 						(filesize = GetFileSize(hFile, NULL)) == INVALID_FILE_SIZE) {
 						MessageBox(hDlg, "Could not get file size", "Error", 0);
 					}else{
-						SetDlgItemInt(hDlg, IDC_BITRATE_SSIZE, filesize / 1024, FALSE);
+						SetDlgItemInt(hDlg,
+								LOWORD(wParam)==IDC_BITRATE_SSELECT? IDC_BITRATE_SSIZE : IDC_BITRATE_ASIZE, 
+								filesize / 1024, FALSE);
 						CloseHandle(hFile);
 					}
 				}
@@ -1412,8 +1434,8 @@ static BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 					ofn.Flags |= OFN_FILEMUSTEXIST;
 				}
 
-				if (GetSaveFileName(&ofn))
-				{
+				if ((psi->idd==IDD_RC_2PASS1 && GetSaveFileName(&ofn)) || 
+					(psi->idd==IDD_RC_2PASS2 && GetOpenFileName(&ofn))) {
 					SetDlgItemText(hDlg, IDC_STATS, tmp);
 				}
 				}
@@ -1561,7 +1583,7 @@ static BOOL adv_dialog(HWND hParent, CONFIG * config, const int * dlgs, int size
 	}
 
 	psh.dwSize = sizeof(PROPSHEETHEADER);
-	psh.dwFlags = PSH_PROPSHEETPAGE | PSH_NOAPPLYNOW;
+	psh.dwFlags = PSH_PROPSHEETPAGE | PSH_NOAPPLYNOW | PSH_NOCONTEXTHELP;
 	psh.hwndParent = hParent;
 	psh.hInstance = g_hInst;
 	psh.pszCaption = (LPSTR) "XviD Configuration";

@@ -57,6 +57,18 @@
 #include "codec.h"
 #include "status.h"
 
+HINSTANCE m_hdll;
+int (*xvid_global_func)(void *handle, int opt, void *param1, void *param2);
+int (*xvid_encore_func)(void *handle, int opt, void *param1, void *param2);
+int (*xvid_decore_func)(void *handle, int opt, void *param1, void *param2);
+
+xvid_plugin_func *xvid_plugin_single_func, 
+				*xvid_plugin_2pass1_func,
+				*xvid_plugin_2pass2_func,
+				*xvid_plugin_lumimasking_func,
+				*xvid_plugin_psnr_func;
+
+
 
 static const int pmvfast_presets[7] = {
 	0, 0, 0, 0,
