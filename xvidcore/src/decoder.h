@@ -33,7 +33,7 @@
  *
  *  - 13.06.2002 Added legal header - Cosmetic
  *
- *  $Id: decoder.h,v 1.10.2.3 2002-12-08 05:38:56 suxen_drol Exp $
+ *  $Id: decoder.h,v 1.10.2.4 2002-12-12 10:37:44 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -148,7 +148,8 @@ typedef struct
 	int64_t last_non_b_time;
 	uint32_t time_pp;
 	uint32_t time_bp;
-	uint8_t low_delay;			// low_delay flage (1 means no B_VOP)
+	uint32_t low_delay;			// low_delay flage (1 means no B_VOP)
+	uint32_t low_delay_default;	// default value for low_delay flag
 
 	XVID_DEC_PICTURE* out_frm;                // This is used for slice rendering
 }

@@ -726,7 +726,7 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 	
 	frame.bitstream = icd->lpInput;
 	frame.length = icd->lpbiInput->biSizeImage;
-
+	frame.general = XVID_DEC_LOWDELAY;	/* force low_delay_default mode */
 	frame.image = icd->lpOutput;
 //	frame.stride = icd->lpbiOutput->biWidth;
 	// dev-api-3:

@@ -28,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.13 2002-12-09 10:47:05 suxen_drol Exp $
+*  $Id: xvid.h,v 1.17.2.14 2002-12-12 10:37:44 suxen_drol Exp $
 *
 *****************************************************************************/
 
@@ -159,6 +159,7 @@ extern "C" {
  ****************************************************************************/
 
 /* Flags for XVID_DEC_FRAME.general */
+#define XVID_DEC_LOWDELAY		0x00000001	/* decode lowdelay mode (ie. video-for-windows) */
 #define XVID_QUICK_DECODE		0x00000010
 
 /*****************************************************************************
@@ -176,6 +177,7 @@ extern "C" {
 
 #define XVID_DEC_VOP	0
 #define XVID_DEC_VOL	1
+#define XVID_DEC_NOTHING	2	/* nothing was decoded */
 
 	typedef struct
 	{

@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.18 2002-12-10 11:13:50 suxen_drol Exp $
+ *  $Id: decoder.c,v 1.37.2.19 2002-12-12 10:37:44 suxen_drol Exp $
  *
  *************************************************************************/
 
@@ -80,6 +80,7 @@
 #include "utils/mem_transfer.h"
 #include "image/interpolate8x8.h"
 #include "image/reduced.h"
+#include "image/font.h"
 
 #include "bitstream/mbcoding.h"
 #include "prediction/mbprediction.h"
@@ -216,7 +217,7 @@ decoder_create(XVID_DEC_PARAM * param)
 
 	// add by chenm001 <chenm001@163.com>
 	// for support B-frame to save reference frame's time
-	dec->frames = -1;
+	dec->frames = 0;
 	dec->time = dec->time_base = dec->last_time_base = 0;
 	dec->low_delay = 0;
 	dec->packed_mode = 0;
@@ -1605,6 +1606,7 @@ mb_swap(MACROBLOCK ** mb1,
 	*mb2 = temp;
 }
 
+
 int
 decoder_decode(DECODER * dec,
 			   XVID_DEC_FRAME * frame, XVID_DEC_STATS * stats)
@@ -1620,8 +1622,12 @@ decoder_decode(DECODER * dec,
 	VECTOR gmc_mv[5];
 	uint32_t vop_type;
 	int success = 0;
+	int output = 0;
+	int seen_something = 0;
 
 	start_global_timer();
+
+	dec->low_delay_default = (frame->general & XVID_DEC_LOWDELAY);
 
 	dec->out_frm = (frame->colorspace == XVID_CSP_EXTERN) ? frame->image : NULL;
 
@@ -1642,17 +1648,20 @@ decoder_decode(DECODER * dec,
 start:
 	// add by chenm001 <chenm001@163.com>
 	// for support B-frame to reference last 2 frame
-	dec->frames++;
 
 xxx:
 	vop_type =
 		BitstreamReadHeaders(&bs, dec, &rounding, &reduced_resolution, 
 			&quant, &fcode_forward, &fcode_backward, &intra_dc_threshold, gmc_mv);
 
-	//DPRINTF(DPRINTF_HEADER, "vop_type=%i", vop_type);
+	DPRINTF(DPRINTF_HEADER, "vop_type=%i,  packed=%i,  time=%i,  time_pp=%i,  time_bp=%i", 
+							vop_type,	dec->packed_mode, dec->time, dec->time_pp, dec->time_bp);
 
-	if (vop_type == -1 && success)
-		goto done;
+	if (vop_type == - 1)
+	{
+		if (success) goto done;
+		return XVID_ERR_FAIL;
+	}
 
 	if (vop_type == -2 || vop_type == -3)
 	{
@@ -1678,121 +1687,138 @@ xxx:
 
 	dec->p_bmv.x = dec->p_bmv.y = dec->p_fmv.y = dec->p_fmv.y = 0;	// init pred vector to 0
 
-	switch (vop_type) {
-	case P_VOP:
-		decoder_pframe(dec, &bs, rounding, reduced_resolution, quant, 
-						fcode_forward, intra_dc_threshold, NULL);
-#ifdef BFRAMES_DEC
-		DEBUG1("P_VOP  Time=", dec->time);
-#endif
-		break;
 
-	case I_VOP:
-		decoder_iframe(dec, &bs, reduced_resolution, quant, intra_dc_threshold);
-#ifdef BFRAMES_DEC
-		DEBUG1("I_VOP  Time=", dec->time);
-#endif
-		break;
-
-	case B_VOP:
-#ifdef BFRAMES_DEC
-		if (dec->time_pp > dec->time_bp) {
-			DEBUG1("B_VOP  Time=", dec->time);
-			decoder_bframe(dec, &bs, quant, fcode_forward, fcode_backward);
-		} else {
-			DEBUG("broken B-frame!");
-		}
-#else
-		image_copy(&dec->cur, &dec->refn[0], dec->edged_width, dec->height);
-#endif
-		break;
-
-	case S_VOP :
-		decoder_pframe(dec, &bs, rounding, reduced_resolution, quant, 
-						fcode_forward, intra_dc_threshold, gmc_mv);
-		break;
-
-	case N_VOP:				// vop not coded
-		// when low_delay==0, N_VOP's should interpolate between the past and future frames
-		image_copy(&dec->cur, &dec->refn[0], dec->edged_width, dec->height);
-#ifdef BFRAMES_DEC
-		DEBUG1("N_VOP  Time=", dec->time);
-#endif
-		break;
-
-	default:
-		if (stats)
-			stats->notify = 0;
-
-		emms();
-		return XVID_ERR_FAIL;
-	}
-
-
-	if (reduced_resolution)
+	/* packed_mode: special-N_VOP treament */
+	if (dec->packed_mode && vop_type == N_VOP)
 	{
-		image_deblock_rrv(&dec->cur, dec->edged_width, dec->mbs,
-			(dec->width + 31) / 32, (dec->height + 31) / 32, dec->mb_width);
+		if (dec->low_delay_default)
+		{
+			image_output(&dec->refn[0], dec->width, dec->height,
+						 dec->edged_width, frame->image, frame->stride,
+						 frame->colorspace, dec->interlacing);
+			output = 1;
+		}
+		/* ignore otherwise */
 	}
+	else if (vop_type != B_VOP)
+	{
+		switch(vop_type)
+		{
+		case I_VOP :
+			decoder_iframe(dec, &bs, reduced_resolution, quant, intra_dc_threshold);
+			break;
+		case P_VOP :
+			decoder_pframe(dec, &bs, rounding, reduced_resolution, quant, 
+						fcode_forward, intra_dc_threshold, NULL);
+			break;
+		case S_VOP :
+			decoder_pframe(dec, &bs, rounding, reduced_resolution, quant, 
+						fcode_forward, intra_dc_threshold, gmc_mv);
+			break;
+		case N_VOP :
+			image_copy(&dec->cur, &dec->refn[0], dec->edged_width, dec->height);
+			break;
+		}
 
-	BitstreamByteAlign(&bs);
+		if (reduced_resolution)
+		{
+			image_deblock_rrv(&dec->refn[0], dec->edged_width, dec->mbs,
+				(dec->width + 31) / 32, (dec->height + 31) / 32, dec->mb_width);
+		}
 
-#ifdef BFRAMES_DEC
-	// test if no B_VOP
-	if (dec->low_delay || dec->frames == 0 || ((dec->packed_mode) && !(frame->length > BitstreamPos(&bs) / 8))) {
-#endif
-		image_output(&dec->cur, dec->width, dec->height, dec->edged_width,
-					 frame->image, frame->stride, frame->colorspace, dec->interlacing);
-
-#ifdef BFRAMES_DEC
-	} else {
-		if (dec->frames >= 1 && !(dec->packed_mode)) {
-			start_timer();
-			if ((vop_type == I_VOP || vop_type == P_VOP || vop_type == S_VOP)) {
-				image_output(&dec->refn[0], dec->width, dec->height,
-							 dec->edged_width, frame->image, frame->stride,
-							 frame->colorspace, dec->interlacing);
-			} else if (vop_type == B_VOP) {
+		/* note: for packed_mode, output is performed when the special-N_VOP is decoded */
+		if (!(dec->low_delay_default && dec->packed_mode))
+		{
+			if (dec->low_delay)
+			{
 				image_output(&dec->cur, dec->width, dec->height,
 							 dec->edged_width, frame->image, frame->stride,
 							 frame->colorspace, dec->interlacing);
+				output = 1;
 			}
-			stop_conv_timer();
+			else if (dec->frames > 0)	/* is the reference frame valid? */
+			{
+				image_output(&dec->refn[0], dec->width, dec->height,
+							 dec->edged_width, frame->image, frame->stride,
+							 frame->colorspace, dec->interlacing);
+				output = 1;
+			}
 		}
-	}
-#endif
 
-	if (vop_type == I_VOP || vop_type == P_VOP || vop_type == S_VOP) {
 		image_swap(&dec->refn[0], &dec->refn[1]);
 		image_swap(&dec->cur, &dec->refn[0]);
+		mb_swap(&dec->mbs, &dec->last_mbs);
 
-		// swap MACROBLOCK
-                // the Divx will not set the low_delay flage some times
-                // so follow code will wrong to not swap at that time
-                // this will broken bitstream! so I'm change it,
-                // But that is not the best way! can anyone tell me how
-                // to do another way?
-                // 18-07-2002   MinChen<chenm001@163.com>
-                //if (!dec->low_delay && vop_type == P_VOP)
-                if (vop_type == P_VOP)
-			mb_swap(&dec->mbs, &dec->last_mbs);
+		dec->frames++;
+		seen_something = 1;
+
+	}else{	/* B_VOP */
+
+		if (dec->low_delay)
+		{
+			DPRINTF(DPRINTF_ERROR, "warning: bvop found in low_delay==1 stream");
+			dec->low_delay = 1;
+		}
+
+		if (dec->time_pp <= dec->time_bp) {
+			/* this occurs when dx50_bvop_compatibility==0 sequences are 
+			decoded in vfw. */
+			image_printf(&dec->cur, dec->edged_width, dec->height, 16, 16,
+						"broken b-frame, tpp=%i tbp=%i", dec->time_pp, dec->time_bp);
+		}else{
+			decoder_bframe(dec, &bs, quant, fcode_forward, fcode_backward);
+		}
+		
+		image_output(&dec->cur, dec->width, dec->height,
+					 dec->edged_width, frame->image, frame->stride,
+					 frame->colorspace, dec->interlacing);
+		output = 1;
+		dec->frames++;
 	}
 
+	emms();
 
-	if (success == 0 && dec->packed_mode)
+	BitstreamByteAlign(&bs);
+
+	/* low_delay_default mode: repeat in packed_mode */
+	if (dec->low_delay_default && dec->packed_mode && output == 0 && success == 0)
 	{
 		success = 1;
-	//	if (frame->length > BitstreamPos(&bs) / 8)	// multiple vops packed together
 		goto start;
 	}
 
 done :
 
+	/* low_delay_default mode: if we've gotten here without outputting anything,
+	   then output the recently decoded frame, or print an error message  */
+	if (dec->low_delay_default && output == 0)
+	{
+		if (dec->packed_mode && seen_something)
+		{
+			/* output the recently decoded frame */
+			image_output(&dec->refn[0], dec->width, dec->height,
+							 dec->edged_width, frame->image, frame->stride,
+							 frame->colorspace, dec->interlacing);
+		}
+		else
+		{
+			image_printf(&dec->cur, dec->edged_width, dec->height, 16, 16,
+				"warning: nothing to output");
+			image_printf(&dec->cur, dec->edged_width, dec->height, 16, 64,
+				"bframe decoder lag");
+
+			image_output(&dec->cur, dec->width, dec->height,
+							 dec->edged_width, frame->image, frame->stride,
+							 frame->colorspace, dec->interlacing);
+		}
+		output = 1;
+	}
+
 	frame->length = BitstreamPos(&bs) / 8;
 
 	if (stats)
 	{
-		stats->notify = XVID_DEC_VOP;
+		stats->notify = output ? XVID_DEC_VOP : XVID_DEC_NOTHING;
 		stats->data.vop.time_base = (int)dec->time_base;
 		stats->data.vop.time_increment = 0;	//XXX: todo
 	}

@@ -77,7 +77,7 @@ static uint32_t __inline
 log2bin(uint32_t value)
 {
 /* Changed by Chenm001 */
-#ifndef WIN32
+#if !defined(_MSC_VER)
 	int n = 0;
 
 	while (value) {
@@ -568,6 +568,8 @@ BitstreamReadHeaders(Bitstream * bs,
 					BitstreamSkip(bs, 15);	// latter_half_vbv_occupancy
 					READ_MARKER();
 				}
+			}else{
+				dec->low_delay = dec->low_delay_default;
 			}
 
 			dec->shape = BitstreamGetBits(bs, 2);	// video_object_layer_shape
@@ -872,6 +874,8 @@ BitstreamReadHeaders(Bitstream * bs,
 				dec->time_bp = (uint32_t) 
 					(dec->time_inc_resolution + dec->last_non_b_time - dec->time)%dec->time_inc_resolution;
 			}
+			DPRINTF(DPRINTF_HEADER,"time_pp=%i", dec->time_pp);
+			DPRINTF(DPRINTF_HEADER,"time_bp=%i", dec->time_bp);
 
 			READ_MARKER();
 
