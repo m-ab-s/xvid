@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.20 2002-11-19 13:21:25 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.76.2.21 2002-11-23 14:57:09 syskin Exp $
  *
  ****************************************************************************/
 
@@ -942,6 +942,8 @@ bvop_loop:
 			pEnc->mbParam.m_quarterpel = 1;
 		else
 			pEnc->mbParam.m_quarterpel = 0;
+
+		if (pEnc->current->global_flags & XVID_MPEGQUANT) pEnc->mbParam.m_quant_type = MPEG4_QUANT;
 
 		DPRINTF(DPRINTF_DEBUG,"*** IFRAME bf: head=%i tail=%i   queue: head=%i tail=%i size=%i",
 				pEnc->bframenum_head, pEnc->bframenum_tail,
@@ -1886,7 +1888,7 @@ FrameCodeB(Encoder * pEnc,
 #endif
 
   	frame->quarterpel =  pEnc->mbParam.m_quarterpel;
-
+	
 	// forward 
 	image_setedges(f_ref, pEnc->mbParam.edged_width,
 				   pEnc->mbParam.edged_height, pEnc->mbParam.width,
