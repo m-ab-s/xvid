@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.7 2002-09-30 09:19:26 chl Exp $
+ *  $Id: encoder.c,v 1.76.2.8 2002-09-30 14:16:02 chl Exp $
  *
  ****************************************************************************/
 
@@ -1112,6 +1112,8 @@ encoder_encode(Encoder * pEnc,
 	pEnc->current->motion_flags = pFrame->motion;
 	pEnc->mbParam.hint = &pFrame->hint;
 
+	inc_frame_num(pEnc);
+
 	/* disable alternate scan flag if interlacing is not enabled */
 	if ((pEnc->current->global_flags & XVID_ALTERNATESCAN) &&
 		!(pEnc->current->global_flags & XVID_INTERLACING))
@@ -1246,7 +1248,6 @@ encoder_encode(Encoder * pEnc,
 	DEBUG(temp);
 #endif
 
-	inc_frame_num(pEnc);
 	pEnc->iFrameNum++;
 
 	stop_global_timer();
