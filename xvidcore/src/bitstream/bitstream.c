@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.c,v 1.39.2.12 2003-06-09 19:42:18 edgomez Exp $
+ * $Id: bitstream.c,v 1.39.2.13 2003-06-12 14:16:41 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -36,8 +36,6 @@
 static uint32_t __inline
 log2bin(uint32_t value)
 {
-/* Changed by Chenm001 */
-#if !defined(_MSC_VER)
 	int n = 0;
 
 	while (value) {
@@ -45,12 +43,6 @@ log2bin(uint32_t value)
 		n++;
 	}
 	return n;
-#else
-	__asm {
-		bsr eax, value 
-		inc eax
-	}
-#endif
 }
 
 
