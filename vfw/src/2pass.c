@@ -930,7 +930,9 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 
 	twopass->desired_bytes2 = bytes2;
 
-	if (frame->intra)
+	// if this keyframe is too close to the next,
+	// reduce it's byte allotment
+	if (frame->intra && !credits_pos)
 	{
 		KFdistance = codec->twopass.keyframe_locations[codec->twopass.KF_idx] -
 			codec->twopass.keyframe_locations[codec->twopass.KF_idx - 1];
@@ -1135,6 +1137,9 @@ int codec_2pass_update(CODEC* codec, XVID_ENC_FRAME* frame, XVID_ENC_STATS* stat
 			codec->twopass.quant_count[frame->quant]++;
 			if ((codec->twopass.nns1.quant & NNSTATS_KEYFRAME))
 			{
+				// calculate how much to distribute per frame in
+				// order to make up for this keyframe's overflow
+
 				codec->twopass.overflow += codec->twopass.KFoverflow;
 				codec->twopass.KFoverflow = codec->twopass.desired_bytes2 - frame->length;
 
@@ -1157,6 +1162,8 @@ int codec_2pass_update(CODEC* codec, XVID_ENC_FRAME* frame, XVID_ENC_STATS* stat
 			}
 			else
 			{
+				// distribute part of the keyframe overflow
+
 				codec->twopass.overflow += codec->twopass.desired_bytes2 - frame->length +
 					codec->twopass.KFoverflow_partial;
 				codec->twopass.KFoverflow -= codec->twopass.KFoverflow_partial;
