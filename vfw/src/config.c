@@ -1127,15 +1127,6 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"XVID");
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DIVX");
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DX50");
-
-			EnableWindow(GetDlgItem(hDlg, IDC_BSTATIC1), FALSE);
-			EnableWindow(GetDlgItem(hDlg, IDC_BSTATIC2), FALSE);
-			EnableWindow(GetDlgItem(hDlg, IDC_BSTATIC3), FALSE);
-			EnableWindow(GetDlgItem(hDlg, IDC_MAXBFRAMES), FALSE);
-			EnableWindow(GetDlgItem(hDlg, IDC_BQUANTRATIO), FALSE);
-			EnableWindow(GetDlgItem(hDlg, IDC_PACKED), FALSE);
-			EnableWindow(GetDlgItem(hDlg, IDC_DX50BVOP), FALSE);
-			EnableWindow(GetDlgItem(hDlg, IDC_DEBUG), FALSE);
 		}
 		else if (psi->page == DLG_2PASSALT)
 		{
@@ -1146,12 +1137,9 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		else if (psi->page == DLG_CPU)
 		{
 #ifndef _SMP
-
 			EnableWindow(GetDlgItem(hDlg, IDC_NUMTHREADS_STATIC), FALSE);
 			EnableWindow(GetDlgItem(hDlg, IDC_NUMTHREADS), FALSE);
 #endif
-			EnableWindow(GetDlgItem(hDlg, IDC_FRAMEDROP_STATIC), FALSE);
-			EnableWindow(GetDlgItem(hDlg, IDC_FRAMEDROP), FALSE);
 		}
 
 		if (hTooltip)
