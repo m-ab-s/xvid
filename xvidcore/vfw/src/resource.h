@@ -373,6 +373,7 @@
 #define IDC_STATUS_NUM                  1342
 #define IDC_CARTOON                     1343
 #define IDC_OVERFLOW_CONTROL_STRENGTH   1344
+#define IDC_ASPECT_RATIO                1345
 
 // Next default values for new objects
 // 
@@ -380,7 +381,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        126
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1345
+#define _APS_NEXT_CONTROL_VALUE         1346
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
