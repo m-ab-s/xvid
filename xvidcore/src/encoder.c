@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.38 2003-01-13 23:52:50 edgomez Exp $
+ *  $Id: encoder.c,v 1.76.2.39 2003-01-15 14:36:06 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1834,6 +1834,14 @@ FrameCodeP(Encoder * pEnc,
 				int32_t iSAD = sad16(pEnc->current->image.y + 16*y*pEnc->mbParam.edged_width + 16*x,
 					pEnc->vGMC.y + 16*y*pEnc->mbParam.edged_width + 16*x, 
 					pEnc->mbParam.edged_width, 65536);
+				
+				if (pEnc->current->motion_flags & PMV_CHROMA16) {
+					iSAD += sad8(pEnc->current->image.u + 8*y*(pEnc->mbParam.edged_width/2) + 8*x,
+					pEnc->vGMC.u + 8*y*(pEnc->mbParam.edged_width/2) + 8*x, pEnc->mbParam.edged_width/2);
+
+					iSAD += sad8(pEnc->current->image.v + 8*y*(pEnc->mbParam.edged_width/2) + 8*x,
+					pEnc->vGMC.v + 8*y*(pEnc->mbParam.edged_width/2) + 8*x, pEnc->mbParam.edged_width/2);
+				}
 
 				if (iSAD <= pMB->sad16) {		/* mode decision GMC */
 
