@@ -498,7 +498,7 @@ CodeCoeffIntra(Bitstream * bs,
 	{
 		if ((level = qcoeff[zigzag[i++]]) != 0)
 		{
-			abs_level = ABS(prev_level);
+			abs_level = abs(prev_level);
 			abs_level = abs_level < 64 ? abs_level : 0;
 			code	  = coeff_VLC[1][0][abs_level][prev_run].code;
 			len		  = coeff_VLC[1][0][abs_level][prev_run].len;
@@ -518,7 +518,7 @@ CodeCoeffIntra(Bitstream * bs,
 			run++;
 	}
 
-	abs_level = ABS(prev_level);
+	abs_level = abs(prev_level);
 	abs_level = abs_level < 64 ? abs_level : 0;
 	code	  = coeff_VLC[1][1][abs_level][prev_run].code;
 	len		  = coeff_VLC[1][1][abs_level][prev_run].len;
@@ -559,7 +559,7 @@ CodeCoeffIntra_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag)
 	{
 		if ((level = qcoeff[zigzag[i++]]) != 0)
 		{
-			abs_level = ABS(prev_level);
+			abs_level = abs(prev_level);
 			abs_level = abs_level < 64 ? abs_level : 0;
 			len		  = coeff_VLC[1][0][abs_level][prev_run].len;
 			bits      += len!=128 ? len : 30;
@@ -572,7 +572,7 @@ CodeCoeffIntra_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag)
 			run++;
 	}
 
-	abs_level = ABS(prev_level);
+	abs_level = abs(prev_level);
 	abs_level = abs_level < 64 ? abs_level : 0;
 	len		  = coeff_VLC[1][1][abs_level][prev_run].len;
 	bits      += len!=128 ? len : 30;
@@ -1059,7 +1059,7 @@ get_mv(Bitstream * bs,
 		return data;
 
 	res = BitstreamGetBits(bs, fcode - 1);
-	mv = ((ABS(data) - 1) * scale_fac) + res + 1;
+	mv = ((abs(data) - 1) * scale_fac) + res + 1;
 
 	return data < 0 ? -mv : mv;
 

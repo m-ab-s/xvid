@@ -21,11 +21,12 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbtransquant.c,v 1.21.2.6 2003-03-30 13:16:41 edgomez Exp $
+ * $Id: mbtransquant.c,v 1.21.2.7 2003-04-10 13:05:54 edgomez Exp $
  *
  ****************************************************************************/
 
 #include <string.h>
+#include <stdlib.h>
 
 #include "../portab.h"
 #include "mbfunctions.h"
@@ -486,25 +487,25 @@ MBFieldTest_c(int16_t data[6 * 64])
 	for (i = 0; i < 7; ++i) {
 		for (j = 0; j < 8; ++j) {
 			frame +=
-				ABS(data[0 * 64 + (i + 1) * 8 + j] - data[0 * 64 + i * 8 + j]);
+				abs(data[0 * 64 + (i + 1) * 8 + j] - data[0 * 64 + i * 8 + j]);
 			frame +=
-				ABS(data[1 * 64 + (i + 1) * 8 + j] - data[1 * 64 + i * 8 + j]);
+				abs(data[1 * 64 + (i + 1) * 8 + j] - data[1 * 64 + i * 8 + j]);
 			frame +=
-				ABS(data[2 * 64 + (i + 1) * 8 + j] - data[2 * 64 + i * 8 + j]);
+				abs(data[2 * 64 + (i + 1) * 8 + j] - data[2 * 64 + i * 8 + j]);
 			frame +=
-				ABS(data[3 * 64 + (i + 1) * 8 + j] - data[3 * 64 + i * 8 + j]);
+				abs(data[3 * 64 + (i + 1) * 8 + j] - data[3 * 64 + i * 8 + j]);
 
 			field +=
-				ABS(data[blocks[i + 1] + lines[i + 1] + j] -
+				abs(data[blocks[i + 1] + lines[i + 1] + j] -
 					data[blocks[i] + lines[i] + j]);
 			field +=
-				ABS(data[blocks[i + 1] + lines[i + 1] + 8 + j] -
+				abs(data[blocks[i + 1] + lines[i + 1] + 8 + j] -
 					data[blocks[i] + lines[i] + 8 + j]);
 			field +=
-				ABS(data[blocks[i + 1] + 64 + lines[i + 1] + j] -
+				abs(data[blocks[i + 1] + 64 + lines[i + 1] + j] -
 					data[blocks[i] + 64 + lines[i] + j]);
 			field +=
-				ABS(data[blocks[i + 1] + 64 + lines[i + 1] + 8 + j] -
+				abs(data[blocks[i + 1] + 64 + lines[i + 1] + 8 + j] -
 					data[blocks[i] + 64 + lines[i] + 8 + j]);
 		}
 	}

@@ -2319,10 +2319,10 @@ GlobalMotionEst(const MACROBLOCK * const pMBs,
 		if (pMB->mode == MODE_INTRA || pMB->mode == MODE_NOT_CODED)
 			continue;
 
-		if ( ( (ABS(mv.x -   (pMB-1)->mvs[0].x) < deltax) && (ABS(mv.y -   (pMB-1)->mvs[0].y) < deltay) )
-		&&   ( (ABS(mv.x -   (pMB+1)->mvs[0].x) < deltax) && (ABS(mv.y -   (pMB+1)->mvs[0].y) < deltay) )
-		&&   ( (ABS(mv.x - (pMB-MBw)->mvs[0].x) < deltax) && (ABS(mv.y - (pMB-MBw)->mvs[0].y) < deltay) )
-		&&   ( (ABS(mv.x - (pMB+MBw)->mvs[0].x) < deltax) && (ABS(mv.y - (pMB+MBw)->mvs[0].y) < deltay) ) )
+		if ( ( (abs(mv.x -   (pMB-1)->mvs[0].x) < deltax) && (abs(mv.y -   (pMB-1)->mvs[0].y) < deltay) )
+		&&   ( (abs(mv.x -   (pMB+1)->mvs[0].x) < deltax) && (abs(mv.y -   (pMB+1)->mvs[0].y) < deltay) )
+		&&   ( (abs(mv.x - (pMB-MBw)->mvs[0].x) < deltax) && (abs(mv.y - (pMB-MBw)->mvs[0].y) < deltay) )
+		&&   ( (abs(mv.x - (pMB+MBw)->mvs[0].x) < deltax) && (abs(mv.y - (pMB+MBw)->mvs[0].y) < deltay) ) )
 			MBmask[mbnum]=1;
 	}
 
@@ -2397,8 +2397,8 @@ GlobalMotionEst(const MACROBLOCK * const pMBs,
 				continue;
 
 			oldnum++;
-			meanx += ABS(( sol[0] + (16*mx+8)*sol[1] + (16*my+8)*sol[2] ) - mv.x );
-			meany += ABS(( sol[3] - (16*mx+8)*sol[2] + (16*my+8)*sol[1] ) - mv.y );
+			meanx += fabs(( sol[0] + (16*mx+8)*sol[1] + (16*my+8)*sol[2] ) - mv.x );
+			meany += fabs(( sol[3] - (16*mx+8)*sol[2] + (16*my+8)*sol[1] ) - mv.y );
 		}
 
 	if (4*meanx > oldnum)	/* better fit than 0.25 is useless */
@@ -2425,8 +2425,8 @@ GlobalMotionEst(const MACROBLOCK * const pMBs,
 			if (!MBmask[mbnum])
 				continue;
 
-			if  ( ( ABS(( sol[0] + (16*mx+8)*sol[1] + (16*my+8)*sol[2] ) - mv.x ) > meanx )
-			   || ( ABS(( sol[3] - (16*mx+8)*sol[2] + (16*my+8)*sol[1] ) - mv.y ) > meany ) )
+			if  ( ( fabs(( sol[0] + (16*mx+8)*sol[1] + (16*my+8)*sol[2] ) - mv.x ) > meanx )
+			   || ( fabs(( sol[3] - (16*mx+8)*sol[2] + (16*my+8)*sol[1] ) - mv.y ) > meany ) )
 				MBmask[mbnum]=0;
 			else
 				num++;

@@ -42,6 +42,8 @@
 #include "../global.h"
 #include "sad.h"
 
+#include <stdlib.h>
+
 sad16FuncPtr sad16;
 sad8FuncPtr sad8;
 sad16biFuncPtr sad16bi;
@@ -65,22 +67,22 @@ sad16_c(const uint8_t * const cur,
 	uint8_t const *ptr_ref = ref;
 
 	for (j = 0; j < 16; j++) {
-			sad += ABS(ptr_cur[0] - ptr_ref[0]);
-			sad += ABS(ptr_cur[1] - ptr_ref[1]);
-			sad += ABS(ptr_cur[2] - ptr_ref[2]);
-			sad += ABS(ptr_cur[3] - ptr_ref[3]);
-			sad += ABS(ptr_cur[4] - ptr_ref[4]);
-			sad += ABS(ptr_cur[5] - ptr_ref[5]);
-			sad += ABS(ptr_cur[6] - ptr_ref[6]);
-			sad += ABS(ptr_cur[7] - ptr_ref[7]);
-			sad += ABS(ptr_cur[8] - ptr_ref[8]);
-			sad += ABS(ptr_cur[9] - ptr_ref[9]);
-			sad += ABS(ptr_cur[10] - ptr_ref[10]);
-			sad += ABS(ptr_cur[11] - ptr_ref[11]);
-			sad += ABS(ptr_cur[12] - ptr_ref[12]);
-			sad += ABS(ptr_cur[13] - ptr_ref[13]);
-			sad += ABS(ptr_cur[14] - ptr_ref[14]);
-			sad += ABS(ptr_cur[15] - ptr_ref[15]);
+			sad += abs(ptr_cur[0] - ptr_ref[0]);
+			sad += abs(ptr_cur[1] - ptr_ref[1]);
+			sad += abs(ptr_cur[2] - ptr_ref[2]);
+			sad += abs(ptr_cur[3] - ptr_ref[3]);
+			sad += abs(ptr_cur[4] - ptr_ref[4]);
+			sad += abs(ptr_cur[5] - ptr_ref[5]);
+			sad += abs(ptr_cur[6] - ptr_ref[6]);
+			sad += abs(ptr_cur[7] - ptr_ref[7]);
+			sad += abs(ptr_cur[8] - ptr_ref[8]);
+			sad += abs(ptr_cur[9] - ptr_ref[9]);
+			sad += abs(ptr_cur[10] - ptr_ref[10]);
+			sad += abs(ptr_cur[11] - ptr_ref[11]);
+			sad += abs(ptr_cur[12] - ptr_ref[12]);
+			sad += abs(ptr_cur[13] - ptr_ref[13]);
+			sad += abs(ptr_cur[14] - ptr_ref[14]);
+			sad += abs(ptr_cur[15] - ptr_ref[15]);
 
 			if (sad >= best_sad) 
 				return sad;
@@ -111,7 +113,7 @@ sad16bi_c(const uint8_t * const cur,
 
 		for (i = 0; i < 16; i++) {
 			int pixel = (ptr_ref1[i] + ptr_ref2[i] + 1) / 2;
-			sad += ABS(ptr_cur[i] - pixel);
+			sad += abs(ptr_cur[i] - pixel);
 		}
 
 		ptr_cur += stride;
@@ -141,7 +143,7 @@ sad8bi_c(const uint8_t * const cur,
 
 		for (i = 0; i < 8; i++) {
 			int pixel = (ptr_ref1[i] + ptr_ref2[i] + 1) / 2;
-			sad += ABS(ptr_cur[i] - pixel);
+			sad += abs(ptr_cur[i] - pixel);
 		}
 
 		ptr_cur += stride;
@@ -168,14 +170,14 @@ sad8_c(const uint8_t * const cur,
 
 	for (j = 0; j < 8; j++) {
 
-		sad += ABS(ptr_cur[0] - ptr_ref[0]);
-		sad += ABS(ptr_cur[1] - ptr_ref[1]);
-		sad += ABS(ptr_cur[2] - ptr_ref[2]);
-		sad += ABS(ptr_cur[3] - ptr_ref[3]);
-		sad += ABS(ptr_cur[4] - ptr_ref[4]);
-		sad += ABS(ptr_cur[5] - ptr_ref[5]);
-		sad += ABS(ptr_cur[6] - ptr_ref[6]);
-		sad += ABS(ptr_cur[7] - ptr_ref[7]);
+		sad += abs(ptr_cur[0] - ptr_ref[0]);
+		sad += abs(ptr_cur[1] - ptr_ref[1]);
+		sad += abs(ptr_cur[2] - ptr_ref[2]);
+		sad += abs(ptr_cur[3] - ptr_ref[3]);
+		sad += abs(ptr_cur[4] - ptr_ref[4]);
+		sad += abs(ptr_cur[5] - ptr_ref[5]);
+		sad += abs(ptr_cur[6] - ptr_ref[6]);
+		sad += abs(ptr_cur[7] - ptr_ref[7]);
 		
 		ptr_cur += stride;
 		ptr_ref += stride;
@@ -213,7 +215,7 @@ dev16_c(const uint8_t * const cur,
 	for (j = 0; j < 16; j++) {
 
 		for (i = 0; i < 16; i++)
-			dev += ABS(*(ptr_cur + i) - (int32_t) mean);
+			dev += abs(*(ptr_cur + i) - (int32_t) mean);
 
 		ptr_cur += stride;
 
@@ -281,7 +283,7 @@ mrsad16_c(const uint8_t * const cur,
 
 		for (i = 0; i < 16; i++) {
 
-			sad += ABS(*(ptr_cur + i) - *(ptr_ref + i) - mean);
+			sad += abs(*(ptr_cur + i) - *(ptr_ref + i) - mean);
 			if (sad >= best_sad) {
 				return MRSAD16_CORRFACTOR * sad;
 			}

@@ -50,6 +50,8 @@
   *                                                                            *
   ******************************************************************************/
 
+#include <stdlib.h>
+
 #include "../global.h"
 #include "../encoder.h"
 #include "mbprediction.h"
@@ -212,7 +214,7 @@ predict_acdc(MACROBLOCK * pMBs,
 	//  determine ac prediction direction & ac/dc predictor
 	//  place rescaled ac/dc predictions into predictors[] for later use
 
-	if (ABS(pLeft[0] - pDiag[0]) < ABS(pDiag[0] - pTop[0])) {
+	if (abs(pLeft[0] - pDiag[0]) < abs(pDiag[0] - pTop[0])) {
 		*acpred_direction = 1;	// vertical
 		predictors[0] = DIV_DIV(pTop[0], iDcScaler);
 		for (i = 1; i < 8; i++) {
@@ -318,9 +320,9 @@ calc_acdc_coeff(MACROBLOCK * pMB,
 			int16_t level;
 
 			level = qcoeff[i];
-			S2 += ABS(level);
+			S2 += abs(level);
 			level -= predictors[i];
-			S1 += ABS(level);
+			S1 += abs(level);
 			predictors[i] = level;
 		}
 	} else						// acpred_direction == 2
@@ -329,9 +331,9 @@ calc_acdc_coeff(MACROBLOCK * pMB,
 			int16_t level;
 
 			level = qcoeff[i * 8];
-			S2 += ABS(level);
+			S2 += abs(level);
 			level -= predictors[i];
-			S1 += ABS(level);
+			S1 += abs(level);
 			predictors[i] = level;
 		}
 

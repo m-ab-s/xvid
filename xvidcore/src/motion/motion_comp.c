@@ -12,13 +12,6 @@
 #include "../utils/timer.h"
 #include "motion.h"
 
-#ifndef ABS
-#define ABS(X) (((X)>0)?(X):-(X))
-#endif
-#ifndef SIGN
-#define SIGN(X) (((X)>0)?1:-1)
-#endif
-
 #ifndef RSHIFT
 #define RSHIFT(a,b) ((a) > 0 ? ((a) + (1<<((b)-1)))>>(b) : ((a) + (1<<((b)-1))-1)>>(b))
 #endif

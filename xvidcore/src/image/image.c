@@ -1019,15 +1019,15 @@ image_mad(const IMAGE * img1,
 
 	for (y = 0; y < height; y++)
 		for (x = 0; x < width; x++)
-			sum += ABS(img1->y[x + y * stride] - img2->y[x + y * stride]);
+			sum += abs(img1->y[x + y * stride] - img2->y[x + y * stride]);
 
 	for (y = 0; y < height2; y++)
 		for (x = 0; x < width2; x++)
-			sum += ABS(img1->u[x + y * stride2] - img2->u[x + y * stride2]);
+			sum += abs(img1->u[x + y * stride2] - img2->u[x + y * stride2]);
 
 	for (y = 0; y < height2; y++)
 		for (x = 0; x < width2; x++)
-			sum += ABS(img1->v[x + y * stride2] - img2->v[x + y * stride2]);
+			sum += abs(img1->v[x + y * stride2] - img2->v[x + y * stride2]);
 
 	return (float) sum / (width * height * 3 / 2);
 }
