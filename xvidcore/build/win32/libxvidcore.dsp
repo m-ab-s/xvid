@@ -25,7 +25,7 @@ CFG=libxvidcore - Win32 Debug
 # PROP AllowPerConfigDependencies 0
 # PROP Scc_ProjName ""
 # PROP Scc_LocalPath ""
-CPP=xicl6.exe
+CPP=cl.exe
 RSC=rc.exe
 
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
 # ADD CPP /nologo /G6 /W3 /GX /Op /Ob2 /D "NDEBUG" /D "ARCH_IS_IA32" /D "ARCH_IS_32BIT" /D "ARCH_IS_LITTLE_ENDIAN" /D "WIN32" /D "_MBCS" /D "_LIB" /FAcs /YX /FD /O3 -QxK /Qunroll /c
-# SUBTRACT CPP /Z<none> /Fr
+# SUBTRACT CPP /Fr
 # ADD BASE RSC /l 0xc09 /d "NDEBUG"
 # ADD RSC /l 0xc09 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -281,7 +281,7 @@ SOURCE=..\..\src\dct\x86_asm\fdct_mmx_ffmpeg.asm
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Release
 InputPath=..\..\src\dct\x86_asm\fdct_mmx_ffmpeg.asm
-InputName=fdct_mmx
+InputName=fdct_mmx_ffmpeg
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
@@ -293,7 +293,7 @@ InputName=fdct_mmx
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Debug
 InputPath=..\..\src\dct\x86_asm\fdct_mmx_ffmpeg.asm
-InputName=fdct_mmx
+InputName=fdct_mmx_ffmpeg
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
@@ -312,7 +312,7 @@ SOURCE=..\..\src\dct\x86_asm\fdct_mmx_skal.asm
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Release
 InputPath=..\..\src\dct\x86_asm\fdct_mmx_skal.asm
-InputName=fdct_xmm
+InputName=fdct_mmx_skal
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
@@ -324,7 +324,7 @@ InputName=fdct_xmm
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Debug
 InputPath=..\..\src\dct\x86_asm\fdct_mmx_skal.asm
-InputName=fdct_xmm
+InputName=fdct_mmx_skal
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
@@ -343,7 +343,7 @@ SOURCE=..\..\src\dct\x86_asm\fdct_sse2_skal.asm
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Release
 InputPath=..\..\src\dct\x86_asm\fdct_sse2_skal.asm
-InputName=fdct_xmm
+InputName=fdct_sse2_skal
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
@@ -355,7 +355,7 @@ InputName=fdct_xmm
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Debug
 InputPath=..\..\src\dct\x86_asm\fdct_sse2_skal.asm
-InputName=fdct_xmm
+InputName=fdct_sse2_skal
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
@@ -436,7 +436,7 @@ SOURCE=..\..\src\dct\x86_asm\idct_sse2_dmitry.asm
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Release
 InputPath=..\..\src\dct\x86_asm\idct_sse2_dmitry.asm
-InputName=idct_mmx
+InputName=idct_sse2_dmitry
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
@@ -448,7 +448,7 @@ InputName=idct_mmx
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Debug
 InputPath=..\..\src\dct\x86_asm\idct_sse2_dmitry.asm
-InputName=idct_mmx
+InputName=idct_sse2_dmitry
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
@@ -532,7 +532,7 @@ SOURCE=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\^^^dev-api-4\!!\xvidcore\src\image\x86_asm\
+InputDir=\xvidcore\src\image\x86_asm
 IntDir=.\Release
 InputPath=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
 InputName=colorspace_rgb_mmx
@@ -545,7 +545,7 @@ InputName=colorspace_rgb_mmx
 !ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\^^^dev-api-4\!!\xvidcore\src\image\x86_asm\
+InputDir=\xvidcore\src\image\x86_asm
 IntDir=.\Debug
 InputPath=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
 InputName=colorspace_rgb_mmx
@@ -565,7 +565,7 @@ SOURCE=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\^^^dev-api-4\!!\xvidcore\src\image\x86_asm\
+InputDir=\xvidcore\src\image\x86_asm
 IntDir=.\Release
 InputPath=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
 InputName=colorspace_yuv_mmx
@@ -578,7 +578,7 @@ InputName=colorspace_yuv_mmx
 !ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\^^^dev-api-4\!!\xvidcore\src\image\x86_asm\
+InputDir=\xvidcore\src\image\x86_asm
 IntDir=.\Debug
 InputPath=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
 InputName=colorspace_yuv_mmx
@@ -598,7 +598,7 @@ SOURCE=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\^^^dev-api-4\!!\xvidcore\src\image\x86_asm\
+InputDir=\xvidcore\src\image\x86_asm
 IntDir=.\Release
 InputPath=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
 InputName=colorspace_yuyv_mmx
@@ -611,7 +611,7 @@ InputName=colorspace_yuyv_mmx
 !ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\^^^dev-api-4\!!\xvidcore\src\image\x86_asm\
+InputDir=\xvidcore\src\image\x86_asm
 IntDir=.\Debug
 InputPath=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
 InputName=colorspace_yuyv_mmx
@@ -754,7 +754,7 @@ SOURCE=..\..\src\image\x86_asm\qpel_mmx.asm
 
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
-# Begin Custom Build
+# Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Release
 InputPath=..\..\src\image\x86_asm\qpel_mmx.asm
 InputName=qpel_mmx
@@ -765,6 +765,16 @@ InputName=qpel_mmx
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
+
+# Begin Custom Build - Assembling $(InputPath)
+IntDir=.\Debug
+InputPath=..\..\src\image\x86_asm\qpel_mmx.asm
+InputName=qpel_mmx
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
 
 !ENDIF 
 
@@ -1098,68 +1108,6 @@ SOURCE=..\..\src\prediction\mbprediction.c
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\src\quant\x86_asm\quantize_mpeg_mmx.asm
-
-!IF  "$(CFG)" == "libxvidcore - Win32 Release"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Release
-InputPath=..\..\src\quant\x86_asm\quantize_mpeg_mmx.asm
-InputName=quantize_mpeg_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Debug
-InputPath=..\..\src\quant\x86_asm\quantize_mpeg_mmx.asm
-InputName=quantize_mpeg_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\src\quant\x86_asm\quantize_mpeg_xmm.asm
-
-!IF  "$(CFG)" == "libxvidcore - Win32 Release"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Release
-InputPath=..\..\src\quant\x86_asm\quantize_mpeg_xmm.asm
-InputName=quantize_mpeg_xmm
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Debug
-InputPath=..\..\src\quant\x86_asm\quantize_mpeg_xmm.asm
-InputName=quantize_mpeg_xmm
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\src\quant\x86_asm\quantize_h263_3dne.asm
 
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
@@ -1211,6 +1159,68 @@ InputName=quantize_h263_mmx
 IntDir=.\Debug
 InputPath=..\..\src\quant\x86_asm\quantize_h263_mmx.asm
 InputName=quantize_h263_mmx
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\quant\x86_asm\quantize_mpeg_mmx.asm
+
+!IF  "$(CFG)" == "libxvidcore - Win32 Release"
+
+# Begin Custom Build - Assembling $(InputPath)
+IntDir=.\Release
+InputPath=..\..\src\quant\x86_asm\quantize_mpeg_mmx.asm
+InputName=quantize_mpeg_mmx
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
+
+# Begin Custom Build - Assembling $(InputPath)
+IntDir=.\Debug
+InputPath=..\..\src\quant\x86_asm\quantize_mpeg_mmx.asm
+InputName=quantize_mpeg_mmx
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\quant\x86_asm\quantize_mpeg_xmm.asm
+
+!IF  "$(CFG)" == "libxvidcore - Win32 Release"
+
+# Begin Custom Build - Assembling $(InputPath)
+IntDir=.\Release
+InputPath=..\..\src\quant\x86_asm\quantize_mpeg_xmm.asm
+InputName=quantize_mpeg_xmm
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
+
+# Begin Custom Build - Assembling $(InputPath)
+IntDir=.\Debug
+InputPath=..\..\src\quant\x86_asm\quantize_mpeg_xmm.asm
+InputName=quantize_mpeg_xmm
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)

@@ -10,8 +10,10 @@ Active Items to work on:
 * update vfw & dshow decoder frontends
   - GUI isn't perfect for vfw and dshow still links against xvid.dll
     which doesn't export internal functions anymore because of the license
-    change. Use xvid -> link against libxvidcore.(lib|dll), use xvid
-    through vfw, use the the vfw framework and anything else.
+    change. 
+* decide on vfw & dshow linking policy. presently we statically link,
+    however this increases the size of zips/packages where both vfw &
+    dshow are included.
 * update/fix 2pass plugin
   - Commited but needs additional testing/feedback (ed.gomez)
 * update/fix CBR plugin
@@ -52,5 +54,6 @@ Already completed items:
 * New unix build process (ed.gomez)
 * New thread/instance safe sse2 code (p.massimino)
 * INSTALL guide for Unix and Win32 (ed.gomez)
+* dshow static link to libxvidcore.lib (peter)
 
-Last edited: $Date: 2003-11-15 01:53:22 $
+Last edited: $Date: 2003-11-15 03:10:42 $
