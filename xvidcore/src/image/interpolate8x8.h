@@ -124,7 +124,7 @@ interpolate8x8_switch(uint8_t * const cur,
 {
 	int32_t ddx, ddy;
 
-	switch (((dx & 1) << 1) + (dy & 1))	// ((dx%2)?2:0)+((dy%2)?1:0)
+	switch (((dx & 1) << 1) + (dy & 1))	/* ((dx%2)?2:0)+((dy%2)?1:0) */
 	{
 	case 0:
 		ddx = dx / 2;
@@ -206,7 +206,7 @@ interpolate8x8_switch2(uint8_t * const buffer,
 {
 	int32_t ddx, ddy;
 
-	switch (((dx & 1) << 1) + (dy & 1))	// ((dx%2)?2:0)+((dy%2)?1:0)
+	switch (((dx & 1) << 1) + (dy & 1))	/* ((dx%2)?2:0)+((dy%2)?1:0) */
 	{
 	case 0:
 		return (uint8_t *)refn + (int)((y + dy/2) * stride + x + dx/2);

@@ -31,12 +31,12 @@
  *
  **************************************************************************/
 
-#include <string.h>				// memcpy
+#include <string.h>				/* memcpy */
 
 #include "../global.h"
 #include "colorspace.h"
 
-// function pointers
+/* function pointers */
 
 /* input */
 packedFuncPtr rgb555_to_yv12;

@@ -35,11 +35,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>    // for memset
+#include <string.h>    /* for memset */
 #include <assert.h>
 
 #ifndef WIN32
-#include <sys/time.h>	// for gettimeofday
+#include <sys/time.h>	/* for gettimeofday */
 #else
 #include <time.h>
 #endif
@@ -67,7 +67,7 @@
 #define M_PI		3.14159265358979323846
 #endif
 
-const int speed_ref = 100;  // on slow machines, decrease this value
+const int speed_ref = 100;  /* on slow machines, decrease this value */
 
 /*********************************************************************
  * misc
@@ -144,7 +144,7 @@ int init_cpu(CPU *cpu)
 
   cpu_type = check_cpu_features() & cpu->cpu;
   xinit.cpu_flags = cpu_type | XVID_CPU_FORCE;
-  //    xinit.cpu_flags = XVID_CPU_MMX | XVID_CPU_FORCE;
+  /* xinit.cpu_flags = XVID_CPU_MMX | XVID_CPU_FORCE; */
   xerr = xvid_init(NULL, 0, &xinit, NULL);
   if (cpu->cpu>0 && (cpu_type==0 || xerr!=XVID_ERR_OK)) {
     printf( "%s - skipped...\n", cpu->name );
@@ -302,7 +302,7 @@ void test_mb()
   const int nb_tests = 2000*speed_ref;
   CPU *cpu;
   const uint8_t Src0[16*9] = {
-        // try to have every possible combinaison of rounding...
+        /* try to have every possible combinaison of rounding... */
       0, 0, 1, 0, 2, 0, 3, 0, 4             ,0,0,0, 0,0,0,0
     , 0, 1, 1, 1, 2, 1, 3, 1, 3             ,0,0,0, 0,0,0,0
     , 0, 2, 1, 2, 2, 2, 3, 2, 2             ,0,0,0, 0,0,0,0
@@ -352,7 +352,7 @@ void test_mb()
     if (iCrc!=8103) printf( "*** CRC ERROR! ***\n" );
 
 
-       // this is a new function, as of 06.06.2002
+       /* this is a new function, as of 06.06.2002 */
 #if 0
     TEST_MB2(interpolate8x8_avrg);
     printf( "%s - interpolate8x8_c %.3f usec       iCrc=%d\n", cpu->name, t, iCrc );
@@ -528,8 +528,8 @@ void test_quant()
 
   printf( "\n =====  test quant =====\n" );
 
-    // we deliberately enfringe the norm's specified range [-127,127],
-    // to test the robustness of the iquant module
+    /* we deliberately enfringe the norm's specified range [-127,127], */
+    /* to test the robustness of the iquant module */
   for(i=0; i<64; ++i) {
     Src[i] = 1 + (i-32) * (i&6);
     Dst[i] = 0;
@@ -616,8 +616,8 @@ void test_cbp()
   printf( "\n =====  test cbp =====\n" );
 
   for(i=0; i<6*64; ++i) {
-    Src1[i] = (i*i*3/8192)&(i/64)&1;  // 'random'
-    Src2[i] = (i<3*64);               // half-full
+    Src1[i] = (i*i*3/8192)&(i/64)&1;  /* 'random' */
+    Src2[i] = (i<3*64);               /* half-full */
     Src3[i] = ((i+32)>3*64);
     Src4[i] = (i==(3*64+2) || i==(5*64+9));
   }
@@ -772,7 +772,7 @@ void report_stats(STATS_8x8 *S, const double *Limits)
   }
 }
 
-//////////////////////////////////////////////////////////
+///* ////////////////////////////////////////////////////// */
 /* Pseudo-random generator specified by IEEE 1180 */
 
 static long ieee_seed = 1;
@@ -859,13 +859,13 @@ void test_IEEE1180_compliance(int Min, int Max, int Sign)
   static const double ILimits[5] = { 1., 0.06, 0.02, 0.015, 0.0015 };
   int Loops = 10000;
   int i, m, n;
-  short Blk0[64];     // reference
+  short Blk0[64];     /* reference */
   short Blk[64], iBlk[64];
   short Ref_FDCT[64];
   short Ref_IDCT[64];
 
-  STATS_8x8 FStats; // forward dct stats
-  STATS_8x8 IStats; // inverse dct stats
+  STATS_8x8 FStats; /* forward dct stats */
+  STATS_8x8 IStats; /* inverse dct stats */
 
   CPU *cpu;
 
@@ -888,8 +888,8 @@ void test_IEEE1180_compliance(int Min, int Max, int Sign)
       for(i=0; i<64; ++i)
         Blk0[i] = (short)ieee_rand(Min,Max) * Sign;
 
-        // hmm, I'm not quite sure this is exactly
-        // the tests described in the norm. check...
+        /* hmm, I'm not quite sure this is exactly */
+        /* the tests described in the norm. check... */
 
       memcpy(Ref_FDCT, Blk0, 64*sizeof(short));
       ref_fdct(Ref_FDCT);
@@ -916,7 +916,7 @@ void test_IEEE1180_compliance(int Min, int Max, int Sign)
 
     printf( "\n  -- FDCT report --\n" );
 //    print_stats(&FStats);
-    report_stats(&FStats, 0); // so far I know, IEEE1180 says nothing for fdct
+    report_stats(&FStats, 0); /* so far I know, IEEE1180 says nothing for fdct */
 
     for(i=0; i<64; i++) Blk[i] = 0;
     emms(); fdct(Blk); emms();
@@ -938,13 +938,13 @@ void test_IEEE1180_compliance(int Min, int Max, int Sign)
 
 void test_dct_saturation(int Min, int Max)
 {
-    // test behaviour on input range fringe
+    /* test behaviour on input range fringe */
 
   int i, n, p;
   CPU *cpu;
-//  const short IDCT_MAX =  2047;  // 12bits input
+//  const short IDCT_MAX =  2047;  /* 12bits input */
 //  const short IDCT_MIN = -2048;
-//  const short IDCT_OUT =   256;  // 9bits ouput
+//  const short IDCT_OUT =   256;  /* 9bits ouput */
   const int Partitions = 4;
   const int Loops = 10000 / Partitions;
 
@@ -961,11 +961,11 @@ void test_dct_saturation(int Min, int Max)
     printf( "\n===== IEEE test for %s Min=%d Max=%d =====\n",
       cpu->name, Min, Max );
 
-              // FDCT tests //
+              /* FDCT tests // */
 
     init_stats(&Stats);
 
-      // test each computation channels separately
+      /* test each computation channels separately */
     for(i=0; i<64; i++) Blk[i] = Blk0[i] = ((i/8)==(i%8)) ? Max : 0;
     ref_fdct(Blk0);
     emms(); fdct(Blk); emms();
@@ -976,7 +976,7 @@ void test_dct_saturation(int Min, int Max)
     emms(); fdct(Blk); emms();
     store_stats(&Stats, Blk, Blk0);
 
-      // randomly saturated inputs
+      /* randomly saturated inputs */
     for(p=0; p<Partitions; ++p)
     {
       for(n=0; n<Loops; ++n)
@@ -992,13 +992,13 @@ void test_dct_saturation(int Min, int Max)
     report_stats(&Stats, 0);
 
 
-              // IDCT tests //
+              /* IDCT tests // */
 #if 0
-      // no finished yet
+      /* no finished yet */
 
     init_stats(&Stats);
 
-    // test each computation channel separately
+    /* test each computation channel separately */
     for(i=0; i<64; i++) Blk[i] = Blk0[i] = ((i/8)==(i%8)) ? IDCT_MAX : 0;
     ref_idct(Blk0);
     emms(); idct(Blk); emms();
@@ -1011,7 +1011,7 @@ void test_dct_saturation(int Min, int Max)
     for(i=0; i<64; i++) { CLAMP(Blk0[i], IDCT_OUT); CLAMP(Blk[i], IDCT_OUT); }
     store_stats(&Stats, Blk, Blk0);
 
-      // randomly saturated inputs
+      /* randomly saturated inputs */
     for(p=0; p<Partitions; ++p)
     {
       for(n=0; n<Loops; ++n)
@@ -1080,8 +1080,8 @@ void test_dec(const char *name, int width, int height, int with_chksum)
   }
   else printf( "Input size: %d\n", buf_size);
 
-  buf = malloc(buf_size); // should be enuf'
-  rgb_out = calloc(4, width*height);  // <-room for _RGB24
+  buf = malloc(buf_size); /* should be enuf' */
+  rgb_out = calloc(4, width*height);  /* <-room for _RGB24 */
   if (buf==0 || rgb_out==0) {
     printf( "malloc failed!\n" );
     goto End;

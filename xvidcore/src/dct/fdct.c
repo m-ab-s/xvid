@@ -108,7 +108,7 @@
 #define FIX_2_562915447  ((int) 20995)	/* FIX(2.562915447) */
 #define FIX_3_072711026  ((int) 25172)	/* FIX(3.072711026) */
 
-// function pointer
+/* function pointer */
 fdctFuncPtr fdct;
 
 /*

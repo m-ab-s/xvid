@@ -121,7 +121,7 @@ bs_get_matrix(Bitstream * bs,
 		matrix[scan_tables[0][i++]] = value;
 	}
 	while (value != 0 && i < 64);
-        i--;    // fix little bug at coeff not full
+        i--;    /* fix little bug at coeff not full */
 
 	while (i < 64) {
 		matrix[scan_tables[0][i++]] = last;
@@ -130,9 +130,11 @@ bs_get_matrix(Bitstream * bs,
 
 
 
-// for PVOP addbits == fcode - 1
-// for BVOP addbits == max(fcode,bcode) - 1
-// returns mbpos
+/*
+ * for PVOP addbits == fcode - 1
+ * for BVOP addbits == max(fcode,bcode) - 1
+ * returns mbpos
+ */
 int
 read_video_packet_header(Bitstream *bs, 
 						DECODER * dec, 
@@ -212,7 +214,7 @@ read_video_packet_header(Bitstream *bs,
 			if (dec->sprite_enable == SPRITE_GMC && coding_type == S_VOP &&
 				dec->sprite_warping_points > 0)
 			{
-				// TODO: sprite trajectory
+				/* TODO: sprite trajectory */
 			}
 			if (dec->reduced_resolution_enable && 
 				dec->shape == VIDOBJLAY_SHAPE_RECTANGULAR &&
@@ -452,14 +454,14 @@ BitstreamReadHeaders(Bitstream * bs,
 
 			DPRINTF(XVID_DEBUG_STARTCODE, "<visual_object_sequence>\n");
 
-			BitstreamSkip(bs, 32);	// visual_object_sequence_start_code
-			profile = BitstreamGetBits(bs, 8);	// profile_and_level_indication
+			BitstreamSkip(bs, 32);	/* visual_object_sequence_start_code */
+			profile = BitstreamGetBits(bs, 8);	/* profile_and_level_indication */
 
 			DPRINTF(XVID_DEBUG_HEADER, "profile_and_level_indication %i\n", profile);
 
 		} else if (start_code == VISOBJSEQ_STOP_CODE) {
 
-			BitstreamSkip(bs, 32);	// visual_object_sequence_stop_code
+			BitstreamSkip(bs, 32);	/* visual_object_sequence_stop_code */
 
 			DPRINTF(XVID_DEBUG_STARTCODE, "</visual_object_sequence>\n");
 
@@ -468,36 +470,36 @@ BitstreamReadHeaders(Bitstream * bs,
 
 			DPRINTF(XVID_DEBUG_STARTCODE, "<visual_object>\n");
 
-			BitstreamSkip(bs, 32);	// visual_object_start_code
-			if (BitstreamGetBit(bs))	// is_visual_object_identified
+			BitstreamSkip(bs, 32);	/* visual_object_start_code */
+			if (BitstreamGetBit(bs))	/* is_visual_object_identified */
 			{
-				visobj_ver_id = BitstreamGetBits(bs, 4);	// visual_object_ver_id
+				visobj_ver_id = BitstreamGetBits(bs, 4);	/* visual_object_ver_id */
 				DPRINTF(XVID_DEBUG_HEADER,"visobj_ver_id %i\n", visobj_ver_id);
-				BitstreamSkip(bs, 3);	// visual_object_priority
+				BitstreamSkip(bs, 3);	/* visual_object_priority */
 			} else {
 				visobj_ver_id = 1;
 			}
 
-			if (BitstreamShowBits(bs, 4) != VISOBJ_TYPE_VIDEO)	// visual_object_type
+			if (BitstreamShowBits(bs, 4) != VISOBJ_TYPE_VIDEO)	/* visual_object_type */
 			{
 				DPRINTF(XVID_DEBUG_ERROR, "visual_object_type != video\n");
 				return -1;
 			}
 			BitstreamSkip(bs, 4);
 
-			// video_signal_type
+			/* video_signal_type */
 
-			if (BitstreamGetBit(bs))	// video_signal_type
+			if (BitstreamGetBit(bs))	/* video_signal_type */
 			{
 				DPRINTF(XVID_DEBUG_HEADER,"+ video_signal_type\n");
-				BitstreamSkip(bs, 3);	// video_format
-				BitstreamSkip(bs, 1);	// video_range
-				if (BitstreamGetBit(bs))	// color_description
+				BitstreamSkip(bs, 3);	/* video_format */
+				BitstreamSkip(bs, 1);	/* video_range */
+				if (BitstreamGetBit(bs))	/* color_description */
 				{
 					DPRINTF(XVID_DEBUG_HEADER,"+ color_description");
-					BitstreamSkip(bs, 8);	// color_primaries
-					BitstreamSkip(bs, 8);	// transfer_characteristics
-					BitstreamSkip(bs, 8);	// matrix_coefficients
+					BitstreamSkip(bs, 8);	/* color_primaries */
+					BitstreamSkip(bs, 8);	/* transfer_characteristics */
+					BitstreamSkip(bs, 8);	/* matrix_coefficients */
 				}
 			}
 		} else if ((start_code & ~VIDOBJ_START_CODE_MASK) == VIDOBJ_START_CODE) {
@@ -505,44 +507,44 @@ BitstreamReadHeaders(Bitstream * bs,
 			DPRINTF(XVID_DEBUG_STARTCODE, "<video_object>\n");
 			DPRINTF(XVID_DEBUG_HEADER, "vo id %i\n", start_code & VIDOBJ_START_CODE_MASK);
 
-			BitstreamSkip(bs, 32);	// video_object_start_code
+			BitstreamSkip(bs, 32);	/* video_object_start_code */
 
 		} else if ((start_code & ~VIDOBJLAY_START_CODE_MASK) == VIDOBJLAY_START_CODE) {
 
 			DPRINTF(XVID_DEBUG_STARTCODE, "<video_object_layer>\n");
 			DPRINTF(XVID_DEBUG_HEADER, "vol id %i\n", start_code & VIDOBJLAY_START_CODE_MASK);
 
-			BitstreamSkip(bs, 32);	// video_object_layer_start_code
-			BitstreamSkip(bs, 1);	// random_accessible_vol
+			BitstreamSkip(bs, 32);	/* video_object_layer_start_code */
+			BitstreamSkip(bs, 1);	/* random_accessible_vol */
 
-            BitstreamSkip(bs, 8);   // video_object_type_indication
+            BitstreamSkip(bs, 8);   /* video_object_type_indication */
 
-			if (BitstreamGetBit(bs))	// is_object_layer_identifier
+			if (BitstreamGetBit(bs))	/* is_object_layer_identifier */
 			{
 				DPRINTF(XVID_DEBUG_HEADER, "+ is_object_layer_identifier\n");
-				vol_ver_id = BitstreamGetBits(bs, 4);	// video_object_layer_verid
+				vol_ver_id = BitstreamGetBits(bs, 4);	/* video_object_layer_verid */
 				DPRINTF(XVID_DEBUG_HEADER,"ver_id %i\n", vol_ver_id);
-				BitstreamSkip(bs, 3);	// video_object_layer_priority
+				BitstreamSkip(bs, 3);	/* video_object_layer_priority */
 			} else {
 				vol_ver_id = 1;
 			}
 
 			dec->aspect_ratio = BitstreamGetBits(bs, 4);
 
-			if (dec->aspect_ratio == VIDOBJLAY_AR_EXTPAR)	// aspect_ratio_info
+			if (dec->aspect_ratio == VIDOBJLAY_AR_EXTPAR)	/* aspect_ratio_info */
 			{
 				DPRINTF(XVID_DEBUG_HEADER, "+ aspect_ratio_info\n");
-				dec->par_width = BitstreamGetBits(bs, 8);	// par_width
-				dec->par_height = BitstreamGetBits(bs, 8);	// par_height
+				dec->par_width = BitstreamGetBits(bs, 8);	/* par_width */
+				dec->par_height = BitstreamGetBits(bs, 8);	/* par_height */
 			}
 
-			if (BitstreamGetBit(bs))	// vol_control_parameters
+			if (BitstreamGetBit(bs))	/* vol_control_parameters */
 			{
 				DPRINTF(XVID_DEBUG_HEADER, "+ vol_control_parameters\n");
-				BitstreamSkip(bs, 2);	// chroma_format
-				dec->low_delay = BitstreamGetBit(bs);	// low_delay
+				BitstreamSkip(bs, 2);	/* chroma_format */
+				dec->low_delay = BitstreamGetBit(bs);	/* low_delay */
 				DPRINTF(XVID_DEBUG_HEADER, "low_delay %i\n", dec->low_delay);
-				if (BitstreamGetBit(bs))	// vbv_parameters
+				if (BitstreamGetBit(bs))	/* vbv_parameters */
 				{
 					unsigned int bitrate;
 					unsigned int buffer_size;
@@ -550,18 +552,18 @@ BitstreamReadHeaders(Bitstream * bs,
 
 					DPRINTF(XVID_DEBUG_HEADER,"+ vbv_parameters\n");
 
-					bitrate = BitstreamGetBits(bs,15) << 15;	// first_half_bit_rate
+					bitrate = BitstreamGetBits(bs,15) << 15;	/* first_half_bit_rate */
 					READ_MARKER();
-					bitrate |= BitstreamGetBits(bs,15);		// latter_half_bit_rate
+					bitrate |= BitstreamGetBits(bs,15);		/* latter_half_bit_rate */
 					READ_MARKER();
 					
-					buffer_size = BitstreamGetBits(bs, 15) << 3;	// first_half_vbv_buffer_size
+					buffer_size = BitstreamGetBits(bs, 15) << 3;	/* first_half_vbv_buffer_size */
 					READ_MARKER();
-					buffer_size |= BitstreamGetBits(bs, 3);		// latter_half_vbv_buffer_size
+					buffer_size |= BitstreamGetBits(bs, 3);		/* latter_half_vbv_buffer_size */
 
-					occupancy = BitstreamGetBits(bs, 11) << 15;	// first_half_vbv_occupancy
+					occupancy = BitstreamGetBits(bs, 11) << 15;	/* first_half_vbv_occupancy */
 					READ_MARKER();
-					occupancy |= BitstreamGetBits(bs, 15);	// latter_half_vbv_occupancy
+					occupancy |= BitstreamGetBits(bs, 15);	/* latter_half_vbv_occupancy */
 					READ_MARKER();
 
 					DPRINTF(XVID_DEBUG_HEADER,"bitrate %d (unit=400 bps)\n", bitrate);
@@ -572,7 +574,7 @@ BitstreamReadHeaders(Bitstream * bs,
 				dec->low_delay = dec->low_delay_default;
 			}
 
-			dec->shape = BitstreamGetBits(bs, 2);	// video_object_layer_shape
+			dec->shape = BitstreamGetBits(bs, 2);	/* video_object_layer_shape */
 
 			DPRINTF(XVID_DEBUG_HEADER, "shape %i\n", dec->shape);
 			if (dec->shape != VIDOBJLAY_SHAPE_RECTANGULAR)
@@ -581,31 +583,35 @@ BitstreamReadHeaders(Bitstream * bs,
 			}
 
 			if (dec->shape == VIDOBJLAY_SHAPE_GRAYSCALE && vol_ver_id != 1) {
-				BitstreamSkip(bs, 4);	// video_object_layer_shape_extension
+				BitstreamSkip(bs, 4);	/* video_object_layer_shape_extension */
 			}
 
 			READ_MARKER();
 
-// *************************** for decode B-frame time ***********************
-			dec->time_inc_resolution = BitstreamGetBits(bs, 16);	// vop_time_increment_resolution
+			/********************** for decode B-frame time ***********************/
+			dec->time_inc_resolution = BitstreamGetBits(bs, 16);	/* vop_time_increment_resolution */
 			DPRINTF(XVID_DEBUG_HEADER,"vop_time_increment_resolution %i\n", dec->time_inc_resolution);
 
-//			dec->time_inc_resolution--;
+#if 0
+			dec->time_inc_resolution--;
+#endif
 
 			if (dec->time_inc_resolution > 0) {
 				dec->time_inc_bits = log2bin(dec->time_inc_resolution-1);
 			} else {
-				// dec->time_inc_bits = 0;
-				// for "old" xvid compatibility, set time_inc_bits = 1
+#if 0
+				dec->time_inc_bits = 0;
+#endif
+				/* for "old" xvid compatibility, set time_inc_bits = 1 */
 				dec->time_inc_bits = 1;
 			}
 
 			READ_MARKER();
 
-			if (BitstreamGetBit(bs))	// fixed_vop_rate
+			if (BitstreamGetBit(bs))	/* fixed_vop_rate */
 			{
 				DPRINTF(XVID_DEBUG_HEADER, "+ fixed_vop_rate\n");
-				BitstreamSkip(bs, dec->time_inc_bits);	// fixed_vop_time_increment
+				BitstreamSkip(bs, dec->time_inc_bits);	/* fixed_vop_time_increment */
 			}
 
 			if (dec->shape != VIDOBJLAY_SHAPE_BINARY_ONLY) {
@@ -614,9 +620,9 @@ BitstreamReadHeaders(Bitstream * bs,
 					uint32_t width, height;
 
 					READ_MARKER();
-					width = BitstreamGetBits(bs, 13);	// video_object_layer_width
+					width = BitstreamGetBits(bs, 13);	/* video_object_layer_width */
 					READ_MARKER();
-					height = BitstreamGetBits(bs, 13);	// video_object_layer_height
+					height = BitstreamGetBits(bs, 13);	/* video_object_layer_height */
 					READ_MARKER();
 
 					DPRINTF(XVID_DEBUG_HEADER, "width %i\n", width);
@@ -638,14 +644,14 @@ BitstreamReadHeaders(Bitstream * bs,
 				dec->interlacing = BitstreamGetBit(bs);
 				DPRINTF(XVID_DEBUG_HEADER, "interlacing %i\n", dec->interlacing);
 
-				if (!BitstreamGetBit(bs))	// obmc_disable
+				if (!BitstreamGetBit(bs))	/* obmc_disable */
 				{
 					DPRINTF(XVID_DEBUG_ERROR, "obmc_disabled==false not supported\n");
-					// TODO
-					// fucking divx4.02 has this enabled
+					/* TODO */
+					/* fucking divx4.02 has this enabled */
 				}
 
-				dec->sprite_enable = BitstreamGetBits(bs, (vol_ver_id == 1 ? 1 : 2));	// sprite_enable
+				dec->sprite_enable = BitstreamGetBits(bs, (vol_ver_id == 1 ? 1 : 2));	/* sprite_enable */
 
 				if (dec->sprite_enable == SPRITE_STATIC || dec->sprite_enable == SPRITE_GMC)
 				{
@@ -657,49 +663,49 @@ BitstreamReadHeaders(Bitstream * bs,
 						int sprite_height;
 						int sprite_left_coord;
 						int sprite_top_coord;
-						sprite_width = BitstreamGetBits(bs, 13);		// sprite_width
+						sprite_width = BitstreamGetBits(bs, 13);		/* sprite_width */
 						READ_MARKER();
-						sprite_height = BitstreamGetBits(bs, 13);	// sprite_height
+						sprite_height = BitstreamGetBits(bs, 13);	/* sprite_height */
 						READ_MARKER();
-						sprite_left_coord = BitstreamGetBits(bs, 13);	// sprite_left_coordinate
+						sprite_left_coord = BitstreamGetBits(bs, 13);	/* sprite_left_coordinate */
 						READ_MARKER();
-						sprite_top_coord = BitstreamGetBits(bs, 13);	// sprite_top_coordinate
+						sprite_top_coord = BitstreamGetBits(bs, 13);	/* sprite_top_coordinate */
 						READ_MARKER();
 					}
-					dec->sprite_warping_points = BitstreamGetBits(bs, 6);		// no_of_sprite_warping_points
-					dec->sprite_warping_accuracy = BitstreamGetBits(bs, 2);		// sprite_warping_accuracy
-					dec->sprite_brightness_change = BitstreamGetBits(bs, 1);		// brightness_change
+					dec->sprite_warping_points = BitstreamGetBits(bs, 6);		/* no_of_sprite_warping_points */
+					dec->sprite_warping_accuracy = BitstreamGetBits(bs, 2);		/* sprite_warping_accuracy */
+					dec->sprite_brightness_change = BitstreamGetBits(bs, 1);		/* brightness_change */
 					if (dec->sprite_enable != SPRITE_GMC)
 					{
-						low_latency_sprite_enable = BitstreamGetBits(bs, 1);		// low_latency_sprite_enable
+						low_latency_sprite_enable = BitstreamGetBits(bs, 1);		/* low_latency_sprite_enable */
 					}
 				}
 
 				if (vol_ver_id != 1 &&
 					dec->shape != VIDOBJLAY_SHAPE_RECTANGULAR) {
-					BitstreamSkip(bs, 1);	// sadct_disable
+					BitstreamSkip(bs, 1);	/* sadct_disable */
 				}
 
-				if (BitstreamGetBit(bs))	// not_8_bit
+				if (BitstreamGetBit(bs))	/* not_8_bit */
 				{
 					DPRINTF(XVID_DEBUG_HEADER, "not_8_bit==true (ignored)\n");
-					dec->quant_bits = BitstreamGetBits(bs, 4);	// quant_precision
-					BitstreamSkip(bs, 4);	// bits_per_pixel
+					dec->quant_bits = BitstreamGetBits(bs, 4);	/* quant_precision */
+					BitstreamSkip(bs, 4);	/* bits_per_pixel */
 				} else {
 					dec->quant_bits = 5;
 				}
 
 				if (dec->shape == VIDOBJLAY_SHAPE_GRAYSCALE) {
-					BitstreamSkip(bs, 1);	// no_gray_quant_update
-					BitstreamSkip(bs, 1);	// composition_method
-					BitstreamSkip(bs, 1);	// linear_composition
+					BitstreamSkip(bs, 1);	/* no_gray_quant_update */
+					BitstreamSkip(bs, 1);	/* composition_method */
+					BitstreamSkip(bs, 1);	/* linear_composition */
 				}
 
-				dec->quant_type = BitstreamGetBit(bs);	// quant_type
+				dec->quant_type = BitstreamGetBit(bs);	/* quant_type */
 				DPRINTF(XVID_DEBUG_HEADER, "quant_type %i\n", dec->quant_type);
 
 				if (dec->quant_type) {
-					if (BitstreamGetBit(bs))	// load_intra_quant_mat
+					if (BitstreamGetBit(bs))	/* load_intra_quant_mat */
 					{
 						uint8_t matrix[64];
 
@@ -710,7 +716,7 @@ BitstreamReadHeaders(Bitstream * bs,
 					} else
 						set_intra_matrix(get_default_intra_matrix());
 
-					if (BitstreamGetBit(bs))	// load_inter_quant_mat
+					if (BitstreamGetBit(bs))	/* load_inter_quant_mat */
 					{
 						uint8_t matrix[64];
 						
@@ -730,7 +736,7 @@ BitstreamReadHeaders(Bitstream * bs,
 
 
 				if (vol_ver_id != 1) {
-					dec->quarterpel = BitstreamGetBit(bs);	// quarter_sample
+					dec->quarterpel = BitstreamGetBit(bs);	/* quarter_sample */
 					DPRINTF(XVID_DEBUG_HEADER,"quarterpel %i\n", dec->quarterpel);
 				}
 				else
@@ -743,21 +749,21 @@ BitstreamReadHeaders(Bitstream * bs,
 					read_vol_complexity_estimation_header(bs, dec);
 				}
 
-				BitstreamSkip(bs, 1);	// resync_marker_disable
+				BitstreamSkip(bs, 1);	/* resync_marker_disable */
 
-				if (BitstreamGetBit(bs))	// data_partitioned
+				if (BitstreamGetBit(bs))	/* data_partitioned */
 				{
 					DPRINTF(XVID_DEBUG_ERROR, "data_partitioned not supported\n");
-					BitstreamSkip(bs, 1);	// reversible_vlc
+					BitstreamSkip(bs, 1);	/* reversible_vlc */
 				}
 
 				if (vol_ver_id != 1) {
 					dec->newpred_enable = BitstreamGetBit(bs);
-					if (dec->newpred_enable)	// newpred_enable
+					if (dec->newpred_enable)	/* newpred_enable */
 					{
 						DPRINTF(XVID_DEBUG_HEADER, "+ newpred_enable\n");
-						BitstreamSkip(bs, 2);	// requested_upstream_message_type
-						BitstreamSkip(bs, 1);	// newpred_segment_type
+						BitstreamSkip(bs, 2);	/* requested_upstream_message_type */
+						BitstreamSkip(bs, 1);	/* newpred_segment_type */
 					}
 					dec->reduced_resolution_enable = BitstreamGetBit(bs);	/* reduced_resolution_vop_enable */
 					DPRINTF(XVID_DEBUG_HEADER, "reduced_resolution_enable %i\n", dec->reduced_resolution_enable);
@@ -790,7 +796,7 @@ BitstreamReadHeaders(Bitstream * bs,
 					}
 					return -1;
 				}
-			} else				// dec->shape == BINARY_ONLY
+			} else				/* dec->shape == BINARY_ONLY */
 			{
 				if (vol_ver_id != 1) {
 					dec->scalability = BitstreamGetBit(bs); /* scalability */
@@ -805,7 +811,7 @@ BitstreamReadHeaders(Bitstream * bs,
 						return -1;
 					}
 				}
-				BitstreamSkip(bs, 1);	// resync_marker_disable
+				BitstreamSkip(bs, 1);	/* resync_marker_disable */
 
 			}
 
@@ -826,26 +832,26 @@ BitstreamReadHeaders(Bitstream * bs,
 				
 				DPRINTF(XVID_DEBUG_HEADER, "time %ih%im%is\n", hours,minutes,seconds);
 			}
-			BitstreamSkip(bs, 1);	// closed_gov
-			BitstreamSkip(bs, 1);	// broken_link
+			BitstreamSkip(bs, 1);	/* closed_gov */
+			BitstreamSkip(bs, 1);	/* broken_link */
 
 		} else if (start_code == VOP_START_CODE) {
 
 			DPRINTF(XVID_DEBUG_STARTCODE, "<vop>\n");
 
-			BitstreamSkip(bs, 32);	// vop_start_code
+			BitstreamSkip(bs, 32);	/* vop_start_code */
 
-			coding_type = BitstreamGetBits(bs, 2);	// vop_coding_type
+			coding_type = BitstreamGetBits(bs, 2);	/* vop_coding_type */
 			DPRINTF(XVID_DEBUG_HEADER, "coding_type %i\n", coding_type);
 
-// *************************** for decode B-frame time ***********************
-			while (BitstreamGetBit(bs) != 0)	// time_base
+			/*********************** for decode B-frame time ***********************/
+			while (BitstreamGetBit(bs) != 0)	/* time_base */
 				time_incr++;
 
 			READ_MARKER();
 
 			if (dec->time_inc_bits) {
-				time_increment = (BitstreamGetBits(bs, dec->time_inc_bits));	// vop_time_increment
+				time_increment = (BitstreamGetBits(bs, dec->time_inc_bits));	/* vop_time_increment */
 			}
 
 			DPRINTF(XVID_DEBUG_HEADER, "time_base %i\n", time_incr);
@@ -860,17 +866,19 @@ BitstreamReadHeaders(Bitstream * bs,
 				dec->time_base += time_incr;
 				dec->time = time_increment;
 
-/*					dec->time_base * dec->time_inc_resolution +
+#if 0
+					dec->time_base * dec->time_inc_resolution +
 					time_increment;
-*/				dec->time_pp = (uint32_t) 
-					(dec->time_inc_resolution + dec->time - dec->last_non_b_time)%dec->time_inc_resolution;
+#endif
+					dec->time_pp = (uint32_t) 
+						(dec->time_inc_resolution + dec->time - dec->last_non_b_time)%dec->time_inc_resolution;
 				dec->last_non_b_time = dec->time;
 			} else {
 				dec->time = time_increment; 
-/*
+#if 0
 					(dec->last_time_base +
 					 time_incr) * dec->time_inc_resolution + time_increment; 
-*/
+#endif
 				dec->time_bp = (uint32_t) 
 					(dec->time_inc_resolution + dec->last_non_b_time - dec->time)%dec->time_inc_resolution;
 			}
@@ -879,7 +887,7 @@ BitstreamReadHeaders(Bitstream * bs,
 
 			READ_MARKER();
 
-			if (!BitstreamGetBit(bs))	// vop_coded
+			if (!BitstreamGetBit(bs))	/* vop_coded */
 			{
 				DPRINTF(XVID_DEBUG_HEADER, "vop_coded==false\n");
 				return N_VOP;
@@ -902,10 +910,10 @@ BitstreamReadHeaders(Bitstream * bs,
 
 		
 
-			// fix a little bug by MinChen <chenm002@163.com>
+			/* fix a little bug by MinChen <chenm002@163.com> */
 			if ((dec->shape != VIDOBJLAY_SHAPE_BINARY_ONLY) &&
 				( (coding_type == P_VOP) || (coding_type == S_VOP && dec->sprite_enable == SPRITE_GMC) ) ) {
-				*rounding = BitstreamGetBit(bs);	// rounding_type
+				*rounding = BitstreamGetBit(bs);	/* rounding_type */
 				DPRINTF(XVID_DEBUG_HEADER, "rounding %i\n", *rounding);
 			}
 
@@ -942,10 +950,10 @@ BitstreamReadHeaders(Bitstream * bs,
 					DPRINTF(XVID_DEBUG_HEADER, "vert_mc_ref %i\n", vert_mc_ref);
 				}
 
-				BitstreamSkip(bs, 1);	// change_conv_ratio_disable
-				if (BitstreamGetBit(bs))	// vop_constant_alpha
+				BitstreamSkip(bs, 1);	/* change_conv_ratio_disable */
+				if (BitstreamGetBit(bs))	/* vop_constant_alpha */
 				{
-					BitstreamSkip(bs, 8);	// vop_constant_alpha_value
+					BitstreamSkip(bs, 8);	/* vop_constant_alpha_value */
 				}
 			}
 
@@ -956,7 +964,7 @@ BitstreamReadHeaders(Bitstream * bs,
 					read_vop_complexity_estimation_header(bs, dec, coding_type);
 				}
 
-				// intra_dc_vlc_threshold
+				/* intra_dc_vlc_threshold */
 				*intra_dc_threshold =
 					intra_dc_threshold_table[BitstreamGetBits(bs, 3)];
 
@@ -1006,32 +1014,32 @@ BitstreamReadHeaders(Bitstream * bs,
 
 				if (dec->sprite_brightness_change)
 				{
-					// XXX: brightness_change_factor()
+					/* XXX: brightness_change_factor() */
 				}
 				if (dec->sprite_enable == SPRITE_STATIC)
 				{
-					// XXX: todo
+					/* XXX: todo */
 				}
 
 			}
 
-			if ((*quant = BitstreamGetBits(bs, dec->quant_bits)) < 1)	// vop_quant
+			if ((*quant = BitstreamGetBits(bs, dec->quant_bits)) < 1)	/* vop_quant */
 				*quant = 1;
 			DPRINTF(XVID_DEBUG_HEADER, "quant %i\n", *quant);
 
 			if (coding_type != I_VOP) {
-				*fcode_forward = BitstreamGetBits(bs, 3);	// fcode_forward
+				*fcode_forward = BitstreamGetBits(bs, 3);	/* fcode_forward */
 				DPRINTF(XVID_DEBUG_HEADER, "fcode_forward %i\n", *fcode_forward);
 			}
 
 			if (coding_type == B_VOP) {
-				*fcode_backward = BitstreamGetBits(bs, 3);	// fcode_backward
+				*fcode_backward = BitstreamGetBits(bs, 3);	/* fcode_backward */
 				DPRINTF(XVID_DEBUG_HEADER, "fcode_backward %i\n", *fcode_backward);
 			}
 			if (!dec->scalability) {
 				if ((dec->shape != VIDOBJLAY_SHAPE_RECTANGULAR) &&
 					(coding_type != I_VOP)) {
-					BitstreamSkip(bs, 1);	// vop_shape_coding_type
+					BitstreamSkip(bs, 1);	/* vop_shape_coding_type */
 				}
 			}
 			return coding_type;
@@ -1041,7 +1049,7 @@ BitstreamReadHeaders(Bitstream * bs,
 		    int i, version, build;
 			char packed;
 
-			BitstreamSkip(bs, 32);	// user_data_start_code
+			BitstreamSkip(bs, 32);	/* user_data_start_code */
 
 			tmp[0] = BitstreamShowBits(bs, 8);
     
@@ -1068,7 +1076,7 @@ BitstreamReadHeaders(Bitstream * bs,
 						version, build, dec->packed_mode);
 			}
 
-		} else					// start_code == ?
+		} else					/* start_code == ? */
 		{
 			if (BitstreamShowBits(bs, 24) == 0x000001) {
 				DPRINTF(XVID_DEBUG_STARTCODE, "<unknown: %x>\n", BitstreamShowBits(bs, 32));
@@ -1078,7 +1086,9 @@ BitstreamReadHeaders(Bitstream * bs,
 	}
 	while ((BitstreamPos(bs) >> 3) < bs->length);
 
-	//DPRINTF("*** WARNING: no vop_start_code found");
+#if 0
+	DPRINTF("*** WARNING: no vop_start_code found");
+#endif
 	return -1;					/* ignore it */
 }
 
@@ -1130,114 +1140,122 @@ BitstreamWriteVolHeader(Bitstream * const bs,
         vol_type_ind = VIDOBJLAY_TYPE_ASP;
     }
 
-	// visual_object_sequence_start_code
-//	BitstreamPad(bs);
-/* no padding here, anymore. You have to make sure that you are 
-   byte aligned, and that always 1-8 padding bits have been written */
+	/* visual_object_sequence_start_code */
+#if 0
+	BitstreamPad(bs);
+#endif
+
+	/*
+	 * no padding here, anymore. You have to make sure that you are 
+	 * byte aligned, and that always 1-8 padding bits have been written
+	 */
 
     if (pParam->profile) {
 	    BitstreamPutBits(bs, VISOBJSEQ_START_CODE, 32);
 	    BitstreamPutBits(bs, pParam->profile, 8);
     }
 
-	// visual_object_start_code
+	/* visual_object_start_code */
 	BitstreamPad(bs);
 	BitstreamPutBits(bs, VISOBJ_START_CODE, 32);
-	BitstreamPutBits(bs, 0, 1);		// is_visual_object_identifier
-	BitstreamPutBits(bs, VISOBJ_TYPE_VIDEO, 4);		// visual_object_type
+	BitstreamPutBits(bs, 0, 1);		/* is_visual_object_identifier */
+	BitstreamPutBits(bs, VISOBJ_TYPE_VIDEO, 4);		/* visual_object_type */
 	
-	// video object_start_code & vo_id
+	/* video object_start_code & vo_id */
 	BitstreamPad(bs);
 	BitstreamPutBits(bs, VIDOBJ_START_CODE|(vo_id&0x5), 32);
 
-	// video_object_layer_start_code & vol_id
+	/* video_object_layer_start_code & vol_id */
 	BitstreamPad(bs);
 	BitstreamPutBits(bs, VIDOBJLAY_START_CODE|(vol_id&0x4), 32);
 
-	BitstreamPutBit(bs, 0);		// random_accessible_vol
-	BitstreamPutBits(bs, vol_type_ind, 8);	// video_object_type_indication
+	BitstreamPutBit(bs, 0);		/* random_accessible_vol */
+	BitstreamPutBits(bs, vol_type_ind, 8);	/* video_object_type_indication */
 
 	if (vol_ver_id == 1)
 	{
-		BitstreamPutBit(bs, 0);				// is_object_layer_identified (0=not given)
+		BitstreamPutBit(bs, 0);				/* is_object_layer_identified (0=not given) */
 	}
 	else
 	{
-		BitstreamPutBit(bs, 1);		// is_object_layer_identified
-		BitstreamPutBits(bs, vol_ver_id, 4);	// vol_ver_id == 2
-		BitstreamPutBits(bs, 4, 3); // vol_ver_priority (1==lowest, 7==highest) ??
+		BitstreamPutBit(bs, 1);		/* is_object_layer_identified */
+		BitstreamPutBits(bs, vol_ver_id, 4);	/* vol_ver_id == 2 */
+		BitstreamPutBits(bs, 4, 3); /* vol_ver_priority (1==lowest, 7==highest) ?? */
 	}
 
-	BitstreamPutBits(bs, 1, 4);	// aspect_ratio_info (1=1:1)
+	BitstreamPutBits(bs, 1, 4);	/* aspect_ratio_info (1=1:1) */
 
-	BitstreamPutBit(bs, 1);	// vol_control_parameters
-	BitstreamPutBits(bs, 1, 2);	// chroma_format 1="4:2:0"
+	BitstreamPutBit(bs, 1);	/* vol_control_parameters */
+	BitstreamPutBits(bs, 1, 2);	/* chroma_format 1="4:2:0" */
 
 	if (pParam->max_bframes > 0) {
-		BitstreamPutBit(bs, 0);	// low_delay
+		BitstreamPutBit(bs, 0);	/* low_delay */
 	} else
 	{
-		BitstreamPutBit(bs, 1);	// low_delay
+		BitstreamPutBit(bs, 1);	/* low_delay */
 	}
-	BitstreamPutBit(bs, 0);	// vbv_parameters (0=not given)
+	BitstreamPutBit(bs, 0);	/* vbv_parameters (0=not given) */
 
-	BitstreamPutBits(bs, 0, 2);	// video_object_layer_shape (0=rectangular)
+	BitstreamPutBits(bs, 0, 2);	/* video_object_layer_shape (0=rectangular) */
 
 	WRITE_MARKER();
 
-	/* time_inc_resolution; ignored by current decore versions
-	   eg. 2fps     res=2       inc=1
-	   25fps        res=25      inc=1
-	   29.97fps res=30000   inc=1001
+	/*
+	 * time_inc_resolution; ignored by current decore versions
+	 * eg. 2fps     res=2       inc=1
+	 *     25fps    res=25      inc=1
+	 *     29.97fps res=30000   inc=1001
 	 */
 	BitstreamPutBits(bs, pParam->fbase, 16);
 
 	WRITE_MARKER();
 
     if (pParam->fincr>0) {
-	    BitstreamPutBit(bs, 1);		// fixed_vop_rate = 1
-	    BitstreamPutBits(bs, pParam->fincr, log2bin(pParam->fbase));	// fixed_vop_time_increment
+	    BitstreamPutBit(bs, 1);		/* fixed_vop_rate = 1 */
+	    BitstreamPutBits(bs, pParam->fincr, log2bin(pParam->fbase));	/* fixed_vop_time_increment */
     }else{
-        BitstreamPutBit(bs, 0);		// fixed_vop_rate = 0
+        BitstreamPutBit(bs, 0);		/* fixed_vop_rate = 0 */
     }
 
 	WRITE_MARKER();
-	BitstreamPutBits(bs, pParam->width, 13);	// width
+	BitstreamPutBits(bs, pParam->width, 13);	/* width */
 	WRITE_MARKER();
-	BitstreamPutBits(bs, pParam->height, 13);	// height
+	BitstreamPutBits(bs, pParam->height, 13);	/* height */
 	WRITE_MARKER();
 
-	BitstreamPutBit(bs, pParam->vol_flags & XVID_VOL_INTERLACING);	// interlace
-	BitstreamPutBit(bs, 1);		// obmc_disable (overlapped block motion compensation)
+	BitstreamPutBit(bs, pParam->vol_flags & XVID_VOL_INTERLACING);	/* interlace */
+	BitstreamPutBit(bs, 1);		/* obmc_disable (overlapped block motion compensation) */
 
 	if (vol_ver_id != 1) 
 	{	if ((pParam->vol_flags & XVID_VOL_GMC))
-		{	BitstreamPutBits(bs, 2, 2);		// sprite_enable=='GMC'
-			BitstreamPutBits(bs, 2, 6);		// no_of_sprite_warping_points
-			BitstreamPutBits(bs, 3, 2);		// sprite_warping_accuracy 0==1/2, 1=1/4, 2=1/8, 3=1/16
-			BitstreamPutBit(bs, 0);			// sprite_brightness_change (not supported)
+		{	BitstreamPutBits(bs, 2, 2);		/* sprite_enable=='GMC' */
+			BitstreamPutBits(bs, 2, 6);		/* no_of_sprite_warping_points */
+			BitstreamPutBits(bs, 3, 2);		/* sprite_warping_accuracy 0==1/2, 1=1/4, 2=1/8, 3=1/16 */
+			BitstreamPutBit(bs, 0);			/* sprite_brightness_change (not supported) */
 
-/* currently we use no_of_sprite_warping_points==2, sprite_warping_accuracy==3 
-   for DivX5 compatability */
+			/*
+			 * currently we use no_of_sprite_warping_points==2, sprite_warping_accuracy==3 
+			 * for DivX5 compatability
+			 */
 
 		} else
-			BitstreamPutBits(bs, 0, 2);		// sprite_enable==off
+			BitstreamPutBits(bs, 0, 2);		/* sprite_enable==off */
 	}
 	else
-		BitstreamPutBit(bs, 0);		// sprite_enable==off
+		BitstreamPutBit(bs, 0);		/* sprite_enable==off */
 
-	BitstreamPutBit(bs, 0);		// not_8_bit
+	BitstreamPutBit(bs, 0);		/* not_8_bit */
 
-	// quant_type   0=h.263  1=mpeg4(quantizer tables)
+	/* quant_type   0=h.263  1=mpeg4(quantizer tables) */
 	BitstreamPutBit(bs, pParam->vol_flags & XVID_VOL_MPEGQUANT);
 
 	if ((pParam->vol_flags & XVID_VOL_MPEGQUANT)) {
-		BitstreamPutBit(bs, get_intra_matrix_status());	// load_intra_quant_mat
+		BitstreamPutBit(bs, get_intra_matrix_status());	/* load_intra_quant_mat */
 		if (get_intra_matrix_status()) {
 			bs_put_matrix(bs, get_intra_matrix());
 		}
 
-		BitstreamPutBit(bs, get_inter_matrix_status());	// load_inter_quant_mat
+		BitstreamPutBit(bs, get_inter_matrix_status());	/* load_inter_quant_mat */
 		if (get_inter_matrix_status()) {
 			bs_put_matrix(bs, get_inter_matrix());
 		}
@@ -1246,24 +1264,24 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 
 	if (vol_ver_id != 1) {
 		if ((pParam->vol_flags & XVID_VOL_QUARTERPEL))
-			BitstreamPutBit(bs, 1);	 	//  quarterpel 
+			BitstreamPutBit(bs, 1);	 	/* quarterpel  */
 		else
-			BitstreamPutBit(bs, 0);		// no quarterpel
+			BitstreamPutBit(bs, 0);		/* no quarterpel */
 	}
 
-	BitstreamPutBit(bs, 1);		// complexity_estimation_disable
-	BitstreamPutBit(bs, 1);		// resync_marker_disable
-	BitstreamPutBit(bs, 0);		// data_partitioned
+	BitstreamPutBit(bs, 1);		/* complexity_estimation_disable */
+	BitstreamPutBit(bs, 1);		/* resync_marker_disable */
+	BitstreamPutBit(bs, 0);		/* data_partitioned */
 
 	if (vol_ver_id != 1) 
 	{
-		BitstreamPutBit(bs, 0);		// newpred_enable
+		BitstreamPutBit(bs, 0);		/* newpred_enable */
 		
 		BitstreamPutBit(bs, (pParam->vol_flags & XVID_VOL_REDUCED_ENABLE)?1:0);	
 									/* reduced_resolution_vop_enabled */
 	}
 	
-	BitstreamPutBit(bs, 0);		// scalability
+	BitstreamPutBit(bs, 0);		/* scalability */
 
 	/* fake divx5 id, to ensure compatibility with divx5 decoder */
 #define DIVX5_ID "DivX000b000p"
@@ -1289,14 +1307,21 @@ BitstreamWriteVopHeader(
 {
 	uint32_t i;
 
-//	BitstreamPad(bs);
-/* no padding here, anymore. You have to make sure that you are 
-   byte aligned, and that always 1-8 padding bits have been written */
+#if 0
+	BitstreamPad(bs);
+#endif
+
+	/*
+	 * no padding here, anymore. You have to make sure that you are 
+	 * byte aligned, and that always 1-8 padding bits have been written
+	 */
 
 	BitstreamPutBits(bs, VOP_START_CODE, 32);
 
 	BitstreamPutBits(bs, frame->coding_type, 2);
-	//DPRINTF(XVID_DEBUG_HEADER, "coding_type = %i\n", frame->coding_type);
+#if 0
+	DPRINTF(XVID_DEBUG_HEADER, "coding_type = %i\n", frame->coding_type);
+#endif
 
 	for (i = 0; i < frame->seconds; i++) {
 		BitstreamPutBit(bs, 1);
@@ -1305,12 +1330,16 @@ BitstreamWriteVopHeader(
 
 	WRITE_MARKER();
 
-	// time_increment: value=nth_of_sec, nbits = log2(resolution)
+	/* time_increment: value=nth_of_sec, nbits = log2(resolution) */
 
 	BitstreamPutBits(bs, frame->ticks, log2bin(pParam->fbase));
-	/*DPRINTF("[%i:%i] %c", frame->seconds, frame->ticks,
-			frame->coding_type == I_VOP ? 'I' : frame->coding_type ==
-			P_VOP ? 'P' : 'B');*/
+#if 0
+	DPRINTF("[%i:%i] %c",
+			frame->seconds, frame->ticks,
+			frame->coding_type == I_VOP ? 'I' :
+			frame->coding_type == P_VOP ? 'P' :
+			frame->coding_type == S_VOP ? 'S' :	'B');
+#endif
 
 	WRITE_MARKER();
 
@@ -1319,7 +1348,7 @@ BitstreamWriteVopHeader(
 		return;
 	}
 
-	BitstreamPutBits(bs, 1, 1);	// vop_coded
+	BitstreamPutBits(bs, 1, 1);	/* vop_coded */
 
 	if ( (frame->coding_type == P_VOP) || (frame->coding_type == S_VOP) )
 		BitstreamPutBits(bs, frame->rounding_type, 1);
@@ -1327,7 +1356,7 @@ BitstreamWriteVopHeader(
 	if ((frame->vol_flags & XVID_VOL_REDUCED_ENABLE))
 		BitstreamPutBit(bs, (frame->vop_flags & XVID_VOP_REDUCED)?1:0);
 
-	BitstreamPutBits(bs, 0, 3);	// intra_dc_vlc_threshold
+	BitstreamPutBits(bs, 0, 3);	/* intra_dc_vlc_threshold */
 
 	if ((frame->vol_flags & XVID_VOL_INTERLACING)) {
 		BitstreamPutBit(bs, (frame->vop_flags & XVID_VOP_TOPFIELDFIRST));
@@ -1335,14 +1364,14 @@ BitstreamWriteVopHeader(
 	}
 	
 	if (frame->coding_type == S_VOP) {
-		if (1)	{		// no_of_sprite_warping_points>=1 (we use 2!)
+		if (1)	{		/* no_of_sprite_warping_points>=1 (we use 2!) */
 			int k;
 			for (k=0;k<2;k++)
 			{
-				bs_put_spritetrajectory(bs, frame->warp.duv[k].x ); // du[k] 
+				bs_put_spritetrajectory(bs, frame->warp.duv[k].x ); /* du[k]  */
 				WRITE_MARKER();
 			
-				bs_put_spritetrajectory(bs, frame->warp.duv[k].y ); // dv[k] 
+				bs_put_spritetrajectory(bs, frame->warp.duv[k].y ); /* dv[k]  */
 				WRITE_MARKER();
 
 			if ((frame->vol_flags & XVID_VOL_QUARTERPEL))
@@ -1358,15 +1387,17 @@ BitstreamWriteVopHeader(
 	}
 	
 
-	//DPRINTF(XVID_DEBUG_HEADER, "quant = %i\n", frame->quant);
+#if 0
+	DPRINTF(XVID_DEBUG_HEADER, "quant = %i\n", frame->quant);
+#endif
 
-	BitstreamPutBits(bs, frame->quant, 5);	// quantizer
+	BitstreamPutBits(bs, frame->quant, 5);	/* quantizer */
 
 	if (frame->coding_type != I_VOP)
-		BitstreamPutBits(bs, frame->fcode, 3);	// forward_fixed_code
+		BitstreamPutBits(bs, frame->fcode, 3);	/* forward_fixed_code */
 
 	if (frame->coding_type == B_VOP)
-		BitstreamPutBits(bs, frame->bcode, 3);	// backward_fixed_code
+		BitstreamPutBits(bs, frame->bcode, 3);	/* backward_fixed_code */
 
 }
 

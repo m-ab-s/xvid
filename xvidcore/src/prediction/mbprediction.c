@@ -106,15 +106,15 @@ predict_acdc(MACROBLOCK * pMBs,
 	const int16_t *pTop = default_acdc_values;
 	const int16_t *pDiag = default_acdc_values;
 
-	uint32_t index = x + y * mb_width;	// current macroblock
+	uint32_t index = x + y * mb_width;	/* current macroblock */
 	int *acpred_direction = &pMBs[index].acpred_directions[block];
 	uint32_t i;
 
 	left = top = diag = current = 0;
 
-	// grab left,top and diag macroblocks
+	/* grab left,top and diag macroblocks */
 
-	// left macroblock 
+	/* left macroblock */
 
 	if (x && mbpos >= bound + 1  &&
 		(pMBs[index - 1].mode == MODE_INTRA ||
@@ -122,9 +122,8 @@ predict_acdc(MACROBLOCK * pMBs,
 
 		left = pMBs[index - 1].pred_values[0];
 		left_quant = pMBs[index - 1].quant;
-		//DEBUGI("LEFT", *(left+MBPRED_SIZE));
 	}
-	// top macroblock
+	/* top macroblock */
 
 	if (mbpos >= bound + (int)mb_width &&
 		(pMBs[index - mb_width].mode == MODE_INTRA ||
@@ -133,7 +132,7 @@ predict_acdc(MACROBLOCK * pMBs,
 		top = pMBs[index - mb_width].pred_values[0];
 		top_quant = pMBs[index - mb_width].quant;
 	}
-	// diag macroblock 
+	/* diag macroblock */
 
 	if (x && mbpos >= bound + (int)mb_width + 1 &&
 		(pMBs[index - 1 - mb_width].mode == MODE_INTRA ||
@@ -144,7 +143,7 @@ predict_acdc(MACROBLOCK * pMBs,
 
 	current = pMBs[index].pred_values[0];
 
-	// now grab pLeft, pTop, pDiag _blocks_ 
+	/* now grab pLeft, pTop, pDiag _blocks_ */
 
 	switch (block) {
 
@@ -211,17 +210,19 @@ predict_acdc(MACROBLOCK * pMBs,
 		break;
 	}
 
-	//  determine ac prediction direction & ac/dc predictor
-	//  place rescaled ac/dc predictions into predictors[] for later use
+	/*
+	 * determine ac prediction direction & ac/dc predictor place rescaled ac/dc
+	 * predictions into predictors[] for later use
+	 */
 
 	if (abs(pLeft[0] - pDiag[0]) < abs(pDiag[0] - pTop[0])) {
-		*acpred_direction = 1;	// vertical
+		*acpred_direction = 1;	/* vertical */
 		predictors[0] = DIV_DIV(pTop[0], iDcScaler);
 		for (i = 1; i < 8; i++) {
 			predictors[i] = rescale(top_quant, current_quant, pTop[i]);
 		}
 	} else {
-		*acpred_direction = 2;	// horizontal
+		*acpred_direction = 2;	/* horizontal */
 		predictors[0] = DIV_DIV(pLeft[0], iDcScaler);
 		for (i = 1; i < 8; i++) {
 			predictors[i] = rescale(left_quant, current_quant, pLeft[i + 7]);
@@ -248,7 +249,7 @@ add_acdc(MACROBLOCK * pMB,
 
 	DPRINTF(XVID_DEBUG_COEFF,"predictor[0] %i\n", predictors[0]);
 
-	dct_codes[0] += predictors[0];	// dc prediction
+	dct_codes[0] += predictors[0];	/* dc prediction */
 	pCurrent[0] = dct_codes[0] * iDcScaler;
 
 	if (acpred_direction == 1) {
@@ -280,8 +281,8 @@ add_acdc(MACROBLOCK * pMB,
 
 
 
-// ******************************************************************
-// ******************************************************************
+/*****************************************************************************
+ ****************************************************************************/
 
 /* encoder: subtract predictors from qcoeff[] and calculate S1/S2
 
@@ -325,7 +326,7 @@ calc_acdc_coeff(MACROBLOCK * pMB,
 			S1 += abs(level);
 			predictors[i] = level;
 		}
-	} else						// acpred_direction == 2
+	} else						/* acpred_direction == 2 */
 	{
 		for (i = 1; i < 8; i++) {
 			int16_t level;
@@ -385,7 +386,7 @@ calc_acdc_bits(MACROBLOCK * pMB,
 			qcoeff[i] -= predictors[i];
 			predictors[i] = qcoeff[i];
 		}
-	}else{						// acpred_direction == 2
+	}else{						/* acpred_direction == 2 */
 		for (i = 1; i < 8; i++) {
 			tmp[i] = qcoeff[i*8];
 			qcoeff[i*8] -= predictors[i];
@@ -403,7 +404,7 @@ calc_acdc_bits(MACROBLOCK * pMB,
 	if (direction == 1) {
 		for (i = 1; i < 8; i++)	
 			qcoeff[i] = tmp[i];
-	}else{						// acpred_direction == 2
+	}else{						/* acpred_direction == 2 */
 		for (i = 1; i < 8; i++)	
 			qcoeff[i*8] = tmp[i];
 	}
@@ -462,7 +463,7 @@ MBPrediction(FRAMEINFO * frame,
 
 		}
 
-		if (S<=0) {				// dont predict
+		if (S<=0) {				/* dont predict */
 			for (j = 0; j < 6; j++)
 				pMB->acpred_directions[j] = 0;
 		}else{

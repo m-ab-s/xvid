@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.27.2.8 2003-05-18 12:33:26 edgomez Exp $
+ *  $Id: encoder.h,v 1.27.2.9 2003-06-09 01:16:35 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -157,8 +157,8 @@ typedef struct
 
 	MACROBLOCK *mbs;
 
-	WARPPOINTS warp;		// as in bitstream
-	GMC_DATA gmc_data;		// common data for all MBs
+	WARPPOINTS warp;		/* as in bitstream */
+	GMC_DATA gmc_data;		/* common data for all MBs */
 
     int length;         /* the encoded size of this frame */
 		
@@ -174,19 +174,19 @@ typedef struct
 	int iFrameNum;
 	int bitrate;
 
-    // zones
+    /* zones */
     unsigned int num_zones;
     xvid_enc_zone_t * zones;
 
-    // plugins
+    /* plugins */
     unsigned int num_plugins;    /* note: we store plugin flags in MBPARAM */
     xvid_enc_plugin_t * plugins;
 
-    // dquant
+    /* dquant */
 
     int * temp_dquants;
 
-	// images
+	/* images */
 
 	FRAMEINFO *current;
 	FRAMEINFO *reference;

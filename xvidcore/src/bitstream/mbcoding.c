@@ -88,8 +88,10 @@ void bs_put_spritetrajectory(Bitstream * bs, const int val)
 	const int code2 = sprite_trajectory_len[len].code;
 	const int len2 = sprite_trajectory_len[len].len;
 
-//	printf("GMC=%d Code/Len  = %d / %d ",val, code,len);
-//	printf("Code2 / Len2 = %d / %d \n",code2,len2);
+#if 0
+	printf("GMC=%d Code/Len  = %d / %d ",val, code,len);
+	printf("Code2 / Len2 = %d / %d \n",code2,len2);
+#endif
 
 	BitstreamPutBits(bs, code2, len2);
 	if (len) BitstreamPutBits(bs, code, len);
@@ -648,7 +650,7 @@ CodeBlockIntra(const FRAMEINFO * const frame,
 
 	cbpy = pMB->cbp >> 2;
 
-	// write mcbpc
+	/* write mcbpc */
 	if (frame->coding_type == I_VOP) {
 		mcbpc = ((pMB->mode >> 1) & 3) | ((pMB->cbp & 3) << 2);
 		BitstreamPutBits(bs, mcbpc_intra_tab[mcbpc].code,
@@ -659,24 +661,24 @@ CodeBlockIntra(const FRAMEINFO * const frame,
 						 mcbpc_inter_tab[mcbpc].len);
 	}
 
-	// ac prediction flag
+	/* ac prediction flag */
 	if (pMB->acpred_directions[0])
 		BitstreamPutBits(bs, 1, 1);
 	else
 		BitstreamPutBits(bs, 0, 1);
 
-	// write cbpy
+	/* write cbpy */
 	BitstreamPutBits(bs, xvid_cbpy_tab[cbpy].code, xvid_cbpy_tab[cbpy].len);
 
-	// write dquant
+	/* write dquant */
 	if (pMB->mode == MODE_INTRA_Q)
 		BitstreamPutBits(bs, DQ_VALUE2INDEX(pMB->dquant), 2);
 
-	// write interlacing
+	/* write interlacing */
 	if (frame->vol_flags & XVID_VOL_INTERLACING) {
 		BitstreamPutBit(bs, pMB->field_dct);
 	}
-	// code block coeffs
+	/* code block coeffs */
 	for (i = 0; i < 6; i++) {
 		if (i < 4)
 			BitstreamPutBits(bs, dcy_tab[qcoeff[i * 64 + 0] + 255].code,
@@ -720,40 +722,40 @@ CodeBlockInter(const FRAMEINFO * const frame,
 	mcbpc = (pMB->mode & 7) | ((pMB->cbp & 3) << 3);
 	cbpy = 15 - (pMB->cbp >> 2);
 
-	// write mcbpc
+	/* write mcbpc */
 	BitstreamPutBits(bs, mcbpc_inter_tab[mcbpc].code,
 					 mcbpc_inter_tab[mcbpc].len);
 
 	if ( (frame->coding_type == S_VOP) && (pMB->mode == MODE_INTER || pMB->mode == MODE_INTER_Q) )
-		BitstreamPutBit(bs, pMB->mcsel);		// mcsel: '0'=local motion, '1'=GMC
+		BitstreamPutBit(bs, pMB->mcsel);		/* mcsel: '0'=local motion, '1'=GMC */
 
-	// write cbpy
+	/* write cbpy */
 	BitstreamPutBits(bs, xvid_cbpy_tab[cbpy].code, xvid_cbpy_tab[cbpy].len);
 
-	// write dquant
+	/* write dquant */
 	if (pMB->mode == MODE_INTER_Q)
 		BitstreamPutBits(bs, DQ_VALUE2INDEX(pMB->dquant), 2);
 
-	// interlacing
+	/* interlacing */
 	if (frame->vol_flags & XVID_VOL_INTERLACING) {
 		if (pMB->cbp) {
 			BitstreamPutBit(bs, pMB->field_dct);
 			DPRINTF(XVID_DEBUG_MB,"codep: field_dct: %i\n", pMB->field_dct);
 		}
 
-		// if inter block, write field ME flag
+		/* if inter block, write field ME flag */
 		if (pMB->mode == MODE_INTER || pMB->mode == MODE_INTER_Q) {
 			BitstreamPutBit(bs, pMB->field_pred);
 			DPRINTF(XVID_DEBUG_MB,"codep: field_pred: %i\n", pMB->field_pred);
 
-			// write field prediction references
+			/* write field prediction references */
 			if (pMB->field_pred) {
 				BitstreamPutBit(bs, pMB->field_for_top);
 				BitstreamPutBit(bs, pMB->field_for_bot);
 			}
 		}
 	}
-	// code motion vector(s) if motion is local 
+	/* code motion vector(s) if motion is local  */
 	if (!pMB->mcsel)
 		for (i = 0; i < (pMB->mode == MODE_INTER4V ? 4 : 1); i++) {
 			CodeVector(bs, pMB->pmvs[i].x, frame->fcode, pStat);
@@ -762,7 +764,7 @@ CodeBlockInter(const FRAMEINFO * const frame,
 
 	bits = BitstreamPos(bs);
 
-	// code block coeffs
+	/* code block coeffs */
 	for (i = 0; i < 6; i++)
 		if (pMB->cbp & (1 << (5 - i)))
 		{
@@ -790,7 +792,7 @@ MBCoding(const FRAMEINFO * const frame,
 		 Statistics * pStat)
 {
 	if (frame->coding_type != I_VOP)  
-			BitstreamPutBit(bs, 0);	// not_coded
+			BitstreamPutBit(bs, 0);	/* not_coded */
 			
 	if (pMB->mode == MODE_INTRA || pMB->mode == MODE_INTRA_Q)
 		CodeBlockIntra(frame, pMB, qcoeff, bs, pStat);
@@ -799,14 +801,15 @@ MBCoding(const FRAMEINFO * const frame,
 
 }
 
-/*
-// moved to mbcoding.h so that in can be 'static __inline'
+
+/* moved to mbcoding.h so that in can be 'static __inline' */
+#if 0
 void
 MBSkip(Bitstream * bs)
 {
-	BitstreamPutBit(bs, 1);	// not coded
+	BitstreamPutBit(bs, 1);	/* not coded */
 }
-*/
+#endif
 
 /***************************************************************
  * bframe encoding start
@@ -864,7 +867,7 @@ put_bvop_dbquant(Bitstream * bs,
 		BitstreamPutBit(bs, 1);
 		return;
 
-	default:;					// invalid
+	default:;					/* invalid */
 	}
 }
 
@@ -888,16 +891,16 @@ MBCodingBVOP(const MACROBLOCK * mb,
 	------------------------------------------------------------------ */
 
 	if (mb->mode == MODE_DIRECT_NONE_MV) {
-		BitstreamPutBit(bs, 1);	// skipped
+		BitstreamPutBit(bs, 1);	/* skipped */
 		return;
 	}
 
-	BitstreamPutBit(bs, 0);		// not skipped
+	BitstreamPutBit(bs, 0);		/* not skipped */
 
 	if (mb->cbp == 0) {
-		BitstreamPutBit(bs, 1);	// cbp == 0
+		BitstreamPutBit(bs, 1);	/* cbp == 0 */
 	} else {
-		BitstreamPutBit(bs, 0);	// cbp == xxx
+		BitstreamPutBit(bs, 0);	/* cbp == xxx */
 	}
 
 	put_bvop_mbtype(bs, mb->mode);
@@ -907,12 +910,12 @@ MBCodingBVOP(const MACROBLOCK * mb,
 	}
 
 	if (mb->mode != MODE_DIRECT && mb->cbp != 0) {
-		put_bvop_dbquant(bs, 0);	// todo: mb->dquant = 0
+		put_bvop_dbquant(bs, 0);	/* todo: mb->dquant = 0 */
 	}
 
 	switch (mb->mode) {
 		case MODE_INTERPOLATE:
-			CodeVector(bs, mb->pmvs[1].x, vcode, pStat); //forward vector of interpolate mode
+			CodeVector(bs, mb->pmvs[1].x, vcode, pStat); /* forward vector of interpolate mode */
 			CodeVector(bs, mb->pmvs[1].y, vcode, pStat);
 		case MODE_BACKWARD:
 			vcode = bcode;
@@ -921,8 +924,8 @@ MBCodingBVOP(const MACROBLOCK * mb,
 			CodeVector(bs, mb->pmvs[0].y, vcode, pStat);
 			break;
 		case MODE_DIRECT:
-			CodeVector(bs, mb->pmvs[3].x, 1, pStat);	// fcode is always 1 for delta vector
-			CodeVector(bs, mb->pmvs[3].y, 1, pStat);	// prediction is always (0,0)
+			CodeVector(bs, mb->pmvs[3].x, 1, pStat);	/* fcode is always 1 for delta vector */
+			CodeVector(bs, mb->pmvs[3].y, 1, pStat);	/* prediction is always (0,0) */
 		default: break;
 	}
 
@@ -944,10 +947,12 @@ MBCodingBVOP(const MACROBLOCK * mb,
  ***************************************************************/
 
 
-// for IVOP addbits == 0
-// for PVOP addbits == fcode - 1
-// for BVOP addbits == max(fcode,bcode) - 1
-// returns true or false
+/*
+ * for IVOP addbits == 0
+ * for PVOP addbits == fcode - 1
+ * for BVOP addbits == max(fcode,bcode) - 1
+ * returns true or false
+ */
 int 
 check_resync_marker(Bitstream * bs, int addbits)
 {
@@ -1225,7 +1230,9 @@ get_intra_block(Bitstream * bs,
 		block[scan[coeff]] = level;
 
 		DPRINTF(XVID_DEBUG_COEFF,"block[%i] %i\n", scan[coeff], level);
-		//DPRINTF(XVID_DEBUG_COEFF,"block[%i] %i %08x\n", scan[coeff], level, BitstreamShowBits(bs, 32));
+#if 0
+		DPRINTF(XVID_DEBUG_COEFF,"block[%i] %i %08x\n", scan[coeff], level, BitstreamShowBits(bs, 32));
+#endif
 
 		if (level < -2047 || level > 2047) {
 			DPRINTF(XVID_DEBUG_ERROR,"warning: intra_overflow %i\n", level);
@@ -1259,7 +1266,7 @@ get_inter_block(Bitstream * bs,
 		block[scan[p]] = level;
 
 		DPRINTF(XVID_DEBUG_COEFF,"block[%i] %i\n", scan[p], level);
-		// DPRINTF(XVID_DEBUG_COEFF,"block[%i] %i %08x\n", scan[p], level, BitstreamShowBits(bs, 32));
+		/* DPRINTF(XVID_DEBUG_COEFF,"block[%i] %i %08x\n", scan[p], level, BitstreamShowBits(bs, 32)); */
 
 		if (level < -2047 || level > 2047) {
 			DPRINTF(XVID_DEBUG_ERROR,"warning: inter overflow %i\n", level);

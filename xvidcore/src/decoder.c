@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.5 2003-05-22 16:34:05 edgomez Exp $
+ * $Id: decoder.c,v 1.49.2.6 2003-06-09 01:15:59 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1721,7 +1721,7 @@ void decoder_output(DECODER * dec, IMAGE * img, MACROBLOCK * mbs,
 	{
 		stats->type = coding2type(coding_type);
 		stats->data.vop.time_base = (int)dec->time_base;
-		stats->data.vop.time_increment = 0;	//XXX: todo
+		stats->data.vop.time_increment = 0;	/* XXX: todo */
 	}
 }
 
@@ -1854,8 +1854,8 @@ repeat:
 						fcode_forward, intra_dc_threshold, &gmc_warp);
 			break;
 		case N_VOP :
-			// XXX: not_coded vops are not used for forward prediction
-			//		we should not swap(last_mbs,mbs)
+			/* XXX: not_coded vops are not used for forward prediction */
+			/* we should not swap(last_mbs,mbs) */
 			image_copy(&dec->cur, &dec->refn[0], dec->edged_width, dec->height);
 			break;
 		}

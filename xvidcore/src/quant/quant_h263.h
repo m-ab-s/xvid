@@ -3,7 +3,7 @@
 
 #include "../portab.h"
 
-// intra
+/* intra */
 typedef void (quanth263_intraFunc) (int16_t * coeff,
 									const int16_t * data,
 									const uint32_t quant,
@@ -27,7 +27,7 @@ quanth263_intraFunc dequant_intra_3dne;
 quanth263_intraFunc dequant_intra_sse2;
 quanth263_intraFunc dequant_intra_ia64;
 
-// inter_quant
+/* inter_quant */
 typedef uint32_t(quanth263_interFunc) (int16_t * coeff,
 									   const int16_t * data,
 									   const uint32_t quant);
@@ -42,7 +42,7 @@ quanth263_interFunc quant_inter_3dne;
 quanth263_interFunc quant_inter_sse2;
 quanth263_interFunc quant_inter_ia64;
 
-//inter_dequant
+/* inter_dequant */
 typedef void (dequanth263_interFunc) (int16_t * coeff,
 									  const int16_t * data,
 									  const uint32_t quant);

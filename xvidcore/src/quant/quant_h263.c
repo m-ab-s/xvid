@@ -62,7 +62,7 @@ static const uint32_t multipliers[32] = {
 
 
 
-// function pointers
+/* function pointers */
 quanth263_intraFuncPtr quant_intra;
 quanth263_intraFuncPtr dequant_intra;
 
@@ -135,7 +135,7 @@ quant_inter_c(int16_t * coeff,
 			}
 
 			acLevel = (acLevel * mult) >> SCALEBITS;
-			sum += acLevel;		// sum += |acLevel|
+			sum += acLevel;		/* sum += |acLevel| */
 			coeff[i] = -acLevel;
 		} else {
 			acLevel -= quant_d_2;
@@ -182,7 +182,7 @@ dequant_intra_c(int16_t * data,
 		} else if (acLevel < 0) {
 			acLevel = quant_m_2 * -acLevel + quant_add;
 			data[i] = (acLevel <= 2048 ? -acLevel : -2048);
-		} else					//  if (acLevel > 0) {
+		} else					/* if (acLevel > 0) { */
 		{
 			acLevel = quant_m_2 * acLevel + quant_add;
 			data[i] = (acLevel <= 2047 ? acLevel : 2047);
@@ -212,7 +212,7 @@ dequant_inter_c(int16_t * data,
 		} else if (acLevel < 0) {
 			acLevel = acLevel * quant_m_2 - quant_add;
 			data[i] = (acLevel >= -2048 ? acLevel : -2048);
-		} else					// if (acLevel > 0)
+		} else					/* if (acLevel > 0) */
 		{
 			acLevel = acLevel * quant_m_2 + quant_add;
 			data[i] = (acLevel <= 2047 ? acLevel : 2047);

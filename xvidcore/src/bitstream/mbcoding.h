@@ -46,7 +46,7 @@ void MBCodingBVOP(const MACROBLOCK * mb,
 static __inline void
 MBSkip(Bitstream * bs)
 {
-	BitstreamPutBit(bs, 1);	// not coded
+	BitstreamPutBit(bs, 1);	/* not coded */
 }
 
 

@@ -50,19 +50,19 @@
  *************************************************************************/
 
 #include <stdlib.h>
-#include <string.h>				// memcpy, memset
+#include <string.h>				/* memcpy, memset */
 #include <math.h>
 
 #include "../portab.h"
-#include "../global.h"			// XVID_CSP_XXX's
-#include "../xvid.h"			// XVID_CSP_XXX's
+#include "../global.h"			/* XVID_CSP_XXX's */
+#include "../xvid.h"			/* XVID_CSP_XXX's */
 #include "image.h"
 #include "colorspace.h"
 #include "interpolate8x8.h"
 #include "reduced.h"
 #include "../utils/mem_align.h"
 
-#include "font.h"		// XXX: remove later
+#include "font.h"		/* XXX: remove later */
 
 #define SAFETY	64
 #define EDGE_SIZE2  (EDGE_SIZE/2)
@@ -191,7 +191,7 @@ image_setedges(IMAGE * image,
 	}
 
 
-//U
+	/* U */
 	dst = image->u - (EDGE_SIZE2 + EDGE_SIZE2 * edged_width2);
 	src = image->u;
 
@@ -219,7 +219,7 @@ image_setedges(IMAGE * image,
 	}
 
 
-// V
+	/* V */
 	dst = image->v - (EDGE_SIZE2 + EDGE_SIZE2 * edged_width2);
 	src = image->v;
 
@@ -247,7 +247,7 @@ image_setedges(IMAGE * image,
 	}
 }
 
-// bframe encoding requires image-based u,v interpolation
+/* bframe encoding requires image-based u,v interpolation */
 void
 image_interpolate(const IMAGE * refn,
 				  IMAGE * refh,
@@ -258,16 +258,14 @@ image_interpolate(const IMAGE * refn,
 				  uint32_t quarterpel,
 				  uint32_t rounding)
 {
-	const uint32_t offset = EDGE_SIZE2 * (edged_width + 1); // we only interpolate half of the edge area
+	const uint32_t offset = EDGE_SIZE2 * (edged_width + 1); /* we only interpolate half of the edge area */
 	const uint32_t stride_add = 7 * edged_width;
-/*
-#ifdef BFRAMES
+#if 0
 	const uint32_t edged_width2 = edged_width / 2;
 	const uint32_t edged_height2 = edged_height / 2;
 	const uint32_t offset2 = EDGE_SIZE2 * (edged_width2 + 1);
 	const uint32_t stride_add2 = 7 * edged_width2;
 #endif
-*/
 	uint8_t *n_ptr, *h_ptr, *v_ptr, *hv_ptr;
 	uint32_t x, y;
 
@@ -561,7 +559,9 @@ image_input(IMAGE * image,
 	const int edged_width2 = edged_width/2;
 	const int width2 = width/2;
 	const int height2 = height/2;
-	//const int height_signed = (csp & XVID_CSP_VFLIP) ? -height : height;
+#if 0
+	const int height_signed = (csp & XVID_CSP_VFLIP) ? -height : height;
+#endif
 
 	switch (csp & ~XVID_CSP_VFLIP) {
 	case XVID_CSP_RGB555:
@@ -790,7 +790,7 @@ image_output(IMAGE * image,
 			interlacing?yv12_to_yuyvi_c:yv12_to_yuyv_c, 2);
 		return 0;
 
-	case XVID_CSP_YVYU:		// u,v swapped
+	case XVID_CSP_YVYU:		/* u,v swapped */
 		safe_packed_conv(
 			dst[0], dst_stride[0], image->y, image->v, image->u,
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
@@ -813,14 +813,14 @@ image_output(IMAGE * image,
 			width, height, (csp & XVID_CSP_VFLIP));
 		return 0;
 
-	case XVID_CSP_YV12:		// u,v swapped
+	case XVID_CSP_YV12:		/* u,v swapped */
 		yv12_to_yv12(dst[0], dst[0] + dst_stride[0]*height, dst[0] + dst_stride[0]*height + (dst_stride[0]/2)*height2,
 			dst_stride[0], dst_stride[0]/2,
 			image->y, image->v, image->u, edged_width, edged_width2,
 			width, height, (csp & XVID_CSP_VFLIP));
 		return 0;
 
-	case XVID_CSP_USER :		// u,v swapped
+	case XVID_CSP_USER :		/* u,v swapped */
 		yv12_to_yv12(dst[0], dst[1], dst[2],
 			dst_stride[0], dst_stride[1],	/* v: dst_stride[2] */
 			image->y, image->v, image->u, edged_width, edged_width2,
@@ -883,7 +883,7 @@ float sse_to_PSNR(long sse, int pixels)
         if (sse==0)
                 return 99.99F;
 
-        return 48.131F - 10*(float)log10((float)sse/(float)(pixels));   // log10(255*255)=4.8131
+        return 48.131F - 10*(float)log10((float)sse/(float)(pixels));   /* log10(255*255)=4.8131 */
 
 }
 
@@ -907,7 +907,7 @@ long plane_sse(uint8_t * orig,
 	return sse;
 }
 
-/*
+#if 0
 
 #include <stdio.h>
 #include <string.h>
@@ -931,7 +931,7 @@ int image_dump_pgm(uint8_t * bmp, uint32_t width, uint32_t height, char * filena
 }
 
 
-// dump image+edges to yuv pgm files 
+/* dump image+edges to yuv pgm files */
 
 int image_dump(IMAGE * image, uint32_t edged_width, uint32_t edged_height, char * path, int number)
 {
@@ -954,7 +954,7 @@ int image_dump(IMAGE * image, uint32_t edged_width, uint32_t edged_height, char 
 
 	return 0;
 }
-*/
+#endif
 
 
 

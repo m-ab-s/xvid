@@ -94,12 +94,13 @@ BOOL WINAPI DllMain(
 			codec->fincr = 1;
 			config_reg_get(&codec->config);
 
-			/* bad things happen if this is uncommented
+#if 0
+			/* bad things happen if this piece of code is activated */
 			if (lstrcmp(XVID_BUILD, codec->config.build))
 			{
 				config_reg_default(&codec->config);
 			}
-			*/
+#endif			
 
 			if (icopen != NULL)
 			{
@@ -110,7 +111,7 @@ BOOL WINAPI DllMain(
 
 	case DRV_CLOSE :
 		DPRINTF("DRV_CLOSE");
-		// compress_end/decompress_end don't always get called
+		/* compress_end/decompress_end don't always get called */
 		compress_end(codec);
 		decompress_end(codec);
 		free(codec);
@@ -196,7 +197,7 @@ BOOL WINAPI DllMain(
 			return 0;
 		}
 		memcpy(&codec->config,(void*)lParam1, sizeof(CONFIG));
-		return 0; // sizeof(CONFIG);
+		return 0; /* sizeof(CONFIG); */
 
 	/* not sure the difference, private/public data? */
 

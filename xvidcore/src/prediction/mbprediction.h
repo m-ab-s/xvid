@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the xvid_free Software
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- *  $Id: mbprediction.h,v 1.21 2003-02-21 14:41:23 syskin Exp $
+ *  $Id: mbprediction.h,v 1.21.2.1 2003-06-09 01:23:03 edgomez Exp $
  *
  *************************************************************************/
 
@@ -337,7 +337,9 @@ get_pmvdata2(const MACROBLOCK * const mbs,
 	if (num_cand == 1) {
 		pmv[0] = pmv[last_cand];
 		psad[0] = psad[last_cand];
-		// return MVequal(pmv[0], zeroMV); /* no point calculating median mv and minimum sad */
+#if 0
+		return MVequal(pmv[0], zeroMV); /* no point calculating median mv and minimum sad */
+#endif
 
 		/* original pmvdata() compatibility hack */
 		return y==0 && block <= 1 ? 0 : MVequal(pmv[0], zeroMV);

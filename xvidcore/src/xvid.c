@@ -17,7 +17,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.4 2003-05-17 13:26:42 suxen_drol Exp $
+ * $Id: xvid.c,v 1.45.2.5 2003-06-09 01:16:57 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -576,7 +576,9 @@ xvid_gbl_convert(xvid_gbl_convert_t* convert)
 	if (XVID_MAJOR(convert->version) != 1)   /* v1.x.x */
 	      return XVID_ERR_VERSION;
 
-	// const int flip1 = (convert->input.colorspace & XVID_CSP_VFLIP) ^ (convert->output.colorspace & XVID_CSP_VFLIP);
+#if 0
+	const int flip1 = (convert->input.colorspace & XVID_CSP_VFLIP) ^ (convert->output.colorspace & XVID_CSP_VFLIP);
+#endif
 	width = convert->width;
 	height = convert->height;
 	width2 = convert->width/2;

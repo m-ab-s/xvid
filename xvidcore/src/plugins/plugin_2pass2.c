@@ -25,7 +25,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.18 2003-05-29 14:18:18 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.19 2003-06-09 01:22:58 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -600,16 +600,16 @@ rc_2pass2_after(rc_2pass2_t * rc, xvid_plg_data_t * data)
         rc->overflow += rc->KFoverflow;
         rc->KFoverflow = s->desired_length - data->length;
 		
-        if (kfdiff > 1) {  // non-consecutive keyframes
+        if (kfdiff > 1) {  /* non-consecutive keyframes */
             rc->KFoverflow_partial = rc->KFoverflow / (kfdiff - 1);
-        }else{ // consecutive keyframes
+        }else{ /* consecutive keyframes */
 			rc->overflow += rc->KFoverflow;
 			rc->KFoverflow = 0;
 			rc->KFoverflow_partial = 0;
         }
         rc->KF_idx++;
     } else {
-        // distribute part of the keyframe overflow
+        /* distribute part of the keyframe overflow */
         rc->overflow += s->desired_length - data->length + rc->KFoverflow_partial;
         rc->KFoverflow -= rc->KFoverflow_partial;
     }
@@ -826,7 +826,7 @@ zone_process(rc_2pass2_t *rc, const xvid_plg_create_t * create)
             next -= create->zones[i].frame;
             rc->avg_weight += (double)(next * create->zones[i].increment) / (double)create->zones[i].base;
             n += next;
-        }else{  // XVID_ZONE_QUANT
+        }else{  /* XVID_ZONE_QUANT */
             for (j = create->zones[i].frame; j < next && j < rc->num_frames; j++ ) {
                 rc->stats[j].zone_mode = XVID_ZONE_QUANT;
                 rc->stats[j].weight = (double)create->zones[i].increment / (double)create->zones[i].base;

@@ -113,8 +113,8 @@ int codec_2pass_init(CODEC* codec)
 		twopass->nns_array_pos = 0;
         twopass->nns_update_pos = 0;
 
-		// read the stats file(s) into array(s) and reorder them so they
-		// correctly represent the frames that the encoder will receive.
+		/* read the stats file(s) into array(s) and reorder them so they */
+		/* correctly represent the frames that the encoder will receive. */
 		if (codec->config.mode == DLG_MODE_2PASS_2_EXT)
 		{
 			if (twopass->stats2 != INVALID_HANDLE_VALUE)
@@ -172,7 +172,7 @@ int codec_2pass_init(CODEC* codec)
 					}
 				}
 
-				// increase the allocated memory if necessary
+				/* increase the allocated memory if necessary */
 				if (frames >= twopass->nns_array_size)
 				{
 					twopass->nns1_array = (NNSTATS*)realloc(twopass->nns1_array,
@@ -182,7 +182,7 @@ int codec_2pass_init(CODEC* codec)
 					twopass->nns_array_size = twopass->nns_array_size * 5 / 4 + 1;
 				}
 
-				// copy this frame's stats into the arrays
+				/* copy this frame's stats into the arrays */
 				memcpy (&twopass->nns1_array[frames], &twopass->nns1, sizeof(NNSTATS));
 				memcpy (&twopass->nns2_array[frames], &twopass->nns2, sizeof(NNSTATS));
 				frames++;
@@ -191,7 +191,7 @@ int codec_2pass_init(CODEC* codec)
 			SetFilePointer(twopass->stats1, sizeof(DWORD), 0, FILE_BEGIN);
 			SetFilePointer(twopass->stats2, sizeof(DWORD), 0, FILE_BEGIN);
 		}
-		else	// DLG_MODE_2PASS_2_INT
+		else	/* DLG_MODE_2PASS_2_INT */
 		{
 			while (1)
 			{
@@ -212,7 +212,7 @@ int codec_2pass_init(CODEC* codec)
 					}
 				}
 
-				// increase the allocated memory if necessary
+				/* increase the allocated memory if necessary */
 				if (frames >= twopass->nns_array_size)
 				{
 					twopass->nns1_array = (NNSTATS*)realloc(twopass->nns1_array,
@@ -220,7 +220,7 @@ int codec_2pass_init(CODEC* codec)
 					twopass->nns_array_size = twopass->nns_array_size * 5 / 4 + 1;
 				}
 
-				// copy this frame's stats into the array
+				/* copy this frame's stats into the array */
 				memcpy (&twopass->nns1_array[frames], &twopass->nns1, sizeof(NNSTATS));
 				frames++;
 			}
@@ -233,10 +233,10 @@ int codec_2pass_init(CODEC* codec)
 		twopass->nns_array_length = frames;
 		frames = 0;
 
-/* // this isn't necessary with the current core.
-		// reorder the array(s) so they are in the order that they were received
-		// IPBBPBB to
-		// IBBPBBP
+/* /* this isn't necessary with the current core. */
+		/* reorder the array(s) so they are in the order that they were received */
+		/* IPBBPBB to */
+		/* IBBPBBP */
 		for (i=0; i<twopass->nns_array_length; i++)
 		{
 			NNSTATS temp_nns, temp_nns2;
@@ -271,7 +271,7 @@ int codec_2pass_init(CODEC* codec)
 			}
 		}
 */
-		// continue with the initialization..
+		/* continue with the initialization.. */
 		if (codec->config.mode == DLG_MODE_2PASS_2_EXT)
 		{
 			while (1)
@@ -324,7 +324,7 @@ int codec_2pass_init(CODEC* codec)
 
 				if (twopass->nns1.quant & NNSTATS_KEYFRAME)
 				{
-					// this test needs to be corrected..
+					/* this test needs to be corrected.. */
 					if (!(twopass->nns1.kblk + twopass->nns1.mblk))
 						recminisize = twopass->nns1.bytes;
 				}
@@ -353,7 +353,7 @@ int codec_2pass_init(CODEC* codec)
 				twopass->average_pframe = (double)pframe_total_ext / pframes / twopass->movie_curve;
 			else
 				if (bframes)
-					twopass->average_pframe = twopass->average_bframe;  // b-frame packed bitstream fix
+					twopass->average_pframe = twopass->average_bframe;  /* b-frame packed bitstream fix */
 				else
 				{
 					DEBUGERR("ERROR:  No p-frames or b-frames were present in the 1st pass.  Rate control cannot function properly!");
@@ -362,7 +362,7 @@ int codec_2pass_init(CODEC* codec)
 
 
 
-			// perform prepass to compensate for over/undersizing
+			/* perform prepass to compensate for over/undersizing */
 			frames = 0;
 
 			if (codec->config.use_alt_curve)
@@ -391,19 +391,19 @@ int codec_2pass_init(CODEC* codec)
 				{
 					switch(codec->config.alt_curve_type)
 					{
-					case 2: // Sine Curve (high aggressiveness)
+					case 2: /* Sine Curve (high aggressiveness) */
 						twopass->alt_curve_qual_dev *= 2.0 / (1.0 + 
 							sin(DEG2RAD * (twopass->average_pframe * 90.0 / twopass->alt_curve_low_diff)));
 						twopass->alt_curve_mid_qual = 1.0 - twopass->alt_curve_qual_dev *
 							sin(DEG2RAD * (twopass->average_pframe * 90.0 / twopass->alt_curve_low_diff));
 						break;
-					case 1: // Linear (medium aggressiveness)
+					case 1: /* Linear (medium aggressiveness) */
 						twopass->alt_curve_qual_dev *= 2.0 / (1.0 +
 							twopass->average_pframe / twopass->alt_curve_low_diff);
 						twopass->alt_curve_mid_qual = 1.0 - twopass->alt_curve_qual_dev *
 							twopass->average_pframe / twopass->alt_curve_low_diff;
 						break;
-					case 0: // Cosine Curve (low aggressiveness)
+					case 0: /* Cosine Curve (low aggressiveness) */
 						twopass->alt_curve_qual_dev *= 2.0 / (1.0 + 
 							(1.0 - cos(DEG2RAD * (twopass->average_pframe * 90.0 / twopass->alt_curve_low_diff))));
 						twopass->alt_curve_mid_qual = 1.0 - twopass->alt_curve_qual_dev *
@@ -545,7 +545,7 @@ int codec_2pass_init(CODEC* codec)
 				DEBUG2P(s);
 			}
 		}
-		else	// DLG_MODE_2PASS_2_INT
+		else	/* DLG_MODE_2PASS_2_INT */
 		{
 			while (1)
 			{
@@ -598,7 +598,7 @@ int codec_2pass_init(CODEC* codec)
 
 				if (twopass->nns1.quant & NNSTATS_KEYFRAME)
 				{
-					// this test needs to be corrected..
+					/* this test needs to be corrected.. */
 					if (!(twopass->nns1.kblk + twopass->nns1.mblk))
 						recminisize = twopass->nns1.bytes;
 				}
@@ -617,14 +617,14 @@ int codec_2pass_init(CODEC* codec)
 			}
 			twopass->keyframe_locations[i_frames] = frames;
 
-			// compensate for avi frame overhead
+			/* compensate for avi frame overhead */
 			desired -= frames * 24;
 
 			switch (codec->config.credits_mode)
 			{
 			case CREDITS_MODE_RATE :
 
-				// credits curve = (total / desired_size) * (100 / credits_rate)
+				/* credits curve = (total / desired_size) * (100 / credits_rate) */
 				twopass->credits_start_curve = twopass->credits_end_curve =
 					((double)(bframe_total + pframe_total + i_total + start + end) / desired) *
 					((double)100 / codec->config.credits_rate);
@@ -632,7 +632,7 @@ int codec_2pass_init(CODEC* codec)
 				start_curved = (__int64)(start / twopass->credits_start_curve);
 				end_curved = (__int64)(end / twopass->credits_end_curve);
 
-				// movie curve = (total - credits) / (desired_size - curved credits)
+				/* movie curve = (total - credits) / (desired_size - curved credits) */
 				twopass->movie_curve = (double)
 					(bframe_total + pframe_total + i_total) /
 					(desired - start_curved - end_curved);
@@ -641,11 +641,11 @@ int codec_2pass_init(CODEC* codec)
 
 			case CREDITS_MODE_QUANT :
 
-				// movie curve = (total - credits) / (desired_size - credits)
+				/* movie curve = (total - credits) / (desired_size - credits) */
 				twopass->movie_curve = (double)
 					(bframe_total + pframe_total + i_total) / (desired - start - end);
 
-				// aid the average asymmetric frame calculation below
+				/* aid the average asymmetric frame calculation below */
 				start_curved = start;
 				end_curved = end;
 
@@ -653,18 +653,18 @@ int codec_2pass_init(CODEC* codec)
 
 			case CREDITS_MODE_SIZE :
 
-				// start curve = (start / start desired size)
+				/* start curve = (start / start desired size) */
 				twopass->credits_start_curve = (double)
 					(start / 1024) / codec->config.credits_start_size;
 
-				// end curve = (end / end desired size)
+				/* end curve = (end / end desired size) */
 				twopass->credits_end_curve = (double)
 					(end / 1024) / codec->config.credits_end_size;
 
 				start_curved = (__int64)(start / twopass->credits_start_curve);
 				end_curved = (__int64)(end / twopass->credits_end_curve);
 
-				// movie curve = (total - credits) / (desired_size - curved credits)
+				/* movie curve = (total - credits) / (desired_size - curved credits) */
 				twopass->movie_curve = (double)
 					(bframe_total + pframe_total + i_total) /
 					(desired - start_curved - end_curved);
@@ -679,7 +679,7 @@ int codec_2pass_init(CODEC* codec)
 				twopass->average_pframe = (double)pframe_total / pframes / twopass->movie_curve;
 			else
 				if (bframes)
-					twopass->average_pframe = twopass->average_bframe;  // b-frame packed bitstream fix
+					twopass->average_pframe = twopass->average_bframe;  /* b-frame packed bitstream fix */
 				else
 				{
 					DEBUGERR("ERROR:  No p-frames or b-frames were present in the 1st pass.  Rate control cannot function properly!");
@@ -688,7 +688,7 @@ int codec_2pass_init(CODEC* codec)
 
 
 
-			// perform prepass to compensate for over/undersizing
+			/* perform prepass to compensate for over/undersizing */
 			frames = 0;
 
 			if (codec->config.use_alt_curve)
@@ -714,19 +714,19 @@ int codec_2pass_init(CODEC* codec)
 				{
 					switch(codec->config.alt_curve_type)
 					{
-					case 2: // Sine Curve (high aggressiveness)
+					case 2: /* Sine Curve (high aggressiveness) */
 						twopass->alt_curve_qual_dev *= 2.0 / (1.0 + 
 							sin(DEG2RAD * (twopass->average_pframe * 90.0 / twopass->alt_curve_low_diff)));
 						twopass->alt_curve_mid_qual = 1.0 - twopass->alt_curve_qual_dev *
 							sin(DEG2RAD * (twopass->average_pframe * 90.0 / twopass->alt_curve_low_diff));
 						break;
-					case 1: // Linear (medium aggressiveness)
+					case 1: /* Linear (medium aggressiveness) */
 						twopass->alt_curve_qual_dev *= 2.0 / (1.0 +
 							twopass->average_pframe / twopass->alt_curve_low_diff);
 						twopass->alt_curve_mid_qual = 1.0 - twopass->alt_curve_qual_dev *
 							twopass->average_pframe / twopass->alt_curve_low_diff;
 						break;
-					case 0: // Cosine Curve (low aggressiveness)
+					case 0: /* Cosine Curve (low aggressiveness) */
 						twopass->alt_curve_qual_dev *= 2.0 / (1.0 + 
 							(1.0 - cos(DEG2RAD * (twopass->average_pframe * 90.0 / twopass->alt_curve_low_diff))));
 						twopass->alt_curve_mid_qual = 1.0 - twopass->alt_curve_qual_dev *
@@ -877,7 +877,7 @@ int codec_2pass_init(CODEC* codec)
 			twopass->curve_comp_scale = ((total1 - total2) * (1.0 - (double)codec->config.alt_curve_bonus_bias / 100.0) + total2) / total2;
 
 
-			// special info for alt curve:  bias bonus and quantizer thresholds, 
+			/* special info for alt curve:  bias bonus and quantizer thresholds,  */
 			{
 				double curve_temp, dbytes;
 				char s[100];
@@ -1002,7 +1002,7 @@ int codec_2pass_get_quant(CODEC* codec, xvid_enc_frame_t* frame)
 
 	if (twopass->nns_array_pos >= twopass->nns_array_length)
 	{
-		// fix for VirtualDub 1.4.13 bframe handling
+		/* fix for VirtualDub 1.4.13 bframe handling */
 		if (codec->config.max_bframes > 0 &&
 			codec->framenum < twopass->nns_array_length + codec->config.max_bframes)
 		{
@@ -1082,7 +1082,7 @@ int codec_2pass_get_quant(CODEC* codec, xvid_enc_frame_t* frame)
 				{
 					bytes2 = (int)(bytes1 / twopass->credits_start_curve);
 				}
-				else // CREDITS_END
+				else /* CREDITS_END */
 				{
 					bytes2 = (int)(bytes1 / twopass->credits_end_curve);
 				}
@@ -1109,7 +1109,7 @@ int codec_2pass_get_quant(CODEC* codec, xvid_enc_frame_t* frame)
 				return ICERR_OK;
 			}
 		}
-		else	// DLG_MODE_2PASS_2_EXT
+		else	/* DLG_MODE_2PASS_2_EXT */
 		{
 			if (codec->config.credits_mode == CREDITS_MODE_QUANT)
 			{
@@ -1134,7 +1134,7 @@ int codec_2pass_get_quant(CODEC* codec, xvid_enc_frame_t* frame)
 				bytes2 = twopass->nns2.bytes;
 		}
 	}
-	else	// Foxer: apply curve compression outside credits
+	else	/* Foxer: apply curve compression outside credits */
 	{
 		double dbytes, curve_temp;
 
@@ -1153,7 +1153,7 @@ int codec_2pass_get_quant(CODEC* codec, xvid_enc_frame_t* frame)
 		if (twopass->nns1.dd_v & NNSTATS_BFRAME)
 			dbytes *= twopass->average_pframe / twopass->average_bframe;
 
-		// spread the compression error across payback_delay frames
+		/* spread the compression error across payback_delay frames */
 		if (codec->config.bitrate_payback_method == 0)
 		{
 			bytes2 = (int)(curve_comp_error / codec->config.bitrate_payback_delay);
@@ -1267,7 +1267,7 @@ int codec_2pass_get_quant(CODEC* codec, xvid_enc_frame_t* frame)
 			curve_comp_error += dbytes - ((int)dbytes);
 		}
 
-		// cap bytes2 to first pass size, lowers number of quant=1 frames
+		/* cap bytes2 to first pass size, lowers number of quant=1 frames */
 		if (bytes2 > bytes1)
 		{
 			curve_comp_error += bytes2 - bytes1;
@@ -1388,7 +1388,7 @@ int codec_2pass_get_quant(CODEC* codec, xvid_enc_frame_t* frame)
 	}
 	else if (frame->type != XVID_TYPE_IVOP)
 	{
-		// Foxer: aid desired quantizer precision by accumulating decision error
+		/* Foxer: aid desired quantizer precision by accumulating decision error */
 		if (twopass->nns1.dd_v & NNSTATS_BFRAME)
 		{
 			bquant_error[frame->quant] += ((double)((twopass->nns1.quant & ~NNSTATS_KEYFRAME) * 
@@ -1443,13 +1443,13 @@ int codec_2pass_get_quant(CODEC* codec, xvid_enc_frame_t* frame)
 			frame->quant = codec->config.min_pquant;
 		}
 
-		// subsequent frame quants can only be +- 2
+		/* subsequent frame quants can only be +- 2 */
 		if ((last_pquant || last_bquant) && capped_to_max_framesize == 0)
 		{
 			if (twopass->nns1.dd_v & NNSTATS_BFRAME)
 			{
-				// this bframe quantizer variation
-				// restriction needs to be redone.
+				/* this bframe quantizer variation */
+				/* restriction needs to be redone. */
 				if (frame->quant > last_bquant + 2)
 				{
 					frame->quant = last_bquant + 2;
@@ -1535,7 +1535,7 @@ int codec_2pass_update(CODEC* codec, xvid_enc_stats_t* stats)
 	switch (codec->config.mode)
 	{
 	case DLG_MODE_2PASS_1 :
-		nns1.bytes = stats->length;	// total bytes
+		nns1.bytes = stats->length;	/* total bytes */
 		nns1.dd_v = 0;
 		nns1.dd_u = nns1.dd_y = 0;
 		nns1.dk_v = nns1.dk_u = nns1.dk_y = 0;
@@ -1543,7 +1543,7 @@ int codec_2pass_update(CODEC* codec, xvid_enc_stats_t* stats)
 		nns1.mk_u = nns1.mk_y = 0;
 
 //		nns1.quant = stats->quant;
-		nns1.quant = 2;				// ugly fix for lumi masking in 1st pass returning new quant
+		nns1.quant = 2;				/* ugly fix for lumi masking in 1st pass returning new quant */
 		nns1.lum_noise[0] = nns1.lum_noise[1] = 1;
 
 		switch(stats->type)
@@ -1582,15 +1582,15 @@ int codec_2pass_update(CODEC* codec, xvid_enc_stats_t* stats)
 			if (!credits_pos)
 			{
 				codec->twopass.quant_count[stats->quant]++;
-				//if ((codec->twopass.nns1.quant & NNSTATS_KEYFRAME))
+				/* if ((codec->twopass.nns1.quant & NNSTATS_KEYFRAME)) */
                 if ((codec->twopass.nns1_array[codec->twopass.nns_update_pos].quant & NNSTATS_KEYFRAME))
 				{
-					// calculate how much to distribute per frame in
-					// order to make up for this keyframe's overflow
+					/* calculate how much to distribute per frame in */
+					/* order to make up for this keyframe's overflow */
 
 					codec->twopass.overflow += codec->twopass.KFoverflow;
-					//codec->twopass.KFoverflow = codec->twopass.desired_bytes2 - frame->length;
-                    // XXX: very ugly hack for bframs; this affects twopass quality
+					/* codec->twopass.KFoverflow = codec->twopass.desired_bytes2 - frame->length; */
+                    /* XXX: very ugly hack for bframs; this affects twopass quality */
                     codec->twopass.KFoverflow = codec->twopass.nns2_array[codec->twopass.nns_update_pos].bytes/*codec->twopass.desired_bytes2*/ - stats->length;
 
 					tempdiv = (codec->twopass.keyframe_locations[codec->twopass.KF_idx] -
@@ -1598,12 +1598,12 @@ int codec_2pass_update(CODEC* codec, xvid_enc_stats_t* stats)
 
 					if (tempdiv > 1)
 					{
-						// non-consecutive keyframes
+						/* non-consecutive keyframes */
 						codec->twopass.KFoverflow_partial = codec->twopass.KFoverflow / (tempdiv - 1);
 					}
 					else
 					{
-						// consecutive keyframes
+						/* consecutive keyframes */
 						codec->twopass.overflow += codec->twopass.KFoverflow;
 						codec->twopass.KFoverflow = 0;
 						codec->twopass.KFoverflow_partial = 0;
@@ -1612,10 +1612,10 @@ int codec_2pass_update(CODEC* codec, xvid_enc_stats_t* stats)
 				}
 				else
 				{
-					// distribute part of the keyframe overflow
+					/* distribute part of the keyframe overflow */
 
-					//codec->twopass.overflow += codec->twopass.desired_bytes2 - frame->length +
-					//	codec->twopass.KFoverflow_partial;
+					/* codec->twopass.overflow += codec->twopass.desired_bytes2 - frame->length + */
+					/* codec->twopass.KFoverflow_partial; */
 				codec->twopass.overflow += codec->twopass.nns2_array[codec->twopass.nns_update_pos].bytes/*codec->twopass.desired_bytes2*/ - stats->length +
 					codec->twopass.KFoverflow_partial;
 					codec->twopass.KFoverflow -= codec->twopass.KFoverflow_partial;
@@ -1623,14 +1623,14 @@ int codec_2pass_update(CODEC* codec, xvid_enc_stats_t* stats)
 			}
 			else
 			{
-				//codec->twopass.overflow += codec->twopass.desired_bytes2 - frame->length;
+				/* codec->twopass.overflow += codec->twopass.desired_bytes2 - frame->length; */
                 codec->twopass.overflow += codec->twopass.nns2_array[codec->twopass.nns_update_pos].bytes/*codec->twopass.desired_bytes2*/ - stats->length;
 
-				// ugly fix for credits..
+				/* ugly fix for credits.. */
 				codec->twopass.overflow += codec->twopass.KFoverflow;
 				codec->twopass.KFoverflow = 0;
 				codec->twopass.KFoverflow_partial = 0;
-				// end of ugly fix.
+				/* end of ugly fix. */
 			}
 
         /* XXX: remove
@@ -1664,7 +1664,7 @@ int codec_2pass_update(CODEC* codec, xvid_enc_stats_t* stats)
 		}
         */
 
-		//DEBUG2ND(frame->quant, quant_type, frame_type, codec->twopass.bytes1, codec->twopass.desired_bytes2, frame->length, codec->twopass.overflow, credits_pos)
+		/* DEBUG2ND(frame->quant, quant_type, frame_type, codec->twopass.bytes1, codec->twopass.desired_bytes2, frame->length, codec->twopass.overflow, credits_pos) */
 		wsprintf(tmp, "[%i] 2nd-pass: quant:%d %s %s stats1:%d scaled:%d actual:%d overflow:%d %s", 
 			codec->twopass.nns_update_pos,
 			stats->quant,
@@ -1708,7 +1708,7 @@ void codec_2pass_finish(CODEC* codec)
 
 	if (codec->config.mode == DLG_MODE_2PASS_2_EXT || codec->config.mode == DLG_MODE_2PASS_2_INT)
 	{
-		// output the quantizer distribution for this encode.
+		/* output the quantizer distribution for this encode. */
 
 		OutputDebugString("Quantizer distribution for 2nd pass:");
 		for (i=1; i<=31; i++)

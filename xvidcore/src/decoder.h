@@ -33,7 +33,7 @@
  *
  *  - 13.06.2002 Added legal header - Cosmetic
  *
- *  $Id: decoder.h,v 1.13.2.1 2003-02-22 08:49:44 suxen_drol Exp $
+ *  $Id: decoder.h,v 1.13.2.2 2003-06-09 01:16:12 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -86,7 +86,7 @@ typedef struct
 
 typedef struct
 {
-	// vol bitstream
+	/* vol bitstream */
 
 	int time_inc_resolution;
 	int fixed_time_inc;
@@ -115,7 +115,7 @@ typedef struct
 	int newpred_enable;
 	int reduced_resolution_enable;
 
-	// image
+	/* image */
 
 	int fixed_dimensions;
 	uint32_t width;
@@ -124,41 +124,43 @@ typedef struct
 	uint32_t edged_height;
 
 	IMAGE cur;
-	IMAGE refn[2];				// 0   -- last I or P VOP
-								// 1   -- first I or P
+	IMAGE refn[2];				/* 0   -- last I or P VOP */
+								/* 1   -- first I or P */
 	IMAGE tmp;		/* bframe interpolation, and post processing tmp buffer */
 	IMAGE qtmp;		/* quarter pel tmp buffer */
 
-	// macroblock
+	/* macroblock */
 
 	uint32_t mb_width;
 	uint32_t mb_height;
 	MACROBLOCK *mbs;
 
-	// for B-frame & low_delay==0
-	// XXX: should move frame based stuff into a DECODER_FRAMEINFO struct */
-	MACROBLOCK *last_mbs;			// last MB
-    int last_coding_type;           // last coding type value
-	int last_reduced_resolution;	// last reduced_resolution value
-	int32_t frames;				// total frame number
-	int32_t packed_mode;		// bframes packed bitstream? (1 = yes)
+	/*
+	 * for B-frame & low_delay==0
+	 * XXX: should move frame based stuff into a DECODER_FRAMEINFO struct
+	 */
+	MACROBLOCK *last_mbs;			/* last MB */
+    int last_coding_type;           /* last coding type value */
+	int last_reduced_resolution;	/* last reduced_resolution value */
+	int32_t frames;				/* total frame number */
+	int32_t packed_mode;		/* bframes packed bitstream? (1 = yes) */
 	int8_t scalability;
-	VECTOR p_fmv, p_bmv;		// pred forward & backward motion vector
-	int64_t time;				// for record time
+	VECTOR p_fmv, p_bmv;		/* pred forward & backward motion vector */
+	int64_t time;				/* for record time */
 	int64_t time_base;
 	int64_t last_time_base;
 	int64_t last_non_b_time;
 	uint32_t time_pp;
 	uint32_t time_bp;
-	uint32_t low_delay;			// low_delay flage (1 means no B_VOP)
-	uint32_t low_delay_default;	// default value for low_delay flag
+	uint32_t low_delay;			/* low_delay flage (1 means no B_VOP) */
+	uint32_t low_delay_default;	/* default value for low_delay flag */
 
-	// for GMC: central place for all parameters
+	/* for GMC: central place for all parameters */
 	
 	IMAGE gmc;		/* gmc tmp buffer, remove for blockbased compensation */
 	GMC_DATA gmc_data;
 	
-	xvid_image_t* out_frm;                // This is used for slice rendering
+	xvid_image_t* out_frm;                /* This is used for slice rendering */
 }
 DECODER;
 

@@ -28,7 +28,7 @@
  *	- 22.12.2001 transfer_8to8add16 limit fix
  *	- 07.11.2001 initial version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: mem_transfer.c,v 1.9 2003-02-15 15:22:19 edgomez Exp $
+ *  $Id: mem_transfer.c,v 1.9.2.1 2003-06-09 01:25:10 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -195,7 +195,7 @@ transfer_8to16sub2_c(int16_t * const dct,
 			if (r > 255) {
 				r = 255;
 			}
-			//cur[j * stride + i] = r;
+			/* cur[j * stride + i] = r; */
 			dct[j * 8 + i] = (int16_t) c - (int16_t) r;
 		}
 	}

@@ -61,7 +61,7 @@ adaptive_quantization(unsigned char *buf,
 					  int min_quant,
 					  int max_quant,
 					  int mb_width,
-					  int mb_height)	// no qstride because normalization
+					  int mb_height)	/* no qstride because normalization */
 {
 	int i, j, k, l;
 
@@ -91,12 +91,12 @@ adaptive_quantization(unsigned char *buf,
 		return(-1);
 
 	for (k = 0; k < mb_height; k++) {
-		for (l = 0; l < mb_width; l++)	// do this for all macroblocks individually 
+		for (l = 0; l < mb_width; l++)	/* do this for all macroblocks individually  */
 		{
 			quant[k * mb_width + l] = (float) framequant;
 
-			// calculate luminance-masking
-			ptr = &buf[16 * k * stride + 16 * l];	// address of MB
+			/* calculate luminance-masking */
+			ptr = &buf[16 * k * stride + 16 * l];	/* address of MB */
 
 			val[k * mb_width + l] = 0.;
 
@@ -117,7 +117,7 @@ adaptive_quantization(unsigned char *buf,
 	if (((global <GlobalBrightThres) &&(global >GlobalDarkThres))
 		|| (mid_range < MidRangeThres)) {
 		for (k = 0; k < mb_height; k++) {
-			for (l = 0; l < mb_width; l++)	// do this for all macroblocks individually 
+			for (l = 0; l < mb_width; l++)	/* do this for all macroblocks individually */
 			{
 				if (val[k * mb_width + l] < DarkThres)
 					quant[k * mb_width + l] +=

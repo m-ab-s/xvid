@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.25 2003-05-22 16:34:47 edgomez Exp $
+ *  $Id: encoder.c,v 1.95.2.26 2003-06-09 01:16:24 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -714,7 +714,7 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
        
         /* todo: [vol,vop,motion]_flags*/
     
-    } else { // XVID_PLG_AFTER
+    } else { /* XVID_PLG_AFTER */
         if ((pEnc->mbParam.plugin_flags & XVID_REQORIGINAL)) {
             data.original.csp = XVID_CSP_USER;
             data.original.plane[0] = original->y;
@@ -1048,10 +1048,10 @@ repeat:
 		goto done;	/* nothing to encode yet; encoder lag */
 	}
 
-	// the current FRAME becomes the reference
+	/* the current FRAME becomes the reference */
 	SWAP(FRAMEINFO*, pEnc->current, pEnc->reference);
 
-	// remove frame from encoding-queue (head), and move it into the current
+	/* remove frame from encoding-queue (head), and move it into the current */
 	image_swap(&pEnc->current->image, &pEnc->queue[pEnc->queue_head].image);
 	frame = &pEnc->queue[pEnc->queue_head].frame;
 	pEnc->queue_head = (pEnc->queue_head + 1) % (pEnc->mbParam.max_bframes+1);
@@ -1167,8 +1167,8 @@ repeat:
 
     if (type == I_VOP && (pEnc->mbParam.global_flags & XVID_GLOBAL_CLOSED_GOP) && pEnc->bframenum_tail > 0) {
 
-		// place this frame back on the encoding-queue (head)
-		// we will deal with it next time
+		/* place this frame back on the encoding-queue (head) */
+		/* we will deal with it next time */
         dec_frame_num(pEnc);
         pEnc->iFrameNum--;
 
@@ -1176,7 +1176,7 @@ repeat:
         pEnc->queue_size++;
 		image_swap(&pEnc->current->image, &pEnc->queue[pEnc->queue_head].image);
 
-		// grab the last frame from the bframe-queue
+		/* grab the last frame from the bframe-queue */
 
 		pEnc->bframenum_tail--;
 		SWAP(FRAMEINFO*, pEnc->current, pEnc->bframes[pEnc->bframenum_tail]);
@@ -1238,7 +1238,7 @@ repeat:
 	 * encode this frame as an p-vop
      * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
 
-    } else { // (type == P_VOP || type == S_VOP)
+    } else { /* (type == P_VOP || type == S_VOP) */
 
 		DPRINTF(XVID_DEBUG_DEBUG,"*** PFRAME bf: head=%i tail=%i   queue: head=%i tail=%i size=%i\n",
 				pEnc->bframenum_head, pEnc->bframenum_tail,
@@ -1469,7 +1469,7 @@ FrameCodeP(Encoder * pEnc,
 
 	pEnc->mbParam.m_rounding_type = 1 - pEnc->mbParam.m_rounding_type;
 	pEnc->current->rounding_type = pEnc->mbParam.m_rounding_type;
-  	//pEnc->current->quarterpel =  pEnc->mbParam.m_quarterpel;
+  	/* pEnc->current->quarterpel =  pEnc->mbParam.m_quarterpel; */
 	pEnc->current->fcode = pEnc->mbParam.m_fcode;
 
 	if (!force_inter)
@@ -1771,7 +1771,9 @@ FrameCodeP(Encoder * pEnc,
 	pEnc->fMvPrevSigma = fSigma;
 
 	/* frame drop code */
-	//DPRINTF(XVID_DEBUG_DEBUG, "kmu %i %i %i\n", pEnc->current->sStat.kblks, pEnc->current->sStat.mblks, pEnc->current->sStat.ublks);
+#if 0
+	DPRINTF(XVID_DEBUG_DEBUG, "kmu %i %i %i\n", pEnc->current->sStat.kblks, pEnc->current->sStat.mblks, pEnc->current->sStat.ublks);
+#endif
 	if (pEnc->current->sStat.kblks + pEnc->current->sStat.mblks <
 		(pEnc->mbParam.frame_drop_ratio * mb_width * mb_height) / 100)
 	{
@@ -1787,7 +1789,7 @@ FrameCodeP(Encoder * pEnc,
 		pEnc->current->quant = pEnc->reference->quant;
 		pEnc->current->motion_flags = pEnc->reference->motion_flags;
 		pEnc->current->rounding_type = pEnc->reference->rounding_type;
-	  	//pEnc->current->quarterpel =  pEnc->reference->quarterpel;
+	  	/* pEnc->current->quarterpel =  pEnc->reference->quarterpel; */
 		pEnc->current->fcode = pEnc->reference->fcode;
 		pEnc->current->bcode = pEnc->reference->bcode;
 		image_copy(&pEnc->current->image, &pEnc->reference->image, pEnc->mbParam.edged_width, pEnc->mbParam.height);
@@ -1853,7 +1855,7 @@ FrameCodeB(Encoder * pEnc,
 	}
 #endif
 
-  	//frame->quarterpel =  pEnc->mbParam.m_quarterpel;
+  	/* frame->quarterpel =  pEnc->mbParam.m_quarterpel; */
 	
 	/* forward  */
 	image_setedges(f_ref, pEnc->mbParam.edged_width,

@@ -243,7 +243,9 @@ LRESULT compress_get_size(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lp
 
 LRESULT compress_frames_info(CODEC * codec, ICCOMPRESSFRAMES * icf)
 {
-    //DPRINTF("%i %i", icf->lStartFrame, icf->lFrameCount);
+#if 0
+    DPRINTF("%i %i", icf->lStartFrame, icf->lFrameCount);
+#endif
 	codec->fincr = icf->dwScale;
 	codec->fbase = icf->dwRate;
 	return ICERR_OK;
@@ -316,7 +318,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	memset(&create, 0, sizeof(create));
 	create.version = XVID_VERSION;
 
-    // zones
+    /* zones */
     create.zones = malloc(sizeof(xvid_enc_zone_t) * codec->config.num_zones);
     create.num_zones = codec->config.num_zones;
     for (i=0; i < create.num_zones; i++) {
@@ -331,7 +333,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
         create.zones[i].base = 100;
     }
 
-    // plugins
+    /* plugins */
 	create.plugins = plugins;
 	switch (codec->config.mode) 
 	{
@@ -725,7 +727,7 @@ LRESULT decompress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO 
 
 	if (get_colorspace(inhdr) != XVID_CSP_NULL) {
 		memcpy(outhdr, inhdr, sizeof(BITMAPINFOHEADER));
-		// XXX: should we set outhdr->biSize ??
+		/* XXX: should we set outhdr->biSize ?? */
 		return ICERR_OK;
 	}
 	/* --- yv12 --- */

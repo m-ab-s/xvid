@@ -24,8 +24,10 @@
 #define MODE_DIRECT_NO4V	5
 
 
-// vop coding types 
-// intra, prediction, backward, sprite, not_coded
+/*
+ * vop coding types 
+ * intra, prediction, backward, sprite, not_coded
+ */
 #define I_VOP	0
 #define P_VOP	1
 #define B_VOP	2
@@ -71,9 +73,9 @@ WARPPOINTS;
 
 typedef struct 
 {
-	int num_wp;		//	[input]: 0=none, 1=translation, 2,3 = warping
-							//  a value of -1 means: "structure not initialized!"
-	int s;					//  [input]: calc is done with 1/s pel resolution
+	int num_wp;		/* [input]: 0=none, 1=translation, 2,3 = warping */
+							/* a value of -1 means: "structure not initialized!" */
+	int s;					/* [input]: calc is done with 1/s pel resolution */
 
 	int W;
 	int H;
@@ -137,43 +139,45 @@ Bitstream;
 
 typedef struct
 {
-	// decoder/encoder 
+	/* decoder/encoder */
 	VECTOR mvs[4];
 
 	short int pred_values[6][MBPRED_SIZE];
 	int acpred_directions[6];
 
 	int mode;
-	int quant;					// absolute quant
+	int quant;					/* absolute quant */
 
 	int field_dct;
 	int field_pred;
 	int field_for_top;
 	int field_for_bot;
 
-	// encoder specific
+	/* encoder specific */
 
 	VECTOR mv16;
 	VECTOR pmvs[4];
-	VECTOR qmvs[4];				// mvs in quarter pixel resolution
+	VECTOR qmvs[4];				/* mvs in quarter pixel resolution */
 
-	int32_t sad8[4];			// SAD values for inter4v-VECTORs
-	int32_t sad16;				// SAD value for inter-VECTOR
+	int32_t sad8[4];			/* SAD values for inter4v-VECTORs */
+	int32_t sad16;				/* SAD value for inter-VECTOR */
 
 	int dquant;
 	int cbp;
 
-	// bframe stuff
+	/* bframe stuff */
 
 	VECTOR b_mvs[4];
 	VECTOR b_qmvs[4];
 
 	int mb_type;
 
-	// stuff for block based ME (needed for Qpel ME)
-	// backup of last integer ME vectors/sad
+	/*
+	 * stuff for block based ME (needed for Qpel ME)
+	 * backup of last integer ME vectors/sad
+	 */
 
-	VECTOR amv; // average motion vectors from GMC 
+	VECTOR amv; /* average motion vectors from GMC  */
 	int32_t mcsel;
 
 /* This structure has become way to big! What to do? Split it up?   */ 
@@ -203,7 +207,7 @@ get_dc_scaler(uint32_t quant,
 		return quant - 6;
 }
 
-// useful macros
+/* useful macros */
 
 #define MIN(X, Y) ((X)<(Y)?(X):(Y))
 #define MAX(X, Y) ((X)>(Y)?(X):(Y))

@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion_est.h,v 1.3.2.7 2003-05-14 20:23:02 edgomez Exp $
+ *  $Id: motion_est.h,v 1.3.2.8 2003-06-09 01:22:18 edgomez Exp $
  *
  ***************************************************************************/
 
@@ -39,7 +39,7 @@
 
 /* hard coded motion search parameters for motion_est and smp_motion_est */
 
-// very large value
+/* very large value */
 #define MV_MAX_ERROR	(4096 * 256)
 
 /* INTER bias for INTER/INTRA decision; mpeg4 spec suggests 2*nb */
@@ -91,7 +91,7 @@ static const int lambda_vec8[32] =
 	(int)(21.2656*NEIGH_TEND_8X8 + 0.5), (int)(24.8580*NEIGH_TEND_8X8 + 0.5),
 	(int)(29.6436*NEIGH_TEND_8X8 + 0.5), (int)(36.4949*NEIGH_TEND_8X8 + 0.5)	};
 
-// mv.length table
+/* mv.length table */
 static const int mvtab[64] = {
 		1, 2, 3, 4, 6, 7, 7, 7,
 		9, 9, 9, 10, 10, 10, 10, 10,
@@ -109,14 +109,14 @@ static const int DQtab[4] = {
 
 typedef struct
 {
-// general fields
+	/* general fields */
 	int max_dx, min_dx, max_dy, min_dy;
 	uint32_t rounding;
 	VECTOR predMV;
 	VECTOR * currentMV;
 	VECTOR * currentQMV;
 	int32_t * iMinSAD;
-	const uint8_t * RefP[6]; // N, V, H, HV, cU, cV
+	const uint8_t * RefP[6]; /* N, V, H, HV, cU, cV */
 	const uint8_t * CurU;
 	const uint8_t * CurV;
 	uint8_t * RefQ;
@@ -129,15 +129,18 @@ typedef struct
 	int qpel, qpel_precision;
 	int chroma;
 	int rrv;
-//fields for interpolate and direct modes
-	const uint8_t * b_RefP[6]; // N, V, H, HV, cU, cV
+
+	/* fields for interpolate and direct modes */
+	const uint8_t * b_RefP[6]; /* N, V, H, HV, cU, cV */
 	VECTOR bpredMV;
 	uint32_t bFcode;
-// fields for direct mode
+
+	/* fields for direct mode */
 	VECTOR directmvF[4];
 	VECTOR directmvB[4];
 	const VECTOR * referencemv;
-// BITS/R-D stuff
+
+	/* BITS/R-D stuff */
 	int16_t * dctSpace;
 	uint32_t iQuant;
 	uint32_t quant_type;

@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion.h,v 1.20.2.1 2003-03-27 17:09:59 edgomez Exp $
+ *  $Id: motion.h,v 1.20.2.2 2003-06-09 01:21:17 edgomez Exp $
  *
  ***************************************************************************/
 
@@ -36,7 +36,7 @@
 #include "../portab.h"
 #include "../global.h"
 
-// fast ((A)/2)*2
+/* fast ((A)/2)*2 */
 #define EVEN(A)		(((A)<0?(A)+1:(A)) & ~1)
 
 #define MVzero(A) ( ((A).x)==(0) && ((A).y)==(0) )
@@ -87,7 +87,7 @@ get_ref(const uint8_t * const refn,
 
 void MotionEstimationBVOP(MBParam * const pParam,
 						FRAMEINFO * const frame,
-						// forward (past) reference
+						/* forward (past) reference */
 						const int32_t time_bp,
 						const int32_t time_pp,
 						const MACROBLOCK * const f_mbs,
@@ -95,7 +95,7 @@ void MotionEstimationBVOP(MBParam * const pParam,
 						const IMAGE * const f_refH,
 						const IMAGE * const f_refV,
 						const IMAGE * const f_refHV,
-						// backward (future) reference
+						/* backward (future) reference */
 						const FRAMEINFO * const b_reference,
 						const IMAGE * const b_ref,
 						const IMAGE * const b_refH,
@@ -121,28 +121,28 @@ void MBMotionCompensationBVOP(MBParam * pParam,
 /* GMC stuff. Maybe better put it into a separate file */
 
 void
-generate_GMCparameters(	const int num_wp,				// [input]: number of warppoints
-						const int res, 					// [input]: resolution
-						const WARPPOINTS *const warp, 	// [input]: warp points
-						const int width, const int height, 	// [input]: without edges!
-						GMC_DATA *const gmc); 		// [output] precalculated parameters
+generate_GMCparameters(	const int num_wp,				/* [input]: number of warppoints */
+						const int res, 					/* [input]: resolution */
+						const WARPPOINTS *const warp, 	/* [input]: warp points */
+						const int width, const int height, 	/* [input]: without edges! */
+						GMC_DATA *const gmc); 		/* [output] precalculated parameters */
 
 void
-generate_GMCimage(	const GMC_DATA *const gmc_data, 	// [input] precalculated data
-					const IMAGE *const pRef,			// [input]
+generate_GMCimage(	const GMC_DATA *const gmc_data, 	/* [input] precalculated data */
+					const IMAGE *const pRef,			/* [input] */
 					const int mb_width,
 					const int mb_height,
 					const int stride,
 					const int stride2,
-					const int fcode, 					// [input] some parameters...
-					const int32_t quarterpel,			// [input] for rounding avgMV
-					const int reduced_resolution,		// [input] ignored
-					const int32_t rounding,			// [input] for rounding image data
-					MACROBLOCK *const pMBs, 	// [output] average motion vectors
-					IMAGE *const pGMC);			// [output] full warped image
+					const int fcode, 					/* [input] some parameters... */
+					const int32_t quarterpel,			/* [input] for rounding avgMV */
+					const int reduced_resolution,		/* [input] ignored */
+					const int32_t rounding,			/* [input] for rounding image data */
+					MACROBLOCK *const pMBs, 	/* [output] average motion vectors */
+					IMAGE *const pGMC);			/* [output] full warped image */
 
 VECTOR generate_GMCimageMB(	const GMC_DATA *const gmc_data, 	/* [input] all precalc data */
-							const IMAGE *const pRef,			// [input]
+							const IMAGE *const pRef,			/* [input] */
 							const int mi, const int mj, 		/* [input] MB position */
 							const int stride,					/* [input] Lumi stride */
 							const int stride2,					/* [input] chroma stride */

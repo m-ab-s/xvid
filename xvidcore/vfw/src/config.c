@@ -60,8 +60,8 @@
 #include <shlobj.h>
 #include <prsht.h>
 
-#include <stdio.h>  // sprintf
-#include <xvid.h>	// XviD API
+#include <stdio.h>  /* sprintf */
+#include <xvid.h>	/* XviD API */
 
 #include "debug.h"
 #include "codec.h"
@@ -1324,11 +1324,11 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
             LVCOLUMN lvc; 
             int i;
  
-            // Initialize the LVCOLUMN structure. 
+            /* Initialize the LVCOLUMN structure.  */
             lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM; 
             lvc.fmt = LVCFMT_LEFT; 
   
-            // Add the columns. 
+            /* Add the columns.  */
             for (i=0; i<sizeof(columns)/sizeof(char_int_t); i++) {
                 lvc.pszText = (char*)columns[i].name; 
                 lvc.cchTextMax = strlen(columns[i].name);

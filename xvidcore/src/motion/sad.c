@@ -47,7 +47,7 @@
 sad16FuncPtr sad16;
 sad8FuncPtr sad8;
 sad16biFuncPtr sad16bi;
-sad8biFuncPtr sad8bi;		// not really sad16, but no difference in prototype
+sad8biFuncPtr sad8bi;		/* not really sad16, but no difference in prototype */
 dev16FuncPtr dev16;
 sad16vFuncPtr sad16v;
 

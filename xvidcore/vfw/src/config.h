@@ -73,10 +73,10 @@ typedef struct
 typedef struct
 {
 /********** ATTENTION **********/
-	int mode;					// Vidomi directly accesses these vars
-	int bitrate;				//
-	int desired_size;			// please try to avoid modifications here
-	char stats[MAX_PATH];		//
+	int mode;					/* Vidomi directly accesses these vars */
+	int bitrate;				
+	int desired_size;			/* please try to avoid modifications here */
+	char stats[MAX_PATH];		
 /*******************************/
 
     /* profile  */

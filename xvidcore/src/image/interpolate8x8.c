@@ -34,7 +34,7 @@
 #include "../global.h"
 #include "interpolate8x8.h"
 
-// function pointers
+/* function pointers */
 INTERPOLATE8X8_PTR interpolate8x8_halfpel_h;
 INTERPOLATE8X8_PTR interpolate8x8_halfpel_v;
 INTERPOLATE8X8_PTR interpolate8x8_halfpel_hv;
@@ -100,7 +100,7 @@ void interpolate8x8_avg4_c(uint8_t *dst, const uint8_t *src1, const uint8_t *src
     }
 }
 
-// dst = interpolate(src)
+/* dst = interpolate(src) */
 
 void
 interpolate8x8_halfpel_h_c(uint8_t * const dst,

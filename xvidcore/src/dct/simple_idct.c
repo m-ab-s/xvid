@@ -35,15 +35,15 @@
 #define ROW_SHIFT 8
 #define COL_SHIFT 17
 #else
-#define W1  22725  //cos(i*M_PI/16)*sqrt(2)*(1<<14) + 0.5
-#define W2  21407  //cos(i*M_PI/16)*sqrt(2)*(1<<14) + 0.5
-#define W3  19266  //cos(i*M_PI/16)*sqrt(2)*(1<<14) + 0.5
-#define W4  16383  //cos(i*M_PI/16)*sqrt(2)*(1<<14) + 0.5
-#define W5  12873  //cos(i*M_PI/16)*sqrt(2)*(1<<14) + 0.5
-#define W6  8867   //cos(i*M_PI/16)*sqrt(2)*(1<<14) + 0.5
-#define W7  4520   //cos(i*M_PI/16)*sqrt(2)*(1<<14) + 0.5
+#define W1  22725  /* cos(i*M_PI/16)*sqrt(2)*(1<<14) + 0.5 */
+#define W2  21407  /* cos(i*M_PI/16)*sqrt(2)*(1<<14) + 0.5 */
+#define W3  19266  /* cos(i*M_PI/16)*sqrt(2)*(1<<14) + 0.5 */
+#define W4  16383  /* cos(i*M_PI/16)*sqrt(2)*(1<<14) + 0.5 */
+#define W5  12873  /* cos(i*M_PI/16)*sqrt(2)*(1<<14) + 0.5 */
+#define W6  8867   /* cos(i*M_PI/16)*sqrt(2)*(1<<14) + 0.5 */
+#define W7  4520   /* cos(i*M_PI/16)*sqrt(2)*(1<<14) + 0.5 */
 #define ROW_SHIFT 11
-#define COL_SHIFT 20 // 6
+#define COL_SHIFT 20 /* 6 */
 #endif
 
 #if defined(ARCH_IS_PPC)

@@ -47,18 +47,18 @@
 #define ARG_BITRATE 900
 
 int QUALITY =5;
-int QUANTI = 0;		// used for fixed-quantizer encoding 
+int QUANTI = 0;		/* used for fixed-quantizer encoding  */
 
 int XDIM=0;
-int YDIM=0;	// will be set when reading first image
+int YDIM=0;	/* will be set when reading first image */
 int filenr = 0;
 
-int save_m4v_flag = 0;		// save MPEG4-bytestream?
-int save_dec_flag = 0;		// save decompressed bytestream?
-char filepath[256] = ".";	// path where to save 
+int save_m4v_flag = 0;		/* save MPEG4-bytestream? */
+int save_dec_flag = 0;		/* save decompressed bytestream? */
+char filepath[256] = ".";	/* path where to save  */
 
-void *enchandle = NULL;		// enchandle is a void*, written by encore
-const long dechandle = 0x0815;	// dechandle is a unique constant!!! 
+void *enchandle = NULL;		/* enchandle is a void*, written by encore */
+const long dechandle = 0x0815;	/* dechandle is a unique constant!!!  */
 
 /*********************************************************************/
 /*	Routines for file input/output, nothing specific to XviD     */
@@ -102,7 +102,7 @@ int read_pgmdata(FILE* handle, unsigned char *image)
 		fread(buff1_ptr3,XDIM/2,1,stdin);      
 		buff1_ptr3 += XDIM/2;
 	}
-	fread(&dummy,1,1,handle);				// should be EOF
+	fread(&dummy,1,1,handle);				/* should be EOF */
 	return 0;
 }
 
@@ -119,7 +119,7 @@ int enc_init()
 
 	enc_param.x_dim = XDIM;
 	enc_param.y_dim = YDIM;
-	enc_param.framerate = ARG_FRAMERATE;		// a float
+	enc_param.framerate = ARG_FRAMERATE;		/* a float */
 	enc_param.bitrate = ARG_BITRATE*1000;
 
 	enc_param.rc_period = 2000;
@@ -131,12 +131,12 @@ int enc_init()
 
 	enc_param.quality = QUALITY;
 
-	enc_param.use_bidirect = 0;	// use bidirectional coding
-	enc_param.deinterlace = 0;	// fast deinterlace
-	enc_param.obmc = 0;		// flag to enable overlapped block motion compensation mode
+	enc_param.use_bidirect = 0;	/* use bidirectional coding */
+	enc_param.deinterlace = 0;	/* fast deinterlace */
+	enc_param.obmc = 0;		/* flag to enable overlapped block motion compensation mode */
 
 	enc_param.max_key_interval = (int)ARG_FRAMERATE*10;
-	enc_param.handle = NULL;	//will be filled by encore
+	enc_param.handle = NULL;	/* will be filled by encore */
 
 	status = encore(enchandle, ENC_OPT_INIT, &enc_param, NULL);
 	enchandle = enc_param.handle;
@@ -165,9 +165,9 @@ int  enc_main(unsigned char* image, unsigned char* bitstream, int *streamlength)
 	
 	enc_frame.image = (void *) image; 
 	enc_frame.bitstream = (void *) bitstream;
-	enc_frame.length = 0;			// filled by encore
-	enc_frame.colorspace = ENC_CSP_YV12;	// input is YUV
-	enc_frame.mvs = NULL;		// unsupported
+	enc_frame.length = 0;			/* filled by encore */
+	enc_frame.colorspace = ENC_CSP_YV12;	/* input is YUV */
+	enc_frame.mvs = NULL;		/* unsupported */
 
 	if (QUANTI==0)
 	{
@@ -175,7 +175,7 @@ int  enc_main(unsigned char* image, unsigned char* bitstream, int *streamlength)
 	}
 	else
 	{	enc_frame.quant = QUANTI;
-		enc_frame.intra = -1;		// let encoder decide if frame is INTER/INTRA
+		enc_frame.intra = -1;		/* let encoder decide if frame is INTER/INTRA */
 		status = encore(enchandle, ENC_OPT_ENCODE_VBR, &enc_frame, &enc_result);
 	}
 
@@ -202,7 +202,7 @@ int dec_init()
 	
 	dec_param.x_dim = XDIM;
 	dec_param.y_dim = YDIM;
-	dec_param.output_format = DEC_RGB24;	//   output color format, , see <decore.h>
+	dec_param.output_format = DEC_RGB24;	/* output color format, , see <decore.h> */
 	
 	dec_param.time_incr = 20;
 
@@ -231,7 +231,7 @@ int dec_main(unsigned char *m4v_buffer, unsigned char *rgb_buffer, int m4v_size)
 	dec_frame.length = m4v_size;
 	dec_frame.bitstream = m4v_buffer;
 	dec_frame.bmp = rgb_buffer;
-	dec_frame.render_flag = 1;		// 0 means: skip this frame
+	dec_frame.render_flag = 1;		/* 0 means: skip this frame */
 	dec_frame.stride = XDIM;
 
 	status = decore(dechandle, DEC_OPT_FRAME, &dec_frame, &dec_frame_info);
@@ -279,16 +279,16 @@ int main()
 /* now we know the sizes, so allocate memory */
   yuv_buffer = (unsigned char *) malloc(XDIM*YDIM);	
   if (!yuv_buffer)
-    goto free_all_memory;	// goto is one of the most underestimated instructions in C !!!
-  divx_buffer = (unsigned char *) malloc(XDIM*YDIM*2);	// this should really be enough!
+    goto free_all_memory;	/* goto is one of the most underestimated instructions in C !!! */
+  divx_buffer = (unsigned char *) malloc(XDIM*YDIM*2);	/* this should really be enough! */
   if (!divx_buffer)
-    goto free_all_memory;	// actually, every program should contain a goto 
+    goto free_all_memory;	/* actually, every program should contain a goto  */
     
-  YDIM = YDIM*2/3; // PGM is YUV 4:2:0 format, so height is *3/2 too much
+  YDIM = YDIM*2/3; /* PGM is YUV 4:2:0 format, so height is *3/2 too much */
     
   rgb_buffer = (unsigned char *) malloc(XDIM*YDIM*4);	
   if (!rgb_buffer)
-    goto free_all_memory;	// the more, the better!
+    goto free_all_memory;	/* the more, the better! */
 
 /*********************************************************************/
 /*	                   DIVX PART  Start                          */
@@ -309,7 +309,7 @@ int main()
 
   do
     {
-      status = read_pgmdata(stdin, yuv_buffer);	// read PGM data (YUV-format)
+      status = read_pgmdata(stdin, yuv_buffer);	/* read PGM data (YUV-format) */
       if (status)
 	{
 	  fprintf(stderr, "PGM-Data-Error: %d\n", status);	/* this should not happen */
@@ -343,7 +343,7 @@ int main()
  	       	filehandle=fopen(filename,"wb");
 		if (filehandle)
 	        {
-                	fprintf(filehandle,"P6\n");		// rgb24 in PPM format
+                	fprintf(filehandle,"P6\n");		/* rgb24 in PPM format */
 	      		fprintf(filehandle,"%d %d 255\n",XDIM,YDIM);
       			fwrite(rgb_buffer,XDIM,YDIM*3,filehandle);
                 	fclose(filehandle);
@@ -351,7 +351,7 @@ int main()
  	}
 
       filenr++;
-      status = read_pgmheader(stdin);		// if it was the last PGM, stop after it
+      status = read_pgmheader(stdin);		/* if it was the last PGM, stop after it */
       if (status)
 	{
 	  fprintf(stderr, "PGM-Header-Error: %d\n", status); /* normally, just end of file */

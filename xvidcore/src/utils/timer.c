@@ -94,7 +94,7 @@ get_freq()
 	return (double) (y - x) / 1000.;
 }
 
-// set everything to zero //
+/* set everything to zero */
 void
 init_timer()
 {

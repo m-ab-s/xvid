@@ -1,7 +1,9 @@
-// 30.10.2002	corrected qpel chroma rounding
-// 04.10.2002	added qpel support to MBMotionCompensation
-// 01.05.2002   updated MBMotionCompensationBVOP
-// 14.04.2002   bframe compensation
+/*
+ * 30.10.2002	corrected qpel chroma rounding
+ * 04.10.2002	added qpel support to MBMotionCompensation
+ * 01.05.2002   updated MBMotionCompensationBVOP
+ * 14.04.2002   bframe compensation
+ */
 
 #include <stdio.h>
 
@@ -27,7 +29,9 @@ static __inline int gmc_sanitize(int value, int quarterpel, int fcode)
 {
 	int length = 1 << (fcode+4);
 
-//	if (quarterpel) value *= 2;
+#if 0
+	if (quarterpel) value *= 2;
+#endif
 
 	if (value < -length)
 		return -length;
@@ -86,7 +90,7 @@ compensate16x16_interpolate(int16_t * const dct_codes,
 											(uint8_t *) ref, tmp + 32,
 											tmp + 64, tmp + 96, x, y, dx, dy, stride, rounding);
 				ptr = tmp;
-			} else ptr =  ref + (y + dy/4)*stride + x + dx/4; // fullpixel position
+			} else ptr =  ref + (y + dy/4)*stride + x + dx/4; /* fullpixel position */
 
 		} else ptr = get_ref(ref, refh, refv, refhv, x, y, 1, dx, dy, stride);
 
@@ -99,7 +103,7 @@ compensate16x16_interpolate(int16_t * const dct_codes,
 		transfer_8to16sub(dct_codes+192, cur + y * stride + x + 8*stride+8,
 							ptr + 8*stride + 8, stride);
 
-	} else { //reduced_resolution
+	} else { /* reduced_resolution */
 
 		x *= 2; y *= 2;
 
@@ -148,12 +152,12 @@ compensate8x8_interpolate(	int16_t * const dct_codes,
 										(uint8_t *) ref, tmp + 32,
 										tmp + 64, tmp + 96, x, y, dx, dy, stride, rounding);
 				ptr = tmp;
-			} else ptr = ref + (y + dy/4)*stride + x + dx/4; // fullpixel position
+			} else ptr = ref + (y + dy/4)*stride + x + dx/4; /* fullpixel position */
 		} else ptr = get_ref(ref, refh, refv, refhv, x, y, 1, dx, dy, stride);
 
 			transfer_8to16sub(dct_codes, cur + y * stride + x, ptr, stride);
 
-	} else { //reduced_resolution
+	} else { /* reduced_resolution */
 
 		x *= 2; y *= 2;
 
@@ -316,7 +320,7 @@ MBMotionCompensation(MACROBLOCK * const mb,
 		dx = (dx >> 1) + roundtab_79[dx & 0x3];
 		dy = (dy >> 1) + roundtab_79[dy & 0x3];
 
-	} else {					// mode == MODE_INTER4V
+	} else {					/* mode == MODE_INTER4V */
 		int k, sumx = 0, sumy = 0;
 		const VECTOR * const mvs = (quarterpel ? mb->qmvs : mb->mvs);
 
@@ -414,14 +418,14 @@ MBMotionCompensationBVOP(MBParam * pParam,
 					(uint8_t *) f_ref->y, tmp + 32,
 					tmp + 64, tmp + 96, 16*i, 16*j, dx, dy, edged_width, 0);
 				ptr1 = tmp;
-			} else ptr1 = f_ref->y + (16*j + dy/4)*edged_width + 16*i + dx/4; // fullpixel position
+			} else ptr1 = f_ref->y + (16*j + dy/4)*edged_width + 16*i + dx/4; /* fullpixel position */
 
 			if ((b_dx&3) | (b_dy&3)) {
 				interpolate16x16_quarterpel(tmp - i * 16 - j * 16 * edged_width + 16,
 					(uint8_t *) b_ref->y, tmp + 32,
 					tmp + 64, tmp + 96, 16*i, 16*j, b_dx, b_dy, edged_width, 0);
 				ptr2 = tmp + 16;
-			} else ptr2 = b_ref->y + (16*j + b_dy/4)*edged_width + 16*i + b_dx/4; // fullpixel position
+			} else ptr2 = b_ref->y + (16*j + b_dy/4)*edged_width + 16*i + b_dx/4; /* fullpixel position */
 
 			b_dx /= 2;
 			b_dy /= 2;
@@ -450,7 +454,7 @@ MBMotionCompensationBVOP(MBParam * pParam,
 
 		break;
 
-	default: // MODE_DIRECT (or MODE_DIRECT_NONE_MV in case of bframes decoding)
+	default: /* MODE_DIRECT (or MODE_DIRECT_NONE_MV in case of bframes decoding) */
 		sumx = sumy = b_sumx = b_sumy = 0;
 
 		for (k = 0; k < 4; k++) {
@@ -500,7 +504,7 @@ MBMotionCompensationBVOP(MBParam * pParam,
 		break;
 	}
 
-	// uv block-based chroma interpolation for direct and interpolate modes
+	/* v block-based chroma interpolation for direct and interpolate modes */
 	transfer_8to16sub2(&dct_codes[4 * 64],
 						cur->u + (j * 8) * edged_width / 2 + (i * 8),
 						interpolate8x8_switch2(tmp, b_ref->u, 8 * i, 8 * j,
@@ -535,7 +539,7 @@ void generate_GMCparameters( const int num_wp, const int res,
 	gmc->W = width;
 	gmc->H = height;
 
-	gmc->rho = 4 - log2bin(res-1);  // = {3,2,1,0} for res={2,4,8,16}
+	gmc->rho = 4 - log2bin(res-1);  /* = {3,2,1,0} for res={2,4,8,16} */
 
 	gmc->alpha = log2bin(gmc->W-1);
 	gmc->Ws = (1 << gmc->alpha);
@@ -572,18 +576,18 @@ void generate_GMCparameters( const int num_wp, const int res,
 }
 
 void
-generate_GMCimage(	const GMC_DATA *const gmc_data, // [input] precalculated data
-					const IMAGE *const pRef,		// [input]
+generate_GMCimage(	const GMC_DATA *const gmc_data, /* [input] precalculated data */
+					const IMAGE *const pRef,		/* [input] */
 					const int mb_width,
 					const int mb_height,
 					const int stride,
 					const int stride2,
-					const int fcode, 				// [input] some parameters...
-  					const int32_t quarterpel,		// [input] for rounding avgMV
-					const int reduced_resolution,	// [input] ignored
-					const int32_t rounding,			// [input] for rounding image data
-					MACROBLOCK *const pMBs, 		// [output] average motion vectors
-					IMAGE *const pGMC)				// [output] full warped image
+					const int fcode, 				/* [input] some parameters... */
+  					const int32_t quarterpel,		/* [input] for rounding avgMV */
+					const int reduced_resolution,	/* [input] ignored */
+					const int32_t rounding,			/* [input] for rounding image data */
+					MACROBLOCK *const pMBs, 		/* [output] average motion vectors */
+					IMAGE *const pGMC)				/* [output] full warped image */
 {
 
 	unsigned int mj,mi;
@@ -670,7 +674,7 @@ VECTOR generate_GMCimageMB( const GMC_DATA *const gmc_data,
 			if (G< -1) G=-1;
 			else if (G>H) G=H;
 
-			{	 // MMX-like bilinear...
+			{	 /* MMX-like bilinear... */
 				const int offset = G*stride + F;
 				uint32_t f0, f1;
 				f0 = pRef->y[ offset +0 ];
@@ -751,7 +755,7 @@ VECTOR generate_GMCimageMB( const GMC_DATA *const gmc_data,
 	}
 
 
-	avgMV.x -= 16*((256*mi+120)<<4);	// 120 = 15*16/2
+	avgMV.x -= 16*((256*mi+120)<<4);	/* 120 = 15*16/2 */
 	avgMV.y -= 16*((256*mj+120)<<4);
 
 	avgMV.x = RSHIFT( avgMV.x, (4+7-quarterpel) );
@@ -764,11 +768,11 @@ VECTOR generate_GMCimageMB( const GMC_DATA *const gmc_data,
 
 #ifdef OLD_GRUEL_GMC
 void
-generate_GMCparameters(	const int num_wp,			// [input]: number of warppoints
-						const int res, 			// [input]: resolution
-						const WARPPOINTS *const warp, // [input]: warp points
+generate_GMCparameters(	const int num_wp,			/* [input]: number of warppoints */
+						const int res, 			/* [input]: resolution */
+						const WARPPOINTS *const warp, /* [input]: warp points */
 						const int width, const int height,
-						GMC_DATA *const gmc) 	// [output] precalculated parameters
+						GMC_DATA *const gmc) 	/* [output] precalculated parameters */
 {
 
 /* We follow mainly two sources: The original standard, which is ugly, and the
@@ -828,8 +832,10 @@ type | variable name  |   ISO name (TeX-style) |  value or range  |  usage
 	int dv0 = warp->duv[0].y;
 	int du1 = warp->duv[1].x;
 	int dv1 = warp->duv[1].y;
-//	int du2 = warp->duv[2].x;
-//	int dv2 = warp->duv[2].y;
+#if 0
+	int du2 = warp->duv[2].x;
+	int dv2 = warp->duv[2].y;
+#endif
 
 	gmc->num_wp = num_wp;
 
@@ -844,19 +850,27 @@ type | variable name  |   ISO name (TeX-style) |  value or range  |  usage
 	gmc->alpha = log2bin(gmc->W-1);
 	gmc->Ws= 1<<gmc->alpha;
 
-//	gmc->beta = log2bin(gmc->H-1);
-//	gmc->Hs= 1<<gmc->beta;
+#if 0
+	gmc->beta = log2bin(gmc->H-1);
+	gmc->Hs= 1<<gmc->beta;
+#endif
 
-//	printf("du0=%d dv0=%d du1=%d dv1=%d s=%d sigma=%d W=%d alpha=%d, Ws=%d, rho=%d\n",du0,dv0,du1,dv1,gmc->s,gmc->sigma,gmc->W,gmc->alpha,gmc->Ws,gmc->rho);
+#if 0
+	printf("du0=%d dv0=%d du1=%d dv1=%d s=%d sigma=%d W=%d alpha=%d, Ws=%d, rho=%d\n",du0,dv0,du1,dv1,gmc->s,gmc->sigma,gmc->W,gmc->alpha,gmc->Ws,gmc->rho);
+#endif
 
-	/* i2s is only needed for num_wp >= 3, etc.  */
-	/* the 's' values are in 1/s pel resolution */
+	/*
+	 * i2s is only needed for num_wp >= 3, etc.
+	 * the 's' values are in 1/s pel resolution
+	 */
 	gmc->i0s = res/2 * ( du0 );
 	gmc->j0s = res/2 * ( dv0 );
 	gmc->i1s = res/2 * (2*width + du1 + du0 );
 	gmc->j1s = res/2 * ( dv1 + dv0 );
-//	gmc->i2s = res/2 * ( du2 + du0 );
-//	gmc->j2s = res/2 * (2*height + dv2 + dv0 );
+#if 0
+	gmc->i2s = res/2 * ( du2 + du0 );
+	gmc->j2s = res/2 * (2*height + dv2 + dv0 );
+#endif
 
 	/* i2s and i2ss are only needed for num_wp == 3, etc.  */
 
@@ -864,25 +878,27 @@ type | variable name  |   ISO name (TeX-style) |  value or range  |  usage
 	gmc->i1ss = 16*gmc->Ws + ROUNDED_DIV(((gmc->W-gmc->Ws)*(gmc->r*gmc->i0s) + gmc->Ws*(gmc->r*gmc->i1s - 16*gmc->W)),gmc->W);
 	gmc->j1ss = ROUNDED_DIV( ((gmc->W - gmc->Ws)*(gmc->r*gmc->j0s) + gmc->Ws*gmc->r*gmc->j1s) ,gmc->W );
 
-//	gmc->i2ss = ROUNDED_DIV( ((gmc->H - gmc->Hs)*(gmc->r*gmc->i0s) + gmc->Hs*(gmc->r*gmc->i2s)), gmc->H);
-//	gmc->j2ss = 16*gmc->Hs + ROUNDED_DIV( ((gmc->H-gmc->Hs)*(gmc->r*gmc->j0s) + gmc->Ws*(gmc->r*gmc->j2s - 16*gmc->H)), gmc->H);
+#if 0
+	gmc->i2ss = ROUNDED_DIV( ((gmc->H - gmc->Hs)*(gmc->r*gmc->i0s) + gmc->Hs*(gmc->r*gmc->i2s)), gmc->H);
+	gmc->j2ss = 16*gmc->Hs + ROUNDED_DIV( ((gmc->H-gmc->Hs)*(gmc->r*gmc->j0s) + gmc->Ws*(gmc->r*gmc->j2s - 16*gmc->H)), gmc->H);
+#endif
 
 	return;
 }
 
 void
-generate_GMCimage(	const GMC_DATA *const gmc_data, 	// [input] precalculated data
-					const IMAGE *const pRef,			// [input]
+generate_GMCimage(	const GMC_DATA *const gmc_data, 	/* [input] precalculated data */
+					const IMAGE *const pRef,			/* [input] */
 					const int mb_width,
 					const int mb_height,
 					const int stride,
 					const int stride2,
-					const int fcode, 					// [input] some parameters...
-  					const int32_t quarterpel,			// [input] for rounding avgMV
-					const int reduced_resolution,		// [input] ignored
-					const int32_t rounding,			// [input] for rounding image data
-					MACROBLOCK *const pMBs, 	// [output] average motion vectors
-					IMAGE *const pGMC)			// [output] full warped image
+					const int fcode, 					/* [input] some parameters... */
+  					const int32_t quarterpel,			/* [input] for rounding avgMV */
+					const int reduced_resolution,		/* [input] ignored */
+					const int32_t rounding,			/* [input] for rounding image data */
+					MACROBLOCK *const pMBs, 	/* [output] average motion vectors */
+					IMAGE *const pGMC)			/* [output] full warped image */
 {
 
 	unsigned int mj,mi;
@@ -944,14 +960,18 @@ type | variable name  |   ISO name (TeX-style) |  value or range  |  usage
 
 	const int i1ss = gmc_data->i1ss;
 	const int j1ss = gmc_data->j1ss;
-//	const int i2ss = gmc_data->i2ss;
-//	const int j2ss = gmc_data->j2ss;
+#if 0
+	const int i2ss = gmc_data->i2ss;
+	const int j2ss = gmc_data->j2ss;
+#endif
 
 	const int alpha = gmc_data->alpha;
 	const int Ws	= gmc_data->Ws;
 
-//	const int beta  = gmc_data->beta;
-//	const int Hs	= gmc_data->Hs;
+#if 0
+	const int beta  = gmc_data->beta;
+	const int Hs	= gmc_data->Hs;
+#endif
 
 	int I,J;
 	VECTOR avgMV = {0,0};
@@ -965,8 +985,8 @@ type | variable name  |   ISO name (TeX-style) |  value or range  |  usage
 /* this naive implementation (with lots of multiplications) isn't slower (rather faster) than
    working incremental. Don't ask me why... maybe the whole this is memory bound? */
 
-		const int ri= F & (s-1); // fractional part of pelwise MV X
-		const int rj= G & (s-1); // fractional part of pelwise MV Y
+		const int ri= F & (s-1); /* fractional part of pelwise MV X */
+		const int rj= G & (s-1); /* fractional part of pelwise MV Y */
 
 		int Y00,Y01,Y10,Y11;
 
@@ -989,7 +1009,7 @@ type | variable name  |   ISO name (TeX-style) |  value or range  |  usage
 		else if (G>H)
 			G=H;		/* dito */
 
-		Y00 = pRef->y[ G*stride + F ];				// Lumi values
+		Y00 = pRef->y[ G*stride + F ];				/* Lumi values */
 		Y01 = pRef->y[ G*stride + F+1 ];
 		Y10 = pRef->y[ G*stride + F+stride ];
 		Y11 = pRef->y[ G*stride + F+stride+1 ];
@@ -1016,8 +1036,8 @@ type | variable name  |   ISO name (TeX-style) |  value or range  |  usage
 	 	int Gc=((-r*j0s+j1ss)*(4*I+1) +(-r*i0s+i1ss)*(4*J+1) +2*Ws*r*j0s
 						-16*Ws +(1<<(alpha+rho+1))) >>(alpha+rho+2);
 
-		const int ri= Fc & (s-1); // fractional part of pelwise MV X
-		const int rj= Gc & (s-1); // fractional part of pelwise MV Y
+		const int ri= Fc & (s-1); /* fractional part of pelwise MV X */
+		const int rj= Gc & (s-1); /* fractional part of pelwise MV Y */
 
 		int C00,C01,C10,C11;
 
@@ -1034,7 +1054,7 @@ type | variable name  |   ISO name (TeX-style) |  value or range  |  usage
 			Gc=H/2;		/* dito */
 
 /* now calculate U data */
-		C00 = pRef->u[ Gc*stride2 + Fc ];				// chroma-value Cb
+		C00 = pRef->u[ Gc*stride2 + Fc ];				/* chroma-value Cb */
 		C01 = pRef->u[ Gc*stride2 + Fc+1 ];
 		C10 = pRef->u[ (Gc+1)*stride2 + Fc ];
 		C11 = pRef->u[ (Gc+1)*stride2 + Fc+1 ];
@@ -1047,7 +1067,7 @@ type | variable name  |   ISO name (TeX-style) |  value or range  |  usage
 		pGMC->u[J*stride2+I] = (uint8_t)C00;										/* output 1 U-pixel */
 
 /* now calculate V data */
-		C00 = pRef->v[ Gc*stride2 + Fc ];				// chroma-value Cr
+		C00 = pRef->v[ Gc*stride2 + Fc ];				/* chroma-value Cr */
 		C01 = pRef->v[ Gc*stride2 + Fc+1 ];
 		C10 = pRef->v[ (Gc+1)*stride2 + Fc ];
 		C11 = pRef->v[ (Gc+1)*stride2 + Fc+1 ];
@@ -1060,7 +1080,7 @@ type | variable name  |   ISO name (TeX-style) |  value or range  |  usage
 		pGMC->v[J*stride2+I] = (uint8_t)C00;										/* output 1 V-pixel */
 	}
 
-/* The average vector is rounded from 1/s-pel to 1/2 or 1/4 using the '//' operator*/
+/* The average vector is rounded from 1/s-pel to 1/2 or 1/4 using the '//' operator */
 
 	avgMV.x = RSHIFT( avgMV.x, (sigma+7-quarterpel) );
 	avgMV.y = RSHIFT( avgMV.y, (sigma+7-quarterpel) );

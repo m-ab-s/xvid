@@ -36,7 +36,7 @@ typedef struct
 	int fincr;
 	int fbase;
     
-    // encoder min keyframe internal
+    /* encoder min keyframe internal */
 	int framenum;   
 	int keyspacing;
 
