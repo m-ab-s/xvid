@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass1.c,v 1.1.2.14 2003-12-20 22:22:26 edgomez Exp $
+ * $Id: plugin_2pass1.c,v 1.1.2.15 2004-01-21 07:14:29 syskin Exp $
  *
  *****************************************************************************/
 
@@ -38,6 +38,7 @@
  * using fast ME routines to speed up the 2pass process at the expense of
  * less precise first pass stats */
 #define FAST1PASS
+#define FAST1PASS_QPEL_TOO
 
 
 /* context struct */
@@ -171,6 +172,10 @@ static int rc_2pass1_before(rc_2pass1_t * rc, xvid_plg_data_t * data)
 			 *     too much the texture data compressibility, and thus the
 			 *     second pass gets confused by too much impredictability
 			 *     of frame sizes, and actually hurts quality */
+#ifdef FAST1PASS_QPEL_TOO
+			/* or maybe we can disable it after all? */
+			data->vol_flags &= ~XVID_VOL_QUARTERPEL;
+#endif
 			data->vol_flags &= ~XVID_VOL_GMC;
 #endif
 		}
