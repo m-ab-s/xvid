@@ -368,7 +368,7 @@ if test "$ARCHITECTURE" = "IA32" ; then
           esac
 
           AS=nasm
-          AFLAGS="-I\$(<D) -f $NASM_FORMAT $PREFIX"
+          AFLAGS="-I\$(<D)/ -f $NASM_FORMAT $PREFIX"
           ASSEMBLY_EXTENSION="asm"
           ASSEMBLY_SOURCES="SRC_IA32"
        fi
