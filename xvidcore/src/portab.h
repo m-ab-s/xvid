@@ -23,7 +23,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: portab.h,v 1.46.2.4 2003-03-28 07:18:45 suxen_drol Exp $
+ * $Id: portab.h,v 1.46.2.5 2003-03-28 07:21:37 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -95,7 +95,7 @@
 #    define ptr_t uint32_t
 #    define intptr_t int32_t
 #    if _MSC_VER < 1300 
-#        define uintptr_t uint64_t 
+#        define uintptr_t uint32_t 
 #    else
 #        include <stdarg.h>
 #    endif 
