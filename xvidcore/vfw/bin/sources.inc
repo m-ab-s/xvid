@@ -1,4 +1,4 @@
-LIBSO = xvid.dll
+LIBSO = xvidvfw.dll
 
 SRC_DIR = ../src
 

@@ -9,7 +9,7 @@
 # Requires GNU Make because of shell expansion performed at a bad time with
 # other make programs (even using := variable assignments)
 #
-# $Id: Makefile,v 1.1.2.2 2003-11-02 19:56:42 edgomez Exp $
+# $Id: Makefile,v 1.1.2.3 2004-01-02 23:24:49 edgomez Exp $
 ##############################################################################
 
 include sources.inc
@@ -32,12 +32,18 @@ CFLAGS += -mno-cygwin
 ##############################################################################
 
 CFLAGS += -Wall
-CFLAGS += -O1
+CFLAGS += -O2
 CFLAGS += -fstrength-reduce
 CFLAGS += -finline-functions
 CFLAGS += -fgcse
 CFLAGS += -freduce-all-givs
 CFLAGS += -ffast-math
+
+##############################################################################
+# Compiler flags for linking stage
+##############################################################################
+
+LDFLAGS += -L$(LOCAL_XVID_BUILDTREE)
 
 ##############################################################################
 # Rules
@@ -75,10 +81,11 @@ $(LIBSO): $(BUILD_DIR) $(OBJECTS)
 	@echo "  L: $(@F)"
 	@cp $(SRC_DIR)/driverproc.def $(BUILD_DIR)/driverproc.def
 	@cd $(BUILD_DIR) && \
-		$(CC) -mno-cygwin -shared -Wl,-dll,--out-implib,$@.a,--enable-stdcall-fixup \
+		$(CC) $(LDFLAGS) \
+			-mno-cygwin -shared -Wl,-dll,--out-implib,$@.a,--enable-stdcall-fixup \
 			-o $@ \
-			$(OBJECTS) driverproc.def $(LOCAL_XVID_BUILDTREE)/libxvidcore.a \
-			-lgdi32 -lwinmm -lcomdlg32 -lcomctl32
+			$(OBJECTS) driverproc.def \
+			-lxvidcore -lgdi32 -lwinmm -lcomdlg32 -lcomctl32
 
 clean:
 	@echo "  Cl: Object files and target lib"
