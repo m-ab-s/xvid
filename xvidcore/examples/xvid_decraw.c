@@ -20,7 +20,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_decraw.c,v 1.10.2.5 2004-07-17 11:41:41 edgomez Exp $
+ * $Id: xvid_decraw.c,v 1.10.2.6 2004-07-24 11:38:12 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -684,6 +684,7 @@ dec_main(unsigned char *istream,
 	int ret;
 
 	xvid_dec_frame_t xvid_dec_frame;
+	memset(&xvid_dec_frame, 0, sizeof(xvid_dec_frame_t));
 
 	/* Set version */
 	xvid_dec_frame.version = XVID_VERSION;
