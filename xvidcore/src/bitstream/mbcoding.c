@@ -62,8 +62,8 @@
 #define ABS(X) (((X)>0)?(X):-(X))
 #define CLIP(X,A) (X > A) ? (A) : (X)
 
-VLC intra_table[524032];
-VLC inter_table[524032];
+VLC intra_table[4*2048*64];
+VLC inter_table[4*2048*64];
 
 VLC DCT3Dintra[4096];
 VLC DCT3Dinter[4096];
