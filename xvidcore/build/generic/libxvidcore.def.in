@@ -1,6 +1,8 @@
 EXPORTS
+	xvid_global; 
 	xvid_decore; 
 	xvid_encore; 
-	xvid_init; 
+	xvid_plugin_lumimasking; 
+	xvid_plugin_dump; 
 	@DIVX4_ENCORE@
 	@DIVX4_DECORE@
