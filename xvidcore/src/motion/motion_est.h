@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion_est.h,v 1.1.2.6 2002-10-17 13:50:23 syskin Exp $
+ *  $Id: motion_est.h,v 1.1.2.7 2002-11-04 10:58:24 syskin Exp $
  *
  ***************************************************************************/
 
@@ -44,12 +44,13 @@
 /* INTER bias for INTER/INTRA decision; mpeg4 spec suggests 2*nb */
 #define MV16_INTER_BIAS	512
 
+/* vector map (vlc delta size) smoother parameters ! float !*/
+#define NEIGH_TEND_16X16	10.5
+#define NEIGH_TEND_8X8		4.0
+#define NEIGH_8X8_BIAS		30
+
 /* Parameters which control inter/inter4v decision */
 #define IMV16X16			2
-
-/* vector map (vlc delta size) smoother parameters ! float !*/
-#define NEIGH_TEND_16X16	4.0
-#define NEIGH_TEND_8X8		6.0
 
 static const int lambda_vec16[32] =
 	{     0    ,(int)(1.00235 * NEIGH_TEND_16X16 + 0.5),
@@ -114,13 +115,19 @@ typedef struct
 		const uint8_t * RefH;
 		const uint8_t * RefV;
 		const uint8_t * RefHV;
-		const uint8_t * RefQ;
+		const uint8_t * RefCU;
+		const uint8_t * RefCV;
+		const uint8_t * CurU;
+		const uint8_t * CurV;
+		uint8_t * RefQ;
 		const uint8_t * Cur;
-		uint32_t lambda16; //weights of motion vectors
+		uint32_t lambda16;
 		uint32_t lambda8;
 		uint32_t iEdgedWidth;
 		uint32_t iFcode;
 		int * temp;
+		int qpel;
+		int chroma;
 //fields for interpolate and direct mode
 		const uint8_t *bRef;
 		const uint8_t *bRefH;
@@ -204,11 +211,10 @@ MotionEstimation(MBParam * const pParam,
 				 const uint32_t iLimit);
 
 static void
-SearchP(const uint8_t * const pRef,
+SearchP(const IMAGE * const pRef,
 		const uint8_t * const pRefH,
 		const uint8_t * const pRefV,
 		const uint8_t * const pRefHV,
-		const uint8_t * const pRefQ,
 		const IMAGE * const pCur,
 		const int x,
 		const int y,
