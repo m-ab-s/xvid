@@ -56,7 +56,7 @@ HKLM,%UnInstallPath%,DisplayName,,%UninstallDispName%
 HKLM,%UnInstallPath%,UninstallString,,"%10%\rundll.exe setupx.dll,InstallHinfSection Remove_XviD 132 %17%\%InfFile%"
 
 [MPEG4.AddRegNT]
-HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\drivers.desc,xvid.dll,,%XviD%
+HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\drivers.desc,xvidvfw.dll,,%XviD%
 HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\drivers32,vidc.XVID,,xvidvfw.dll
 
 HKLM,%UnInstallPath%,DisplayName,,%UninstallDispName%
