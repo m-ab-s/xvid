@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.23 2002-11-28 14:45:21 syskin Exp $
+ *  $Id: encoder.c,v 1.76.2.24 2002-12-04 12:31:18 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -224,7 +224,7 @@ encoder_create(XVID_ENC_PARAM * pParam)
 
 	pEnc->mbParam.m_quant_type = H263_QUANT;
 
-	pEnc->sStat.fMvPrevSigma = -1;
+	pEnc->fMvPrevSigma = -1;
 
 	/* Fill rate control parameters */
 
@@ -1069,10 +1069,10 @@ bvop_loop:
 
 	if (pResult) {
 		pResult->quant = pEnc->current->quant;
-		pResult->hlength = pFrame->length - (pEnc->sStat.iTextBits / 8);
-		pResult->kblks = pEnc->sStat.kblks;
-		pResult->mblks = pEnc->sStat.mblks;
-		pResult->ublks = pEnc->sStat.ublks;
+		pResult->hlength = pFrame->length - (pEnc->current->sStat.iTextBits / 8);
+		pResult->kblks = pEnc->current->sStat.kblks;
+		pResult->mblks = pEnc->current->sStat.mblks;
+		pResult->ublks = pEnc->current->sStat.ublks;
 	}
 
 	emms();
@@ -1257,10 +1257,10 @@ encoder_encode(Encoder * pEnc,
 
 	if (pResult) {
 		pResult->quant = pEnc->current->quant;
-		pResult->hlength = pFrame->length - (pEnc->sStat.iTextBits / 8);
-		pResult->kblks = pEnc->sStat.kblks;
-		pResult->mblks = pEnc->sStat.mblks;
-		pResult->ublks = pEnc->sStat.ublks;
+		pResult->hlength = pFrame->length - (pEnc->current->sStat.iTextBits / 8);
+		pResult->kblks = pEnc->current->sStat.kblks;
+		pResult->mblks = pEnc->current->sStat.mblks;
+		pResult->ublks = pEnc->current->sStat.ublks;
 	}
 
 	emms();
@@ -1545,9 +1545,9 @@ FrameCodeI(Encoder * pEnc,
 
 	*pBits = BitstreamPos(bs);
 
-	pEnc->sStat.iTextBits = 0;
-	pEnc->sStat.kblks = pEnc->mbParam.mb_width * pEnc->mbParam.mb_height;
-	pEnc->sStat.mblks = pEnc->sStat.ublks = 0;
+	pEnc->current->sStat.iTextBits = 0;
+	pEnc->current->sStat.kblks = pEnc->mbParam.mb_width * pEnc->mbParam.mb_height;
+	pEnc->current->sStat.mblks = pEnc->current->sStat.ublks = 0;
 
 	for (y = 0; y < pEnc->mbParam.mb_height; y++)
 		for (x = 0; x < pEnc->mbParam.mb_width; x++) {
@@ -1569,16 +1569,14 @@ FrameCodeI(Encoder * pEnc,
 				qcoeff[4*64+0]=0;		/* zero, because for INTRA MBs DC value is saved */
 				qcoeff[5*64+0]=0;
 			}
-			MBCoding(pEnc->current, pMB, qcoeff, bs, &pEnc->sStat);
+			MBCoding(pEnc->current, pMB, qcoeff, bs, &pEnc->current->sStat);
 			stop_coding_timer();
 		}
 
 	emms();
 
 	*pBits = BitstreamPos(bs) - *pBits;
-	pEnc->sStat.fMvPrevSigma = -1;
-	pEnc->sStat.iMvSum = 0;
-	pEnc->sStat.iMvCount = 0;
+	pEnc->fMvPrevSigma = -1;
 	pEnc->mbParam.m_fcode = 2;
 
 	if (pEnc->current->global_flags & XVID_HINTEDME_GET) {
@@ -1679,8 +1677,8 @@ FrameCodeP(Encoder * pEnc,
 
 	*pBits = BitstreamPos(bs);
 
-	pEnc->sStat.iTextBits = pEnc->sStat.iMvSum = pEnc->sStat.iMvCount = 
-		pEnc->sStat.kblks = pEnc->sStat.mblks = pEnc->sStat.ublks = 0;
+	pEnc->current->sStat.iTextBits = pEnc->current->sStat.iMvSum = pEnc->current->sStat.iMvCount = 
+		pEnc->current->sStat.kblks = pEnc->current->sStat.mblks = pEnc->current->sStat.ublks = 0;
 
 	for (y = 0; y < pEnc->mbParam.mb_height; y++) {
 		for (x = 0; x < pEnc->mbParam.mb_width; x++) {
@@ -1730,13 +1728,13 @@ FrameCodeP(Encoder * pEnc,
 			stop_prediction_timer();
 
 			if (pMB->mode == MODE_INTRA || pMB->mode == MODE_INTRA_Q) {
-				pEnc->sStat.kblks++;
+				pEnc->current->sStat.kblks++;
 			} else if (pMB->cbp || pMB->mvs[0].x || pMB->mvs[0].y ||
 					   pMB->mvs[1].x || pMB->mvs[1].y || pMB->mvs[2].x ||
 					   pMB->mvs[2].y || pMB->mvs[3].x || pMB->mvs[3].y) {
-				pEnc->sStat.mblks++;
+				pEnc->current->sStat.mblks++;
 			}  else {
-				pEnc->sStat.ublks++;
+				pEnc->current->sStat.ublks++;
 			} 
 
 			start_timer();
@@ -1786,7 +1784,7 @@ FrameCodeP(Encoder * pEnc,
 					}
 					pMB->mode = MODE_INTER;
 					pMB->cbp = 0;
-					MBCoding(pEnc->current, pMB, qcoeff, bs, &pEnc->sStat);
+					MBCoding(pEnc->current, pMB, qcoeff, bs, &pEnc->current->sStat);
 				}
 				else 
 				{
@@ -1800,7 +1798,7 @@ FrameCodeP(Encoder * pEnc,
 					qcoeff[4*64+0]=0;		/* zero, because DC for INTRA MBs DC value is saved */
 					qcoeff[5*64+0]=0;
 				}
-				MBCoding(pEnc->current, pMB, qcoeff, bs, &pEnc->sStat);
+				MBCoding(pEnc->current, pMB, qcoeff, bs, &pEnc->current->sStat);
 			}
 
 			stop_coding_timer();
@@ -1813,10 +1811,10 @@ FrameCodeP(Encoder * pEnc,
 		HintedMEGet(pEnc, 0);
 	}
 
-	if (pEnc->sStat.iMvCount == 0)
-		pEnc->sStat.iMvCount = 1;
+	if (pEnc->current->sStat.iMvCount == 0)
+		pEnc->current->sStat.iMvCount = 1;
 
-	fSigma = (float) sqrt((float) pEnc->sStat.iMvSum / pEnc->sStat.iMvCount);
+	fSigma = (float) sqrt((float) pEnc->current->sStat.iMvSum / pEnc->current->sStat.iMvCount);
 
 	iSearchRange = 1 << (3 + pEnc->mbParam.m_fcode);
 
@@ -1826,24 +1824,23 @@ FrameCodeP(Encoder * pEnc,
 		pEnc->mbParam.m_fcode++;
 		iSearchRange *= 2;
 	} else if ((fSigma < iSearchRange / 6)
-			   && (pEnc->sStat.fMvPrevSigma >= 0)
-			   && (pEnc->sStat.fMvPrevSigma < iSearchRange / 6)
+			   && (pEnc->fMvPrevSigma >= 0)
+			   && (pEnc->fMvPrevSigma < iSearchRange / 6)
 			&& (pEnc->mbParam.m_fcode >= (2 + pEnc->mbParam.m_quarterpel)))	// minimum search range 16
 	{
 		pEnc->mbParam.m_fcode--;
 		iSearchRange /= 2;
 	}
 
-	pEnc->sStat.fMvPrevSigma = fSigma;
+	pEnc->fMvPrevSigma = fSigma;
 
-#ifdef FRAMEDROP
 	/* frame drop code */
-	// DPRINTF(DPRINTF_DEBUG, "kmu %i %i %i", pEnc->sStat.kblks, pEnc->sStat.mblks, pEnc->sStat.ublks);
-	if (pEnc->sStat.kblks + pEnc->sStat.mblks <
+	// DPRINTF(DPRINTF_DEBUG, "kmu %i %i %i", pEnc->current->sStat.kblks, pEnc->current->sStat.mblks, pEnc->current->sStat.ublks);
+	if (pEnc->current->sStat.kblks + pEnc->current->sStat.mblks <
 		(pEnc->frame_drop_ratio * pEnc->mbParam.mb_width * pEnc->mbParam.mb_height) / 100)
 	{
-		pEnc->sStat.kblks = pEnc->sStat.mblks = 0;
-		pEnc->sStat.ublks = pEnc->mbParam.mb_width * pEnc->mbParam.mb_height;
+		pEnc->current->sStat.kblks = pEnc->current->sStat.mblks = 0;
+		pEnc->current->sStat.ublks = pEnc->mbParam.mb_width * pEnc->mbParam.mb_height;
 
 		BitstreamReset(bs);
 
@@ -1861,7 +1858,6 @@ FrameCodeP(Encoder * pEnc,
 		memcpy(pEnc->current->mbs, pEnc->reference->mbs, sizeof(MACROBLOCK) * pEnc->mbParam.mb_width * pEnc->mbParam.mb_height);
 
 	}
-#endif
 
 	*pBits = BitstreamPos(bs) - *pBits;
 
@@ -1941,10 +1937,10 @@ FrameCodeB(Encoder * pEnc,
 
 	*pBits = BitstreamPos(bs);
 
-	pEnc->sStat.iTextBits = 0;
-	pEnc->sStat.iMvSum = 0;
-	pEnc->sStat.iMvCount = 0;
-	pEnc->sStat.kblks = pEnc->sStat.mblks = pEnc->sStat.ublks = 0;
+	frame->sStat.iTextBits = 0;
+	frame->sStat.iMvSum = 0;
+	frame->sStat.iMvCount = 0;
+	frame->sStat.kblks = frame->sStat.mblks = frame->sStat.ublks = 0;
 
 
 	for (y = 0; y < pEnc->mbParam.mb_height; y++) {
@@ -1982,7 +1978,7 @@ FrameCodeB(Encoder * pEnc,
 #endif
 			start_timer();
 			MBCodingBVOP(mb, qcoeff, frame->fcode, frame->bcode, bs,
-						 &pEnc->sStat, direction);
+						 &frame->sStat, direction);
 			stop_coding_timer();
 		}
 	}

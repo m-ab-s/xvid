@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.18.2.5 2002-11-19 13:21:25 suxen_drol Exp $
+ *  $Id: encoder.h,v 1.18.2.6 2002-12-04 12:31:18 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -119,6 +119,18 @@ MBParam;
 
 typedef struct
 {
+	int iTextBits;
+	int iMvSum;
+	int iMvCount;
+	int kblks;
+	int mblks;
+	int ublks;
+}
+Statistics;
+
+
+typedef struct
+{
 	uint32_t quant;
 	uint32_t motion_flags;
 	uint32_t global_flags;
@@ -137,20 +149,10 @@ typedef struct
 
 	MACROBLOCK *mbs;
 	VECTOR GMC_MV;
+
+	Statistics sStat;
 }
 FRAMEINFO;
-
-typedef struct
-{
-	int iTextBits;
-	float fMvPrevSigma;
-	int iMvSum;
-	int iMvCount;
-	int kblks;
-	int mblks;
-	int ublks;
-}
-Statistics;
 
 
 
@@ -201,8 +203,9 @@ typedef struct
 
 	int m_framenum; /* debug frame num counter; unlike iFrameNum, does not reset at ivop */
 
-	Statistics sStat;
 	RateControl rate_control;
+
+	float fMvPrevSigma;
 }
 Encoder;
 
