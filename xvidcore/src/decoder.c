@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.13 2003-10-01 23:23:00 edgomez Exp $
+ * $Id: decoder.c,v 1.49.2.14 2003-10-03 15:49:21 syskin Exp $
  *
  ****************************************************************************/
 
@@ -940,7 +940,7 @@ decoder_pframe(DECODER * dec,
 				mb->quant = quant;
 
 				if (dec->interlacing) {
-					if (cbp || intra) {
+					if ((cbp || intra) && !mcsel) {
 						mb->field_dct = BitstreamGetBit(bs);
 						DPRINTF(XVID_DEBUG_MB,"decp: field_dct: %i\n", mb->field_dct);
 					}
@@ -1600,6 +1600,26 @@ decoder_bframe(DECODER * dec,
 						quant = 1;
 					}
 				}
+
+				if (dec->interlacing) {
+					if (mb->cbp) {
+						mb->field_dct = BitstreamGetBit(bs);
+						DPRINTF(XVID_DEBUG_MB,"decp: field_dct: %i\n", mb->field_dct);
+					}
+
+					if (mb->mb_type) {
+						mb->field_pred = BitstreamGetBit(bs);
+						DPRINTF(XVID_DEBUG_MB, "decp: field_pred: %i\n", mb->field_pred);
+
+						if (mb->field_pred) {
+							mb->field_for_top = BitstreamGetBit(bs);
+							DPRINTF(XVID_DEBUG_MB,"decp: field_for_top: %i\n", mb->field_for_top);
+							mb->field_for_bot = BitstreamGetBit(bs);
+							DPRINTF(XVID_DEBUG_MB,"decp: field_for_bot: %i\n", mb->field_for_bot);
+						}
+					}
+				}
+
 			} else {
 				mb->mb_type = MODE_DIRECT_NONE_MV;
 				mb->cbp = 0;
