@@ -1515,8 +1515,9 @@ int codec_2pass_update(CODEC* codec, XVID_ENC_FRAME* frame, XVID_ENC_STATS* stat
 	{
 	case DLG_MODE_2PASS_1 :
 		nns1.bytes = frame->length;	// total bytes
-		nns1.dd_v = stats->hlength;	// header bytes
-
+// THIS small bugger messed up 2pass encoding!
+//		nns1.dd_v = stats->hlength;	// header bytes
+		nns1.dd_v = 0;
 		nns1.dd_u = nns1.dd_y = 0;
 		nns1.dk_v = nns1.dk_u = nns1.dk_y = 0;
 		nns1.md_u = nns1.md_y = 0;
