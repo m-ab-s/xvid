@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbcoding.h,v 1.11.2.5 2003-09-10 22:18:59 edgomez Exp $
+ * $Id: mbcoding.h,v 1.11.2.6 2003-10-03 13:47:00 syskin Exp $
  *
  ****************************************************************************/
 
@@ -59,13 +59,13 @@ void get_inter_block(Bitstream * bs,
 					 int direction);
 
 
-void MBCodingBVOP(const MACROBLOCK * mb,
+void MBCodingBVOP(const FRAMEINFO * const frame,
+				  const MACROBLOCK * mb,
 				  const int16_t qcoeff[6 * 64],
 				  const int32_t fcode,
 				  const int32_t bcode,
 				  Bitstream * bs,
-				  Statistics * pStat,
-				  int alternate_scan);
+				  Statistics * pStat);
 
 
 static __inline void

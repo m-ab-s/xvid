@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.42 2003-10-01 23:23:00 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.43 2003-10-03 13:47:24 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1906,8 +1906,8 @@ FrameCodeB(Encoder * pEnc,
 				mb->cbp &= 0x3C;
 
 			start_timer();
-			MBCodingBVOP(mb, qcoeff, frame->fcode, frame->bcode, bs,
-						 &frame->sStat, direction);
+			MBCodingBVOP(frame, mb, qcoeff, frame->fcode, frame->bcode, bs,
+						 &frame->sStat);
 			stop_coding_timer();
 		}
 	}

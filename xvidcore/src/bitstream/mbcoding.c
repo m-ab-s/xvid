@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbcoding.c,v 1.44.2.14 2003-10-01 23:23:01 edgomez Exp $
+ * $Id: mbcoding.c,v 1.44.2.15 2003-10-03 13:47:00 syskin Exp $
  *
  ****************************************************************************/
 
@@ -775,16 +775,6 @@ MBCoding(const FRAMEINFO * const frame,
 
 }
 
-
-/* moved to mbcoding.h so that in can be 'static __inline' */
-#if 0
-void
-MBSkip(Bitstream * bs)
-{
-	BitstreamPutBit(bs, 1);	/* not coded */
-}
-#endif
-
 /***************************************************************
  * bframe encoding start
  ***************************************************************/
@@ -848,16 +838,21 @@ put_bvop_dbquant(Bitstream * bs,
 
 
 void
-MBCodingBVOP(const MACROBLOCK * mb,
+MBCodingBVOP(const FRAMEINFO * const frame,
+			 const MACROBLOCK * mb,
 			 const int16_t qcoeff[6 * 64],
 			 const int32_t fcode,
 			 const int32_t bcode,
 			 Bitstream * bs,
-			 Statistics * pStat,
-			 int direction)
+			 Statistics * pStat)
 {
 	int vcode = fcode;
 	unsigned int i;
+
+	const uint16_t *scan_table =
+		frame->vop_flags & XVID_VOP_ALTERNATESCAN ?
+		scan_tables[2] : scan_tables[0];
+
 
 /*	------------------------------------------------------------------
 		when a block is skipped it is decoded DIRECT(0,0)
@@ -886,6 +881,25 @@ MBCodingBVOP(const MACROBLOCK * mb,
 	if (mb->mode != MODE_DIRECT && mb->cbp != 0) {
 		put_bvop_dbquant(bs, 0);	/* todo: mb->dquant = 0 */
 	}
+
+	if (frame->vol_flags & XVID_VOL_INTERLACING) {
+		if (mb->cbp) {
+			BitstreamPutBit(bs, mb->field_dct);
+			DPRINTF(XVID_DEBUG_MB,"codep: field_dct: %i\n", mb->field_dct);
+		}
+
+		/* if not direct block, write field ME flag */
+		if (mb->mode != MODE_DIRECT) {
+			BitstreamPutBit(bs, 0 /*mb->field_pred*/); /* field ME not implemented */
+			
+			/* write field prediction references */
+		/*	if (mb->field_pred) {
+				BitstreamPutBit(bs, mb->field_for_top);
+				BitstreamPutBit(bs, mb->field_for_bot);
+			}*/
+		}
+	}
+
 
 	switch (mb->mode) {
 		case MODE_INTERPOLATE:
