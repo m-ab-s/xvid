@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.35 2003-09-06 11:24:43 Isibaar Exp $
+ * $Id: xvid.h,v 1.27.2.36 2003-09-11 15:28:51 syskin Exp $
  *
  ****************************************************************************/
 
@@ -73,7 +73,7 @@ extern "C" {
  * doesnt hurt but not increasing it could cause difficulty for decoders in the
  * future
  */
-#define XVID_BS_VERSION "0018"
+#define XVID_BS_VERSION "0019"
 
 
 /*****************************************************************************
@@ -551,11 +551,11 @@ int xvid_encore(void *handle, int opt, void *param1, void *param2);
 #define XVID_ME_CHROMA_BVOP           (1<<13) /* also use chroma for B_VOP ME */
 
 /* Motion search using DCT. use XVID_VOP_MODEDECISION_BITS to enable */
-#define XVID_ME_HALFPELREFINE16_RD    (1<<14) /* perform DCT-based halfpel refinement */
-#define XVID_ME_HALFPELREFINE8_RD     (1<<15) /* perform DCT-based halfpel refinement for 8x8 mode */
-#define XVID_ME_QUARTERPELREFINE16_RD (1<<16) /* perform DCT-based qpel refinement */
-#define XVID_ME_QUARTERPELREFINE8_RD  (1<<17) /* perform DCT-based qpel refinement for 8x8 mode */
-#define XVID_ME_EXTSEARCH_RD          (1<<18) /* perform DCT-based search using square pattern enable XVID_ME_EXTSEARCH8 to do this in 8x8 search as well */
+#define XVID_ME_HALFPELREFINE16_RD    (1<<14) /* perform RD-based halfpel refinement */
+#define XVID_ME_HALFPELREFINE8_RD     (1<<15) /* perform RD-based halfpel refinement for 8x8 mode */
+#define XVID_ME_QUARTERPELREFINE16_RD (1<<16) /* perform RD-based qpel refinement */
+#define XVID_ME_QUARTERPELREFINE8_RD  (1<<17) /* perform RD-based qpel refinement for 8x8 mode */
+#define XVID_ME_EXTSEARCH_RD          (1<<18) /* perform RD-based search using square pattern enable XVID_ME_EXTSEARCH8 to do this in 8x8 search as well */
 #define XVID_ME_CHECKPREDICTION_RD    (1<<19) /* always check vector equal to prediction */
 
 #define XVID_ME_UNRESTRICTED16        (1<<20) /* unrestricted ME, not implemented */
