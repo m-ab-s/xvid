@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.h,v 1.3.2.14 2003-08-02 15:08:45 edgomez Exp $
+ * $Id: motion_est.h,v 1.3.2.15 2003-08-03 10:10:54 syskin Exp $
  *
  ****************************************************************************/
 
@@ -333,23 +333,23 @@ MakeGoodMotionFlags(const uint32_t MotionFlags, const uint32_t VopFlags, const u
 #include "../dct/fdct.h"
 
 static int
-CountMBBitsInter(SearchData * const Data,
-				const MACROBLOCK * const pMBs, const int x, const int y,
-				const MBParam * const pParam,
-				const uint32_t MotionFlags);
+findRDinter(SearchData * const Data,
+			const MACROBLOCK * const pMBs, const int x, const int y,
+			const MBParam * const pParam,
+			const uint32_t MotionFlags);
 
 static int
-CountMBBitsInter4v(const SearchData * const Data,
-					MACROBLOCK * const pMB, const MACROBLOCK * const pMBs,
-					const int x, const int y,
-					const MBParam * const pParam, const uint32_t MotionFlags,
-					const VECTOR * const backup);
+findRDinter4v(const SearchData * const Data,
+				MACROBLOCK * const pMB, const MACROBLOCK * const pMBs,
+				const int x, const int y,
+				const MBParam * const pParam, const uint32_t MotionFlags,
+				const VECTOR * const backup);
 
 static int
-CountMBBitsIntra(const SearchData * const Data);
+findRDintra(const SearchData * const Data);
 
 static int
-CountMBBitsGMC(const SearchData * const Data, const IMAGE * const vGMC, const int x, const int y);
+findRDgmc(const SearchData * const Data, const IMAGE * const vGMC, const int x, const int y);
 
 int CodeCoeffIntra_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag);
 int CodeCoeffInter_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag);
@@ -391,10 +391,7 @@ Block_CalcBits(	int16_t * const coeff,
 			distortion += data[i]*data[i];
 	}
 
-
-	bits += (LAMBDA*distortion)/(quant*quant);
-
-	return bits;
+	return bits + (LAMBDA*distortion)/(quant*quant);
 }
 
 static __inline unsigned int
@@ -433,13 +430,10 @@ Block_CalcBitsIntra(int16_t * const coeff,
 	if (quant_type) dequant_intra(dqcoeff, coeff, quant, iDcScaler);
 	else dequant4_intra(dqcoeff, coeff, quant, iDcScaler);
 
-	for (i = 0; i < 64; i++) {
+	for (i = 0; i < 64; i++)
 		distortion += (data[i] - dqcoeff[i])*(data[i] - dqcoeff[i]);
-	}
 
-	bits += (LAMBDA*distortion)/(quant*quant);
-
-	return bits;
+	return bits + (LAMBDA*distortion)/(quant*quant);
 }
 
 #endif							/* _MOTION_EST_H_ */
