@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.27 2003-06-09 13:50:34 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.28 2003-06-09 19:20:56 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -44,7 +44,6 @@
 #include "bitstream/mbcoding.h"
 #include "utils/emms.h"
 #include "bitstream/mbcoding.h"
-#include "quant/adapt_quant.h"
 #include "quant/quant_matrix.h"
 #include "utils/mem_align.h"
 
