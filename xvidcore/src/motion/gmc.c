@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: gmc.c,v 1.1.2.6 2003-10-01 23:23:01 edgomez Exp $
+ * $Id: gmc.c,v 1.1.2.7 2004-03-04 00:47:17 syskin Exp $
  *
  ****************************************************************************/
 
@@ -70,12 +70,18 @@ void Predict_16x16_C(const NEW_GMC_DATA * const This,
 			U += dUx; V += dVx;
 
 			if (u > 0 && u <= W) { ri = MTab[u&15]; Offset = u>>4;	}
-			else if (u > W) Offset = W>>4;
-			else Offset = -1;
+			else {
+				if (u > W) Offset = W>>4;
+				else Offset = -1;
+				ri = 0;
+			}
 
 			if (v > 0 && v <= H) { rj = MTab[v&15]; Offset += (v>>4)*srcstride; }
-			else if (v > H) Offset += (H>>4)*srcstride;
-			else Offset -= srcstride;
+			else {
+				if (v > H) Offset += (H>>4)*srcstride;
+				else Offset -= srcstride;
+				rj = 0;
+			}
 
 			f0	= src[Offset + 0];
 			f0 |= src[Offset + 1] << 16;
@@ -214,17 +220,23 @@ void Predict_1pt_16x16_C(const NEW_GMC_DATA * const This,
 
 	int32_t uo = This->Uo + (x<<8);	 /* ((16*x)<<4) */
 	int32_t vo = This->Vo + (y<<8);
-	const uint32_t ri = MTab[uo & 15];
-	const uint32_t rj = MTab[vo & 15];
+	uint32_t ri = MTab[uo & 15];
+	uint32_t rj = MTab[vo & 15];
 	int i, j;
 
 	int32_t Offset;
-	if ((uint32_t)vo<=(uint32_t)H) Offset	= (vo>>4)*srcstride;
-	else if (vo>H)				 Offset	= ( H>>4)*srcstride;
-	else							 Offset	=-16*srcstride;
-	if ((uint32_t)uo<=(uint32_t)W) Offset += (uo>>4);
-	else if (uo>W)				 Offset += ( W>>4);
-	else							 Offset -= 16;
+	if (vo>=(-16*4) && vo<=H) Offset = (vo>>4)*srcstride;
+	else {
+		if (vo>H) Offset = ( H>>4)*srcstride;
+		else Offset =-16*srcstride;
+		rj = MTab[0];
+	}
+	if (uo>=(-16*4) && uo<=W) Offset += (uo>>4);
+	else {
+		if (uo>W) Offset += (W>>4);
+		else Offset -= 16;
+		ri = MTab[0];
+	}
 
 	Dst += 16;
 
@@ -259,17 +271,23 @@ void Predict_1pt_8x8_C(const NEW_GMC_DATA * const This,
 
 	int32_t uo = This->Uco + (x<<7);
 	int32_t vo = This->Vco + (y<<7);
-	const uint32_t rri = MTab[uo & 15];
-	const uint32_t rrj = MTab[vo & 15];
+	uint32_t rri = MTab[uo & 15];
+	uint32_t rrj = MTab[vo & 15];
 	int i, j;
 
 	int32_t Offset;
-	if ((uint32_t)vo<=(uint32_t)H) Offset = (vo>>4)*srcstride;
-	else if (vo>H) Offset = ( H>>4)*srcstride;
-	else Offset =-8*srcstride;
-	if ((uint32_t)uo<=(uint32_t)W) Offset += (uo>>4);
-	else if (uo>W) Offset += (W>>4);
-	else Offset -= 8;
+	if (vo>=(-8*4) && vo<=H) Offset	= (vo>>4)*srcstride;
+	else {
+		if (vo>H) Offset = ( H>>4)*srcstride;
+		else Offset =-8*srcstride;
+		rrj = MTab[0];
+	}
+	if (uo>=(-8*4) && uo<=W) Offset	+= (uo>>4);
+	else {
+		if (uo>W) Offset += ( W>>4);
+		else Offset -= 8;
+		rri = MTab[0];
+	}
 
 	uDst += 8;
 	vDst += 8;
