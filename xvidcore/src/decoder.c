@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.26 2003-12-17 17:07:38 Isibaar Exp $
+ * $Id: decoder.c,v 1.49.2.27 2003-12-20 11:54:27 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -1318,7 +1318,10 @@ decoder_bframe(DECODER * dec,
 void decoder_output(DECODER * dec, IMAGE * img, MACROBLOCK * mbs,
 					xvid_dec_frame_t * frame, xvid_dec_stats_t * stats, int coding_type)
 {
-	if (frame->general & (XVID_DEBLOCKY|XVID_DEBLOCKUV) && mbs != NULL)	/* post process */
+	if (dec->cartoon_mode)
+		frame->general &= ~XVID_FILMEFFECT;
+
+	if (frame->general & (XVID_DEBLOCKY|XVID_DEBLOCKUV|XVID_FILMEFFECT) && mbs != NULL)	/* post process */
 	{
 		/* note: image is stored to tmp */
 		image_copy(&dec->tmp, img, dec->edged_width, dec->height);

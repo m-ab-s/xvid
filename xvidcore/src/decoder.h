@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.h,v 1.13.2.7 2003-11-30 16:13:15 edgomez Exp $
+ * $Id: decoder.h,v 1.13.2.8 2003-12-20 11:54:22 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -83,6 +83,7 @@ typedef struct
 	uint32_t quant_type;
 	uint16_t *mpeg_quant_matrices;
 	int32_t quarterpel;
+	int32_t cartoon_mode;
 	int complexity_estimation_disable;
 	ESTIMATION estimation;
 

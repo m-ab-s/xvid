@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.c,v 1.39.2.22 2003-12-03 19:46:50 edgomez Exp $
+ * $Id: bitstream.c,v 1.39.2.23 2003-12-20 11:54:33 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -1016,7 +1016,13 @@ BitstreamReadHeaders(Bitstream * bs,
 
 			/* read xvid bitstream version */
 			if(strncmp(tmp, "XviD", 4) == 0) {
-				sscanf(tmp, "XviD%d", &dec->bs_version);
+				if (tmp[strlen(tmp)-1] == 'C') {				
+					sscanf(tmp, "XviD%dC", &dec->bs_version);
+					dec->cartoon_mode = 1;
+				}
+				else
+					sscanf(tmp, "XviD%d", &dec->bs_version);
+
 				DPRINTF(XVID_DEBUG_HEADER, "xvid bitstream version=%i", dec->bs_version);
 			}
 
@@ -1075,7 +1081,8 @@ bs_put_matrix(Bitstream * bs,
 */
 void
 BitstreamWriteVolHeader(Bitstream * const bs,
-						const MBParam * pParam)
+						const MBParam * pParam,
+						const FRAMEINFO * const frame)
 {
 	static const unsigned int vo_id = 0;
 	static const unsigned int vol_id = 0;
@@ -1266,7 +1273,16 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 
 	/* xvid id */
 #define XVID_ID "XviD" XVID_BS_VERSION
-	BitstreamWriteUserData(bs, XVID_ID, strlen(XVID_ID));
+	{
+		char xvid_id_string[100];
+
+		if (frame->vop_flags & XVID_VOP_CARTOON)
+			sprintf(xvid_id_string, "%sC", XVID_ID);
+		else
+			sprintf(xvid_id_string, "%s", XVID_ID);
+
+		BitstreamWriteUserData(bs, xvid_id_string, strlen(xvid_id_string));
+	}
 }
 
 

@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.61 2003-12-19 11:16:51 syskin Exp $
+ * $Id: encoder.c,v 1.95.2.62 2003-12-20 11:54:14 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -1452,7 +1452,7 @@ FrameCodeI(Encoder * pEnc,
 
 	SetMacroblockQuants(&pEnc->mbParam, pEnc->current);
 
-	BitstreamWriteVolHeader(bs, &pEnc->mbParam);
+	BitstreamWriteVolHeader(bs, &pEnc->mbParam, pEnc->current);
 
 	set_timecodes(pEnc->current,pEnc->reference,pEnc->mbParam.fbase);
 
@@ -1647,7 +1647,7 @@ FrameCodeP(Encoder * pEnc,
 
 	set_timecodes(current,reference,pParam->fbase);
 	if (vol_header)
-	{	BitstreamWriteVolHeader(bs, &pEnc->mbParam);
+	{	BitstreamWriteVolHeader(bs, &pEnc->mbParam, current);
 		BitstreamPad(bs);
 	}
 
