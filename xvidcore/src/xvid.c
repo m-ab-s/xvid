@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.48.2.2 2004-04-11 11:19:57 suxen_drol Exp $
+ * $Id: xvid.c,v 1.48.2.3 2004-04-14 19:51:06 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -470,9 +470,9 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 			interpolate8x8_halfpel_hv = interpolate8x8_halfpel_hv_3dne;
 
 			/* Quantization */
-			quant_h263_intra = quant_h263_intra_3dne;		// cmov only
+			quant_h263_intra = quant_h263_intra_3dne;		/* cmov only */
 			quant_h263_inter = quant_h263_inter_3dne;
-			dequant_mpeg_intra = dequant_mpeg_intra_3dne;	// cmov only
+			dequant_mpeg_intra = dequant_mpeg_intra_3dne;	/* cmov only */
 			dequant_mpeg_inter = dequant_mpeg_inter_3dne;
 			dequant_h263_intra = dequant_h263_intra_3dne;
 			dequant_h263_inter = dequant_h263_inter_3dne;
