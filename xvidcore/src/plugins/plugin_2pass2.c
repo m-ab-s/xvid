@@ -25,7 +25,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.17 2003-05-29 13:53:17 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.18 2003-05-29 14:18:18 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -357,11 +357,6 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	if (data->frame_num >= rc->num_frames)
 		return 0;
 
-	/*
-	 * The last case is the one every normal minded developer should fear to
-	 * maintain in a project :-)
-	 */
-
 	/* XXX: why by 8 */
 	overflow = rc->overflow / 8;
 
@@ -380,17 +375,6 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	dbytes /= rc->movie_curve;
 
 	/*
-	 * We are now entering in the hard part of the algo, it was first designed
-	 * to work with i/pframes only streams, so the way it computes things is
-	 * adapted to pframes only. However we can use it if we just take care to
-	 * scale the bframes sizes to pframes sizes using the ratio avg_p/avg_p and
-	 * then before really using values depending on frame sizes, scaling the
-	 * value again with the inverse ratio
-	 */
-	if (s->type == XVID_TYPE_BVOP)
-		dbytes *= rc->avg_length[XVID_TYPE_PVOP-1] / rc->avg_length[XVID_TYPE_BVOP-1];
-
-	/*
 	 * Apply user's choosen Payback method. Payback helps bitrate to follow the
 	 * scaled curve "paying back" past errors in curve previsions.
 	 */
@@ -398,11 +382,10 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 		desired = (int)(rc->curve_comp_error / rc->param.bitrate_payback_delay);
 	} else {
 		desired = (int)(rc->curve_comp_error * dbytes /
-						rc->avg_length[XVID_TYPE_PVOP-1] / rc->param.bitrate_payback_delay);
+						rc->avg_length[s->type-1] / rc->param.bitrate_payback_delay);
 
-		if (labs(desired) > fabs(rc->curve_comp_error)) {
+		if (labs(desired) > fabs(rc->curve_comp_error))
 			desired = (int)rc->curve_comp_error;
-		}
 	}
 
 	rc->curve_comp_error -= desired;
@@ -413,31 +396,15 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	if ((rc->param.curve_compression_high + rc->param.curve_compression_low) &&	s->type != XVID_TYPE_IVOP) {
 
 		curve_temp = rc->curve_comp_scale;
-		if (dbytes > rc->avg_length[XVID_TYPE_PVOP-1]) {
-			curve_temp *= ((double)dbytes + (rc->avg_length[XVID_TYPE_PVOP-1] - dbytes) * rc->param.curve_compression_high / 100.0);
+		if (dbytes > rc->avg_length[s->type-1]) {
+			curve_temp *= ((double)dbytes + (rc->avg_length[s->type-1] - dbytes) * rc->param.curve_compression_high / 100.0);
 		} else {
-			curve_temp *= ((double)dbytes + (rc->avg_length[XVID_TYPE_PVOP-1] - dbytes) * rc->param.curve_compression_low / 100.0);
+			curve_temp *= ((double)dbytes + (rc->avg_length[s->type-1] - dbytes) * rc->param.curve_compression_low / 100.0);
 		}
-
-		/*
-		 * End of code path for curve_temp, as told earlier, we are now
-		 * obliged to scale the value to a bframe one using the inverse
-		 * ratio applied earlier
-		 */
-		if (s->type == XVID_TYPE_BVOP)
-			curve_temp *= rc->avg_length[XVID_TYPE_BVOP-1] / rc->avg_length[XVID_TYPE_PVOP-1];
 
 		desired += (int)curve_temp;
 		rc->curve_comp_error += curve_temp - (int)curve_temp;
 	} else {
-		/*
-		 * End of code path for dbytes, as told earlier, we are now
-		 * obliged to scale the value to a bframe one using the inverse
-		 * ratio applied earlier
-		 */
-		if (s->type == XVID_TYPE_BVOP)
-			dbytes *= rc->avg_length[XVID_TYPE_BVOP-1] / rc->avg_length[XVID_TYPE_PVOP-1];
-		
 		desired += (int)dbytes;
 		rc->curve_comp_error += dbytes - (int)dbytes;
 	}
@@ -461,7 +428,6 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	}
 
 	s->desired_length = desired;
-
 
 	/*
 	 * if this keyframe is too close to the next, reduce it's byte allotment
@@ -491,6 +457,13 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 		}
 	}
 
+	/*
+	 * The "sens commun" would force us to use rc->avg_length[s->type-1] but
+	 * even VFW code uses the pframe average length. Note that this length is
+	 * used with desired which represents bframes _and_ pframes length.
+	 *
+	 * XXX: why are we using the avg pframe length for all frame types ? 
+	 */
 	overflow = (int)((double)overflow * desired / rc->avg_length[XVID_TYPE_PVOP-1]);
 
 	/* Reign in overflow with huge frames */
@@ -723,7 +696,7 @@ load_stats(rc_2pass2_t *rc, char * filename)
         }else if (type == 'b') {
             s->type = XVID_TYPE_BVOP;
         }else{  /* unknown type */
-            DPRINTF(XVID_DEBUG_RC, "unknown stats frame type; assuming pvop\n");
+            DPRINTF(XVID_DEBUG_RC, "WARNING: unknown stats frame type, assuming pvop\n");
             s->type = XVID_TYPE_PVOP;
         }
 
@@ -1009,31 +982,25 @@ pre_process1(rc_2pass2_t * rc)
             dbytes = s->scaled_length / rc->movie_curve;
             dbytes2 = 0; /* XXX: warning */
             total1 += dbytes;
-            if (s->type == XVID_TYPE_BVOP)
-                dbytes *= rc->avg_length[XVID_TYPE_PVOP-1] / rc->avg_length[XVID_TYPE_BVOP-1];
 
-			if (dbytes > rc->avg_length[XVID_TYPE_PVOP-1]) {
-				dbytes2=((double)dbytes + (rc->avg_length[XVID_TYPE_PVOP-1] - dbytes) * rc->param.curve_compression_high / 100.0);
+			if (dbytes > rc->avg_length[s->type-1]) {
+				dbytes2=((double)dbytes + (rc->avg_length[s->type-1] - dbytes) * rc->param.curve_compression_high / 100.0);
 			} else {
-				dbytes2 = ((double)dbytes + (rc->avg_length[XVID_TYPE_PVOP-1] - dbytes) * rc->param.curve_compression_low / 100.0);
+				dbytes2 = ((double)dbytes + (rc->avg_length[s->type-1] - dbytes) * rc->param.curve_compression_low / 100.0);
 			}
 
-            if (s->type == XVID_TYPE_BVOP) {
-			    dbytes2 *= rc->avg_length[XVID_TYPE_BVOP-1] / rc->avg_length[XVID_TYPE_PVOP-1];
-			    if (dbytes2 < rc->min_length[XVID_TYPE_BVOP-1])
-				    dbytes2 = rc->min_length[XVID_TYPE_BVOP-1];
-            }else{
-			    if (dbytes2 < rc->min_length[XVID_TYPE_PVOP-1])
-				    dbytes2 = rc->min_length[XVID_TYPE_PVOP-1];
-            }
+			if (dbytes2 < rc->min_length[s->type-1])
+				    dbytes2 = rc->min_length[s->type-1];
+
             total2 += dbytes2;
         }
     }
 
     rc->curve_comp_scale = total1 / total2;
 
-	DPRINTF(XVID_DEBUG_RC, "middle frame size for asymmetric curve compression: %i\n",
-            (int)(rc->avg_length[XVID_TYPE_PVOP-1] * rc->curve_comp_scale));
+	DPRINTF(XVID_DEBUG_RC, "middle frame size for asymmetric curve compression: pframe%d bframe:%d\n",
+            (int)(rc->avg_length[XVID_TYPE_PVOP-1] * rc->curve_comp_scale),
+			(int)(rc->avg_length[XVID_TYPE_BVOP-1] * rc->curve_comp_scale));
 
     rc->overflow = 0;
     rc->KFoverflow = 0;
