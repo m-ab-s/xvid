@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.59 2003-12-18 21:40:11 Isibaar Exp $
+ * $Id: xvid.h,v 1.27.2.60 2003-12-20 22:20:54 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -105,6 +105,7 @@ extern "C" {
 #define XVID_CSP_BGRA     (1<< 6) /* 32-bit bgra packed */
 #define XVID_CSP_ABGR     (1<< 7) /* 32-bit abgr packed */
 #define XVID_CSP_RGBA     (1<< 8) /* 32-bit rgba packed */
+#define XVID_CSP_ARGB     (1<<15) /* 32-bit argb packed */
 #define XVID_CSP_BGR      (1<< 9) /* 24-bit bgr packed */
 #define XVID_CSP_RGB555   (1<<10) /* 16-bit rgb555 packed */
 #define XVID_CSP_RGB565   (1<<11) /* 16-bit rgb565 packed */

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: image.c,v 1.26.2.12 2003-12-12 08:19:13 chl Exp $
+ * $Id: image.c,v 1.26.2.13 2003-12-20 22:20:54 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -598,6 +598,14 @@ image_input(IMAGE * image,
 			interlacing?rgbai_to_yv12  :rgba_to_yv12,
 			interlacing?rgbai_to_yv12_c:rgba_to_yv12_c, 4);
 		break;
+            
+	case XVID_CSP_ARGB:
+		safe_packed_conv(
+			src[0], src_stride[0], image->y, image->u, image->v,
+			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
+			interlacing?argbi_to_yv12  : argb_to_yv12,
+			interlacing?argbi_to_yv12_c: argb_to_yv12_c, 4);
+		break;
 
 	case XVID_CSP_YUY2:
 		safe_packed_conv(
@@ -765,6 +773,14 @@ image_output(IMAGE * image,
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?yv12_to_rgbai  :yv12_to_rgba,
 			interlacing?yv12_to_rgbai_c:yv12_to_rgba_c, 4);
+		return 0;
+
+	case XVID_CSP_ARGB:
+		safe_packed_conv(
+			dst[0], dst_stride[0], image->y, image->u, image->v,
+			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
+			interlacing?yv12_to_argbi  :yv12_to_argb,
+			interlacing?yv12_to_argbi_c:yv12_to_argb_c, 4);
 		return 0;
 
 	case XVID_CSP_YUY2:

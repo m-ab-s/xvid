@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: colorspace.h,v 1.5.2.4 2003-10-01 23:23:01 edgomez Exp $
+ * $Id: colorspace.h,v 1.5.2.5 2003-12-20 22:20:54 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -58,6 +58,7 @@ extern packedFuncPtr bgr_to_yv12;
 extern packedFuncPtr bgra_to_yv12;
 extern packedFuncPtr abgr_to_yv12;
 extern packedFuncPtr rgba_to_yv12;
+extern packedFuncPtr argb_to_yv12;
 extern packedFuncPtr yuyv_to_yv12;
 extern packedFuncPtr uyvy_to_yv12;
 
@@ -67,9 +68,9 @@ extern packedFuncPtr bgri_to_yv12;
 extern packedFuncPtr bgrai_to_yv12;
 extern packedFuncPtr abgri_to_yv12;
 extern packedFuncPtr rgbai_to_yv12;
+extern packedFuncPtr argbi_to_yv12;
 extern packedFuncPtr yuyvi_to_yv12;
 extern packedFuncPtr uyvyi_to_yv12;
-
 
 /* plain c */
 packedFunc rgb555_to_yv12_c;
@@ -78,6 +79,7 @@ packedFunc bgr_to_yv12_c;
 packedFunc bgra_to_yv12_c;
 packedFunc abgr_to_yv12_c;
 packedFunc rgba_to_yv12_c;
+packedFunc argb_to_yv12_c;
 packedFunc yuyv_to_yv12_c;
 packedFunc uyvy_to_yv12_c;
 
@@ -87,9 +89,9 @@ packedFunc bgri_to_yv12_c;
 packedFunc bgrai_to_yv12_c;
 packedFunc abgri_to_yv12_c;
 packedFunc rgbai_to_yv12_c;
+packedFunc argbi_to_yv12_c;
 packedFunc yuyvi_to_yv12_c;
 packedFunc uyvyi_to_yv12_c;
-
 
 #ifdef ARCH_IS_IA32
 /* mmx */
@@ -116,6 +118,7 @@ extern packedFuncPtr yv12_to_bgr;
 extern packedFuncPtr yv12_to_bgra;
 extern packedFuncPtr yv12_to_abgr;
 extern packedFuncPtr yv12_to_rgba;
+extern packedFuncPtr yv12_to_argb;
 extern packedFuncPtr yv12_to_yuyv;
 extern packedFuncPtr yv12_to_uyvy;
 
@@ -125,6 +128,7 @@ extern packedFuncPtr yv12_to_bgri;
 extern packedFuncPtr yv12_to_bgrai;
 extern packedFuncPtr yv12_to_abgri;
 extern packedFuncPtr yv12_to_rgbai;
+extern packedFuncPtr yv12_to_argbi;
 extern packedFuncPtr yv12_to_yuyvi;
 extern packedFuncPtr yv12_to_uyvyi;
 
@@ -135,6 +139,7 @@ packedFunc yv12_to_bgr_c;
 packedFunc yv12_to_bgra_c;
 packedFunc yv12_to_abgr_c;
 packedFunc yv12_to_rgba_c;
+packedFunc yv12_to_argb_c;
 packedFunc yv12_to_yuyv_c;
 packedFunc yv12_to_uyvy_c;
 
@@ -144,6 +149,7 @@ packedFunc yv12_to_bgri_c;
 packedFunc yv12_to_bgrai_c;
 packedFunc yv12_to_abgri_c;
 packedFunc yv12_to_rgbai_c;
+packedFunc yv12_to_argbi_c;
 packedFunc yv12_to_yuyvi_c;
 packedFunc yv12_to_uyvyi_c;
 

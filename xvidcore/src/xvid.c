@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.25 2003-12-17 17:07:38 Isibaar Exp $
+ * $Id: xvid.c,v 1.45.2.26 2003-12-20 22:20:54 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -248,6 +248,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	bgra_to_yv12    = bgra_to_yv12_c;
 	abgr_to_yv12    = abgr_to_yv12_c;
 	rgba_to_yv12    = rgba_to_yv12_c;
+	argb_to_yv12    = argb_to_yv12_c;
 	yuyv_to_yv12    = yuyv_to_yv12_c;
 	uyvy_to_yv12    = uyvy_to_yv12_c;
 
@@ -257,9 +258,9 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	bgrai_to_yv12   = bgrai_to_yv12_c;
 	abgri_to_yv12   = abgri_to_yv12_c;
 	rgbai_to_yv12   = rgbai_to_yv12_c;
+	argbi_to_yv12   = argbi_to_yv12_c;
 	yuyvi_to_yv12   = yuyvi_to_yv12_c;
 	uyvyi_to_yv12   = uyvyi_to_yv12_c;
-
 
 	/* All colorspace transformation functions YV12->User format */
 	yv12_to_rgb555  = yv12_to_rgb555_c;
@@ -268,6 +269,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	yv12_to_bgra    = yv12_to_bgra_c;
 	yv12_to_abgr    = yv12_to_abgr_c;
 	yv12_to_rgba    = yv12_to_rgba_c;
+	yv12_to_argb    = yv12_to_argb_c;
 	yv12_to_yuyv    = yv12_to_yuyv_c;
 	yv12_to_uyvy    = yv12_to_uyvy_c;
 
@@ -277,6 +279,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	yv12_to_bgrai   = yv12_to_bgrai_c;
 	yv12_to_abgri   = yv12_to_abgri_c;
 	yv12_to_rgbai   = yv12_to_rgbai_c;
+	yv12_to_argbi   = yv12_to_argbi_c;
 	yv12_to_yuyvi   = yv12_to_yuyvi_c;
 	yv12_to_uyvyi   = yv12_to_uyvyi_c;
 
