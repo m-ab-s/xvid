@@ -34,7 +34,6 @@ SRC_GENERIC = \
 	$(SRCDIR)/utils/mbtransquant.c \
 	$(SRCDIR)/utils/mem_align.c \
 	$(SRCDIR)/utils/mem_transfer.c \
-	$(SRCDIR)/utils/ratecontrol.c \
 	$(SRCDIR)/utils/timer.c
 
 SRC_DIVX4COMPAT = \
