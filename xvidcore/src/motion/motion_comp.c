@@ -158,13 +158,12 @@ MBMotionCompensation(MACROBLOCK * const mb,
 
 		if (quarterpel)
 		{
-			dx = (dx >> 2) + roundtab_78[dx & 0x7];
-			dy = (dy >> 2) + roundtab_78[dy & 0x7];
+			dx /= 2;
+			dy /= 2;
 		}
-		else {
-			dx = (dx >> 1) + roundtab_79[dx & 0x3];
-			dy = (dy >> 1) + roundtab_79[dy & 0x3];
-		}
+
+		dx = (dx >> 1) + roundtab_79[dx & 0x3];
+		dy = (dy >> 1) + roundtab_79[dy & 0x3];
 
 		/* uv-block-based compensation */
 		transfer_8to16sub(&dct_codes[4 * 64],

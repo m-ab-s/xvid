@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.6 2002-10-30 18:01:48 Isibaar Exp $
+ *  $Id: decoder.c,v 1.37.2.7 2002-10-30 23:11:48 Isibaar Exp $
  *
  *************************************************************************/
 
@@ -362,13 +362,12 @@ decoder_mbinter(DECODER * dec,
 
 		if (dec->quarterpel)
 		{
-			uv_dx = (uv_dx >> 2) + roundtab_78[uv_dx & 0x7];
-			uv_dy = (uv_dy >> 2) + roundtab_78[uv_dy & 0x7];
+			uv_dx /= 2;
+			uv_dy /= 2;
 		}
-		else {
-			uv_dx = (uv_dx >> 1) + roundtab_79[uv_dx & 0x3];
-			uv_dy = (uv_dy >> 1) + roundtab_79[uv_dy & 0x3];
-		}
+
+		uv_dx = (uv_dx >> 1) + roundtab_79[uv_dx & 0x3];
+		uv_dy = (uv_dy >> 1) + roundtab_79[uv_dy & 0x3];
 
 		start_timer();
 		if(dec->quarterpel) {
