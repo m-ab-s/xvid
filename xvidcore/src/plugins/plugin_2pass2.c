@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.25 2003-11-13 22:35:30 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.26 2003-11-19 15:42:39 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -616,7 +616,7 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 			b_ref--;
 
 		/* Compute the original quant */
-		s->quant  = 100*s->quant - data->bquant_offset;
+		s->quant  = 2*(100*s->quant - data->bquant_offset);
 		s->quant += data->bquant_ratio - 1; /* to avoid rouding issues */
 		s->quant  = s->quant/data->bquant_ratio - b_ref->quant;
 	}
