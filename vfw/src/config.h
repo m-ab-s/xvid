@@ -96,14 +96,12 @@ typedef struct
 //added by koepi for gruel's greyscale_mode
 	int greyscale;
 // end of koepi's additions
-#ifdef BFRAMES
 	int max_bframes;
 	int bquant_ratio;
 	int bquant_offset;
 	int packed;
 	int dx50bvop;
 	int debug;
-#endif
 
 	int min_iquant;
 	int max_iquant;
@@ -159,9 +157,7 @@ typedef struct
 #ifdef _SMP
 	int num_threads;
 #endif
-#ifdef BFRAMES
 	int frame_drop_ratio;
-#endif
 
 //	char build[50];
 	DWORD cpu;

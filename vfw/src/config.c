@@ -97,7 +97,6 @@ REG_INT const reg_ints[] = {
 //added by koepi for gruel's greyscale_mode
 	{"greyscale",				&reg.greyscale,					0},
 // end of koepi's additions
-#ifdef BFRAMES
 	{"max_bframes",				&reg.max_bframes,				-1},
 	{"bquant_ratio",			&reg.bquant_ratio,				150},
 	{"bquant_offset",			&reg.bquant_offset,				100},
@@ -105,7 +104,6 @@ REG_INT const reg_ints[] = {
 	{"dx50bvop",				&reg.dx50bvop,					0},
 	{"debug",					&reg.debug,						0},
 	{"frame_drop_ratio",		&reg.frame_drop_ratio,			0},
-#endif
 
 	{"min_iquant",				&reg.min_iquant,				2},
 	{"max_iquant",				&reg.max_iquant,				31},
@@ -650,14 +648,12 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 // added by koepi for gruel's greyscale_mode
 		CheckDlgButton(hDlg, IDC_GREYSCALE, config->greyscale ? BST_CHECKED : BST_UNCHECKED);
 // end of koepi's addition
-#ifdef BFRAMES
 		SetDlgItemInt(hDlg, IDC_MAXBFRAMES, config->max_bframes, TRUE);
 		SetDlgItemInt(hDlg, IDC_BQUANTRATIO, config->bquant_ratio, FALSE);
 		SetDlgItemInt(hDlg, IDC_BQUANTOFFSET, config->bquant_offset, FALSE);
 		CheckDlgButton(hDlg, IDC_PACKED, config->packed ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_DX50BVOP, config->dx50bvop ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_DEBUG, config->debug ? BST_CHECKED : BST_UNCHECKED);
-#endif
 		break;
 
 	case DLG_QUANT :
@@ -751,11 +747,7 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 #ifdef _SMP
 		SetDlgItemInt(hDlg, IDC_NUMTHREADS, config->num_threads, FALSE);
 #endif
-
-#ifdef BFRAMES
 		SetDlgItemInt(hDlg, IDC_FRAMEDROP, config->frame_drop_ratio, FALSE);
-#endif
-
 		SetDlgItemInt(hDlg, IDC_CBR_REACTIONDELAY, config->rc_reaction_delay_factor, FALSE);
 		SetDlgItemInt(hDlg, IDC_CBR_AVERAGINGPERIOD, config->rc_averaging_period, FALSE);
 		SetDlgItemInt(hDlg, IDC_CBR_BUFFER, config->rc_buffer, FALSE);
@@ -789,14 +781,12 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 // added by koepi for gruel's greyscale_mode
 		config->greyscale = ISDLGSET(IDC_GREYSCALE);
 // end of koepi's addition
-#ifdef BFRAMES
 		config->max_bframes = config_get_int(hDlg, IDC_MAXBFRAMES, config->max_bframes);
 		config->bquant_ratio = config_get_uint(hDlg, IDC_BQUANTRATIO, config->bquant_ratio);
 		config->bquant_offset = config_get_uint(hDlg, IDC_BQUANTOFFSET, config->bquant_offset);
 		config->packed = ISDLGSET(IDC_PACKED);
 		config->dx50bvop = ISDLGSET(IDC_DX50BVOP);
 		config->debug = ISDLGSET(IDC_DEBUG);
-#endif
 		break;
 
 	case DLG_QUANT :
@@ -919,10 +909,7 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 #ifdef _SMP
 		config->num_threads = config_get_uint(hDlg, IDC_NUMTHREADS, config->num_threads);
 #endif
-#ifdef BFRAMES
 		config->frame_drop_ratio = config_get_uint(hDlg, IDC_FRAMEDROP, config->frame_drop_ratio);
-#endif
-
 		config->rc_reaction_delay_factor = config_get_uint(hDlg, IDC_CBR_REACTIONDELAY, config->rc_reaction_delay_factor);
 		config->rc_averaging_period = config_get_uint(hDlg, IDC_CBR_AVERAGINGPERIOD, config->rc_averaging_period);
 		config->rc_buffer = config_get_uint(hDlg, IDC_CBR_BUFFER, config->rc_buffer);
@@ -1141,7 +1128,6 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DIVX");
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DX50");
 
-#ifndef BFRAMES
 			EnableWindow(GetDlgItem(hDlg, IDC_BSTATIC1), FALSE);
 			EnableWindow(GetDlgItem(hDlg, IDC_BSTATIC2), FALSE);
 			EnableWindow(GetDlgItem(hDlg, IDC_BSTATIC3), FALSE);
@@ -1150,7 +1136,6 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			EnableWindow(GetDlgItem(hDlg, IDC_PACKED), FALSE);
 			EnableWindow(GetDlgItem(hDlg, IDC_DX50BVOP), FALSE);
 			EnableWindow(GetDlgItem(hDlg, IDC_DEBUG), FALSE);
-#endif
 		}
 		else if (psi->page == DLG_2PASSALT)
 		{
@@ -1165,10 +1150,8 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			EnableWindow(GetDlgItem(hDlg, IDC_NUMTHREADS_STATIC), FALSE);
 			EnableWindow(GetDlgItem(hDlg, IDC_NUMTHREADS), FALSE);
 #endif
-#ifndef BFRAMES
 			EnableWindow(GetDlgItem(hDlg, IDC_FRAMEDROP_STATIC), FALSE);
 			EnableWindow(GetDlgItem(hDlg, IDC_FRAMEDROP), FALSE);
-#endif
 		}
 
 		if (hTooltip)

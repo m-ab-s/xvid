@@ -223,11 +223,7 @@ LRESULT compress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * 
 
 LRESULT compress_get_size(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiOutput)
 {
-	return
-#ifdef BFRAMES
-	 2 *
-#endif
-	lpbiOutput->bmiHeader.biWidth * lpbiOutput->bmiHeader.biHeight * 3;
+	return 2 * lpbiOutput->bmiHeader.biWidth * lpbiOutput->bmiHeader.biHeight * 3;
 }
 
 
@@ -302,7 +298,6 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	param.num_threads = codec->config.num_threads;
 #endif
 
-#ifdef BFRAMES
 	param.global = 0;
 	if (codec->config.packed) param.global |= XVID_GLOBAL_PACKED;
 	if (codec->config.dx50bvop) param.global |= XVID_GLOBAL_DX50BVOP;
@@ -311,7 +306,6 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	param.bquant_ratio = codec->config.bquant_ratio;
 	param.bquant_offset = codec->config.bquant_offset;
 	param.frame_drop_ratio = codec->config.frame_drop_ratio;
-#endif
 
 	switch(xvid_encore(0, XVID_ENC_CREATE, &param, NULL)) 
 	{
@@ -544,9 +538,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		frame.intra = 0;
 	}
 
-#ifdef BFRAMES
 	frame.bquant = 0;
-#endif
 
 //	OutputDebugString(" ");
 	switch (xvid_encore(codec->ehandle, XVID_ENC_ENCODE, &frame, &stats)) 
