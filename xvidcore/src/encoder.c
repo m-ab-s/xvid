@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.56 2003-11-30 16:13:15 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.57 2003-12-12 09:58:40 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1223,6 +1223,9 @@ repeat:
 		/* ---- update vol flags at IVOP ----------- */
 		pEnc->current->vol_flags = pEnc->mbParam.vol_flags = frame->vol_flags;
 		switch(frame->par) {
+		case 0:
+			pEnc->mbParam.par = XVID_PAR_11_VGA;
+			break;
 		case XVID_PAR_11_VGA:
 		case XVID_PAR_43_PAL:
 		case XVID_PAR_43_NTSC:
