@@ -5,6 +5,315 @@
 # relevant.
 #
 
+
+2004-01-25 15:37:57 GMT	                                	patch-17
+
+    Summary:
+      VFW update (again²)
+    Revision:
+      xvidcore--devapi4--1.0--patch-17
+
+    From sysKin:
+     * Added Constant Quant encoding.
+
+    modified files:
+     vfw/src/codec.c vfw/src/config.c vfw/src/config.h
+     vfw/src/resource.rc
+
+
+2004-01-25 15:35:38 GMT	                                	patch-16
+
+    Summary:
+      Missing MB quants for PP.
+    Revision:
+      xvidcore--devapi4--1.0--patch-16
+
+    From sysKin:
+     * MB Quants are used by the PP code, so don't forget to update
+       them even if the block is skipped or not coded.
+
+    modified files:
+     src/decoder.c
+
+
+2004-01-23 13:25:52 GMT	                                	patch-15
+
+    Summary:
+      VFW update (again)
+    Revision:
+      xvidcore--devapi4--1.0--patch-15
+
+    From sysKin:
+     * Status window updates.
+     * Big resource.h cleanup, it seems msvc isn't able to do it automatically.
+
+    modified files:
+     vfw/src/resource.h vfw/src/resource.rc vfw/src/status.c
+
+
+2004-01-23 11:17:20 GMT	                                	patch-14
+
+    Summary:
+      VFW gcc warnings
+    Revision:
+      xvidcore--devapi4--1.0--patch-14
+
+    VFW gcc warnings
+    
+
+    modified files:
+     vfw/src/codec.c vfw/src/config.c vfw/src/config.h
+
+
+2004-01-22 20:54:53 GMT	                                	patch-13
+
+    Summary:
+      DShow updates.
+    Revision:
+      xvidcore--devapi4--1.0--patch-13
+
+    From sysKin:
+     * Fixed registry params type. Bool cannot be used or something weird
+       happens when writing to registry
+     * Defaults set to what the Reset widget sets.
+
+    modified files:
+     dshow/src/CAbout.h dshow/src/CXvidDecoder.cpp
+
+
+2004-01-22 20:35:27 GMT	                                	patch-12
+
+    Summary:
+      VFW updates.
+    Revision:
+      xvidcore--devapi4--1.0--patch-12
+
+    From sysKin:
+     * GUI improvements.
+     * Stats fixing.
+     * Automatic config clear upon installation.
+     * Added postprocessing options in there too.
+
+    modified files:
+     vfw/bin/xvid.inf vfw/src/codec.c vfw/src/codec.h
+     vfw/src/config.c vfw/src/config.h vfw/src/resource.h
+     vfw/src/resource.rc vfw/src/status.c vfw/src/status.h
+
+
+2004-01-22 20:28:54 GMT	                                	patch-11
+
+    Summary:
+      Minor updates to text files
+    Revision:
+      xvidcore--devapi4--1.0--patch-11
+
+    Minor updates to text files
+    
+
+    modified files:
+     AUTHORS TODO
+
+
+2004-01-22 20:27:10 GMT	                                	patch-10
+
+    Summary:
+      2pass plugin changes.
+    Revision:
+      xvidcore--devapi4--1.0--patch-10
+
+    From sysKin:
+     * Disabled QPel during first pass as well.
+     * Fix a mistaking condition when enabling largers 2nd passes.
+    
+    From ed.gomez:
+     * Fix the fix logic. The previous fix enclosed a condition it should
+       not have touched. So i removed the mistaking condition, which was
+       wrong anyway as stated in the comment, and got back the sane condition
+       test.
+
+    modified files:
+     src/plugins/plugin_2pass1.c src/plugins/plugin_2pass2.c
+
+
+2004-01-17 13:03:11 GMT	                                	patch-9
+
+    Summary:
+      Unitialized pointers during plugin creation.
+    Revision:
+      xvidcore--devapi4--1.0--patch-9
+
+    From sysKin:
+     - plugins which do not require private data were leaving the param2
+       unitialized. Just init it to NULL. This bug wasn't causing any
+       trouble anyway...
+
+    modified files:
+     src/plugins/plugin_dump.c src/plugins/plugin_psnr.c
+     vfw/src/codec.c
+
+
+2004-01-17 01:09:01 GMT	                                	patch-8
+
+    Summary:
+      DShow forwwards AR information.
+    Revision:
+      xvidcore--devapi4--1.0--patch-8
+
+    From syskin(?):
+     - forward AR information to DShow framework.
+     - grayed some widgets.
+
+    modified files:
+     dshow/src/CXvidDecoder.cpp dshow/src/CXvidDecoder.h
+     dshow/src/xvid.ax.rc
+
+
+2004-01-07 13:50:29 GMT	                                	patch-7
+
+    Summary:
+      Scaled zones fix.
+    Revision:
+      xvidcore--devapi4--1.0--patch-7
+
+    From sysKin (ideas from Koepi iirc):
+     * Fix scaled zones computing prescaled data and so on instead of
+       guessing everything with a global zone weight factor.
+
+    modified files:
+     src/plugins/plugin_2pass2.c
+
+
+2004-01-06 01:06:39 GMT	                                	patch-6
+
+    Summary:
+      Tab->Spaces in header only
+    Revision:
+      xvidcore--devapi4--1.0--patch-6
+
+    Tab->Spaces in header only
+    
+
+    modified files:
+     src/xvid.h
+
+
+2004-01-04 18:35:35 GMT	                                	patch-5
+
+    Summary:
+      Typo fixed
+    Revision:
+      xvidcore--devapi4--1.0--patch-5
+
+    Typo fixed
+    
+
+    modified files:
+     build/generic/configure.in
+
+
+2004-01-04 13:40:51 GMT	                                	patch-4
+
+    Summary:
+      VFW safer code.
+    Revision:
+      xvidcore--devapi4--1.0--patch-4
+
+    From sysKin:
+     * Protects some parts of the code depending on a previous
+       xvidcore opening. Avoids resources leaking.
+
+    modified files:
+     vfw/src/codec.c vfw/src/driverproc.c
+
+
+2004-01-04 13:33:28 GMT	                                	patch-3
+
+    Summary:
+      Fixes VC debug target name
+    Revision:
+      xvidcore--devapi4--1.0--patch-3
+
+    Fixes VC debug target name
+    
+
+    modified files:
+     vfw/vfw.dsp
+
+
+2004-01-02 23:10:56 GMT	                                	patch-2
+
+    Summary:
+      Win32 linking policy revised.
+    Revision:
+      xvidcore--devapi4--1.0--patch-2
+
+    Finnaly Win32 linking policy is to separate all XviD components:
+     - xvidcore.dll exports XviD API
+     - xvidvfw.dll links against xvidcore DLL
+     - xviddshow.dll links against xvidcore DLL
+    
+    From sysKin:
+     * Changed DShow linking policy in VS project file.
+     * Changed VFW linking policy in VS project file.
+     * Added runtime xvidcore.dll loading in DShow and VFW.
+     * Installs xvidcore.dll along side with xvidvfw.dll.
+    
+    From ed.gomez:
+     * Changed libxvidcore.dll mingw32/cygwin target name to
+       xvidcore.dll in the configure script.
+     * Changed xvid.dll VFW target name to xvidvfw.dll in the
+       generic Makefile.
+    
+    PS: unlike CVS, i reverted back to MS build tools in VS project files
+
+    modified files:
+     build/generic/configure.in build/win32/libxvidcore.dsp
+     dshow/dshow.dsp dshow/src/CXvidDecoder.cpp
+     dshow/src/CXvidDecoder.h vfw/bin/Makefile vfw/bin/sources.inc
+     vfw/bin/xvid.inf vfw/src/codec.c vfw/src/codec.h
+     vfw/src/config.c vfw/src/config.h vfw/vfw.dsp
+
+
+2004-01-02 22:02:07 GMT	                                	patch-1
+
+    Summary:
+      Better seeking in dshow
+    Revision:
+      xvidcore--devapi4--1.0--patch-1
+
+    From Michael:
+     * Better DShow seeking.
+
+    modified files:
+     dshow/src/CXvidDecoder.cpp
+
+
+2004-01-02 12:28:39 GMT	                                	base-0
+
+    Summary:
+      tag of ed.gomez@free.fr--2003-1/xvidcore--devapi4--1.0--patch-162
+    Revision:
+      xvidcore--devapi4--1.0--base-0
+
+    Archive cycling...
+
+#########################################################################
+# 1.0.0 beta3
+#########################################################################
+
+2003-12-26 22:21:35 GMT	                                	patch-162
+
+    Summary:
+      Marking 1.0.0 beta3
+    Revision:
+      xvidcore--devapi4--1.0--patch-162
+
+    Marking beta3
+
+    modified files:
+     ChangeLog TODO build/generic/configure.in src/xvid.h
+
+
 2003-12-25 20:57:52 GMT	                                	patch-161
 
     Summary:
@@ -534,7 +843,7 @@
        the bvop lag frame (black with error message).
     
     Fixing previous patch a bit:
-     * added $Id: ChangeLog,v 1.1.2.5 2003-12-27 10:50:50 edgomez Exp $ fields
+     * added $Id: ChangeLog,v 1.1.2.6 2004-01-26 00:12:16 edgomez Exp $ fields
      * Fixed copyright
 
     modified files:
