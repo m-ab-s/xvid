@@ -25,7 +25,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.13 2003-05-29 10:19:35 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.14 2003-05-29 10:36:41 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -847,8 +847,8 @@ internal_scale(rc_2pass2_t *rc)
 	int64_t target  = rc->target - rc->tot_quant;
 	int64_t pass1_length = rc->tot_length[0] + rc->tot_length[1] + rc->tot_length[2] - rc->tot_quant;
 	double scaler;
-	int i;
-
+	int i, num_MBs;
+	int min_size[3];
 
 	/* Let's compute a linear scaler in order to perform curve scaling */
 	scaler = (double)target / (double)pass1_length;
@@ -863,21 +863,24 @@ internal_scale(rc_2pass2_t *rc)
 			(int)target, (int)pass1_length, scaler);
 
 	/*
+	 * Compute min frame lengths (for each frame type) according to the number
+	 * of MBs. We sum all blocks count from frame 0 (should be an IFrame, so
+	 * blocks[0] should be enough) to know how many MBs there are.
+	 */
+	num_MBs = rc->stats[0].blks[0] + rc->stats[0].blks[1] + rc->stats[0].blks[2];
+	min_size[0] = ((num_MBs*22) + 240) / 8;
+	min_size[1] = ((num_MBs)    + 88)  / 8;
+	min_size[2] = 8;
+
+	/*
 	 * Perform an initial scale pass.
 	 * If a frame size is scaled underneath our hardcoded minimums, then we
 	 * force the frame size to the minimum, and deduct the original & scaled
 	 * frame length from the original and target total lengths
 	 */
-
 	for (i=0; i<rc->num_frames; i++) {
 		stat_t * s = &rc->stats[i];
-		int min_size[3];
 		int len;
-
-		/* Compute min frame lengths (oe for each frame type) */
-		min_size[0] = ((s->blks[0]*22) + 240) / 8;
-		min_size[1] = (s->blks[0] + 88) / 8;
-		min_size[2] = 8;
 
         if (s->zone_mode == XVID_ZONE_QUANT) {
             s->scaled_length = s->length;
@@ -897,7 +900,6 @@ internal_scale(rc_2pass2_t *rc)
 			/* Do nothing for now, we'll scale this later */
 			s->scaled_length = 0;
 		}
-        
 	}
 
 	/* Correct the scaler for all non forced frames */
