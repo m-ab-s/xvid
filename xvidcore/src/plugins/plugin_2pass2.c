@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.1 2003-03-25 10:58:33 suxen_drol Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.2 2003-04-08 14:01:09 suxen_drol Exp $
  *
  *****************************************************************************/
 
@@ -38,6 +38,7 @@
 typedef struct {
     int type;               /* first pass type */
     int quant;              /* first pass quant */
+	int blks[3];			/* k,m,y blks */
     int length;             /* first pass length */
     int scaled_length;     /* scaled length */
     int desired_length;
@@ -52,9 +53,10 @@ typedef struct
     xvid_plugin_2pass2_t param;
 
     /* constant statistical data */
-    int num_frames;
+	int num_frames;
     int num_keyframes;
-
+    uint64_t target;	/* target bitrate */
+	
     int count[3];   /* count of each frame types */
     uint64_t tot_length[3];  /* total length of each frame types */
     double avg_length[3];   /* avg */
@@ -110,8 +112,8 @@ static int det_stats_length(rc_2pass2_t * rc, char * filename)
     if ((f = fopen(filename, "rt")) == NULL)
         return 0;
 
-    while((n = fscanf(f, "%c %d %d %d %d %d\n",
-        &type, &ignore, &ignore, &ignore, &ignore, &ignore)) != EOF) {
+    while((n = fscanf(f, "%c %d %d %d %d %d %d\n",
+        &type, &ignore, &ignore, &ignore, &ignore, &ignore, &ignore)) != EOF) {
         if (type == 'i') {
             rc->num_frames++;
             rc->num_keyframes++;
@@ -126,63 +128,70 @@ static int det_stats_length(rc_2pass2_t * rc, char * filename)
 }
 
 
-/* open stats file(s) and read into rc->stats array */
+/* scale the curve */
 
-static int load_stats(rc_2pass2_t *rc, char * filename1, char * filename2)
+static void internal_scale(rc_2pass2_t *rc)
 {
-    FILE * f1, *f2;
-    int i;
-    
+	int64_t target  = rc->target;
+	int64_t tot_length = rc->tot_length[0] + rc->tot_length[1] + rc->tot_length[2];
+	int min_size[3];
+	double scaler;
+	int i;
+	
+	if (target <= 0 || target >= tot_length) {
+		printf("undersize warning\n");
+	}
 
-    if ((f1 = fopen(filename1, "rt"))==NULL)
-        return 0;
-    
-    if ((f2 = fopen(filename2, "rt"))==NULL) {
-        fclose(f1);
-        return 0;
-    }
+	/* perform an initial scale pass.
+	   if a frame size is scaled underneath our hardcoded minimums, then we force the
+	   frame size to the minimum, and deduct the original & scaled frmae length from the
+	   original and target total lengths */
 
-    i = 0;
-    while(i < rc->num_frames) {
-        stat_t * s = &rc->stats[i];
-        int n, ignore;
-        char type;
+	min_size[0] = ((rc->stats[0].blks[0]*22) + 240) / 8;
+	min_size[1] = (rc->stats[0].blks[0] + 88) / 8;
+	min_size[2] = 8;
 
-        n = fscanf(f1, "%c %d %d %d %d %d\n", &type, &s->quant, &s->length, &ignore, &ignore, &ignore);
-        if (n == EOF) break;
 
-        if (type == 'i') {
-            s->type = XVID_TYPE_IVOP;
-        }else if (type == 'p' || type == 's') {
-            s->type = XVID_TYPE_PVOP;
-        }else if (type == 'b') {
-            s->type = XVID_TYPE_BVOP;
-        }else{  /* unknown type */
-            printf("unk\n");
-            continue;
-        }
+	scaler = (double)target / (double)tot_length;
+	//printf("target=%i, tot_length=%i, scaler=%f\n", (int)target, (int)tot_length, scaler);
 
-        n = fscanf(f2, "%c %d %d %d %d %d\n", &type, &ignore, &s->scaled_length, &ignore, &ignore, &ignore);
-        if (n == EOF) break;
-        if (type != 'i'&& type != 'p' && type != 'b' && type != 's') {
-            printf("unk\n");
-            continue; /* unknown type */
-        }
+	for (i=0; i<rc->num_frames; i++) {
+		stat_t * s = &rc->stats[i];
+		int len;
+		
+		len = (int)((double)s->length * scaler);
+		if (len < min_size[s->type]) {		/* force frame size */
+			s->scaled_length = min_size[s->type];
+			target -= s->scaled_length;
+			tot_length -= s->length;
+		}else{
+			s->scaled_length = 0;
+		}
+	}
 
-        i++;
-    }
-    rc->num_frames = i;
+	if (target <= 0 || target >= tot_length) {
+		printf("undersize warning\n");
+		return;
+	}
 
-    
-    fclose(f1);
-    if (filename2) 
-        fclose(f2);
+	scaler = (double)target / (double)tot_length;
+	//printf("target=%i, tot_length=%i, scaler=%f\n", (int)target, (int)tot_length, scaler);
 
-    return 1;
+	for (i=0; i<rc->num_frames; i++) {
+		stat_t * s = &rc->stats[i];
+
+		if (s->scaled_length==0) {	/* ignore frame with forced frame sizes */
+			s->scaled_length = (int)((double)s->length * scaler);
+		}
+	}
+
 }
 
 
-/*static void internal_scale(rc_2pass2_t *rc)
+
+
+
+/* static void internal_scale(rc_2pass2_t *rc)
 {
     const double avg_pvop = rc->avg_length[XVID_TYPE_PVOP-1];
     const double avg_bvop = rc->avg_length[XVID_TYPE_BVOP-1];
@@ -319,6 +328,54 @@ static int load_stats(rc_2pass2_t *rc, char * filename1, char * filename2)
 
 
 
+/* open stats file(s) and read into rc->stats array */
+
+static int load_stats(rc_2pass2_t *rc, char * filename)
+{
+    FILE * f;
+    int i, not_scaled;
+ 
+
+    if ((f = fopen(filename, "rt"))==NULL)
+        return 0;
+    
+    i = 0;
+	not_scaled = 0;
+    while(i < rc->num_frames) {
+        stat_t * s = &rc->stats[i];
+        int n;
+        char type;
+
+		s->scaled_length = 0;
+        n = fscanf(f, "%c %d %d %d %d %d %d\n", &type, &s->quant, &s->blks[0], &s->blks[1], &s->blks[2], &s->length, &s->scaled_length);
+        if (n == EOF) break;
+		if (n < 7) {
+			not_scaled = 1;
+		}
+
+        if (type == 'i') {
+            s->type = XVID_TYPE_IVOP;
+        }else if (type == 'p' || type == 's') {
+            s->type = XVID_TYPE_PVOP;
+        }else if (type == 'b') {
+            s->type = XVID_TYPE_BVOP;
+        }else{  /* unknown type */
+            printf("unk\n");
+            continue;
+        }
+
+        i++;
+    }
+    rc->num_frames = i;
+   
+    fclose(f);
+
+    return 1;
+}
+
+
+
+
 
 static void print_stats(rc_2pass2_t * rc)
 {
@@ -335,19 +392,13 @@ static void print_stats(rc_2pass2_t * rc)
     this is a clone of vfw/src/2pass.c:codec_2pass_init minus file reading, alt_curve, internal scale
 */
 
-void pre_process(rc_2pass2_t * rc)
+void pre_process0(rc_2pass2_t * rc)
 {
     int i,j;
-    double total1, total2;
-    uint64_t ivop_boost_total;
-
-    ivop_boost_total = 0;
-    rc->curve_comp_error = 0;
 
     for (i=0; i<3; i++) {
         rc->count[i]=0;
         rc->tot_length[i] = 0;
-        rc->tot_scaled_length[i] = 0;
         rc->last_quant[i] = 0;
     }
 
@@ -362,7 +413,6 @@ void pre_process(rc_2pass2_t * rc)
 
         rc->count[s->type-1]++;
         rc->tot_length[s->type-1] += s->length;
-        rc->tot_scaled_length[s->type-1] += s->scaled_length;
        
         if (i == 0 || s->length < rc->min_length[s->type-1]) {
             rc->min_length[s->type-1] = s->length;
@@ -373,12 +423,37 @@ void pre_process(rc_2pass2_t * rc)
         }
 
         if (s->type == XVID_TYPE_IVOP) {
-            ivop_boost_total += s->scaled_length * rc->param.keyframe_boost / 100;
             rc->keyframe_locations[j] = i;
             j++;
         }
     }
     rc->keyframe_locations[j] = i;
+}
+
+
+
+void pre_process1(rc_2pass2_t * rc)
+{
+    int i;
+    double total1, total2;
+    uint64_t ivop_boost_total;
+
+    ivop_boost_total = 0;
+    rc->curve_comp_error = 0;
+
+    for (i=0; i<3; i++) {
+        rc->tot_scaled_length[i] = 0;
+    }
+
+    for (i=0; i<rc->num_frames; i++) {
+        stat_t * s = &rc->stats[i];
+
+        rc->tot_scaled_length[s->type-1] += s->scaled_length;
+       
+        if (s->type == XVID_TYPE_IVOP) {
+            ivop_boost_total += s->scaled_length * rc->param.keyframe_boost / 100;
+        }
+    }
 
     rc->movie_curve = ((double)(rc->tot_scaled_length[XVID_TYPE_PVOP-1] + rc->tot_scaled_length[XVID_TYPE_BVOP-1] + ivop_boost_total) /
 			                (rc->tot_scaled_length[XVID_TYPE_PVOP-1] + rc->tot_scaled_length[XVID_TYPE_BVOP-1]));
@@ -391,7 +466,6 @@ void pre_process(rc_2pass2_t * rc)
         }
     }
 
-    printf("--\n");
     /* alt curve stuff here */
 
     if (rc->param.use_alt_curve) {
@@ -440,7 +514,7 @@ void pre_process(rc_2pass2_t * rc)
 
 
     total1=total2=0;
-    for (i=j=0; i<rc->num_frames; i++) {
+    for (i=0; i<rc->num_frames; i++) {
         stat_t * s = &rc->stats[i];
 
         if (s->type != XVID_TYPE_IVOP) {
@@ -633,8 +707,8 @@ static int rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t ** handle)
     if (rc->param.kfreduction <= 0) rc->param.kfreduction = 20;
     if (rc->param.min_key_interval <= 0) rc->param.min_key_interval = 300;
 
-    if (!det_stats_length(rc, param->filename1)){
-        DPRINTF(DPRINTF_RC,"fopen %s failed\n", param->filename1);
+    if (!det_stats_length(rc, param->filename)){
+        DPRINTF(DPRINTF_RC,"fopen %s failed\n", param->filename);
         free(rc);
         return XVID_ERR_FAIL;
     }
@@ -651,8 +725,8 @@ static int rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t ** handle)
         return XVID_ERR_MEMORY;
     }
 
-    if (!load_stats(rc, param->filename1, param->filename2)) {
-        DPRINTF(DPRINTF_RC,"fopen %s,%s failed\n", param->filename1, param->filename2);
+    if (!load_stats(rc, param->filename)) {
+        DPRINTF(DPRINTF_RC,"fopen %s failed\n", param->filename);
         free(rc->keyframe_locations);
         free(rc->stats);
         free(rc);
@@ -660,7 +734,25 @@ static int rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t ** handle)
     }
 
     /* pre-process our stats */
-    pre_process(rc);
+
+	{
+		if (rc->num_frames  < create->fbase/create->fincr) {
+			rc->target = rc->param.bitrate / 8;	/* one second */
+		}else{
+			rc->target = (rc->param.bitrate * rc->num_frames * create->fincr) / (create->fbase * 8);
+		}
+
+		
+		rc->target -= rc->num_frames*24;	/* avi file header */
+
+	}
+    
+
+	pre_process0(rc);
+	if (rc->param.bitrate) {
+		internal_scale(rc);
+	}
+	pre_process1(rc);pre_process1(rc);pre_process1(rc);
     
     *handle = rc;
 	return(0);
@@ -704,7 +796,7 @@ static int rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
         dbytes += desired * rc->param.keyframe_boost / 100;
     }
     dbytes /= rc->movie_curve;
-    
+
     if (s->type == XVID_TYPE_BVOP) {
         dbytes *= rc->avg_length[XVID_TYPE_PVOP-1] / rc->avg_length[XVID_TYPE_BVOP-1];
     }
@@ -712,8 +804,10 @@ static int rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
     if (rc->param.payback_method == XVID_PAYBACK_BIAS) {
         desired =(int)(rc->curve_comp_error / rc->param.bitrate_payback_delay);
     }else{
+		//printf("desired=%i, dbytes=%i\n", desired,dbytes);
 		desired = (int)(rc->curve_comp_error * dbytes /
 			rc->avg_length[XVID_TYPE_PVOP-1] / rc->param.bitrate_payback_delay);
+		//printf("desired=%i\n", desired);
 
 		if (labs(desired) > fabs(rc->curve_comp_error)) {
 			desired = (int)rc->curve_comp_error;

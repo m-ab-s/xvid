@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.14 2003-03-26 14:56:09 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.15 2003-04-08 14:01:35 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -94,6 +94,7 @@ static int ARG_LUMIMASKING = 0;
 static int ARG_BITRATE = 0;
 static char *ARG_PASS1 = 0;
 static char *ARG_PASS2 = 0;
+static int ARG_PASS2_BITRATE = 0;
 static float ARG_QUANTI = 0.0f;
 static int ARG_QUALITY = 5;
 static float ARG_FRAMERATE = 25.00f;
@@ -216,9 +217,9 @@ main(int argc,
 			ARG_PASS1 = argv[i];
 		} else if (strcmp("-pass2", argv[i]) == 0 && i < argc - 2) {
 			i++;
-			ARG_PASS1 = argv[i];
-			i++;
 			ARG_PASS2 = argv[i];
+			i++;
+			ARG_PASS2_BITRATE = atoi(argv[i]);
 		} else if (strcmp("-max_bframes", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_MAXBFRAMES = atoi(argv[i]);
@@ -573,8 +574,8 @@ usage()
 	fprintf(stderr, " -framerate float               : target framerate (>0 | default=25.0)\n");
 	fprintf(stderr,	" -bitrate   integer             : bitrate -- for CBR/VBR pass2\n");
 	fprintf(stderr,	" -quant     float               : quantizer -- for \"Fixed\" quantizer RC\n");
-	fprintf(stderr, " -pass1     filename            : stats filename\n");
-	fprintf(stderr,	" -pass2     filename1 filename2 : first pass stats and scaled stats filename\n");
+	fprintf(stderr, " -pass1     filename            : output stats filename\n");
+	fprintf(stderr,	" -pass2     filename bitrate : input stats filename, target bitrate\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Other options\n");
 	fprintf(stderr, " -asm            : use assembly optmized code\n");
@@ -787,16 +788,18 @@ enc_init(int use_assembler)
 		xvid_enc_create.num_plugins++;
 	}
 
-	if (ARG_PASS1 && ARG_PASS2) {
+	if (ARG_PASS2) {
 		rc2pass2.version = XVID_VERSION;
 		memset(&rc2pass2, 0, sizeof(xvid_plugin_2pass2_t));
-		rc2pass2.filename1 = ARG_PASS1;
-		rc2pass2.filename2 = ARG_PASS2;
+		rc2pass2.filename = ARG_PASS2;
+		rc2pass2.bitrate = ARG_PASS2_BITRATE;
 
 		plugins[xvid_enc_create.num_plugins].func = xvid_plugin_2pass2;
 		plugins[xvid_enc_create.num_plugins].param = &rc2pass2;
 		xvid_enc_create.num_plugins++;
-	} else if (ARG_PASS1) {
+	}
+
+	if (ARG_PASS1) {
 		rc2pass1.version = XVID_VERSION;
 		memset(&rc2pass1, 0, sizeof(xvid_plugin_2pass1_t));
 		rc2pass1.filename = ARG_PASS1;

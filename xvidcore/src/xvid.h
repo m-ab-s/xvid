@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.14 2003-03-27 17:09:48 edgomez Exp $
+ * $Id: xvid.h,v 1.27.2.15 2003-04-08 14:00:20 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -390,7 +390,7 @@ typedef struct
 typedef struct
 {
     int version;
-    int bitrate;
+    int bitrate;				/* bits per second */
     int max_quantizer;
     int min_quantizer;
     int reaction_delay_factor;
@@ -414,8 +414,8 @@ typedef struct {
 
 typedef struct {
     int version;
-    char * filename1;
-    char * filename2;
+    char * filename;
+	int bitrate;				/* bits per second */
 
     int keyframe_boost;             /* keyframe boost percentage: [0..100...]; */
     int payback_method;
