@@ -1323,10 +1323,6 @@ SOURCE=..\..\src\utils\mem_transfer.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\src\utils\ratecontrol.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\src\utils\timer.c
 # End Source File
 # End Group

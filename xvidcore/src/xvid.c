@@ -17,7 +17,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.3 2003-04-10 13:05:54 edgomez Exp $
+ * $Id: xvid.c,v 1.45.2.4 2003-05-17 13:26:42 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -44,6 +44,10 @@
 #include "utils/emms.h"
 #include "utils/timer.h"
 #include "bitstream/mbcoding.h"
+
+#if defined(_DEBUG)
+unsigned int xvid_debug = 0; /* xvid debug mask */
+#endif
 
 #if defined(ARCH_IS_IA32)
 
@@ -532,7 +536,11 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	}
 #endif
 
-	return 0;
+#if defined(_DEBUG)
+    xvid_debug = init->debug;
+#endif
+
+    return 0;
 }
 
 

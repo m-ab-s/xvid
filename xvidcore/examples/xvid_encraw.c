@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.24 2003-05-15 17:53:11 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.25 2003-05-17 13:21:26 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -131,6 +131,7 @@ static char *ARG_PASS2 = 0;
 static int ARG_QUALITY = ME_ELEMENTS - 1;
 static float ARG_FRAMERATE = 25.00f;
 static int ARG_MAXFRAMENR = ABS_MAXFRAMENR;
+static int ARG_MAXKEYINTERVAL = 0;
 static char *ARG_INPUTFILE = NULL;
 static int ARG_INPUTTYPE = 0;
 static int ARG_SAVEMPEGSTREAM = 0;
@@ -142,6 +143,7 @@ static int ARG_BQOFFSET = 100;
 static int ARG_MAXBFRAMES = 0;
 static int ARG_PACKED = 0;
 static int ARG_DEBUG = 0;
+static int ARG_VOPDEBUG = 0;
 
 #define IMAGE_SIZE(x,y) ((x)*(y)*3/2)
 
@@ -291,6 +293,9 @@ main(int argc,
 		} else if (strcmp("-framerate", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_FRAMERATE = (float) atof(argv[i]);
+		} else if (strcmp("-max_key_interval", argv[i]) == 0 && i < argc - 1) {
+			i++;
+			ARG_MAXKEYINTERVAL = atoi(argv[i]);
 		} else if (strcmp("-i", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_INPUTFILE = argv[i];
@@ -309,10 +314,14 @@ main(int argc,
 		} else if (strcmp("-save", argv[i]) == 0) {
 			ARG_SAVEMPEGSTREAM = 1;
 		} else if (strcmp("-debug", argv[i]) == 0) {
-			ARG_DEBUG = 1;
+			i++;
+            if (sscanf(argv[i],"0x%x", &ARG_DEBUG) || sscanf(argv[i],"%d", &ARG_DEBUG)) ;
 		} else if (strcmp("-o", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_OUTPUTFILE = argv[i];
+		} else if (strcmp("-vop_debug", argv[i]) == 0) {
+			ARG_VOPDEBUG = 1;
+
 		} else if (strcmp("-help", argv[i])) {
 			usage();
 			return (0);
@@ -446,7 +455,7 @@ main(int argc,
 
 		/* Write the Frame statistics */
 
-		printf("%5d: key=%i, time= %6.0f, length= %7d", !result ? input_num : -1,
+		printf("%5d: key=%i, time= %6.0f, len= %7d", !result ? input_num : -1,
 			   key, (float) enctime, (int) m4v_size);
 
 		if (stats_type > 0) {	/* !XVID_TYPE_NOTHING */
@@ -469,7 +478,7 @@ main(int argc,
 				break;
 			}
 
-			printf(" | type=%s, quant= %2d, length= %7d", type, stats_quant,
+			printf(" | type=%s, quant= %2d, len= %7d", type, stats_quant,
 				   stats_length);
 
 #define SSE2PSNR(sse, width, height) ((!(sse))?0.0f : 48.131f - 10*(float)log10((float)(sse)/((float)((width)*(height)))))
@@ -635,14 +644,15 @@ usage()
 	fprintf(stderr,	" -bquant_offset integer: bframe quantizer offset (default=100)\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Rate control options:\n");
-	fprintf(stderr, " -framerate float               : target framerate (>0 | default=25.0)\n");
+    fprintf(stderr, " -framerate float               : target framerate (>0 | default=25.0)\n");
 	fprintf(stderr,	" -bitrate   integer             : target bitrate\n");
     fprintf(stderr,	" -single                        : single pass mode\n");
 	fprintf(stderr, " -pass1     filename            : twopass mode (first pass)\n");
 	fprintf(stderr,	" -pass2     filename            : twopass mode (2nd pass)\n");
 	fprintf(stderr,	" -zq starting_frame float       : bitrate zone; quant\n");
 	fprintf(stderr,	" -zw starting_frame float       : bitrate zone; weight\n");
-	fprintf(stderr, "\n");
+    fprintf(stderr, " -max_key_interval integer      : maximum keyframe interval\n");
+    fprintf(stderr, "\n");
 	fprintf(stderr, "Other options\n");
 	fprintf(stderr, " -asm            : use assembly optmized code\n");
 	fprintf(stderr, " -quality integer: quality ([0..%d])\n", ME_ELEMENTS - 1);
@@ -803,6 +813,8 @@ enc_init(int use_assembler)
 	/* Set version -- version checking will done by xvidcore */
 	memset(&xvid_gbl_init, 0, sizeof(xvid_gbl_init));
 	xvid_gbl_init.version = XVID_VERSION;
+    printf("0x%x\n", ARG_DEBUG);
+    xvid_gbl_init.debug = ARG_DEBUG;
 
 
 	/* Do we have to enable ASM optimizations ? */
@@ -882,11 +894,11 @@ enc_init(int use_assembler)
 		xvid_enc_create.num_plugins++;
 	}
 
-	if (ARG_DEBUG) {
+	/* if (ARG_DEBUG) {
 		plugins[xvid_enc_create.num_plugins].func = rawenc_debug;
 		plugins[xvid_enc_create.num_plugins].param = NULL;
 		xvid_enc_create.num_plugins++;
-	}
+	}*/
 
 	/* No fancy thread tests */
 	xvid_enc_create.num_threads = 0;
@@ -901,7 +913,12 @@ enc_init(int use_assembler)
 	}
 
 	/* Maximum key frame interval */
-	xvid_enc_create.max_key_interval = (int) ARG_FRAMERATE *10;
+
+    if (ARG_MAXKEYINTERVAL > 0) {
+        xvid_enc_create.max_key_interval = ARG_MAXKEYINTERVAL;
+    }else {
+	    xvid_enc_create.max_key_interval = (int) ARG_FRAMERATE *10;
+    }
 
 	/* Bframes settings */
 	xvid_enc_create.max_bframes = ARG_MAXBFRAMES;
@@ -981,6 +998,9 @@ enc_main(unsigned char *image,
 
 	/* Set up core's general features */
 	xvid_enc_frame.vop_flags = vop_presets[ARG_QUALITY];
+    if (ARG_VOPDEBUG) {
+        xvid_enc_frame.vop_flags |= XVID_VOP_DEBUG;
+    }
 
 	/* Frame type -- let core decide for us */
 	xvid_enc_frame.type = XVID_TYPE_AUTO;

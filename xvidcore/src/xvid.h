@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.18 2003-05-15 13:00:37 suxen_drol Exp $
+ * $Id: xvid.h,v 1.27.2.19 2003-05-17 13:26:28 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -169,11 +169,22 @@ typedef struct {
 #define XVID_CPU_ALTIVEC    0x00000001   /* altivec */
 
 
+#define XVID_DEBUG_ERROR       0x00000001
+#define XVID_DEBUG_STARTCODE   0x00000002
+#define XVID_DEBUG_HEADER      0x00000004
+#define XVID_DEBUG_TIMECODE    0x00000008
+#define XVID_DEBUG_MB          0x00000010
+#define XVID_DEBUG_COEFF       0x00000020
+#define XVID_DEBUG_MV          0x00000040
+#define XVID_DEBUG_RC          0x00000080
+#define XVID_DEBUG_DEBUG       0x80000000
+
 /* XVID_GBL_INIT param1 */
 typedef struct {
 	int version;
 	int cpu_flags;			/* [in:opt]	zero = autodetect cpu
 									XVID_CPU_FORCE|{cpu features} = force cpu features */
+    int debug;              /* [in:opt] debug level */
 } xvid_gbl_init_t;
 
 
