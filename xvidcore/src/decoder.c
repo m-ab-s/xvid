@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.30 2004-01-27 09:24:49 syskin Exp $
+ * $Id: decoder.c,v 1.49.2.31 2004-02-03 02:56:57 syskin Exp $
  *
  ****************************************************************************/
 
@@ -851,12 +851,12 @@ decoder_pframe(DECODER * dec,
 				mb->quant = quant;
 
 				if (dec->interlacing) {
-					if ((cbp || intra) && !mcsel) {
+					if (cbp || intra) {
 						mb->field_dct = BitstreamGetBit(bs);
 						DPRINTF(XVID_DEBUG_MB,"decp: field_dct: %i\n", mb->field_dct);
 					}
 
-					if (mb->mode == MODE_INTER || mb->mode == MODE_INTER_Q) {
+					if ((mb->mode == MODE_INTER || mb->mode == MODE_INTER_Q) && !mcsel) {
 						mb->field_pred = BitstreamGetBit(bs);
 						DPRINTF(XVID_DEBUG_MB, "decp: field_pred: %i\n", mb->field_pred);
 
