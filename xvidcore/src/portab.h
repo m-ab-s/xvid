@@ -23,7 +23,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: portab.h,v 1.46.2.2 2003-03-15 14:32:56 suxen_drol Exp $
+ * $Id: portab.h,v 1.46.2.3 2003-03-27 14:26:17 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -91,11 +91,15 @@
  ****************************************************************************/
 
 #if defined(ARCH_IS_32BIT)
-#    define CACHE_LINE  64
+#    define CACHE_LINE 64
 #    define ptr_t uint32_t
+#    define intptr_t int32_t
+#    define uintptr_t uint32_t
 #elif defined(ARCH_IS_64BIT)
 #    define CACHE_LINE  64
 #    define ptr_t uint64_t
+#    define intptr_t int64_t
+#    define uintptr_t uint64_t
 #else
 #    error You are trying to compile XviD without defining address bus size.
 #endif
@@ -136,9 +140,8 @@
             char buf[DPRINTF_BUF_SZ];
             va_start(args, fmt);
             vsprintf(buf, fmt, args);
-            strcat(buf,"\n");
             OutputDebugString(buf);
-            fputs(buf, stderr);
+            fprintf(stderr, "%s\n", buf);
          }
      }
 #    else
