@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.39 2003-01-15 14:36:06 syskin Exp $
+ *  $Id: encoder.c,v 1.76.2.40 2003-01-21 22:05:44 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -229,7 +229,7 @@ encoder_create(XVID_ENC_PARAM * pParam)
 
 	pEnc->bitrate = pParam->rc_bitrate;
 
-	pEnc->iFrameNum = 0;
+	pEnc->iFrameNum = -1;
 	pEnc->mbParam.iMaxKeyInterval = pParam->max_key_interval;
 
 	/* try to allocate frame memory */
@@ -661,7 +661,6 @@ static int intra2coding_type(int intra)
 	if (intra < 0)  return -1;
 	if (intra == 1) return I_VOP;
 	if (intra == 2) return B_VOP;
-	if (intra == 3) return S_VOP;
 
 	return P_VOP;
 }
@@ -733,10 +732,8 @@ ipvop_loop:
 
 			BitstreamPadAlways(&bs);
 			pFrame->length = BitstreamLength(&bs);
-			if(pEnc->current->coding_type == P_VOP)
-				pFrame->intra = 0;
-			else
-				pFrame->intra = 3;
+			pFrame->intra = 0;
+
 
 			emms();
 
@@ -1063,12 +1060,7 @@ bvop_loop:
 			}
 			FrameCodeP(pEnc, &bs, &bits, 1, 0);
 			bframes_count = 0;
-
-			if(pEnc->current->coding_type == P_VOP)
-				pFrame->intra = 0;
-			else
-				pFrame->intra = 3;
-
+			pFrame->intra = 0;
 
 		} else {
 
@@ -1106,10 +1098,7 @@ bvop_loop:
 
 		FrameCodeP(pEnc, &bs, &bits, 1, 0);
 		bframes_count = 0;
-		if(pEnc->current->coding_type == P_VOP)
-			pFrame->intra = 0;
-		else
-			pFrame->intra = 3;
+		pFrame->intra = 0;
 		pEnc->flush_bframes = 1;
 
 		if ((pEnc->mbParam.global & XVID_GLOBAL_PACKED) && (pEnc->bframenum_tail > 0)) {
