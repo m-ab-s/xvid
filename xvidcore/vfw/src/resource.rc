@@ -520,9 +520,9 @@ BEGIN
                     WS_VSCROLL | WS_TABSTOP
     EDITTEXT        IDC_MAXBFRAMES,120,134,76,12,ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "Packed bitstream",IDC_PACKED,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,16,182,71,10
+                    WS_TABSTOP,16,184,71,10
     CONTROL         "Closed GOV",IDC_CLOSEDGOV,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,16,194,55,10
+                    WS_TABSTOP,96,184,55,10
     LTEXT           "Max consecutive BVOPs:",IDC_MAXBFRAMES_S,16,137,96,8
     GROUPBOX        "",IDC_STATIC,8,122,196,86
     CONTROL         "BVOPs",IDC_BVOP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
@@ -537,9 +537,6 @@ BEGIN
     LTEXT           "Quantization type:",IDC_QUANTTYPE_S,16,34,100,8
     CONTROL         "Adaptive quantization",IDC_LUMMASK,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,16,50,84,10
-    COMBOBOX        IDC_ASPECT_RATIO,121,75,72,55,CBS_DROPDOWNLIST | 
-                    WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Display aspect ratio:",IDC_STATIC,124,65,67,8
 END
 
 IDD_ZONE DIALOG DISCARDABLE  0, 0, 212, 194
@@ -572,7 +569,7 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,16,124,92,8
 END
 
-IDD_LEVEL DIALOG DISCARDABLE  0, 0, 212, 212
+IDD_LEVEL DIALOG DISCARDABLE  0, 0, 212, 215
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Level"
 FONT 8, "MS Sans Serif"
@@ -723,6 +720,36 @@ BEGIN
     LTEXT           "Avg bitrate (kbps):",IDC_STATIC,204,216,72,8
 END
 
+IDD_AR DIALOGEX 0, 0, 211, 215
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Aspect Ratio"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "Picture Aspect Ratio",IDC_AR,"Button",
+                    BS_AUTORADIOBUTTON,13,81,81,10,WS_EX_TRANSPARENT
+    GROUPBOX        "",IDC_STATIC,7,7,197,127,BS_CENTER
+    GROUPBOX        "",IDC_STATIC,7,81,197,53,BS_CENTER
+    CONTROL         "Pixel Aspect Ratio",IDC_PAR,"Button",BS_AUTORADIOBUTTON,
+                    13,7,73,10,WS_EX_TRANSPARENT
+    COMBOBOX        IDC_ASPECT_RATIO,27,33,151,55,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_PARX,48,58,36,12,ES_NUMBER
+    EDITTEXT        IDC_PARY,114,58,36,12,ES_NUMBER
+    CTEXT           "X :",IDC_STATIC,33,60,10,10
+    EDITTEXT        IDC_ARX,48,110,36,12,ES_NUMBER
+    EDITTEXT        IDC_ARY,114,110,36,12,ES_NUMBER
+    LTEXT           "Aspect Ratio is written to mpeg-4 bitstream, but unfortunately is likely to be ignored if video stream is encapsulated in a general-purpose container (like .avi, .ogm., .mkv).",
+                    IDC_STATIC,7,138,197,27
+    LTEXT           "Therefore, be aware that using different aspect ratio than default might be ignored by some players, especially when decoded on Windows.\n\nUse at your own risk.",
+                    IDC_STATIC,7,168,197,41
+    LTEXT           "Select the shape of a pixel...",IDC_STATIC,25,18,104,10
+    CTEXT           "Y :",IDC_STATIC,100,60,10,10
+    CTEXT           "Y :",IDC_STATIC,100,112,10,10
+    CTEXT           "X :",IDC_STATIC,33,112,10,10
+    LTEXT           "Select the shape of the image...",IDC_STATIC,25,93,110,
+                    11
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -821,7 +848,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 181
         TOPMARGIN, 7
-        BOTTOMMARGIN, 211
+        BOTTOMMARGIN, 214
     END
 
     IDD_CALC, DIALOG
@@ -837,6 +864,17 @@ BEGIN
         RIGHTMARGIN, 374
         TOPMARGIN, 7
         BOTTOMMARGIN, 224
+    END
+
+    IDD_AR, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 204
+        VERTGUIDE, 28
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 209
+        HORZGUIDE, 81
+        HORZGUIDE, 134
     END
 END
 #endif    // APSTUDIO_INVOKED

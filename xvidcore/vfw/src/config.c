@@ -129,13 +129,16 @@ const profile_t profiles[] =
 	{ "AS @ L5",	       0xf5,  720, 576, 30,  4, 4860, 1620,  48600,  25, 112*16368, 16384, 8000, PROFILE_AS },
 
 #ifdef DXN_PROFILES
+
 	{ "DXN Handheld",	   0x00,  176, 144, 15, -1,  198,   99,   1485, 100,  16*16368,    -1,  128, PROFILE_ADAPTQUANT },
 	{ "DXN Portable NTSC", 0x00,  352, 240, 30, -1,  990,  330,   9900, 100,  64*16368,    -1,  768, PROFILE_ADAPTQUANT|PROFILE_BVOP },
 	{ "DXN Portable PAL",  0x00,  352, 288, 25, -1, 1188,  396,   9900, 100,  64*16368,    -1,  768, PROFILE_ADAPTQUANT|PROFILE_BVOP },
 	{ "DXN HT NTSC",	   0x00,  720, 480, 30, -1, 4050, 1350,  40500, 100, 192*16368,    -1, 4000, PROFILE_ADAPTQUANT|PROFILE_BVOP|PROFILE_INTERLACE },
 	{ "DXN HT PAL",        0x00,  720, 576, 25, -1, 4860, 1620,  40500, 100, 192*16368,    -1, 4000, PROFILE_ADAPTQUANT|PROFILE_BVOP|PROFILE_INTERLACE },
 	{ "DXN HDTV",          0x00, 1280, 720, 30, -1,10800, 3600, 108000, 100, 384*16368,    -1, 8000, PROFILE_ADAPTQUANT|PROFILE_BVOP|PROFILE_INTERLACE },
+
 #endif
+
     { "(unrestricted)",    0x00,    0,   0,  0,  0,    0,    0,      0, 100,   0*16368,     0,    0, 0xffffffff },
 };
 
@@ -166,7 +169,14 @@ static const REG_INT reg_ints[] = {
 	{"bquant_offset",			&reg.bquant_offset,				100},   /* 100-base float */
 	{"packed",					&reg.packed,					0},
 	{"closed_gov",				&reg.closed_gov,				1},
+	
+	/* aspect ratio */
+	{"ar_mode",					&reg.ar_mode,					0},
 	{"aspect_ratio",			&reg.display_aspect_ratio,		0},
+	{"par_x",					&reg.par_x,						1},
+	{"par_y",					&reg.par_y,						1},
+	{"ar_x",					&reg.ar_x,						4},
+	{"ar_y",					&reg.ar_y,						3},
 
     /* zones */
     {"num_zones",               &reg.num_zones,                 1},
@@ -628,13 +638,14 @@ void adv_init(HWND hDlg, int idd, CONFIG * config)
 		SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"MPEG");
 		SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"MPEG-Custom");
 
-		SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_ADDSTRING, 0, (LPARAM)"1:1 (Default)");
-		SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_ADDSTRING, 0, (LPARAM)"4:3 (Anamorph)");
-		SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_ADDSTRING, 0, (LPARAM)"16:9 (Anamorph)");
-		/* reserved for future use if acceptance is there for DAR */
-#if 0
-		SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_ADDSTRING, 0, (LPARAM)"Custom");
-#endif		
+		break;
+	case IDD_AR:
+		SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_ADDSTRING, 0, (LPARAM)"Square (default)");
+		SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_ADDSTRING, 0, (LPARAM)"4:3 PAL");
+		SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_ADDSTRING, 0, (LPARAM)"4:3 NTSC");
+		SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_ADDSTRING, 0, (LPARAM)"16:9 PAL");
+		SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_ADDSTRING, 0, (LPARAM)"16:9 NTSC");
+		SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_ADDSTRING, 0, (LPARAM)"Custom...");
         break;
         
     case IDD_LEVEL :
@@ -683,6 +694,7 @@ void adv_mode(HWND hDlg, int idd, CONFIG * config)
     int weight_en, quant_en;
     int cpu_force;
     int custom_quant, bvops;
+	int ar_mode, ar_par, ar_select;
     
     switch(idd) {
     case IDD_PROFILE :
@@ -709,6 +721,32 @@ void adv_mode(HWND hDlg, int idd, CONFIG * config)
 		EnableDlgWindow(hDlg, IDC_BQUANTOFFSET_S,   bvops);
 		EnableDlgWindow(hDlg, IDC_PACKED,           bvops);
 		EnableDlgWindow(hDlg, IDC_CLOSEDGOV,        bvops);
+		break;
+
+	case IDD_AR:
+		ar_mode = IsDlgChecked(hDlg, IDC_PAR);
+		EnableDlgWindow(hDlg, IDC_ASPECT_RATIO, ar_mode);
+		
+		ar_par = SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_GETCURSEL, 0, 0);
+		if (ar_par == 5) { /* custom par */
+			SetDlgItemInt(hDlg, IDC_PARY, config->par_y, FALSE);
+			SetDlgItemInt(hDlg, IDC_PARX, config->par_x, FALSE);
+			
+			EnableDlgWindow(hDlg, IDC_PARX, ar_mode);
+			EnableDlgWindow(hDlg, IDC_PARY, ar_mode);
+		} else {
+			SetDlgItemInt(hDlg, IDC_PARX, PARS[ar_par][0], FALSE);
+			SetDlgItemInt(hDlg, IDC_PARY, PARS[ar_par][1], FALSE);
+			EnableDlgWindow(hDlg, IDC_PARX, FALSE);
+			EnableDlgWindow(hDlg, IDC_PARY, FALSE);
+		}
+		
+		ar_mode = IsDlgChecked(hDlg, IDC_AR);
+		SetDlgItemInt(hDlg, IDC_ARX, config->ar_x, FALSE);
+		SetDlgItemInt(hDlg, IDC_ARY, config->ar_y, FALSE);
+		EnableDlgWindow(hDlg, IDC_ARX, ar_mode);
+		EnableDlgWindow(hDlg, IDC_ARY, ar_mode);
+		break;
 
     case IDD_LEVEL :
         profile = SendDlgItemMessage(hDlg, IDC_LEVEL_PROFILE, CB_GETCURSEL, 0, 0);
@@ -779,7 +817,11 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
 		set_dlgitem_float(hDlg, IDC_BQUANTOFFSET, config->bquant_offset);
         CheckDlg(hDlg, IDC_PACKED, config->packed);
 		CheckDlg(hDlg, IDC_CLOSEDGOV, config->closed_gov);
-        SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_SETCURSEL, (config->display_aspect_ratio), 0);
+        
+		break;
+	case IDD_AR:
+		CheckRadioButton(hDlg, IDC_AR, IDC_PAR, config->ar_mode == 0 ? IDC_PAR : IDC_AR);
+		SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_SETCURSEL, (config->display_aspect_ratio), 0);
 		break;
 
     case IDD_LEVEL :
@@ -890,7 +932,17 @@ void adv_download(HWND hDlg, int idd, CONFIG * config)
 		config->bquant_offset = get_dlgitem_float(hDlg, IDC_BQUANTOFFSET, config->bquant_offset);
 		config->packed = IsDlgChecked(hDlg, IDC_PACKED);
 		config->closed_gov = IsDlgChecked(hDlg, IDC_CLOSEDGOV);
-        config->display_aspect_ratio = SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_GETCURSEL, 0, 0);
+		break;
+
+	case IDD_AR:
+		config->ar_mode = IsDlgChecked(hDlg, IDC_PAR) ? 0:1;
+		config->ar_x = config_get_uint(hDlg, IDC_ARX, config->ar_x);
+		config->ar_y = config_get_uint(hDlg, IDC_ARY, config->ar_y);
+		config->display_aspect_ratio = SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_GETCURSEL, 0, 0);
+		if (config->display_aspect_ratio == 5) {
+			config->par_x = config_get_uint(hDlg, IDC_PARX, config->par_x);
+			config->par_y = config_get_uint(hDlg, IDC_PARY, config->par_y);
+		}
 		break;
 
     case IDD_LEVEL :
@@ -1034,6 +1086,8 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
             case IDC_ZONE_BVOPTHRESHOLD_ENABLE :
 			case IDC_CPU_AUTO :
 			case IDC_CPU_FORCE :
+			case IDC_AR :
+			case IDC_PAR :
 				adv_mode(hDlg, psi->idd, psi->config);
 				break;
 
@@ -1079,16 +1133,23 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}else if (HIWORD(wParam) == LBN_SELCHANGE &&
             (LOWORD(wParam) == IDC_PROFILE_PROFILE ||
              LOWORD(wParam) == IDC_LEVEL_PROFILE ||
-             LOWORD(wParam) == IDC_QUANTTYPE))
+             LOWORD(wParam) == IDC_QUANTTYPE ||
+			 LOWORD(wParam) == IDC_ASPECT_RATIO))
 		{
             adv_mode(hDlg, psi->idd, psi->config);
         }else if (HIWORD(wParam) == EN_UPDATE && (LOWORD(wParam)==IDC_ZONE_WEIGHT || LOWORD(wParam)==IDC_ZONE_QUANT)) {
 
             SendDlgItemMessage(hDlg, IDC_ZONE_SLIDER, TBM_SETPOS, TRUE, 
                     get_dlgitem_float(hDlg, LOWORD(wParam), 100));
-        }else {
-            return 0;
-        }
+        } else if (HIWORD(wParam) == EN_UPDATE && (LOWORD(wParam)==IDC_PARX || LOWORD(wParam)==IDC_PARY)) {
+			if (5 == SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_GETCURSEL, 0, 0)) {
+				if(LOWORD(wParam)==IDC_PARX)
+					psi->config->par_x = config_get_uint(hDlg, LOWORD(wParam), psi->config->par_x);
+				else
+					psi->config->par_y = config_get_uint(hDlg, LOWORD(wParam), psi->config->par_y);
+			}
+		} else 
+			return 0;
 		break;
 
 	case WM_HSCROLL :
@@ -1309,7 +1370,7 @@ void main_download(HWND hDlg, CONFIG * config)
 
 /* main dialog proc */
 
-static const int profile_dlgs[] = { IDD_PROFILE, IDD_LEVEL };
+static const int profile_dlgs[] = { IDD_PROFILE, IDD_LEVEL, IDD_AR };
 static const int single_dlgs[] = { IDD_RC_CBR };
 static const int pass1_dlgs[] = { IDD_RC_2PASS1 };
 static const int pass2_dlgs[] = { IDD_RC_2PASS2 };

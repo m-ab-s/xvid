@@ -557,26 +557,19 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	if ((profiles[codec->config.profile].flags & PROFILE_INTERLACE) && codec->config.interlacing)
 		frame.vol_flags |= XVID_VOL_INTERLACING;
 
-	if (codec->config.display_aspect_ratio !=0) {
-		int ar_x;
-		int ar_y;
-
-		if (codec->config.display_aspect_ratio == 1) {
-			ar_x = 4;
-			ar_y = 3;
+	if (codec->config.ar_mode == 0) { /* PAR */
+		if (codec->config.display_aspect_ratio != 5) {
+			frame.par = codec->config.display_aspect_ratio + 1;
+		} else {
+			frame.par = XVID_PAR_EXT;
+			frame.par_width = codec->config.par_x;
+			frame.par_height= codec->config.par_y;
 		}
-		if (codec->config.display_aspect_ratio == 2) {
-			ar_x = 16;
-			ar_y = 9;
-		}
-
+	} else { /* AR */
 		/* custom pixel aspect ratio -> calculated from DAR */
 		frame.par = XVID_PAR_EXT;
-		frame.par_width = (100 * inhdr->biHeight) / ar_y;
-		frame.par_height= (100 * inhdr->biWidth) / ar_x;
-	} else {
-		/* assuming defaults for now... */
-		frame.par = XVID_PAR_11_VGA;
+		frame.par_width = (100 * inhdr->biHeight) / codec->config.ar_y;
+		frame.par_height= (100 * inhdr->biWidth) / codec->config.ar_x;;
 	}
 
     /* vop stuff */

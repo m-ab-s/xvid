@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: config.h,v 1.1.2.13 2003-12-17 15:16:16 edgomez Exp $
+ * $Id: config.h,v 1.1.2.14 2003-12-18 14:51:40 syskin Exp $
  *
  ****************************************************************************/
 #ifndef _CONFIG_H_
@@ -123,6 +123,9 @@ typedef struct
 	int packed;
 	int closed_gov;
 	int display_aspect_ratio;				/* aspect ratio */
+	int ar_x, ar_y;							/* picture aspect ratio */
+	int par_x, par_y;						/* custom pixel aspect ratio */
+	int ar_mode;							/* picture/pixel AR */
 
     /* zones */
     int num_zones;
@@ -211,6 +214,17 @@ typedef struct REG_STR
 
 #define PROFILE_AS			(PROFILE_ADAPTQUANT|PROFILE_BVOP|PROFILE_MPEGQUANT|PROFILE_INTERLACE|PROFILE_QPEL|PROFILE_GMC)
 #define PROFILE_ARTS		(PROFILE_ADAPTQUANT|PROFILE_REDUCED)
+
+static const int PARS[][2] = {
+	{1, 1},
+	{12, 11},
+	{10, 11},
+	{16, 11},
+	{40, 33},
+	{0, 0},
+};
+
+
 
 
 typedef struct

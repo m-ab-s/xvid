@@ -24,6 +24,7 @@
 #define IDD_LEVEL                       122
 #define IDD_CALC                        124
 #define IDD_STATUS                      125
+#define IDD_AR                          127
 #define WIZ_CYDLG                       140
 #define PROP_MIN_CYDLG                  144
 #define PROP_SM_CYDLG                   188
@@ -374,14 +375,20 @@
 #define IDC_CARTOON                     1343
 #define IDC_OVERFLOW_CONTROL_STRENGTH   1344
 #define IDC_ASPECT_RATIO                1345
+#define IDC_AR                          1346
+#define IDC_PAR                         1347
+#define IDC_PARX                        1355
+#define IDC_PARY                        1356
+#define IDC_ARX                         1357
+#define IDC_ARY                         1358
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        126
+#define _APS_NEXT_RESOURCE_VALUE        128
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1346
+#define _APS_NEXT_CONTROL_VALUE         1364
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
