@@ -632,7 +632,7 @@ MBFieldTest_c(int16_t data[6 * 64])
 		}
 	}
 
-	return (frame >= field);
+	return (frame >= (field + 350));
 }
 
 

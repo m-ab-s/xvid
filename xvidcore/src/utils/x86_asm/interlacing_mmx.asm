@@ -198,6 +198,7 @@ _decide:
 	movd	ecx, mm0
 	movd	edx, mm1
 
+	add		edx, 350				; add bias against field decision
 	cmp		ecx, edx
 	jb		_end					; if frame<field, don't use field dct
 	inc		eax						; if frame>=field, use field dct (return 1)
