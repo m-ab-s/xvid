@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.18 2003-10-29 12:41:41 edgomez Exp $
+ * $Id: xvid.c,v 1.45.2.19 2003-11-02 23:02:52 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -497,7 +497,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 
 		/* DCT operators */
 		fdct = fdct_sse2_skal;
-		idct = idct_sse2_skal;
+		idct = idct_sse2_dmitry;
 	}
 #endif
 #endif

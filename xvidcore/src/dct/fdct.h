@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: fdct.h,v 1.7.2.3 2003-10-27 01:03:06 edgomez Exp $
+ * $Id: fdct.h,v 1.7.2.4 2003-11-02 23:02:52 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -38,6 +38,7 @@ fdctFunc fdct_mmx_ffmpeg;
 fdctFunc fdct_xmm_ffmpeg;
 fdctFunc fdct_mmx_skal;
 fdctFunc fdct_xmm_skal;
+fdctFunc fdct_sse2_skal;
 #endif
 
 #ifdef ARCH_IS_ALTIVEC

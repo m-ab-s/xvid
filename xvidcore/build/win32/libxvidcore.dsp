@@ -429,6 +429,37 @@ InputName=idct_mmx
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\dct\x86_asm\idct_sse2_dmitry.asm
+
+!IF  "$(CFG)" == "libxvidcore - Win32 Release"
+
+# Begin Custom Build - Assembling $(InputPath)
+IntDir=.\Release
+InputPath=..\..\src\dct\x86_asm\idct_sse2_dmitry.asm
+InputName=idct_mmx
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
+
+# Begin Custom Build - Assembling $(InputPath)
+IntDir=.\Debug
+InputPath=..\..\src\dct\x86_asm\idct_sse2_dmitry.asm
+InputName=idct_mmx
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\dct\x86_asm\simple_idct_mmx.asm
 
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"

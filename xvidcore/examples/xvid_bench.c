@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_bench.c,v 1.9.2.5 2003-10-09 18:50:22 edgomez Exp $
+ * $Id: xvid_bench.c,v 1.9.2.6 2003-11-02 23:02:52 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -145,16 +145,28 @@ CPU cpu_short_list2[] =
 
 int init_cpu(CPU *cpu)
 {
-	int xerr, cpu_type;
-	xvid_gbl_init_t xinit;
+	xvid_gbl_info_t xinfo;
 
-	memset(&xinit, 0, sizeof(xinit));
-	xinit.cpu_flags = cpu->cpu | XVID_CPU_FORCE;
-	xinit.version = XVID_VERSION;
-	xerr = xvid_global(NULL, 0, &xinit, NULL);
-	if (cpu->cpu>0 && xerr==XVID_ERR_FAIL) {
-		printf( "%s - skipped...\n", cpu->name );
-		return 0;
+	/* Get the available CPU flags */
+	memset(&xinfo, 0, sizeof(xinfo));
+	xinfo.version = XVID_VERSION;
+	xvid_global(NULL, XVID_GBL_INFO, &xinfo, NULL);
+
+	/* Are we trying to test a subset of the host CPU features */
+	if ((xinfo.cpu_flags & cpu->cpu) == cpu->cpu) {
+		int xerr;
+		xvid_gbl_init_t xinit;
+		memset(&xinit, 0, sizeof(xinit));
+		xinit.cpu_flags = cpu->cpu | XVID_CPU_FORCE;
+		xinit.version = XVID_VERSION;
+		xerr = xvid_global(NULL, XVID_GBL_INIT, &xinit, NULL);
+		if (xerr==XVID_ERR_FAIL) {
+			/* libxvidcore failed to init */
+			return 0;
+		}
+	} else {
+		/* The host CPU doesn't support some required feature for this test */
+		return(0);
 	}
 	return 1;
 }
@@ -1313,13 +1325,11 @@ int main(int argc, char *argv[])
 
 	if (what==7) {
 		test_IEEE1180_compliance(-256, 255, 1);
-#if 0
 		test_IEEE1180_compliance(-256, 255,-1);
 		test_IEEE1180_compliance(  -5,   5, 1);
 		test_IEEE1180_compliance(  -5,   5,-1);
 		test_IEEE1180_compliance(-300, 300, 1);
 		test_IEEE1180_compliance(-300, 300,-1);
-#endif
 	}
 	if (what==8) test_dct_saturation(-256, 255);
 
