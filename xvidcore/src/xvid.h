@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.48 2003-12-06 10:35:23 chl Exp $
+ * $Id: xvid.h,v 1.27.2.49 2003-12-06 10:56:10 chl Exp $
  *
  ****************************************************************************/
 
@@ -96,9 +96,9 @@ extern "C" {
 
 /* colorspace values */
 
-#define XVID_CSP_USER     (1<< 0) /* 4:2:0 planar */
-#define XVID_CSP_I420     (1<< 1) /* 4:2:0 packed(planar win32) */
-#define XVID_CSP_YV12     (1<< 2) /* 4:2:0 packed(planar win32) */
+#define XVID_CSP_USER     (1<< 0) /* 4:2:0 planar (==I420, except for pointers/strides) */
+#define XVID_CSP_I420     (1<< 1) /* 4:2:0 planar */
+#define XVID_CSP_YV12     (1<< 2) /* 4:2:0 planar */
 #define XVID_CSP_YUY2     (1<< 3) /* 4:2:2 packed */
 #define XVID_CSP_UYVY     (1<< 4) /* 4:2:2 packed */
 #define XVID_CSP_YVYU     (1<< 5) /* 4:2:2 packed */
