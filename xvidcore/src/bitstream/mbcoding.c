@@ -840,7 +840,7 @@ get_intra_block(Bitstream * bs,
 		DPRINTF(DPRINTF_COEFF,"block[%i] %i", scan[coeff], level);
 		//DPRINTF(DPRINTF_COEFF,"block[%i] %i %08x", scan[coeff], level, BitstreamShowBits(bs, 32));
 
-		if (level < -127 || level > 127) {
+		if (level < -2047 || level > 2047) {
 			DPRINTF(DPRINTF_ERROR,"warning: intra_overflow %i", level);
 		}
 		coeff++;
@@ -874,7 +874,7 @@ get_inter_block(Bitstream * bs,
 		DPRINTF(DPRINTF_COEFF,"block[%i] %i", scan[p], level);
 		// DPRINTF(DPRINTF_COEFF,"block[%i] %i %08x", scan[p], level, BitstreamShowBits(bs, 32));
 
-		if (level < -127 || level > 127) {
+		if (level < -2047 || level > 2047) {
 			DPRINTF(DPRINTF_ERROR,"warning: inter overflow %i", level);
 		}
 		p++;
