@@ -3,7 +3,7 @@
 # This file builds the configure script and copies all needed files
 # provided by automake/libtoolize
 #
-# $Id: bootstrap.sh,v 1.3.2.1 2003-03-27 14:21:00 edgomez Exp $
+# $Id: bootstrap.sh,v 1.3.2.2 2003-09-28 13:21:59 edgomez Exp $
 
 
 ##############################################################################
@@ -16,10 +16,10 @@ $AUTOCONF --version 2>/dev/null 1>/dev/null
 
 if [ $? -ne 0 ] ; then
     AUTOCONF="autoconf"
-	$AUTOCONF --version 2>/dev/null 1>/dev/null
+    $AUTOCONF --version 2>/dev/null 1>/dev/null
 
     if [ $? -ne 0 ] ; then
-        echo "Autoconf not found"
+        echo "'autoconf' not found"
         exit -1
     fi
 fi
@@ -39,6 +39,19 @@ if [ "$AC_MINORVER" -lt "50" ]; then
     exit -1
 fi
 
+LIBTOOLIZE="libtoolize"
+$LIBTOOLIZE --version 1>/dev/null 2>/dev/null
+
+if [ $? -ne 0 ] ; then
+    LIBTOOLIZE="glibtoolize"
+    $LIBTOOLIZE --version 1>/dev/null 2>/dev/null
+
+    if [ $? -ne 0 ] ; then
+        echo "'libtoolize' not found"
+        exit -1
+    fi
+fi
+
 ##############################################################################
 # Bootstraps the configure script
 ##############################################################################
@@ -50,7 +63,7 @@ echo "Copying files provided by automake"
 automake -c -a 1>/dev/null 2>/dev/null
 
 echo "Copying files provided by libtool"
-libtoolize -f -c 1>/dev/null 2>/dev/null
+$LIBTOOLIZE -f -c 1>/dev/null 2>/dev/null
 
 echo "Removing files that are not needed"
 rm -rf autom4*
