@@ -1148,7 +1148,7 @@ image_deblock_rrv(IMAGE * img, int edged_width,
 			if (mbs[(j-1)/2*mb_stride + (i/2)].mode != MODE_NOT_CODED ||
 				mbs[(j+0)/2*mb_stride + (i/2)].mode != MODE_NOT_CODED)
 			{
-				xvid_HFilter_31_C(img->y + (j*block - 1)*edged_width + i*block,
+				hfilter_31(img->y + (j*block - 1)*edged_width + i*block,
 								  img->y + (j*block + 0)*edged_width + i*block, nblocks);
 			}
 		}
@@ -1170,7 +1170,20 @@ image_deblock_rrv(IMAGE * img, int edged_width,
 	/* chroma */
 	if ((flags & XVID_DEC_DEBLOCKUV))
 	{
-		for (j = 0; j < mb_height; j++)			/* horizontal deblocking */
+		for (j = 1; j < mb_height; j++)		/* horizontal deblocking */
+		for (i = 0; i < mb_width; i++)
+		{
+			if (mbs[(j-1)*mb_stride + i].mode != MODE_NOT_CODED || 
+				mbs[(j+0)*mb_stride + i].mode != MODE_NOT_CODED)
+			{
+				hfilter_31(img->u + (j*block - 1)*edged_width2 + i*block,
+						   img->u + (j*block + 0)*edged_width2 + i*block, nblocks);
+				hfilter_31(img->v + (j*block - 1)*edged_width2 + i*block,
+						   img->v + (j*block + 0)*edged_width2 + i*block, nblocks);
+			}
+		}
+
+		for (j = 0; j < mb_height; j++)		/* vertical deblocking */	
 		for (i = 1; i < mb_width; i++)
 		{
 			if (mbs[j*mb_stride + i - 1].mode != MODE_NOT_CODED ||
@@ -1182,19 +1195,6 @@ image_deblock_rrv(IMAGE * img, int edged_width,
 				vfilter_31(img->v + (j*block)*edged_width2 + i*block - 1,
 						   img->v + (j*block)*edged_width2 + i*block + 0,
 						   edged_width2, nblocks);
-			}
-		}
-
-		for (j = 1; j < mb_height; j++)		/* vertical deblocking */
-		for (i = 0; i < mb_width; i++)
-		{
-			if (mbs[(j-1)*mb_stride + i].mode != MODE_NOT_CODED || 
-				mbs[(j+0)*mb_stride + i].mode != MODE_NOT_CODED)
-			{
-				hfilter_31(img->u + (j*block - 1)*edged_width2 + i*block,
-						   img->u + (j*block + 0)*edged_width2 + i*block, nblocks);
-				hfilter_31(img->v + (j*block - 1)*edged_width2 + i*block,
-						   img->v + (j*block + 0)*edged_width2 + i*block, nblocks);
 			}
 		}
 	}
