@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.c,v 1.58.2.34 2003-09-05 10:01:50 Isibaar Exp $
+ * $Id: motion_est.c,v 1.58.2.35 2003-09-06 11:24:50 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -1159,7 +1159,7 @@ ModeDecision_Fast(SearchData * const Data,
 	pMB->mcsel = 0;
 
 	/* INTER <-> INTER4V decision */
-	if ((Data->iMinSAD[0] + 50 < Data->iMinSAD[1] + 
+	if ((Data->iMinSAD[0] + 75 < Data->iMinSAD[1] + 
 		Data->iMinSAD[2] + Data->iMinSAD[3] + Data->iMinSAD[4])) { /* normal, fast, SAD-based mode decision */
 		if (inter4v == 0 || Data->iMinSAD[0] < Data->iMinSAD[1] + Data->iMinSAD[2] +
 			Data->iMinSAD[3] + Data->iMinSAD[4] + IMV16X16 * (int32_t)iQuant) {
@@ -1258,15 +1258,16 @@ ModeDecision_Fast(SearchData * const Data,
 	left = top = top_right = -1;
 	thresh = 0;
 
-	if(x > 0 && y > 0 && x < pParam->mb_width) {
+	if((x > 0) && (y > 0) && (x < (int32_t) pParam->mb_width)) {
 		left = (&pMBs[(x-1) + y * pParam->mb_width])->sad16; // left
 		top = (&pMBs[x + (y-1) * pParam->mb_width])->sad16; // top
 		top_right = (&pMBs[(x+1) + (y-1) * pParam->mb_width])->sad16; // top right
 
 		if(((&pMBs[(x-1) + y * pParam->mb_width])->mode != MODE_INTRA) &&
 		   ((&pMBs[x + (y-1) * pParam->mb_width])->mode != MODE_INTRA) &&
-		   ((&pMBs[(x+1) + (y-1) * pParam->mb_width])->mode != MODE_INTRA))
+		   ((&pMBs[(x+1) + (y-1) * pParam->mb_width])->mode != MODE_INTRA)) {
 			thresh = MAX(MAX(top, left), top_right);
+		}
 		else
 			thresh = MIN(MIN(top, left), top_right);
 	}

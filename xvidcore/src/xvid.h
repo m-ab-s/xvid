@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.34 2003-09-04 18:40:01 Isibaar Exp $
+ * $Id: xvid.h,v 1.27.2.35 2003-09-06 11:24:43 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -531,7 +531,7 @@ int xvid_encore(void *handle, int opt, void *param1, void *param2);
 /* only valid for vol_flags|=XVID_VOL_REDUCED_ENABLED */
 #define XVID_VOP_REDUCED         (1<<11) /* reduced resolution vop */
 
-#define XVID_VOP_FAST_MODEDECISION_RD (1<< 8) /* use simplified R-D mode decision */
+#define XVID_VOP_FAST_MODEDECISION_RD (1<< 12) /* use simplified R-D mode decision */
 
 
 
