@@ -102,6 +102,7 @@ typedef struct
 	int packed;
 	int dx50bvop;
 	int debug;
+	int reduced_resolution;
 
 	int min_iquant;
 	int max_iquant;
@@ -158,6 +159,11 @@ typedef struct
 	int num_threads;
 #endif
 	int frame_drop_ratio;
+
+	/* decoder */
+
+	int deblock_y;
+	int deblock_uv;
 
 //	char build[50];
 	DWORD cpu;

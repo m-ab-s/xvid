@@ -302,6 +302,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	if (codec->config.packed) param.global |= XVID_GLOBAL_PACKED;
 	if (codec->config.dx50bvop) param.global |= XVID_GLOBAL_DX50BVOP;
 	if (codec->config.debug) param.global |= XVID_GLOBAL_DEBUG;
+	if (codec->config.reduced_resolution) param.global |= XVID_GLOBAL_REDUCED;
 	param.max_bframes = codec->config.max_bframes;
 	param.bquant_ratio = codec->config.bquant_ratio;
 	param.bquant_offset = codec->config.bquant_offset;
@@ -398,7 +399,6 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	if (codec->config.qpel) {
 		frame.general |= XVID_QUARTERPEL;
 		frame.motion |= PMV_QUARTERPELREFINE16 | PMV_QUARTERPELREFINE8;
-
 	}
 
 	if (codec->config.gmc)
@@ -406,6 +406,9 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 
 	if (codec->config.chromame)
 		frame.general |= XVID_ME_COLOUR;
+
+	if (codec->config.reduced_resolution) 
+		frame.general |= XVID_REDUCED;
 
 // added by koepi for credits greyscale
 
@@ -727,6 +730,11 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 	frame.bitstream = icd->lpInput;
 	frame.length = icd->lpbiInput->biSizeImage;
 	frame.general = XVID_DEC_LOWDELAY;	/* force low_delay_default mode */
+	if (codec->config.deblock_y)
+		frame.general |= XVID_DEC_DEBLOCKY;
+	if (codec->config.deblock_uv)
+		frame.general |= XVID_DEC_DEBLOCKUV;
+
 	frame.image = icd->lpOutput;
 //	frame.stride = icd->lpbiOutput->biWidth;
 	// dev-api-3:

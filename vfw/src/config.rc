@@ -71,7 +71,7 @@ END
 // Dialog
 //
 
-IDD_MAIN DIALOG DISCARDABLE  0, 0, 184, 129
+IDD_MAIN DIALOG DISCARDABLE  0, 0, 184, 145
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "XviD Configuration"
 FONT 8, "MS Sans Serif"
@@ -81,13 +81,14 @@ BEGIN
     CONTROL         "Slider1",IDC_SLIDER,"msctls_trackbar32",TBS_BOTH | 
                     TBS_NOTICKS | WS_TABSTOP,96,32,76,12
     EDITTEXT        IDC_VALUE,96,48,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    PUSHBUTTON      "Advanced options...",IDC_ADVANCED,52,76,80,12
-    PUSHBUTTON      "Load Defaults...",IDC_DEFAULTS,52,92,80,12
-    DEFPUSHBUTTON   "OK",IDOK,52,108,80,12
+    PUSHBUTTON      "Advanced options...",IDC_ADVANCED,52,75,80,12
+    PUSHBUTTON      "Decoder options...",IDC_DECODER,52,91,80,12
+    DEFPUSHBUTTON   "OK",IDOK,52,123,80,12
     LTEXT           "Encoding Mode:",IDC_STATIC,12,16,80,12,SS_CENTERIMAGE
     LTEXT           "",IDC_SLIDER_STATIC,12,32,80,12,SS_CENTERIMAGE
     LTEXT           "",IDC_VALUE_STATIC,12,48,80,12,SS_CENTERIMAGE
     GROUPBOX        "Encoding options",IDC_STATIC,4,4,176,64
+    PUSHBUTTON      "Load Defaults...",IDC_DEFAULTS,52,107,80,12
 END
 
 IDD_GLOBAL DIALOG DISCARDABLE  0, 0, 200, 217
@@ -138,6 +139,8 @@ BEGIN
     GROUPBOX        "B-frame control",IDC_BSTATIC1,4,136,192,79
     LTEXT           "B-frame quantizer ratio (%):",IDC_BSTATIC3,13,158,89,8
     LTEXT           "B-frame quantizer offset:",IDC_STATIC,13,171,77,8
+    CONTROL         "Reduced resolution",IDC_REDUCED,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,110,7,77,10
 END
 
 IDD_QUANT DIALOG DISCARDABLE  0, 0, 200, 217
@@ -631,6 +634,17 @@ BEGIN
                     SS_CENTERIMAGE
 END
 
+IDD_POSTPROC DIALOG DISCARDABLE  0, 0, 186, 146
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Post processing"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "Luma deblocking",IDC_DEBLOCK_Y,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,7,28,70,10
+    CONTROL         "Chroma deblocking",IDC_DEBLOCK_UV,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,40,77,10
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -644,7 +658,7 @@ BEGIN
     BEGIN
         LEFTMARGIN, 7
         TOPMARGIN, 7
-        BOTTOMMARGIN, 106
+        BOTTOMMARGIN, 136
     END
 
     IDD_GLOBAL, DIALOG
@@ -703,6 +717,14 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 193
         TOPMARGIN, 7
+    END
+
+    IDD_POSTPROC, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 139
     END
 END
 #endif    // APSTUDIO_INVOKED

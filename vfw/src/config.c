@@ -103,6 +103,7 @@ REG_INT const reg_ints[] = {
 	{"packed",					&reg.packed,					0},
 	{"dx50bvop",				&reg.dx50bvop,					1},
 	{"debug",					&reg.debug,						0},
+	{"reduced_resolution",		&reg.reduced_resolution,		0},
 	{"frame_drop_ratio",		&reg.frame_drop_ratio,			0},
 
 	{"min_iquant",				&reg.min_iquant,				2},
@@ -151,7 +152,11 @@ REG_INT const reg_ints[] = {
 	{"credits_quant_i",			&reg.credits_quant_i,			20},
 	{"credits_quant_p",			&reg.credits_quant_p,			20},
 	{"credits_start_size",		&reg.credits_start_size,		10000},
-	{"credits_end_size",		&reg.credits_end_size,			10000}
+	{"credits_end_size",		&reg.credits_end_size,			10000},
+
+	/* decoder */
+	{"deblock_y",				&reg.deblock_y,					0},
+	{"deblock_uv",				&reg.deblock_uv,				0}
 };
 
 REG_STR const reg_strs[] = {
@@ -654,6 +659,8 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 		CheckDlgButton(hDlg, IDC_PACKED, config->packed ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_DX50BVOP, config->dx50bvop ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_DEBUG, config->debug ? BST_CHECKED : BST_UNCHECKED);
+		
+		CheckDlgButton(hDlg, IDC_REDUCED, config->reduced_resolution ? BST_CHECKED : BST_UNCHECKED);
 		break;
 
 	case DLG_QUANT :
@@ -787,6 +794,7 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 		config->packed = ISDLGSET(IDC_PACKED);
 		config->dx50bvop = ISDLGSET(IDC_DX50BVOP);
 		config->debug = ISDLGSET(IDC_DEBUG);
+		config->reduced_resolution = ISDLGSET(IDC_REDUCED);
 		break;
 
 	case DLG_QUANT :
@@ -972,6 +980,134 @@ BOOL CALLBACK enum_tooltips(HWND hWnd, LPARAM lParam)
 }
 
 
+
+/* --- decoder options dialog  --- */
+
+#define DEC_DLG_COUNT	1
+#define DEC_DLG_POSTPROC	0
+
+/* decoder dialog: upload config data */
+
+void dec_upload(HWND hDlg, int page, CONFIG * config)
+{
+	switch (page)
+	{
+	case DEC_DLG_POSTPROC :
+		CheckDlgButton(hDlg, IDC_DEBLOCK_Y,  config->deblock_y ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg, IDC_DEBLOCK_UV, config->deblock_uv ? BST_CHECKED : BST_UNCHECKED);
+		break;
+	}
+}
+
+
+/* dec dialog: download config data */
+
+void dec_download(HWND hDlg, int page, CONFIG * config)
+{
+	switch (page)
+	{
+	case DEC_DLG_POSTPROC :
+		config->deblock_y = ISDLGSET(IDC_DEBLOCK_Y);
+		config->deblock_uv = ISDLGSET(IDC_DEBLOCK_UV);
+		break;
+	}
+}
+
+/* decoder dialog proc */
+
+BOOL CALLBACK dec_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	PROPSHEETINFO *psi;
+
+	psi = (PROPSHEETINFO*)GetWindowLong(hDlg, GWL_USERDATA);
+
+	switch (uMsg)
+	{
+	case WM_INITDIALOG :
+		psi = (PROPSHEETINFO*) ((LPPROPSHEETPAGE)lParam)->lParam;
+
+		SetWindowLong(hDlg, GWL_USERDATA, (LPARAM)psi);
+
+		if (hTooltip)
+		{
+			EnumChildWindows(hDlg, enum_tooltips, 0);
+		}
+
+		dec_upload(hDlg, psi->page, psi->config);
+		break;
+
+	case WM_NOTIFY :
+		switch (((NMHDR *)lParam)->code)
+		{
+		case PSN_KILLACTIVE :	
+			/* validate */
+			dec_download(hDlg, psi->page, psi->config);
+			SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
+			break;
+
+		case PSN_APPLY :
+			/* apply */
+			dec_download(hDlg, psi->page, psi->config);
+			SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
+			psi->config->save = TRUE;
+			break;
+		}
+		break;
+
+	default :
+		return 0;
+	}
+
+	return 1;
+}
+
+
+void dec_dialog(HWND hParent, CONFIG * config)
+{
+	PROPSHEETINFO psi[DEC_DLG_COUNT];
+	PROPSHEETPAGE psp[DEC_DLG_COUNT];
+	PROPSHEETHEADER psh;
+	CONFIG temp;
+	int i;
+
+	config->save = FALSE;
+	memcpy(&temp, config, sizeof(CONFIG));
+
+	for (i=0 ; i<DEC_DLG_COUNT ; ++i)
+	{
+		psp[i].dwSize = sizeof(PROPSHEETPAGE);
+		psp[i].dwFlags = 0;
+		psp[i].hInstance = hInst;
+		psp[i].pfnDlgProc = dec_proc;
+		psp[i].lParam = (LPARAM)&psi[i];
+		psp[i].pfnCallback = NULL;
+
+		psi[i].page = i;
+		psi[i].config = &temp;
+	}
+
+	psp[DEC_DLG_POSTPROC].pszTemplate = MAKEINTRESOURCE(IDD_POSTPROC);
+
+	psh.dwSize = sizeof(PROPSHEETHEADER);
+	psh.dwFlags = PSH_PROPSHEETPAGE | PSH_NOAPPLYNOW;
+	psh.hwndParent = hParent;
+	psh.hInstance = hInst;
+	psh.pszCaption = (LPSTR) "XviD Configuration";
+	psh.nPages = DEC_DLG_COUNT;
+	psh.nStartPage = DEC_DLG_POSTPROC;
+	psh.ppsp = (LPCPROPSHEETPAGE)&psp;
+	psh.pfnCallback = NULL;
+
+	PropertySheet(&psh);
+
+	if (temp.save)
+	{
+		memcpy(config, &temp, sizeof(CONFIG));
+	}
+}
+
+
+
 /* main dialog proc */
 
 BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -1033,6 +1169,15 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		else if (LOWORD(wParam) == IDC_ADVANCED && HIWORD(wParam) == BN_CLICKED)
 		{
 			adv_dialog(hDlg, config);
+
+			if (config->save)
+			{
+				config_reg_set(config);
+			}
+		}
+		else if (LOWORD(wParam) == IDC_DECODER && HIWORD(wParam) == BN_CLICKED)
+		{
+			dec_dialog(hDlg, config);
 
 			if (config->save)
 			{
@@ -1127,6 +1272,9 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"XVID");
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DIVX");
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DX50");
+
+			/* XXX: reduced resolution is not ready for prime-time */
+			ShowWindow(GetDlgItem(hDlg, IDC_REDUCED), SW_HIDE);
 		}
 		else if (psi->page == DLG_2PASSALT)
 		{

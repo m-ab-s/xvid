@@ -11,12 +11,15 @@
 #define IDD_QUANTMATRIX                 106
 #define IDD_ABOUT                       107
 #define IDD_2PASSALT                    108
+#define IDD_POSTPROC                    109
 #define IDC_MODE                        1000
 #define IDC_SLIDER                      1001
 #define IDC_VALUE                       1002
 #define IDC_SLIDER_STATIC               1003
 #define IDC_VALUE_STATIC                1004
-#define IDC_ADVANCED                    1007
+#define IDC_ADVANCED                    1005
+#define IDC_DECODER                     1006
+#define IDC_DEFAULTS                    1007
 #define IDC_STATIC_HELP                 1008
 #define IDC_MOTION                      1009
 #define IDC_QUANTTYPE                   1010
@@ -201,7 +204,6 @@
 #define IDC_QINTER61                    1189
 #define IDC_QINTER62                    1190
 #define IDC_QINTER63                    1191
-#define IDC_DEFAULTS                    1192
 #define IDC_USEALT                      1193
 #define IDC_USEAUTO                     1194
 #define IDC_AUTOSTR                     1195
@@ -242,14 +244,17 @@
 #define IDC_QPEL                        1232
 #define IDC_CHROMAME                    1233
 #define IDC_BQUANTOFFSET                1234
+#define IDC_DEBLOCK_Y                   1235
+#define IDC_DEBLOCK_UV                  1236
+#define IDC_REDUCED                     1237
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        109
+#define _APS_NEXT_RESOURCE_VALUE        110
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1235
+#define _APS_NEXT_CONTROL_VALUE         1239
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
