@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion_est.h,v 1.3.2.2 2003-03-26 14:56:49 edgomez Exp $
+ *  $Id: motion_est.h,v 1.3.2.3 2003-03-29 10:11:06 edgomez Exp $
  *
  ***************************************************************************/
 
@@ -144,6 +144,8 @@ typedef struct
 	VECTOR directmvF[4];
 	VECTOR directmvB[4];
 	const VECTOR * referencemv;
+// _BITS stuff
+	int16_t * dctSpace;
 
 } SearchData;
 
