@@ -31,6 +31,7 @@
 #include <windows.h>
 #include <vfw.h>
 
+#include "debug.h"
 #include "codec.h"
 #include "config.h"
 #include "resource.h"
@@ -41,7 +42,7 @@ BOOL WINAPI DllMain(
 	DWORD  ul_reason_for_call, 
 	LPVOID lpReserved)
 {
-	hInst = (HINSTANCE) hModule;
+	g_hInst = (HINSTANCE) hModule;
     return TRUE;
 }
 
@@ -66,7 +67,7 @@ BOOL WINAPI DllMain(
 		return DRV_OK;
 
 	case DRV_OPEN :
-		DEBUG("DRV_OPEN");
+		DPRINTF("DRV_OPEN");
 		{
 			ICOPEN * icopen = (ICOPEN *)lParam2;
 			
@@ -106,7 +107,7 @@ BOOL WINAPI DllMain(
 		}
 
 	case DRV_CLOSE :
-		DEBUG("DRV_CLOSE");
+		DPRINTF("DRV_CLOSE");
 		// compress_end/decompress_end don't always get called
 		compress_end(codec);
 		decompress_end(codec);
@@ -129,7 +130,7 @@ BOOL WINAPI DllMain(
 	/* info */
 
 	case ICM_GETINFO :
-		DEBUG("ICM_GETINFO");
+		DPRINTF("ICM_GETINFO");
 		{
 			ICINFO *icinfo = (ICINFO *)lParam1;
 
@@ -152,12 +153,12 @@ BOOL WINAPI DllMain(
 		/* state control */
 
 	case ICM_ABOUT :
-		DEBUG("ICM_ABOUT");
-		DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_ABOUT), (HWND)lParam1, about_proc, 0);
+		DPRINTF("ICM_ABOUT");
+		DialogBoxParam(g_hInst, MAKEINTRESOURCE(IDD_ABOUT), (HWND)lParam1, about_proc, 0);
 		return ICERR_OK;
 
 	case ICM_CONFIGURE :
-		DEBUG("ICM_CONFIGURE");
+		DPRINTF("ICM_CONFIGURE");
 		if (lParam1 != -1)
 		{
 			CONFIG temp;
@@ -165,7 +166,7 @@ BOOL WINAPI DllMain(
 			codec->config.save = FALSE;
 			memcpy(&temp, &codec->config, sizeof(CONFIG));
 
-			DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_MAIN), (HWND)lParam1, main_proc, (LPARAM)&temp);
+			DialogBoxParam(g_hInst, MAKEINTRESOURCE(IDD_MAIN), (HWND)lParam1, main_proc, (LPARAM)&temp);
 
 			if (temp.save)
 			{
@@ -176,7 +177,7 @@ BOOL WINAPI DllMain(
 		return ICERR_OK;
 			
 	case ICM_GETSTATE :
-		DEBUG("ICM_GETSTATE");
+		DPRINTF("ICM_GETSTATE");
 		if ((void*)lParam1 == NULL)
 		{
 			return sizeof(CONFIG);
@@ -185,10 +186,10 @@ BOOL WINAPI DllMain(
 		return ICERR_OK;
 
 	case ICM_SETSTATE :
-		DEBUG("ICM_SETSTATE");
+		DPRINTF("ICM_SETSTATE");
 		if ((void*)lParam1 == NULL)
 		{
-			DEBUG("ICM_SETSTATE : DEFAULT");
+			DPRINTF("ICM_SETSTATE : DEFAULT");
 			config_reg_get(&codec->config);
 			return 0;
 		}
@@ -215,53 +216,53 @@ BOOL WINAPI DllMain(
 	/* compressor */
 
 	case ICM_COMPRESS_QUERY :
-		DEBUG("ICM_COMPRESS_QUERY");
+		DPRINTF("ICM_COMPRESS_QUERY");
 		return compress_query(codec, (BITMAPINFO *)lParam1, (BITMAPINFO *)lParam2);
 
 	case ICM_COMPRESS_GET_FORMAT :
-		DEBUG("ICM_COMPRESS_GET_FORMAT");
+		DPRINTF("ICM_COMPRESS_GET_FORMAT");
 		return compress_get_format(codec, (BITMAPINFO *)lParam1, (BITMAPINFO *)lParam2);
 
 	case ICM_COMPRESS_GET_SIZE :
-		DEBUG("ICM_COMPRESS_GET_SIZE");
+		DPRINTF("ICM_COMPRESS_GET_SIZE");
 		return compress_get_size(codec, (BITMAPINFO *)lParam1, (BITMAPINFO *)lParam2);
 
 	case ICM_COMPRESS_FRAMES_INFO :
-		DEBUG("ICM_COMPRESS_FRAMES_INFO");
+		DPRINTF("ICM_COMPRESS_FRAMES_INFO");
 		return compress_frames_info(codec, (ICCOMPRESSFRAMES *)lParam1);
 
 	case ICM_COMPRESS_BEGIN :
-		DEBUG("ICM_COMPRESS_BEGIN");
+		DPRINTF("ICM_COMPRESS_BEGIN");
 		return compress_begin(codec, (BITMAPINFO *)lParam1, (BITMAPINFO *)lParam2);
 
 	case ICM_COMPRESS_END :
-		DEBUG("ICM_COMPRESS_END");
+		DPRINTF("ICM_COMPRESS_END");
 		return compress_end(codec);
 
 	case ICM_COMPRESS :
-		DEBUG("ICM_COMPRESS");
+		DPRINTF("ICM_COMPRESS");
 		return compress(codec, (ICCOMPRESS *)lParam1);
 
 	/* decompressor */
 	
 	case ICM_DECOMPRESS_QUERY :
-		DEBUG("ICM_DECOMPRESS_QUERY");
+		DPRINTF("ICM_DECOMPRESS_QUERY");
 		return decompress_query(codec, (BITMAPINFO *)lParam1, (BITMAPINFO *)lParam2);
 
 	case ICM_DECOMPRESS_GET_FORMAT :
-		DEBUG("ICM_DECOMPRESS_GET_FORMAT");
+		DPRINTF("ICM_DECOMPRESS_GET_FORMAT");
 		return decompress_get_format(codec, (BITMAPINFO *)lParam1, (BITMAPINFO *)lParam2);
 	
 	case ICM_DECOMPRESS_BEGIN :
-		DEBUG("ICM_DECOMPRESS_BEGIN");
+		DPRINTF("ICM_DECOMPRESS_BEGIN");
 		return decompress_begin(codec, (BITMAPINFO *)lParam1, (BITMAPINFO *)lParam2);
 
 	case ICM_DECOMPRESS_END :
-		DEBUG("ICM_DECOMPRESS_END");
+		DPRINTF("ICM_DECOMPRESS_END");
 		return decompress_end(codec);
 
 	case ICM_DECOMPRESS :
-		DEBUG("ICM_DECOMPRESS");
+		DPRINTF("ICM_DECOMPRESS");
 		return decompress(codec, (ICDECOMPRESS *)lParam1);
 
 	case ICM_DECOMPRESS_GET_PALETTE :

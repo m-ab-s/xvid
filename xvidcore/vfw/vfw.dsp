@@ -70,7 +70,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\src" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\src" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc09 /d "_DEBUG"
@@ -142,10 +142,6 @@ SOURCE=.\todo.txt
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=.\src\2pass.c
-# End Source File
-# Begin Source File
-
 SOURCE=.\src\codec.c
 # End Source File
 # Begin Source File
@@ -162,15 +158,15 @@ SOURCE=.\src\driverproc.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=.\src\2pass.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\src\codec.h
 # End Source File
 # Begin Source File
 
 SOURCE=.\src\config.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\debug.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
@@ -193,5 +189,9 @@ SOURCE=.\src\XviD_logo.bmp
 SOURCE=.\src\driverproc.def
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=.\src\credits.txt
+# End Source File
 # End Target
 # End Project

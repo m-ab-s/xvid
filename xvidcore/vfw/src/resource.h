@@ -6,12 +6,20 @@
 #define IDD_GLOBAL                      101
 #define IDD_QUANT                       102
 #define IDD_2PASS                       103
+#define IDD_RC_2PASS2                   103
 #define IDD_CREDITS                     104
 #define IDD_CPU                         105
+#define IDD_DEBUG                       105
 #define IDD_QUANTMATRIX                 106
 #define IDD_ABOUT                       107
 #define IDD_2PASSALT                    108
+#define IDD_RC_2PASS2_ALT               108
 #define IDD_POSTPROC                    109
+#define IDD_RC_CBR                      110
+#define IDD_PROFILE                     111
+#define IDD_RC_2PASS1                   116
+#define IDD_MOTION                      117
+#define IDD_TOOLS                       120
 #define IDC_MODE                        1000
 #define IDC_SLIDER                      1001
 #define IDC_VALUE                       1002
@@ -21,6 +29,7 @@
 #define IDC_DECODER                     1006
 #define IDC_DEFAULTS                    1007
 #define IDC_STATIC_HELP                 1008
+#define IDC_PROFILE                     1008
 #define IDC_MOTION                      1009
 #define IDC_QUANTTYPE                   1010
 #define IDC_FOURCC                      1011
@@ -45,6 +54,7 @@
 #define IDC_STATS1                      1030
 #define IDC_STATS2                      1031
 #define IDC_STATS1_BROWSE               1032
+#define IDC_STATS_BROWSE                1032
 #define IDC_STATS2_BROWSE               1033
 #define IDC_CREDITS_START               1034
 #define IDC_CREDITS_START_BEGIN         1035
@@ -228,7 +238,9 @@
 #define IDC_PACKED                      1215
 #define IDC_BSTATIC1                    1216
 #define IDC_BSTATIC2                    1217
+#define IDC_MAXBFRAMES_S                1217
 #define IDC_BSTATIC3                    1218
+#define IDC_BQUANTRATIO_S               1218
 #define IDC_DX50BVOP                    1219
 #define IDC_DEBUG                       1220
 #define IDC_NUMTHREADS                  1221
@@ -249,14 +261,36 @@
 #define IDC_REDUCED                     1237
 #define IDC_VHQ                         1238
 #define IDC_CHROMA_OPT                  1239
+#define IDC_STATS                       1240
+#define IDC_MODE_ADV                    1241
+#define IDC_PROFILE_ADV                 1242
+#define IDC_PROFILE_BVOP                1244
+#define IDC_PROFILE_MPEGQUANT           1246
+#define IDC_PROFILE_INTERLACE           1247
+#define IDC_PROFILE_QPEL                1248
+#define IDC_PROFILE_GMC                 1249
+#define IDC_PROFILE_REDUCED             1250
+#define IDC_PROFILE_WIDTH               1251
+#define IDC_PROFILE_HEIGHT              1252
+#define IDC_PROFILE_FPS                 1253
+#define IDC_PROFILE_BITRATE             1254
+#define IDC_PROFILE_VBV                 1255
+#define IDC_PROFILE_PROFILE             1256
+#define IDC_PROFILE_VCV                 1257
+#define IDC_PROFILE_VMV                 1258
+#define IDC_BVOP                        1260
+#define IDC_BVOP_THRESHOLD              1261
+#define IDC_BVOP_THRESHOLD_S            1264
+#define IDC_BQUANTOFFSET_S              1265
+#define IDC_CLOSEDGOV                   1266
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        110
+#define _APS_NEXT_RESOURCE_VALUE        121
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1240
+#define _APS_NEXT_CONTROL_VALUE         1267
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

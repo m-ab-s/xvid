@@ -3,9 +3,7 @@
 
 #include <windows.h>
 
-
-HINSTANCE hInst;
-HWND hTooltip;
+extern HINSTANCE g_hInst;
 
 
 /* small hack */
@@ -27,40 +25,16 @@ HWND hTooltip;
 #define XVID_SPECIAL_BUILD	"(Vanilla CVS Build)"
 
 /* constants */
-#define CONFIG_HINTFILE		"\\hintfile.mvh"
-#define CONFIG_2PASS_1_FILE "\\video.stats"
-#define CONFIG_2PASS_2_FILE "\\videogk.stats"
-
-/* property sheets - sheets can be reordered here */
-#define DLG_COUNT		6
-
-#define DLG_GLOBAL		0
-#define DLG_QUANT		1
-#define DLG_2PASS		2
-#define DLG_2PASSALT	3
-#define DLG_CREDITS		4
-#define DLG_CPU			5
+#define CONFIG_2PASS_FILE "\\video.pass"
 
 /* codec modes */
-#define DLG_MODE_CBR			0
-#define DLG_MODE_VBR_QUAL		1
-#define DLG_MODE_VBR_QUANT		2
-#define DLG_MODE_2PASS_1		3
-#define DLG_MODE_2PASS_2_EXT	4
-#define DLG_MODE_2PASS_2_INT	5
-#define DLG_MODE_NULL			6
-
-/* quantizer modes */
-#define QUANT_MODE_H263			0
-#define QUANT_MODE_MPEG			1
-#define QUANT_MODE_CUSTOM		2
-#define QUANT_MODE_MOD			3
-#define QUANT_MODE_MOD_NEW		4
-
-/* credits modes */
-#define CREDITS_MODE_RATE		0
-#define CREDITS_MODE_QUANT		1
-#define CREDITS_MODE_SIZE		2
+#define RC_MODE_CBR				0
+#define RC_MODE_VBR_QUAL		1	/* deprecated */
+#define RC_MODE_FIXED			2
+#define RC_MODE_2PASS1			3
+#define RC_MODE_2PASS2_EXT		4
+#define RC_MODE_2PASS2_INT		5
+#define RC_MODE_NULL			6
 
 /* vhq modes */
 #define VHQ_OFF					0
@@ -69,11 +43,11 @@ HWND hTooltip;
 #define VHQ_MEDIUM_SEARCH		3
 #define VHQ_WIDE_SEARCH			4
 
-#define CREDITS_START			1
-#define CREDITS_END				2
+/* quantizer modes */
+#define QUANT_MODE_H263			0
+#define QUANT_MODE_MPEG			1
+#define QUANT_MODE_CUSTOM		2
 
-#define RAD2DEG 57.295779513082320876798154814105
-#define DEG2RAD 0.017453292519943295769236907684886
 
 typedef struct
 {
@@ -81,8 +55,11 @@ typedef struct
 	int mode;					// Vidomi directly accesses these vars
 	int rc_bitrate;				//
 	int desired_size;			// please try to avoid modifications here
-	char stats1[MAX_PATH];		//
+	char stats[MAX_PATH];		//
 /*******************************/
+
+    char profile_name[MAX_PATH];
+	int profile;
 
 	int quality;
 	int	quant;
@@ -101,14 +78,14 @@ typedef struct
 	int qpel;
 	int gmc;
 	int chromame;
-//added by koepi for gruel's greyscale_mode
 	int greyscale;
-// end of koepi's additions
+    int use_bvop;
 	int max_bframes;
 	int bquant_ratio;
 	int bquant_offset;
+    int bvop_threshold;
 	int packed;
-	int dx50bvop;
+	int closed_gov;
 	int debug;
 	int reduced_resolution;
 
@@ -120,12 +97,9 @@ typedef struct
 	BYTE qmatrix_inter[64];
 
 	int keyframe_boost;
-//added by koepi for new 2pass curve treatment
 	int kftreshold;
 	int kfreduction;
-// end of koepi's additions
 	int discard1pass;
-	int dummy2pass;
 	int curve_compression_high;
 	int curve_compression_low;
 	int use_alt_curve;
@@ -143,25 +117,6 @@ typedef struct
 	int bitrate_payback_delay;
 	int bitrate_payback_method;
 	int hinted_me;
-	char hintfile[MAX_PATH];
-	char stats2[MAX_PATH];
-
-	int credits_start;
-	int credits_start_begin;
-	int credits_start_end;
-	int credits_end;
-	int credits_end_begin;
-	int credits_end_end;
-
-//added by koepi for gruel's greyscale_mode
-	int credits_greyscale;
-// end of koepi's additions
-	int credits_mode;
-	int credits_rate;
-	int credits_quant_i;
-	int credits_quant_p;
-	int credits_start_size;
-	int credits_end_size;
 
 	int num_threads;
 	int chroma_opt;
@@ -170,10 +125,9 @@ typedef struct
 
 	/* decoder */
 
-	int deblock_y;
-	int deblock_uv;
+//	int deblock_y;
+//	int deblock_uv;
 
-//	char build[50];
 	DWORD cpu;
 	float fquant;
 	BOOL save;
@@ -181,7 +135,7 @@ typedef struct
 
 typedef struct PROPSHEETINFO
 {
-	int page;
+	int idd;
 	CONFIG * config;
 } PROPSHEETINFO;
 
@@ -199,24 +153,12 @@ typedef struct REG_STR
 	char* def;
 } REG_STR;
 
-void config_reg_get(CONFIG *);
-void config_reg_set(CONFIG *);
-void config_reg_default(CONFIG *);
-int config_get_int(HWND, INT, int);
-int config_get_uint(HWND, UINT, int);
-void main_download(HWND, CONFIG *);
-void main_slider(HWND, CONFIG *);
-void main_value(HWND, CONFIG *);
-void adv_dialog(HWND, CONFIG *);
-void adv_mode(HWND, int);
-void adv_upload(HWND, int, CONFIG *);
-void adv_download(HWND, int, CONFIG *);
-void quant_upload(HWND, CONFIG *);
-void quant_download(HWND, CONFIG *);
-BOOL CALLBACK enum_tooltips(HWND, LPARAM);
+
+void config_reg_get(CONFIG * config);
+void config_reg_set(CONFIG * config);
+
 BOOL CALLBACK main_proc(HWND, UINT, WPARAM, LPARAM);
-BOOL CALLBACK adv_proc(HWND, UINT, WPARAM, LPARAM);
-BOOL CALLBACK quantmatrix_proc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK about_proc(HWND, UINT, WPARAM, LPARAM);
+
 
 #endif /* _CONFIG_H_ */

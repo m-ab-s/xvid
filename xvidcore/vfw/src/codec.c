@@ -50,16 +50,20 @@
 #include <windows.h>
 #include <vfw.h>
 
+#include <xvid.h>
+#include "debug.h"
 #include "codec.h"
-#include "2pass.h"
 
-int pmvfast_presets[7] = {
+
+static const int pmvfast_presets[7] = {
 	0, 0, 0, 0,
 	0 | XVID_ME_HALFPELREFINE16 | 0,
 	0 | XVID_ME_HALFPELREFINE16 | 0 |
 	XVID_ME_ADVANCEDDIAMOND16, XVID_ME_HALFPELREFINE16 | XVID_ME_EXTSEARCH16 |
 	XVID_ME_HALFPELREFINE8 | 0 | XVID_ME_USESQUARES16
 };
+
+
 
 /*	return xvid compatbile colorspace,
 	or XVID_CSP_NULL if failure
@@ -75,21 +79,21 @@ int get_colorspace(BITMAPINFOHEADER * hdr)
 	case BI_RGB :
 		if (hdr->biBitCount == 16)
 		{
-			DEBUG("RGB16 (RGB555)");
+			DPRINTF("RGB16 (RGB555)");
 			return rgb_flip | XVID_CSP_RGB555;
 		}
 		if (hdr->biBitCount == 24) 
 		{
-			DEBUG("RGB24");
+			DPRINTF("RGB24");
 			return rgb_flip | XVID_CSP_BGR;
 		}
 		if (hdr->biBitCount == 32) 
 		{
-			DEBUG("RGB32");
+			DPRINTF("RGB32");
 			return rgb_flip | XVID_CSP_BGRA;
 		}
 
-		DEBUG1("unsupported BI_RGB biBitCount", hdr->biBitCount);
+		DPRINTF("unsupported BI_RGB biBitCount=%i", hdr->biBitCount);
 		return XVID_CSP_NULL;
 
 	case BI_BITFIELDS :
@@ -102,7 +106,7 @@ int get_colorspace(BITMAPINFOHEADER * hdr)
 				hdr4->bV4GreenMask == 0x3e0 &&
 				hdr4->bV4BlueMask == 0x1f)
 			{
-				DEBUG("RGB555");
+				DPRINTF("RGB555");
 				return rgb_flip | XVID_CSP_RGB555;
 			}
 
@@ -111,41 +115,45 @@ int get_colorspace(BITMAPINFOHEADER * hdr)
 				hdr4->bV4GreenMask == 0x7e0 &&
 				hdr4->bV4BlueMask == 0x1f)
 			{
-				DEBUG("RGB565");
+				DPRINTF("RGB565");
 				return rgb_flip | XVID_CSP_RGB565;
 			}
 
-			DEBUG("unsupported BI_BITFIELDS mode");
+			DPRINTF("unsupported BI_BITFIELDS mode");
 			return XVID_CSP_NULL;
 		}
 		
-		DEBUG("unsupported BI_BITFIELDS/BITMAPHEADER combination");
+		DPRINTF("unsupported BI_BITFIELDS/BITMAPHEADER combination");
 		return XVID_CSP_NULL;
 
 	case FOURCC_I420 :
 	case FOURCC_IYUV :
-		DEBUG("IYUY");
+		DPRINTF("IYUY");
 		return XVID_CSP_I420;
 
 	case FOURCC_YV12 :
-		DEBUG("YV12");
+		DPRINTF("YV12");
 		return XVID_CSP_YV12;
 			
 	case FOURCC_YUYV :
 	case FOURCC_YUY2 :
-		DEBUG("YUY2");
+		DPRINTF("YUY2");
 		return XVID_CSP_YUY2;
 
 	case FOURCC_YVYU :
-		DEBUG("YVYU");
+		DPRINTF("YVYU");
 		return XVID_CSP_YVYU;
 
 	case FOURCC_UYVY :
-		DEBUG("UYVY");
+		DPRINTF("UYVY");
 		return XVID_CSP_UYVY;
 
 	default :
-		DEBUGFOURCC("unsupported colorspace", hdr->biCompression);
+		DPRINTF("unsupported colorspace %c%c%c%c", 
+            hdr->biCompression&0xff,
+            (hdr->biCompression>>8)&0xff,
+            (hdr->biCompression>>16)&0xff,
+            (hdr->biCompression>>24)&0xff);
 		return XVID_CSP_NULL;
 	}
 }
@@ -229,70 +237,70 @@ LRESULT compress_get_size(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lp
 
 LRESULT compress_frames_info(CODEC * codec, ICCOMPRESSFRAMES * icf)
 {
-	// DEBUG2("frate fscale", codec->frate, codec->fscale);
 	codec->fincr = icf->dwScale;
 	codec->fbase = icf->dwRate;
 	return ICERR_OK;
 }
 
 
+const char type2char(int type)
+{
+    if (type==XVID_TYPE_IVOP)
+        return 'I';
+    if (type==XVID_TYPE_PVOP)
+        return 'P';
+    if (type==XVID_TYPE_BVOP)
+        return 'B';
+    return 'S';
+}
+
+int vfw_debug(void *handle,
+			 int opt,
+			 void *param1,
+			 void *param2)
+{
+	switch (opt) {
+	case XVID_PLG_INFO:
+	case XVID_PLG_CREATE:
+	case XVID_PLG_DESTROY:
+	case XVID_PLG_BEFORE:
+		return 0;
+
+	case XVID_PLG_AFTER:
+		{
+			xvid_plg_data_t *data = (xvid_plg_data_t *) param1;
+
+			DPRINTF("[%5i]   type=%c   Q:%2i   length:%6i",
+				   data->frame_num, 
+                   type2char(data->type),
+                   data->quant, 
+                   data->length);
+			return 0;
+		}
+	}
+
+	return XVID_ERR_FAIL;
+}
+
+
+
 LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiOutput)
 {
 	xvid_gbl_init_t init;
 	xvid_enc_create_t create;
-	xvid_enc_rc_t rc;
-    xvid_enc_plugin_t plugins[1];
+    xvid_enc_plugin_t plugins[3];
 
-	memset(&rc, 0, sizeof(rc));
-	rc.version = XVID_VERSION;
-
-	switch (codec->config.mode) 
-	{
-	case DLG_MODE_CBR :
-		//rc.type = XVID_RC_CBR;
-		rc.min_iquant = codec->config.min_iquant;
-		rc.max_iquant = codec->config.max_iquant;
-		rc.min_pquant = codec->config.min_pquant;
-		rc.max_pquant = codec->config.max_pquant;
-		rc.min_bquant = 0;	/* XXX: todo */
-		rc.max_bquant = 0;	/* XXX: todo */
-		rc.data.cbr.bitrate = codec->config.rc_bitrate;
-        rc.data.cbr.reaction_delay_factor = codec->config.rc_reaction_delay_factor;
-		rc.data.cbr.averaging_period = codec->config.rc_averaging_period;
-		rc.data.cbr.buffer = codec->config.rc_buffer;
-		break;
-
-	case DLG_MODE_VBR_QUAL :
-		codec->config.fquant = 0;
-		//param.rc_bitrate = 0;
-		break;
-
-	case DLG_MODE_VBR_QUANT :
-		codec->config.fquant = (float) codec->config.quant;
-		//param.rc_bitrate = 0;
-		break;
-
-	case DLG_MODE_2PASS_1 :
-	case DLG_MODE_2PASS_2_INT :
-	case DLG_MODE_2PASS_2_EXT :
-		//param.rc_bitrate = 0;
-		codec->twopass.max_framesize = (int)((double)codec->config.twopass_max_bitrate / 8.0 / ((double)codec->fbase / (double)codec->fincr));
-		break;
-
-	case DLG_MODE_NULL :
-		return ICERR_OK;
-
-	default :
-		break;
-	}
+	xvid_plugin_fixed_t	fixed;
+	xvid_plugin_cbr_t cbr;
+	xvid_plugin_2pass1_t pass1;
+	xvid_plugin_2pass2_t pass2;
 
     /* destroy previously created codec */
-	if(codec->ehandle)
-	{
+	if(codec->ehandle) {
 		xvid_encore(codec->ehandle, XVID_ENC_DESTROY, NULL, NULL);
 		codec->ehandle = NULL;
 	}
-	
+
     memset(&init, 0, sizeof(init));
 	init.version = XVID_VERSION;
 	init.cpu_flags = codec->config.cpu;
@@ -300,30 +308,93 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 
 	memset(&create, 0, sizeof(create));
 	create.version = XVID_VERSION;
+	create.plugins = plugins;
+
+	switch (codec->config.mode) 
+	{
+	case RC_MODE_CBR :
+    	memset(&cbr, 0, sizeof(cbr));
+	    cbr.version = XVID_VERSION;
+        cbr.bitrate = codec->config.rc_bitrate;
+        cbr.reaction_delay_factor = codec->config.rc_reaction_delay_factor;
+		cbr.averaging_period = codec->config.rc_averaging_period;
+		cbr.buffer = codec->config.rc_buffer;
+        plugins[create.num_plugins].func = xvid_plugin_cbr;
+        plugins[create.num_plugins].param = &cbr;
+        create.num_plugins++;
+
+	case RC_MODE_FIXED :
+    	memset(&fixed, 0, sizeof(fixed));
+	    fixed.version = XVID_VERSION;
+        fixed.quant_increment = codec->config.quant;
+        fixed.quant_base = 1;
+        plugins[create.num_plugins].func = xvid_plugin_fixed;
+        plugins[create.num_plugins].param = &fixed;
+        create.num_plugins++;
+		break;
+
+	case RC_MODE_2PASS1 :
+    	memset(&pass1, 0, sizeof(pass1));
+	    pass1.version = XVID_VERSION;
+
+        plugins[create.num_plugins].func = xvid_plugin_2pass1;
+        plugins[create.num_plugins].param = &pass1;
+        create.num_plugins++;
+		break;
+
+
+	case RC_MODE_2PASS2_INT :
+	case RC_MODE_2PASS2_EXT :
+    	memset(&pass2, 0, sizeof(pass2));
+	    pass2.version = XVID_VERSION;
+        pass2.min_quant[0] = codec->config.min_iquant;
+        pass2.max_quant[0] = codec->config.max_iquant;
+        pass2.min_quant[1] = codec->config.min_pquant;
+        pass2.max_quant[1] = codec->config.max_pquant;
+        //pass2.min_quant[2] = codec->config.min_bquant;
+        //pass2.max_quant[2] = codec->config.max_bquant;
+		pass2.filename = codec->config.stats;
+		if (codec->config.mode == RC_MODE_2PASS2_INT) {
+			pass2.bitrate = 10000;	/* xxx */
+		}
+        plugins[create.num_plugins].func = xvid_plugin_2pass2;
+        plugins[create.num_plugins].param = &pass2;
+        create.num_plugins++;
+		break;
+
+	case RC_MODE_NULL :
+		return ICERR_OK;
+
+	default :
+		break;
+	}
+
+  	if (codec->config.lum_masking) {
+        plugins[create.num_plugins].func = xvid_plugin_lumimasking;
+        plugins[create.num_plugins].param = NULL;
+        create.num_plugins++; 
+	}
+
+    plugins[create.num_plugins].func = vfw_debug;
+    plugins[create.num_plugins].param = NULL;
+    create.num_plugins++; 
 
 	create.width = lpbiInput->bmiHeader.biWidth;
 	create.height = lpbiInput->bmiHeader.biHeight;
 	create.fincr = codec->fincr;
 	create.fbase = codec->fbase;
 
-    create.plugins = plugins;
-    create.num_plugins = 0;
-   	if (codec->config.lum_masking) {
-        plugins[create.num_plugins].func = xvid_plugin_lumimasking;
-        plugins[create.num_plugins].param = NULL;
-        create.num_plugins++; 
-    }
-
     if (codec->config.packed) 
         create.global |= XVID_GLOBAL_PACKED;
-	if (codec->config.dx50bvop) 
+	if (codec->config.closed_gov) 
 		create.global |= XVID_GLOBAL_CLOSED_GOP;
 
     create.max_key_interval = codec->config.max_key_interval;
 	/* XXX: param.min_quantizer = codec->config.min_pquant;
 	param.max_quantizer = codec->config.max_pquant; */
 
-	create.max_bframes = codec->config.max_bframes;
+    if (codec->config.use_bvop)
+        create.max_bframes = codec->config.max_bframes;
 	create.frame_drop_ratio = codec->config.frame_drop_ratio;
 
 	create.bquant_ratio = codec->config.bquant_ratio;
@@ -331,7 +402,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 
 	create.num_threads = codec->config.num_threads;
 
-	switch(xvid_encore(0, XVID_ENC_CREATE, &create, (codec->config.mode==DLG_MODE_CBR)?&rc:NULL )) 
+	switch(xvid_encore(0, XVID_ENC_CREATE, &create, NULL))
 	{
 	case XVID_ERR_FAIL :	
 		return ICERR_ERROR;
@@ -350,9 +421,6 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	codec->framenum = 0;
 	codec->keyspacing = 0;
 
-	codec->twopass.hints = codec->twopass.stats1 = codec->twopass.stats2 = INVALID_HANDLE_VALUE;
-	codec->twopass.hintstream = NULL;
-
 	return ICERR_OK;
 }
 
@@ -362,27 +430,7 @@ LRESULT compress_end(CODEC * codec)
 	if (codec->ehandle != NULL)
 	{
 		xvid_encore(codec->ehandle, XVID_ENC_DESTROY, NULL, NULL);
-
-		if (codec->twopass.hints != INVALID_HANDLE_VALUE)
-		{
-			CloseHandle(codec->twopass.hints);
-		}
-		if (codec->twopass.stats1 != INVALID_HANDLE_VALUE)
-		{
-			CloseHandle(codec->twopass.stats1);
-		}
-		if (codec->twopass.stats2 != INVALID_HANDLE_VALUE)
-		{
-			CloseHandle(codec->twopass.stats2);
-		}
-		if (codec->twopass.hintstream != NULL)
-		{
-			free(codec->twopass.hintstream);
-		}
-
 		codec->ehandle = NULL;
-
-		codec_2pass_finish(codec);
 	}
 
 	return ICERR_OK;
@@ -397,13 +445,6 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	int length;
 	
 	// mpeg2avi yuv bug workaround (2 instances of CODEC)
-	if (codec->twopass.stats1 == INVALID_HANDLE_VALUE)
-	{
-		if (codec_2pass_init(codec) == ICERR_ERROR)
-		{
-			return ICERR_ERROR;
-		}
-	}
 
 	memset(&frame, 0, sizeof(frame));
 	frame.version = XVID_VERSION;
@@ -463,49 +504,6 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	if (codec->config.chroma_opt)
 		frame.vop_flags |= XVID_VOP_CHROMAOPT;
 
-	check_greyscale_mode(&codec->config, &frame, codec->framenum);
-
-/* XXX: hinted me
-
-// fix 1pass modes/hinted MV by koepi
-	if (codec->config.hinted_me && (codec->config.mode == DLG_MODE_CBR || codec->config.mode == DLG_MODE_VBR_QUAL || codec->config.mode == DLG_MODE_VBR_QUANT))
-	{
-		codec->config.hinted_me = 0;
-	}
-// end of ugly hack
-
-	if (codec->config.hinted_me && codec->config.mode == DLG_MODE_2PASS_1)
-	{
-		frame.hint.hintstream = codec->twopass.hintstream;
-		frame.hint.rawhints = 0;
-		frame.general |= XVID_HINTEDME_GET;
-	}
-	else if (codec->config.hinted_me && (codec->config.mode == DLG_MODE_2PASS_2_EXT || codec->config.mode == DLG_MODE_2PASS_2_INT))
-	{
-		DWORD read;
-		DWORD blocksize;
-
-		frame.hint.hintstream = codec->twopass.hintstream;
-		frame.hint.rawhints = 0;
-		frame.general |= XVID_HINTEDME_SET;
-
-		if (codec->twopass.hints == INVALID_HANDLE_VALUE)
-		{
-			codec->twopass.hints = CreateFile(codec->config.hintfile, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-			if (codec->twopass.hints == INVALID_HANDLE_VALUE)
-			{
-				DEBUGERR("couldn't open hints file");
-				return ICERR_ERROR;
-			}
-		}
-		if (!ReadFile(codec->twopass.hints, &blocksize, sizeof(DWORD), &read, 0) || read != sizeof(DWORD) ||
-			!ReadFile(codec->twopass.hints, frame.hint.hintstream, blocksize, &read, 0) || read != blocksize)
-		{
-			DEBUGERR("couldn't read from hints file");
-			return ICERR_ERROR;
-		}
-	} */
-
 	frame.motion |= pmvfast_presets[codec->config.motion_search];
 
 	switch (codec->config.vhq_mode)
@@ -543,6 +541,8 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		break;
 	}
 
+    frame.bframe_threshold = codec->config.bvop_threshold;
+
 	frame.input.plane[0] = icc->lpInput;
 	frame.input.stride[0] = (((icc->lpbiInput->biWidth * icc->lpbiInput->biBitCount) + 31) & ~31) >> 3;
 
@@ -557,40 +557,34 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 
 	switch (codec->config.mode) 
 	{
-	case DLG_MODE_CBR :
+	case RC_MODE_CBR :
 		frame.quant = 0;  /* use xvidcore cbr rate control */
 		break;
 
-	case DLG_MODE_VBR_QUAL :
-	case DLG_MODE_VBR_QUANT :
-	case DLG_MODE_2PASS_1 :
-		if (codec_get_quant(codec, &frame) == ICERR_ERROR)
+	//case RC_MODE_VBR_QUAL :
+	case RC_MODE_FIXED :
+	case RC_MODE_2PASS1 :
+		/*if (codec_get_quant(codec, &frame) == ICERR_ERROR)
 		{
 			return ICERR_ERROR;
-		}
+		}*/
 		break;
 
-	case DLG_MODE_2PASS_2_EXT :
-	case DLG_MODE_2PASS_2_INT :
-		if (codec_2pass_get_quant(codec, &frame) == ICERR_ERROR)
+	case RC_MODE_2PASS2_EXT :
+	case RC_MODE_2PASS2_INT :
+		/*if (codec_2pass_get_quant(codec, &frame) == ICERR_ERROR)
 		{
 			return ICERR_ERROR;
-		}
-		if (codec->config.dummy2pass)
-		{
-			outhdr->biSizeImage = codec->twopass.bytes2;
-			*icc->lpdwFlags = (codec->twopass.nns1.quant & NNSTATS_KEYFRAME) ? AVIIF_KEYFRAME : 0;
-			return ICERR_OK;
-		}
+		}*/
 		break;
 
-	case DLG_MODE_NULL :
+	case RC_MODE_NULL :
 		outhdr->biSizeImage = 0;
 		*icc->lpdwFlags = AVIIF_KEYFRAME;
 		return ICERR_OK;
 
 	default :
-		DEBUGERR("Invalid encoding mode");
+		DPRINTF("Invalid encoding mode");
 		return ICERR_ERROR;
 	}
 
@@ -602,7 +596,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	}
 	else if (codec->keyspacing < codec->config.min_key_interval && codec->framenum)
 	{
-		DEBUG("current frame forced to p-frame");
+		DPRINTF("current frame forced to p-frame");
 		frame.type = XVID_TYPE_PVOP;
 	}
 
@@ -625,11 +619,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		return ICERR_UNSUPPORTED;
 	}
 
-	{  /* XXX: debug text */
-		char tmp[100];
-		wsprintf(tmp, " {type=%i len=%i} length=%i", stats.type, stats.length, length);
-		OutputDebugString(tmp);
-	}
+	DPRINTF("{type=%i len=%i} length=%i", stats.type, stats.length, length);
 
     if (length == 0)	/* no encoder output */
 	{
@@ -650,38 +640,9 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 
     	outhdr->biSizeImage = length;
 
-    	if (codec->config.mode == DLG_MODE_2PASS_1 && codec->config.discard1pass)
+    	if (codec->config.mode == RC_MODE_2PASS1 && codec->config.discard1pass)
 	    {
 		    outhdr->biSizeImage = 0;
-	    }
-
-        /* XXX: hinted me 
-	    if (frame.general & XVID_HINTEDME_GET)
-    	{
-	    	DWORD wrote;
-	    	DWORD blocksize = frame.hint.hintlength;
-
-    		if (codec->twopass.hints == INVALID_HANDLE_VALUE)
-	    	{
-		    	codec->twopass.hints = CreateFile(codec->config.hintfile, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
-			    if (codec->twopass.hints	== INVALID_HANDLE_VALUE)
-    			{
-	    			DEBUGERR("couldn't create hints file");
-		    		return ICERR_ERROR;
-    			}
-	    	}
-		    if (!WriteFile(codec->twopass.hints, &frame.hint.hintlength, sizeof(int), &wrote, 0) || wrote != sizeof(int) ||
-			    !WriteFile(codec->twopass.hints, frame.hint.hintstream, blocksize, &wrote, 0) || wrote != blocksize)
-    		{
-	    		DEBUGERR("couldn't write to hints file");
-		    	return ICERR_ERROR;
-    		}
-	    }
-        */
-
-        if (stats.type > 0)
-	    {   
-		  codec_2pass_update(codec, &stats);
 	    }
     }
 
@@ -826,8 +787,15 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 	{
 		xvid_gbl_convert_t convert;
 
-		DEBUGFOURCC("input", icd->lpbiInput->biCompression);
-		DEBUGFOURCC("output", icd->lpbiOutput->biCompression);
+		DPRINTF("input=%c%c%c%c output=%c%c%c%c", 
+            icd->lpbiInput->biCompression&0xff,
+            (icd->lpbiInput->biCompression>>8)&0xff,
+            (icd->lpbiInput->biCompression>>16)&0xff,
+            (icd->lpbiInput->biCompression>>24)&0xff,
+            icd->lpbiOutput->biCompression&0xff,
+            (icd->lpbiOutput->biCompression>>8)&0xff,
+            (icd->lpbiOutput->biCompression>>16)&0xff,
+            (icd->lpbiOutput->biCompression>>24)&0xff);
 
 		memset(&convert, 0, sizeof(convert));
 		convert.version = XVID_VERSION;
@@ -896,231 +864,4 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 
 	return ICERR_OK;
 }
-
-int codec_get_quant(CODEC* codec, xvid_enc_frame_t* frame)
-{
-	switch (codec->config.mode)
-	{
-	case DLG_MODE_VBR_QUAL :
-		if (codec_is_in_credits(&codec->config, codec->framenum))
-		{
-// added by koepi for credits greyscale
-
-			check_greyscale_mode(&codec->config, frame, codec->framenum);
-
-// end of koepi's addition
-
-			switch (codec->config.credits_mode)
-			{
-			case CREDITS_MODE_RATE :
-				frame->quant = codec_get_vbr_quant(&codec->config, codec->config.quality * codec->config.credits_rate / 100);
-				break;
-
-			case CREDITS_MODE_QUANT :
-				frame->quant = codec->config.credits_quant_p;
-				break;
-
-			default :
-				DEBUGERR("Can't use credits size mode in quality mode");
-				return ICERR_ERROR;
-			}
-		}
-		else
-		{
-// added by koepi for credits greyscale
-
-			check_greyscale_mode(&codec->config, frame, codec->framenum);
-
-// end of koepi's addition
-
-			frame->quant = codec_get_vbr_quant(&codec->config, codec->config.quality);
-		}
-		return ICERR_OK;
-
-	case DLG_MODE_VBR_QUANT :
-		if (codec_is_in_credits(&codec->config, codec->framenum))
-		{
-// added by koepi for credits greyscale
-
-			check_greyscale_mode(&codec->config, frame, codec->framenum);
-
-// end of koepi's addition
-
-			switch (codec->config.credits_mode)
-			{
-			case CREDITS_MODE_RATE :
-				frame->quant =
-					codec->config.max_pquant -
-					((codec->config.max_pquant - codec->config.quant) * codec->config.credits_rate / 100);
-				break;
-
-			case CREDITS_MODE_QUANT :
-				frame->quant = codec->config.credits_quant_p;
-				break;
-
-			default :
-				DEBUGERR("Can't use credits size mode in quantizer mode");
-				return ICERR_ERROR;
-			}
-		}
-		else
-		{
-// added by koepi for credits greyscale
-
-			check_greyscale_mode(&codec->config, frame, codec->framenum);
-
-// end of koepi's addition
-
-			frame->quant = codec->config.quant;
-		}
-		return ICERR_OK;
-
-	case DLG_MODE_2PASS_1 :
-// added by koepi for credits greyscale
-
-		check_greyscale_mode(&codec->config, frame, codec->framenum);
-
-// end of koepi's addition
-
-		if (codec->config.credits_mode == CREDITS_MODE_QUANT)
-		{
-			if (codec_is_in_credits(&codec->config, codec->framenum))
-			{
-				frame->quant = codec->config.credits_quant_p;
-			}
-			else
-			{
-				frame->quant = 2;
-			}
-		}
-		else
-		{
-			frame->quant = 2;
-		}
-		return ICERR_OK;
-
-	default:
-		DEBUGERR("get quant: invalid mode");
-		return ICERR_ERROR;
-	}
-}
-
-
-int codec_is_in_credits(CONFIG* config, int framenum)
-{
-	if (config->credits_start)
-	{
-		if (framenum >= config->credits_start_begin &&
-			framenum <= config->credits_start_end)
-		{
-			return CREDITS_START;
-		}
-	}
-
-	if (config->credits_end)
-	{
-		if (framenum >= config->credits_end_begin &&
-			framenum <= config->credits_end_end)
-		{
-			return CREDITS_END;
-		}
-	}
-
-	return 0;
-}
-
-
-int codec_get_vbr_quant(CONFIG* config, int quality)
-{
-	static float fquant_running = 0;
-	static int my_quality = -1;
-	int	quant;
-
-	// if quality changes, recalculate fquant (credits)
-	if (quality != my_quality)
-	{
-		config->fquant = 0;
-	}
-
-	my_quality = quality;
-
-	// desired quantiser = (maxQ-minQ)/100 * (100-qual) + minQ
-	if (!config->fquant)
-	{
-		config->fquant =
-			((float) (config->max_pquant - config->min_pquant) / 100) *
-			(100 - quality) +
-			(float) config->min_pquant;
-
-		fquant_running = config->fquant;
-	}
-
-	if (fquant_running < config->min_pquant)
-	{
-		fquant_running = (float) config->min_pquant;
-	}
-	else if(fquant_running > config->max_pquant)
-	{
-		fquant_running = (float) config->max_pquant;
-	}
-
-	quant = (int) fquant_running;
-
-	// add error between fquant and quant to fquant_running
-	fquant_running += config->fquant - quant;
-
-	return quant;
-}
-
-// added by koepi for credits greyscale
-
-int check_greyscale_mode(CONFIG* config, xvid_enc_frame_t* frame, int framenum)
-
-{
-
-	if ((codec_is_in_credits(config, framenum)) && (config->mode!=DLG_MODE_CBR))
-
-	{
-
-		if (config->credits_greyscale)
-
-		{
-
-			if ((frame->vop_flags && XVID_VOP_GREYSCALE))  // use only if not already in greyscale
-
-				frame->vop_flags |= XVID_VOP_GREYSCALE;
-
-		} else {
-
-			if (!(frame->vop_flags && XVID_VOP_GREYSCALE))  // if movie is in greyscale, switch back
-
-				frame->vop_flags |= XVID_VOP_GREYSCALE;
-
-		}
-
-	} else {
-
-		if (config->greyscale)
-
-		{
-
-			if ((frame->vop_flags && XVID_VOP_GREYSCALE))  // use only if not already in greyscale
-
-				frame->vop_flags |= XVID_VOP_GREYSCALE;
-
-		} else {
-
-			if (!(frame->vop_flags && XVID_VOP_GREYSCALE))  // if credits is in greyscale, switch back
-
-				frame->vop_flags |= XVID_VOP_GREYSCALE;
-
-		}
-
-	}
-
-	return 0;
-
-}
-
-// end of koepi's addition
 
