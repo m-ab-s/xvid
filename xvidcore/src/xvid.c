@@ -37,7 +37,7 @@
  *  - 22.12.2001  API change: added xvid_init() - Isibaar
  *  - 16.12.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: xvid.c,v 1.33.2.15 2002-12-08 05:38:56 suxen_drol Exp $
+ *  $Id: xvid.c,v 1.33.2.16 2002-12-08 06:43:34 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -509,7 +509,7 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 static int
 xvid_init_convert(XVID_INIT_CONVERTINFO* convert)
 {
-	const int flip1 = (convert->input.colorspace & XVID_CSP_VFLIP) ^ (convert->output.colorspace & XVID_CSP_VFLIP);
+	// const int flip1 = (convert->input.colorspace & XVID_CSP_VFLIP) ^ (convert->output.colorspace & XVID_CSP_VFLIP);
 	const int width = convert->width;
 	const int height = convert->height;
 	const int width2 = convert->width/2;

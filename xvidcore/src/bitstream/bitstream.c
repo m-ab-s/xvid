@@ -1034,7 +1034,8 @@ BitstreamReadHeaders(Bitstream * bs,
 
 		} else if (start_code == USERDATA_START_CODE) {
 			char tmp[256];
-		    int i, version, build, packed;
+		    int i, version, build;
+			char packed;
 
 			BitstreamSkip(bs, 32);	// user_data_start_code
 

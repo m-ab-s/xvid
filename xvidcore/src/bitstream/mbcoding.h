@@ -24,12 +24,6 @@ int get_dc_dif(Bitstream * bs,
 int get_dc_size_lum(Bitstream * bs);
 int get_dc_size_chrom(Bitstream * bs);
 
-static int get_coeff(Bitstream * bs,
-			  int *run,
-			  int *last,
-			  int intra,
-			  int short_video_header);
-
 void get_intra_block(Bitstream * bs,
 					 int16_t * block,
 					 int direction,

@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion.h,v 1.13.2.6 2002-11-12 14:46:03 syskin Exp $
+ *  $Id: motion.h,v 1.13.2.7 2002-12-08 06:43:34 suxen_drol Exp $
  *
  ***************************************************************************/
 
@@ -182,11 +182,6 @@ int
 FindFcode(	const MBParam * const pParam,
 			const FRAMEINFO * const current);
 
-/* used internally only */
-
-static VECTOR
-GlobalMotionEst(const MACROBLOCK * const pMBs, 
-				const MBParam * const pParam, const uint32_t iFcode);
 				
 
 #endif							/* _MOTION_H_ */

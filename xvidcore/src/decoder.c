@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.15 2002-12-08 05:38:56 suxen_drol Exp $
+ *  $Id: decoder.c,v 1.37.2.16 2002-12-08 06:43:33 suxen_drol Exp $
  *
  *************************************************************************/
 
@@ -388,17 +388,6 @@ decoder_mbintra(DECODER * dec,
 #define ABS(X) (((X)>0)?(X):-(X))
 
 // decode an inter macroblock
-
-static void
-set_block(uint8_t * dst, int stride, int width, int height, int color)
-{
-	int i;
-	for (i = 0; i < height; i++)
-	{
-		memset(dst, color, width);
-		dst += stride;
-	}
-}
 
 static void
 rrv_mv_scaleup(VECTOR * mv)

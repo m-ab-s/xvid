@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.24 2002-12-04 12:31:18 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.76.2.25 2002-12-08 06:43:34 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -1865,7 +1865,7 @@ FrameCodeP(Encoder * pEnc,
 }
 
 
-static __inline void
+static void
 FrameCodeB(Encoder * pEnc,
 		   FRAMEINFO * frame,
 		   Bitstream * bs,

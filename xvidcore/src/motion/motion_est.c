@@ -54,6 +54,11 @@
 
 #define iDiamondSize 2
 
+static VECTOR
+GlobalMotionEst(const MACROBLOCK * const pMBs, 
+				const MBParam * const pParam, const uint32_t iFcode);
+
+
 static __inline int
 d_mv_bits(int x, int y, const uint32_t iFcode)
 {
