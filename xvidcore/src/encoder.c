@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.62 2003-12-20 11:54:14 Isibaar Exp $
+ * $Id: encoder.c,v 1.95.2.63 2004-01-30 18:53:50 chl Exp $
  *
  ****************************************************************************/
 
@@ -652,7 +652,7 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
 		data.max_quant[i] = pEnc->mbParam.max_quant[i];
 	}
 
-	data.reference.csp = XVID_CSP_USER;
+	data.reference.csp = XVID_CSP_PLANAR;
 	data.reference.plane[0] = pEnc->reference->image.y;
 	data.reference.plane[1] = pEnc->reference->image.u;
 	data.reference.plane[2] = pEnc->reference->image.v;
@@ -660,7 +660,7 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
 	data.reference.stride[1] = pEnc->mbParam.edged_width/2;
 	data.reference.stride[2] = pEnc->mbParam.edged_width/2;
 
-	data.current.csp = XVID_CSP_USER;
+	data.current.csp = XVID_CSP_PLANAR;
 	data.current.plane[0] = frame->image.y;
 	data.current.plane[1] = frame->image.u;
 	data.current.plane[2] = frame->image.v;
@@ -690,7 +690,7 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
 	
 	} else { /* XVID_PLG_AFTER */
 		if ((pEnc->mbParam.plugin_flags & XVID_REQORIGINAL)) {
-			data.original.csp = XVID_CSP_USER;
+			data.original.csp = XVID_CSP_PLANAR;
 			data.original.plane[0] = original->y;
 			data.original.plane[1] = original->u;
 			data.original.plane[2] = original->v;
