@@ -265,6 +265,10 @@ MBTransQuantInter(const MBParam * const pParam,
 
 		sum = QuantizeInterBlock(&qcoeff[i * 64], &data[i * 64], iQuant, pParam->m_quant_type);
 
+		if(frame->global_flags & XVID_CARTOON_MODE) {
+			limit *= 3;
+		}
+
 		if (sum >= limit) {
 
 			start_timer();
@@ -345,7 +349,11 @@ MBTransQuantInterBVOP(const MBParam * pParam,
 		int codedecision = 0;
 		
 		int sum = QuantizeInterBlock(&qcoeff[i * 64], &data[i * 64], pMB->quant, pParam->m_quant_type);
-		
+
+		if(frame->global_flags & XVID_CARTOON_MODE) {
+			limit *= 2;
+		}
+
 		if ((sum > 2) || (qcoeff[i*64+1] != 0) || (qcoeff[i*64+8] != 0) ) codedecision = 1;
 		else {
 			if (pMB->mode == MODE_DIRECT || pMB->mode == MODE_DIRECT_NO4V) {
