@@ -233,6 +233,8 @@
 #define IDC_NUMTHREADS_STATIC           1223
 #define IDC_FRAMEDROP                   1224
 #define IDC_FRAMEDROP_STATIC            1225
+#define IDC_KFTRESHOLD                  1226
+#define IDC_KFREDUCTION                 1227
 
 // Next default values for new objects
 // 
@@ -240,7 +242,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1226
+#define _APS_NEXT_CONTROL_VALUE         1228
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

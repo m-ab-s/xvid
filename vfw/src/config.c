@@ -108,6 +108,10 @@ REG_INT const reg_ints[] = {
 	{"keyframe_boost",			&reg.keyframe_boost,			20},
 	{"discard1pass",			&reg.discard1pass,				1},
 	{"dummy2pass",				&reg.dummy2pass,				0},
+// added by koepi for new two-pass curve treatment
+	{"kftreshold",				&reg.kftreshold,				10},
+	{"kfreduction",				&reg.kfreduction,				30},
+// end of koepi's additions
 	{"curve_compression_high",	&reg.curve_compression_high,	25},
 	{"curve_compression_low",	&reg.curve_compression_low,		10},
 	{"use_alt_curve",			&reg.use_alt_curve,				0},
@@ -488,6 +492,9 @@ void adv_mode(HWND hDlg, int mode)
 	// create arrays of controls to be disabled for each mode
 	const short twopass_disable[] = {
 		IDC_KFBOOST, IDC_DUMMY2PASS, IDC_USEALT,
+// added by koepi for new curve treatment
+		IDC_KFTRESHOLD, IDC_KFREDUCTION,
+//end of koepi's additions
 		IDC_CURVECOMPH, IDC_CURVECOMPL, IDC_PAYBACK, IDC_PAYBACKBIAS, IDC_PAYBACKPROP,
 		IDC_STATS2, IDC_STATS2_BROWSE,
 	};
@@ -643,7 +650,10 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 		SetDlgItemInt(hDlg, IDC_KFBOOST, config->keyframe_boost, FALSE);
 		CheckDlgButton(hDlg, IDC_DISCARD1PASS, config->discard1pass ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_DUMMY2PASS, config->dummy2pass ? BST_CHECKED : BST_UNCHECKED);
-
+// added by koepi for new 2pass curve treatment
+		SetDlgItemInt(hDlg, IDC_KFTRESHOLD, config->kftreshold, FALSE);
+		SetDlgItemInt(hDlg, IDC_KFREDUCTION, config->kfreduction, FALSE);
+// end of koepi's additions
 		SetDlgItemInt(hDlg, IDC_CURVECOMPH, config->curve_compression_high, FALSE);
 		SetDlgItemInt(hDlg, IDC_CURVECOMPL, config->curve_compression_low, FALSE);
 		SetDlgItemInt(hDlg, IDC_PAYBACK, config->bitrate_payback_delay, FALSE);
@@ -771,6 +781,10 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 
 	case DLG_2PASS :
 		config->keyframe_boost = GetDlgItemInt(hDlg, IDC_KFBOOST, NULL, FALSE);
+// added by koepi for the new 2pass curve treatment
+		config->kftreshold = GetDlgItemInt(hDlg, IDC_KFTRESHOLD, NULL, FALSE);
+		config->kfreduction = GetDlgItemInt(hDlg, IDC_KFREDUCTION, NULL, FALSE);
+//end of koepi's additions
 		config->discard1pass = ISDLGSET(IDC_DISCARD1PASS);
 		config->dummy2pass = ISDLGSET(IDC_DUMMY2PASS);
 		config->curve_compression_high = GetDlgItemInt(hDlg, IDC_CURVECOMPH, NULL, FALSE);

@@ -710,6 +710,7 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 	int overflow;
 	int credits_pos;
 	int capped_to_max_framesize = 0;
+	int KFdistance, KF_min_size;
 
 	if (codec->framenum == 0)
 	{
@@ -928,6 +929,30 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 	}
 
 	twopass->desired_bytes2 = bytes2;
+
+	if (frame->intra)
+	{
+		KFdistance = codec->twopass.keyframe_locations[codec->twopass.KF_idx] -
+			codec->twopass.keyframe_locations[codec->twopass.KF_idx - 1];
+
+		if (KFdistance < codec->config.kftreshold)
+		{
+			KFdistance = KFdistance - codec->config.min_key_interval;
+
+			if (KFdistance >= 0)
+			{
+				KF_min_size = bytes2 * (100 - codec->config.kfreduction) / 100;
+				if (KF_min_size < 1)
+					KF_min_size = 1;
+
+				bytes2 = KF_min_size + (bytes2 - KF_min_size) * KFdistance /
+					(codec->config.kftreshold - codec->config.min_key_interval);
+
+				if (bytes2 < 1)
+					bytes2 = 1;
+			}
+		}
+	}
 
 	// Foxer: scale overflow in relation to average size, so smaller frames don't get
 	// too much/little bitrate
