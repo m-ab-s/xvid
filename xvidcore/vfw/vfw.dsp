@@ -168,6 +168,10 @@ SOURCE=.\src\config.h
 
 SOURCE=.\src\debug.h
 # End Source File
+# Begin Source File
+
+SOURCE=.\src\vfwext.h
+# End Source File
 # End Group
 # Begin Group "Resource Files"
 

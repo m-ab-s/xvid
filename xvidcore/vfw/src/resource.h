@@ -20,6 +20,19 @@
 #define IDD_RC_2PASS1                   116
 #define IDD_MOTION                      117
 #define IDD_TOOLS                       120
+#define IDD_ZONE                        121
+#define IDD_LEVEL                       122
+#define IDD_CALC                        124
+#define WIZ_CYDLG                       140
+#define PROP_MIN_CYDLG                  144
+#define PROP_SM_CYDLG                   188
+#define PROP_MIN_CXDLG                  212
+#define PROP_SM_CXDLG                   212
+#define PROP_MED_CYDLG                  215
+#define PROP_LG_CYDLG                   218
+#define PROP_MED_CXDLG                  227
+#define PROP_LG_CXDLG                   252
+#define WIZ_CXDLG                       276
 #define IDC_MODE                        1000
 #define IDC_SLIDER                      1001
 #define IDC_VALUE                       1002
@@ -31,6 +44,7 @@
 #define IDC_STATIC_HELP                 1008
 #define IDC_PROFILE                     1008
 #define IDC_MOTION                      1009
+#define IDC_ADVANCED2                   1009
 #define IDC_QUANTTYPE                   1010
 #define IDC_FOURCC                      1011
 #define IDC_MAXKEY                      1012
@@ -264,8 +278,12 @@
 #define IDC_STATS                       1240
 #define IDC_MODE_ADV                    1241
 #define IDC_PROFILE_ADV                 1242
+#define IDC_ADD                         1243
 #define IDC_PROFILE_BVOP                1244
+#define IDC_REMOVE                      1244
+#define IDC_EDIT                        1245
 #define IDC_PROFILE_MPEGQUANT           1246
+#define IDC_BITRATE_CALC                1246
 #define IDC_PROFILE_INTERLACE           1247
 #define IDC_PROFILE_QPEL                1248
 #define IDC_PROFILE_GMC                 1249
@@ -283,14 +301,48 @@
 #define IDC_BVOP_THRESHOLD_S            1264
 #define IDC_BQUANTOFFSET_S              1265
 #define IDC_CLOSEDGOV                   1266
+#define IDC_ZONES                       1267
+#define IDC_ZONE_FRAME                  1268
+#define IDC_ZONE_VALUE                  1274
+#define IDC_ZONE_BITRATE                1274
+#define IDC_ZONE_WEIGHT                 1274
+#define IDC_ZONE_SLIDER                 1275
+#define IDC_ZONE_FETCH                  1276
+#define IDC_ZONE_MODE                   1277
+#define IDC_ZONE_QUANT                  1277
+#define IDC_ZONE_GREYSCALE              1279
+#define IDC_ZONE_CHROMAOPT              1280
+#define IDC_ZONE_BVOPTHRESHOLD_ENABLE   1281
+#define IDC_ZONE_BVOPTHRESHOLD          1282
+#define IDC_VALUE_LABEL                 1283
+#define IDC_SLIDER_LABEL                1284
+#define IDC_ZONE_MODE_WEIGHT            1284
+#define IDC_ZONE_MODE_QUANT             1287
+#define IDC_QUANTTYPE_S                 1290
+#define IDC_ZONE_MAX                    1292
+#define IDC_ZONE_MIN                    1293
+#define IDC_LEVEL_PROFILE               1293
+#define IDC_LEVEL_WIDTH                 1294
+#define IDC_LEVEL_HEIGHT                1295
+#define IDC_LEVEL_FPS                   1296
+#define IDC_LEVEL_VMV                   1297
+#define IDC_LEVEL_VCV                   1298
+#define IDC_LEVEL_VBV                   1299
+#define IDC_LEVEL_BITRATE               1300
+#define IDC_BITRATE                     1302
+#define IDC_BITRATE_MIN                 1303
+#define IDC_BITRATE_MAX                 1304
+#define IDC_ZONE_BVOPTHRESHOLD_S        1305
+#define IDC_TRELLISQUANT                1306
+#define IDC_BITRATE_S                   1307
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        121
+#define _APS_NEXT_RESOURCE_VALUE        125
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1267
+#define _APS_NEXT_CONTROL_VALUE         1309
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

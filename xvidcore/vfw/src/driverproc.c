@@ -30,6 +30,7 @@
 
 #include <windows.h>
 #include <vfw.h>
+#include "vfwext.h"
 
 #include "debug.h"
 #include "codec.h"
@@ -87,8 +88,9 @@ BOOL WINAPI DllMain(
 				return 0;
 			}
 
-			codec->ehandle = codec->dhandle = NULL;
-			codec->fbase = 25;
+            codec->config.ci_valid = 0;
+            codec->ehandle = codec->dhandle = NULL;
+            codec->fbase = 25;
 			codec->fincr = 1;
 			config_reg_get(&codec->config);
 
@@ -272,6 +274,21 @@ BOOL WINAPI DllMain(
 	case ICM_DECOMPRESSEX_END:
 	case ICM_DECOMPRESSEX:
 		return ICERR_UNSUPPORTED;
+
+    /* VFWEXT entry point */
+    case ICM_USER+0x0fff :
+        if (lParam1 == VFWEXT_CONFIGURE_INFO) {
+            VFWEXT_CONFIGURE_INFO_T * info = (VFWEXT_CONFIGURE_INFO_T*)lParam2;
+            DPRINTF("%i %i %i %i %i %i",
+                info->ciWidth, info->ciHeight,
+                info->ciRate, info->ciScale,
+                info->ciActiveFrame, info->ciFrameCount);
+
+            codec->config.ci_valid = 1;
+            memcpy(&codec->config.ci, (void*)lParam2, sizeof(VFWEXT_CONFIGURE_INFO_T));
+            return ICERR_OK;
+        }
+        return ICERR_UNSUPPORTED;
 
 	default:
 		return DefDriverProc(dwDriverId, hDriver, uMsg, lParam1, lParam2);

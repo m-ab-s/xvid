@@ -60,6 +60,7 @@
 #include <shlobj.h>
 #include <prsht.h>
 
+#include <stdio.h>  // sprintf
 #include <xvid.h>	// XviD API
 
 #include "debug.h"
@@ -70,6 +71,7 @@
 
 #define CONSTRAINVAL(X,Y,Z) if((X)<(Y)) X=Y; if((X)>(Z)) X=Z;
 #define IsDlgChecked(hwnd,idc)	(IsDlgButtonChecked(hwnd,idc) == BST_CHECKED)
+#define CheckDlg(hwnd,idc,value) CheckDlgButton(hwnd,idc, value?BST_CHECKED:BST_UNCHECKED)
 #define EnableDlgWindow(hwnd,idc,state) EnableWindow(GetDlgItem(hwnd,idc),state)
 
 HINSTANCE g_hInst;
@@ -99,63 +101,40 @@ BOOL CALLBACK enum_tooltips(HWND hWnd, LPARAM lParam)
 /* MPEG-4 PROFILES/LEVELS ============================================================== */
 /* ===================================================================================== */
 
-#define PROFILE_BVOP		0x00000001
-#define PROFILE_MPEGQUANT	0x00000002
-#define PROFILE_INTERLACE	0x00000004
-#define PROFILE_QPEL		0x00000008
-#define PROFILE_GMC			0x00000010
-#define PROFILE_REDUCED		0x00000020	/* dynamic resolution conversion */
 
-#define PROFILE_AS			(PROFILE_BVOP|PROFILE_MPEGQUANT|PROFILE_INTERLACE|PROFILE_QPEL|PROFILE_GMC)
-#define PROFILE_ARTS		(PROFILE_REDUCED)
-
-
-typedef struct
-{
-	char * name;
-	int width;
-	int height;
-	int fps;
-	int max_objects;
-	int total_vmv_buffer_sz;    /* macroblock memory; when BVOPS=false, vmv = 2*vcv; when BVOPS=true,  vmv = 3*vcv*/
-	int max_vmv_buffer_sz;	    /* max macroblocks per vop */
-	int vcv_decoder_rate;	/* macroblocks decoded per second */
-	int max_acpred_mbs;	/* percentage */ 
-	int max_vbv_size;			/*    max vbv size (bits) 16368 bits */
-	int max_video_packet_length; /* bits */
-	int max_bitrate;			/* kbits/s */
-	unsigned int flags;
-} profile_t;
 
 /* default vbv_occupancy is (64/170)*vbv_buffer_size */
 
-static const profile_t profiles[] =
+const profile_t profiles[] =
 {
-/*    name                   w    h  fps  obj  Tvmv  vmv    vcv   ac%  vbv          pkt   kbps  flags */
-	{ "(unrestricted)",       0,   0,  0,  0,    0,    0,      0, 100,   0*16368,     0,    0, 0xffffffff },
- 
-	{ "Simple @ L1",        176, 144, 15,  4,  198,   99,   1485, 100,  10*16368,  2048,   64, 0 },
-	{ "Simple @ L2",        352, 288, 15,  4,  792,  396,   5940, 100,  40*16368,  4096,  128, 0 },
-	{ "Simple @ L3",        352, 288, 15,  4,  792,  396,  11880, 100,  40*16368,  8192,  384, 0 },
+/*    name                 p@l,    w    h  fps  obj  Tvmv  vmv    vcv   ac%     vbv      pkt   kbps  flags */
+    { "Simple @ L0",       0x08,  176, 144, 15,  1,  198,   99,   1485, 100,  10*16368,  2048,   64, 0 },
+            /* simple@l0: max f_code=1, intra_dc_vlc_threshold=0
+            /* if ac preidition is used, adaptive quantization must not be used */
+	{ "Simple @ L1",       0x01,  176, 144, 15,  4,  198,   99,   1485, 100,  10*16368,  2048,   64, PROFILE_ADAPTQUANT },
+	{ "Simple @ L2",       0x02,  352, 288, 15,  4,  792,  396,   5940, 100,  40*16368,  4096,  128, PROFILE_ADAPTQUANT },
+	{ "Simple @ L3",       0x03,  352, 288, 15,  4,  792,  396,  11880, 100,  40*16368,  8192,  384, PROFILE_ADAPTQUANT },
 
-	{ "ARTS @ L1",          176, 144, 15,  4,  198,   99,   1485, 100,  10*16368,  8192,   64, PROFILE_ARTS },
-	{ "ARTS @ L2",          352, 288, 15,  4,  792,  396,   5940, 100,  40*16368, 16384,  128, PROFILE_ARTS },
-	{ "ARTS @ L3",          352, 288, 30,  4,  792,  396,  11880, 100,  40*16368, 16384,  384, PROFILE_ARTS },
-	{ "ARTS @ L4",          352, 288, 30, 16,  792,  396,  11880, 100,  80*16368, 16384, 2000, PROFILE_ARTS },
+	{ "ARTS @ L1",         0x91,  176, 144, 15,  4,  198,   99,   1485, 100,  10*16368,  8192,   64, PROFILE_ARTS },
+	{ "ARTS @ L2",         0x92,  352, 288, 15,  4,  792,  396,   5940, 100,  40*16368, 16384,  128, PROFILE_ARTS },
+	{ "ARTS @ L3",         0x93,  352, 288, 30,  4,  792,  396,  11880, 100,  40*16368, 16384,  384, PROFILE_ARTS },
+	{ "ARTS @ L4",         0x94,  352, 288, 30, 16,  792,  396,  11880, 100,  80*16368, 16384, 2000, PROFILE_ARTS },
 
-	{ "AS @ L0",	        176, 144, 30,  1,  297,   99,   2970, 100,  10*16368,  2048,  128, PROFILE_AS },
-	{ "AS @ L1",	        176, 144, 30,  4,  297,   99,   2970, 100,  10*16368,  2048,  128, PROFILE_AS },
-	{ "AS @ L2",	        352, 288, 15,  4, 1188,  396,   5940, 100,  40*16368,  4096,  384, PROFILE_AS },
-	{ "AS @ L3",	        352, 288, 30,  4, 1188,  396,  11880, 100,  40*16368,  4096,  768, PROFILE_AS },
-	{ "AS @ L4",	        352, 576, 30,  4, 2376,  792,  23760,  50,  80*16368,  8192, 3000, PROFILE_AS },
-	{ "AS @ L5",	        720, 576, 30,  4, 4860, 1620,  48600,  25, 112*16368, 16384, 8000, PROFILE_AS },
+	{ "AS @ L0",	       0xf0,  176, 144, 30,  1,  297,   99,   2970, 100,  10*16368,  2048,  128, PROFILE_AS },
+	{ "AS @ L1",	       0xf1,  176, 144, 30,  4,  297,   99,   2970, 100,  10*16368,  2048,  128, PROFILE_AS },
+	{ "AS @ L2",	       0xf2,  352, 288, 15,  4, 1188,  396,   5940, 100,  40*16368,  4096,  384, PROFILE_AS },
+	{ "AS @ L3",	       0xf3,  352, 288, 30,  4, 1188,  396,  11880, 100,  40*16368,  4096,  768, PROFILE_AS },
+	{ "AS @ L4",	       0xf4,  352, 576, 30,  4, 2376,  792,  23760,  50,  80*16368,  8192, 3000, PROFILE_AS },
+	{ "AS @ L5",	       0xf5,  720, 576, 30,  4, 4860, 1620,  48600,  25, 112*16368, 16384, 8000, PROFILE_AS },
 
-	{ "DXN Handheld",		176, 144, 15, -1,  198,   99,   1485, 100,  16*16368,    -1,  128, 0 },
-	{ "DXN Portable NTSC",	352, 240, 30, -1,  990,  330,   9900, 100,  64*16368,    -1,  768, PROFILE_BVOP },
-	{ "DXN Portable PAL",	352, 288, 25, -1, 1188,  396,   9900, 100,  64*16368,    -1,  768, PROFILE_BVOP },
-	{ "DXN HT NTSC",	    720, 480, 30, -1, 4050, 1350,  40500, 100, 192*16368,    -1, 4000, PROFILE_BVOP|PROFILE_INTERLACE },
-	{ "DXN HT NTSC",        720, 576, 25, -1, 4860, 1620,  40500, 100, 192*16368,    -1, 4000, PROFILE_BVOP|PROFILE_INTERLACE },
-	{ "DXN HDTV",          1280, 720, 30, -1,10800, 3600, 108000, 100, 384*16368,    -1, 8000, PROFILE_BVOP|PROFILE_INTERLACE },
+	{ "DXN Handheld",	   0x00,  176, 144, 15, -1,  198,   99,   1485, 100,  16*16368,    -1,  128, PROFILE_ADAPTQUANT },
+	{ "DXN Portable NTSC", 0x00,  352, 240, 30, -1,  990,  330,   9900, 100,  64*16368,    -1,  768, PROFILE_ADAPTQUANT|PROFILE_BVOP },
+	{ "DXN Portable PAL",  0x00,  352, 288, 25, -1, 1188,  396,   9900, 100,  64*16368,    -1,  768, PROFILE_ADAPTQUANT|PROFILE_BVOP },
+	{ "DXN HT NTSC",	   0x00,  720, 480, 30, -1, 4050, 1350,  40500, 100, 192*16368,    -1, 4000, PROFILE_ADAPTQUANT|PROFILE_BVOP|PROFILE_INTERLACE },
+	{ "DXN HT PAL",        0x00,  720, 576, 25, -1, 4860, 1620,  40500, 100, 192*16368,    -1, 4000, PROFILE_ADAPTQUANT|PROFILE_BVOP|PROFILE_INTERLACE },
+	{ "DXN HDTV",          0x00, 1280, 720, 30, -1,10800, 3600, 108000, 100, 384*16368,    -1, 8000, PROFILE_ADAPTQUANT|PROFILE_BVOP|PROFILE_INTERLACE },
+	
+    { "(unrestricted)",    0x00,    0,   0,  0,  0,    0,    0,      0, 100,   0*16368,     0,    0, 0xffffffff },
 };
 
 
@@ -167,10 +146,9 @@ static const profile_t profiles[] =
 CONFIG reg;
 
 static const REG_INT reg_ints[] = {
-	{"mode",					&reg.mode,						RC_MODE_CBR},
-	{"quality",					&reg.quality,					85},
-	{"quant",					&reg.quant,						5},
-	{"rc_bitrate",				&reg.rc_bitrate,				900000},
+	{"mode",					&reg.mode,						RC_MODE_1PASS},
+	{"bitrate",					&reg.bitrate,					700},
+
 	{"rc_reaction_delay_factor",&reg.rc_reaction_delay_factor,	16},
 	{"rc_averaging_period",		&reg.rc_averaging_period,		100},
 	{"rc_buffer",				&reg.rc_buffer,		    		100},
@@ -186,23 +164,23 @@ static const REG_INT reg_ints[] = {
 	{"qpel",					&reg.qpel,						0},
 	{"gmc",						&reg.gmc,						0},
 	{"chromame",				&reg.chromame,					0},
-	{"greyscale",				&reg.greyscale,					0},
     {"use_bvop",				&reg.use_bvop,	    			0},
 	{"max_bframes",				&reg.max_bframes,				2},
-	{"bquant_ratio",			&reg.bquant_ratio,				150},
-	{"bquant_offset",			&reg.bquant_offset,				100},
-    {"bvop_threshold",          &reg.bvop_threshold,            0},
+	{"bquant_ratio",			&reg.bquant_ratio,				150},   /* 100-base float */
+	{"bquant_offset",			&reg.bquant_offset,				100},   /* 100-base float */
 	{"packed",					&reg.packed,					0},
 	{"closed_gov",				&reg.closed_gov,				1},
 	{"debug",					&reg.debug,						0},
 	{"reduced_resolution",		&reg.reduced_resolution,		0},
-	{"chroma_opt",				&reg.chroma_opt,				0},
 	{"frame_drop_ratio",		&reg.frame_drop_ratio,			0},
 
 	{"min_iquant",				&reg.min_iquant,				2},
 	{"max_iquant",				&reg.max_iquant,				31},
 	{"min_pquant",				&reg.min_pquant,				2},
 	{"max_pquant",				&reg.max_pquant,				31},
+	{"min_bquant",				&reg.min_bquant,				2},
+	{"max_bquant",				&reg.max_bquant,				31},
+    {"trellis_quant",           &reg.trellis_quant,             0},
 
 	{"desired_size",			&reg.desired_size,				570000},
 	{"keyframe_boost",			&reg.keyframe_boost,			0},
@@ -222,13 +200,9 @@ static const REG_INT reg_ints[] = {
 	{"alt_curve_min_rel_qual",	&reg.alt_curve_min_rel_qual,	50},
 	{"bitrate_payback_delay",	&reg.bitrate_payback_delay,		250},
 	{"bitrate_payback_method",	&reg.bitrate_payback_method,	0},
-	{"twopass_max_bitrate",		&reg.twopass_max_bitrate,		10000 * CONFIG_KBPS},
 	{"twopass_max_overflow_improvement", &reg.twopass_max_overflow_improvement, 60},
 	{"twopass_max_overflow_degradation", &reg.twopass_max_overflow_degradation, 60},
-
-	/* decoder */
-//	{"deblock_y",				&reg.deblock_y,					0},
-//	{"deblock_uv",				&reg.deblock_uv,				0}
+    {"num_zones",               &reg.num_zones,                 1},
 };
 
 static const REG_STR reg_strs[] = {
@@ -236,15 +210,50 @@ static const REG_STR reg_strs[] = {
     {"stats",					reg.stats,						CONFIG_2PASS_FILE},
 };
 
-/* get config settings from registry */
+
+zone_t stmp;
+static const REG_INT reg_zone[] = {
+    {"zone%i_frame",            &stmp.frame,                     0},
+    {"zone%i_mode",             &stmp.mode,                      RC_ZONE_WEIGHT},
+    {"zone%i_weight",           &stmp.weight,                    100},      /* 100-base float */
+    {"zone%i_quant",            &stmp.quant,                     500},      /* 100-base float */
+    {"zone%i_greyscale",        &stmp.greyscale,                 0},
+    {"zone%i_chroma_opt",       &stmp.chroma_opt,                0},
+    {"zone%i_bvop_threshold",   &stmp.bvop_threshold,            0},
+};
+
+static const BYTE default_qmatrix_intra[] = {
+	8, 17,18,19,21,23,25,27,
+	17,18,19,21,23,25,27,28,
+	20,21,22,23,24,26,28,30,
+	21,22,23,24,26,28,30,32,
+	22,23,24,26,28,30,32,35,
+	23,24,26,28,30,32,35,38,
+	25,26,28,30,32,35,38,41,
+	27,28,30,32,35,38,41,45
+};
+
+static const BYTE default_qmatrix_inter[] = {
+	16,17,18,19,20,21,22,23,
+	17,18,19,20,21,22,23,24,
+	18,19,20,21,22,23,24,25,
+	19,20,21,22,23,24,26,27,
+	20,21,22,23,25,26,27,28,
+	21,22,23,24,26,27,28,30,
+	22,23,24,26,27,28,30,31,
+	23,24,25,27,28,30,31,33
+};
+
+
 
 #define REG_GET_B(X, Y, Z) size=sizeof((Z));if(RegQueryValueEx(hKey, X, 0, 0, Y, &size) != ERROR_SUCCESS) {memcpy(Y, Z, sizeof((Z)));}
 
 void config_reg_get(CONFIG * config)
 {
-	HKEY hKey;
+    char tmp[32];
+    HKEY hKey;
 	DWORD size;
-    int i;
+    int i,j;
 	xvid_gbl_info_t info;
 
 	memset(&info, 0, sizeof(info));
@@ -255,51 +264,20 @@ void config_reg_get(CONFIG * config)
 	
 	RegOpenKeyEx(XVID_REG_KEY, XVID_REG_PARENT "\\" XVID_REG_CHILD, 0, KEY_READ, &hKey);
 
-	for (i=0 ; i<sizeof(reg_ints)/sizeof(REG_INT) ; ++i)
-	{
+    /* read integer values */
+	for (i=0 ; i<sizeof(reg_ints)/sizeof(REG_INT); i++) {
 		size = sizeof(int);
-
-		if (RegQueryValueEx(hKey, reg_ints[i].reg_value, 0, 0, (LPBYTE)reg_ints[i].config_int, &size) != ERROR_SUCCESS)
-		{
+        if (RegQueryValueEx(hKey, reg_ints[i].reg_value, 0, 0, (LPBYTE)reg_ints[i].config_int, &size) != ERROR_SUCCESS) {
 			*reg_ints[i].config_int = reg_ints[i].def;
-		}
+        }
 	}
 
-	for (i=0 ; i<sizeof(reg_strs)/sizeof(REG_STR) ; ++i)
-	{
+    /* read string values */
+	for (i=0 ; i<sizeof(reg_strs)/sizeof(REG_STR); i++) {
 		size = MAX_PATH;
-
-		if (RegQueryValueEx(hKey, reg_strs[i].reg_value, 0, 0, (LPBYTE)reg_strs[i].config_str, &size) != ERROR_SUCCESS)
-		{
+		if (RegQueryValueEx(hKey, reg_strs[i].reg_value, 0, 0, (LPBYTE)reg_strs[i].config_str, &size) != ERROR_SUCCESS) {
 			memcpy(reg_strs[i].config_str, reg_strs[i].def, MAX_PATH);
 		}
-	}
-
-	{
-		BYTE default_qmatrix_intra[] = {
-			8, 17,18,19,21,23,25,27,
-			17,18,19,21,23,25,27,28,
-			20,21,22,23,24,26,28,30,
-			21,22,23,24,26,28,30,32,
-			22,23,24,26,28,30,32,35,
-			23,24,26,28,30,32,35,38,
-			25,26,28,30,32,35,38,41,
-			27,28,30,32,35,38,41,45
-		};
-
-		BYTE default_qmatrix_inter[] = {
-			16,17,18,19,20,21,22,23,
-			17,18,19,20,21,22,23,24,
-			18,19,20,21,22,23,24,25,
-			19,20,21,22,23,24,26,27,
-			20,21,22,23,25,26,27,28,
-			21,22,23,24,26,27,28,30,
-			22,23,24,26,27,28,30,31,
-			23,24,25,27,28,30,31,33
-		};
-
-		REG_GET_B("qmatrix_intra", reg.qmatrix_intra, default_qmatrix_intra);
-		REG_GET_B("qmatrix_inter", reg.qmatrix_inter, default_qmatrix_inter);
 	}
 
     reg.profile = 0;
@@ -309,7 +287,32 @@ void config_reg_get(CONFIG * config)
         }
     }
 
-	memcpy(config, &reg, sizeof(CONFIG));
+    memcpy(config, &reg, sizeof(CONFIG));
+
+
+    /* read quant matrices */
+	REG_GET_B("qmatrix_intra", config->qmatrix_intra, default_qmatrix_intra);
+	REG_GET_B("qmatrix_inter", config->qmatrix_inter, default_qmatrix_inter);
+    
+
+    /* read zones */
+    if (config->num_zones>MAX_ZONES) {
+        config->num_zones=MAX_ZONES;
+    }else if (config->num_zones<=0) {
+        config->num_zones = 1;
+    }
+
+    for (i=0; i<config->num_zones; i++) {
+	    for (j=0; j<sizeof(reg_zone)/sizeof(REG_INT); j++)  {
+		    size = sizeof(int);
+            
+            wsprintf(tmp, reg_zone[j].reg_value, i);
+		    if (RegQueryValueEx(hKey, tmp, 0, 0, (LPBYTE)reg_zone[j].config_int, &size) != ERROR_SUCCESS)
+			    *reg_zone[j].config_int = reg_zone[j].def;
+	    }
+
+        memcpy(&config->zones[i], &stmp, sizeof(zone_t));
+    }
 
 	RegCloseKey(hKey);
 }
@@ -321,9 +324,10 @@ void config_reg_get(CONFIG * config)
 
 void config_reg_set(CONFIG * config)
 {
-	HKEY hKey;
+    char tmp[64];
+    HKEY hKey;
 	DWORD dispo;
-	int i;
+	int i,j;
 
 	if (RegCreateKeyEx(
 			XVID_REG_KEY,
@@ -342,20 +346,29 @@ void config_reg_set(CONFIG * config)
 
 	memcpy(&reg, config, sizeof(CONFIG));
 
-    strcpy(reg.profile_name, profiles[reg.profile].name);
-
-	for (i=0 ; i<sizeof(reg_ints)/sizeof(REG_INT) ; ++i)
-	{
+    /* set integer values */
+	for (i=0 ; i<sizeof(reg_ints)/sizeof(REG_INT); i++) {
 		RegSetValueEx(hKey, reg_ints[i].reg_value, 0, REG_DWORD, (LPBYTE)reg_ints[i].config_int, sizeof(int));
 	}
 
-	for (i=0 ; i<sizeof(reg_strs)/sizeof(REG_STR) ; ++i)
-	{
+    /* set string values */
+    strcpy(reg.profile_name, profiles[reg.profile].name);
+	for (i=0 ; i<sizeof(reg_strs)/sizeof(REG_STR); i++) {
 		RegSetValueEx(hKey, reg_strs[i].reg_value, 0, REG_SZ, reg_strs[i].config_str, lstrlen(reg_strs[i].config_str)+1);
 	}
 
-	REG_SET_B("qmatrix_intra", reg.qmatrix_intra);
-	REG_SET_B("qmatrix_inter", reg.qmatrix_inter);
+    /* set quant matrices */
+	REG_SET_B("qmatrix_intra", config->qmatrix_intra);
+	REG_SET_B("qmatrix_inter", config->qmatrix_inter);
+
+    /* set seections */
+    for (i=0; i<config->num_zones; i++) {
+        memcpy(&stmp, &config->zones[i], sizeof(zone_t));
+	    for (j=0; j<sizeof(reg_zone)/sizeof(REG_INT); j++)  {
+            wsprintf(tmp, reg_zone[j].reg_value, i);
+	        RegSetValueEx(hKey, tmp, 0, REG_DWORD, (LPBYTE)reg_zone[j].config_int, sizeof(int));
+	    }
+    }
 
 	RegCloseKey(hKey);
 }
@@ -367,14 +380,12 @@ void config_reg_default(CONFIG * config)
 {
 	HKEY hKey;
 
-	if (RegOpenKeyEx(XVID_REG_KEY, XVID_REG_PARENT, 0, KEY_ALL_ACCESS, &hKey))
-	{
+	if (RegOpenKeyEx(XVID_REG_KEY, XVID_REG_PARENT, 0, KEY_ALL_ACCESS, &hKey)) {
 		DPRINTF("Couldn't open registry key for deletion - GetLastError=%i", GetLastError());
 		return;
 	}
 
-	if (RegDeleteKey(hKey, XVID_REG_CHILD))
-	{
+	if (RegDeleteKey(hKey, XVID_REG_CHILD)) {
 		DPRINTF("Couldn't delete registry key - GetLastError=%i", GetLastError());
 		return;
 	}
@@ -386,13 +397,10 @@ void config_reg_default(CONFIG * config)
 
 
 /* leaves current config value if dialog item is empty */
-
 int config_get_int(HWND hDlg, INT item, int config)
 {
 	BOOL success = FALSE;
-
 	int tmp = GetDlgItemInt(hDlg, item, &success, TRUE);
-
 	return (success) ? tmp : config;
 }
 
@@ -400,12 +408,30 @@ int config_get_int(HWND hDlg, INT item, int config)
 int config_get_uint(HWND hDlg, UINT item, int config)
 {
 	BOOL success = FALSE;
-
 	int tmp = GetDlgItemInt(hDlg, item, &success, FALSE);
-
 	return (success) ? tmp : config;
 }
 
+
+/* we use "100 base" floats */
+
+#define FLOAT_BUF_SZ    20
+int get_dlgitem_float(HWND hDlg, UINT item, int def)
+{
+	char buf[FLOAT_BUF_SZ];
+
+    if (GetDlgItemText(hDlg, item, buf, FLOAT_BUF_SZ) == 0)
+        return def;
+
+	return (int)(atof(buf)*100);
+}
+
+void set_dlgitem_float(HWND hDlg, UINT item, int value)
+{
+	char buf[FLOAT_BUF_SZ];
+    sprintf(buf, "%.2f", (float)value/100);
+    SetDlgItemText(hDlg, item, buf);
+}
 
 
 /* ===================================================================================== */
@@ -416,8 +442,7 @@ void quant_upload(HWND hDlg, CONFIG* config)
 {
 	int i;
 
-	for (i=0 ; i<64 ; ++i)
-	{
+	for (i=0 ; i<64; i++) {
 		SetDlgItemInt(hDlg, IDC_QINTRA00 + i, config->qmatrix_intra[i], FALSE);
 		SetDlgItemInt(hDlg, IDC_QINTER00 + i, config->qmatrix_inter[i], FALSE);
 	}
@@ -428,8 +453,7 @@ void quant_download(HWND hDlg, CONFIG* config)
 {
 	int i;
 
-	for (i=0; i<64 ; ++i)
-	{
+	for (i=0; i<64; i++) {
 		int temp;
 
 		temp = config_get_uint(hDlg, i + IDC_QINTRA00, config->qmatrix_intra[i]);
@@ -440,6 +464,64 @@ void quant_download(HWND hDlg, CONFIG* config)
 		CONSTRAINVAL(temp, 1, 255);
 		config->qmatrix_inter[i] = temp;
 	}
+}
+
+
+void quant_loadsave(HWND hDlg, CONFIG * config, int save)
+{
+	char file[MAX_PATH];
+    OPENFILENAME ofn;
+	HANDLE hFile;
+	DWORD read=128, wrote=0;
+	BYTE quant_data[128];
+
+	strcpy(file, "\\matrix");
+	memset(&ofn, 0, sizeof(OPENFILENAME));
+	ofn.lStructSize = sizeof(OPENFILENAME);
+
+	ofn.hwndOwner = hDlg;
+	ofn.lpstrFilter = "All files (*.*)\0*.*\0\0";
+	ofn.lpstrFile = file;
+	ofn.nMaxFile = MAX_PATH;
+	ofn.Flags = OFN_PATHMUSTEXIST;
+
+	if (save) {
+		ofn.Flags |= OFN_OVERWRITEPROMPT;
+		if (GetSaveFileName(&ofn)) {
+			hFile = CreateFile(file, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+
+			quant_download(hDlg, config);
+			memcpy(quant_data, config->qmatrix_intra, 64);
+			memcpy(quant_data+64, config->qmatrix_inter, 64);
+
+			if (hFile == INVALID_HANDLE_VALUE) {
+				DPRINTF("Couldn't save quant matrix");
+			}else{
+				if (!WriteFile(hFile, quant_data, 128, &wrote, 0)) {
+					DPRINTF("Couldnt write quant matrix");
+				}
+			}
+			CloseHandle(hFile);
+		}
+	}else{
+		ofn.Flags |= OFN_FILEMUSTEXIST; 
+		if (GetOpenFileName(&ofn)) {
+			hFile = CreateFile(file, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+
+			if (hFile == INVALID_HANDLE_VALUE) {
+				DPRINTF("Couldn't load quant matrix");
+			} else {
+				if (!ReadFile(hFile, quant_data, 128, &read, 0)) {
+					DPRINTF("Couldnt read quant matrix");
+				}else{
+					memcpy(config->qmatrix_intra, quant_data, 64);
+					memcpy(config->qmatrix_inter, quant_data+64, 64);
+					quant_upload(hDlg, config);
+				}
+			}
+			CloseHandle(hFile);
+		}
+    }
 }
 
 /* quantization matrix dialog proc */
@@ -462,96 +544,38 @@ BOOL CALLBACK quantmatrix_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 		break;
 
 	case WM_COMMAND :
-		if (LOWORD(wParam) == IDOK && HIWORD(wParam) == BN_CLICKED)
-		{
-			quant_download(hDlg, config);
-			EndDialog(hDlg, IDOK);
-		}
-		else if (LOWORD(wParam) == IDCANCEL)
-		{
-			EndDialog(hDlg, IDCANCEL);
-		}
-		else if ((LOWORD(wParam) == IDC_LOAD || LOWORD(wParam) == IDC_SAVE) && HIWORD(wParam) == BN_CLICKED)
-		{
-			OPENFILENAME ofn;
-			char file[MAX_PATH];
 
-			HANDLE hFile;
-			DWORD read=128, wrote=0;
-			BYTE quant_data[128];
+        if (HIWORD(wParam) == BN_CLICKED) {
+            switch(LOWORD(wParam)) {
+            case IDOK :
+			    quant_download(hDlg, config);
+			    EndDialog(hDlg, IDOK);
+                break;
 
-			strcpy(file, "\\matrix");
-			memset(&ofn, 0, sizeof(OPENFILENAME));
-			ofn.lStructSize = sizeof(OPENFILENAME);
+            case IDCANCEL :
+                EndDialog(hDlg, IDCANCEL);
+                break;
 
-			ofn.hwndOwner = hDlg;
-			ofn.lpstrFilter = "All files (*.*)\0*.*\0\0";
-			ofn.lpstrFile = file;
-			ofn.nMaxFile = MAX_PATH;
-			ofn.Flags = OFN_PATHMUSTEXIST;
+            case IDC_SAVE :
+                quant_loadsave(hDlg, config, 1);
+                break;
 
-			if (LOWORD(wParam) == IDC_SAVE)
-			{
-				ofn.Flags |= OFN_OVERWRITEPROMPT;
-				if (GetSaveFileName(&ofn))
-				{
-					hFile = CreateFile(file, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+            case IDC_LOAD :
+                quant_loadsave(hDlg, config, 0);
+                break;
 
-					quant_download(hDlg, config);
-					memcpy(quant_data, config->qmatrix_intra, 64);
-					memcpy(quant_data+64, config->qmatrix_inter, 64);
-
-					if (hFile == INVALID_HANDLE_VALUE)
-					{
-						DPRINTF("Couldn't save quant matrix");
-					}
-					else
-					{
-						if (!WriteFile(hFile, quant_data, 128, &wrote, 0))
-						{
-							DPRINTF("Couldnt write quant matrix");
-						}
-					}
-
-					CloseHandle(hFile);
-				}
-			}
-			else
-			{
-				ofn.Flags |= OFN_FILEMUSTEXIST; 
-				if (GetOpenFileName(&ofn))
-				{
-					hFile = CreateFile(file, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
-
-					if (hFile == INVALID_HANDLE_VALUE)
-					{
-						DPRINTF("Couldn't load quant matrix");
-					}
-					else
-					{
-						if (!ReadFile(hFile, quant_data, 128, &read, 0))
-						{
-							DPRINTF("Couldnt read quant matrix");
-						}
-						else
-						{
-							memcpy(config->qmatrix_intra, quant_data, 64);
-							memcpy(config->qmatrix_inter, quant_data+64, 64);
-							quant_upload(hDlg, config);
-						}
-					}
-
-					CloseHandle(hFile);
-				}
-			}
-		}
-		break;
+            default :
+                return FALSE;
+            }
+            break;
+        }
+        return FALSE;
 
 	default :
-		return 0;
+		return FALSE;
 	}
 
-	return 1;
+	return TRUE;
 }
 
 
@@ -568,12 +592,25 @@ void adv_init(HWND hDlg, int idd, CONFIG * config)
     case IDD_PROFILE :
 		for (i=0; i<sizeof(profiles)/sizeof(profile_t); i++)
 			SendDlgItemMessage(hDlg, IDC_PROFILE_PROFILE, CB_ADDSTRING, 0, (LPARAM)profiles[i].name);
+		SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"H.263");
+		SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"MPEG");
+		SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"MPEG-Custom");
+        break;
+        
+    case IDD_LEVEL :
+		for (i=0; i<sizeof(profiles)/sizeof(profile_t); i++)
+			SendDlgItemMessage(hDlg, IDC_LEVEL_PROFILE, CB_ADDSTRING, 0, (LPARAM)profiles[i].name);
         break;
 		
     case IDD_RC_2PASS2_ALT :
 		SendDlgItemMessage(hDlg, IDC_CURVETYPE, CB_ADDSTRING, 0, (LPARAM)"Low");
 		SendDlgItemMessage(hDlg, IDC_CURVETYPE, CB_ADDSTRING, 0, (LPARAM)"Medium");
 		SendDlgItemMessage(hDlg, IDC_CURVETYPE, CB_ADDSTRING, 0, (LPARAM)"High");
+        break;
+
+    case IDD_ZONE :
+        EnableDlgWindow(hDlg, IDC_ZONE_FETCH, 
+            config->cur_zone>0 && config->ci_valid && config->ci.ciActiveFrame>0);
         break;
 
     case IDD_MOTION :
@@ -592,12 +629,6 @@ void adv_init(HWND hDlg, int idd, CONFIG * config)
 		SendDlgItemMessage(hDlg, IDC_VHQ, CB_ADDSTRING, 0, (LPARAM)"4 - Wide Search");
         break;
 
-    case IDD_TOOLS :
-		SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"H.263");
-		SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"MPEG");
-		SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"MPEG-Custom");
-        break;
-	
     case IDD_DEBUG :
 		/* force threads disabled */
 		EnableWindow(GetDlgItem(hDlg, IDC_NUMTHREADS_STATIC), FALSE);
@@ -610,22 +641,52 @@ void adv_init(HWND hDlg, int idd, CONFIG * config)
     }
 }
 
+
 /* enable/disable controls based on encoder-mode or user selection */
 
 void adv_mode(HWND hDlg, int idd, CONFIG * config)
 {
+    int profile;
 	int use_alt, use_alt_auto, use_alt_auto_bonus;
+    int weight_en, quant_en;
     int cpu_force;
-    int bvops;
+    int custom_quant, bvops;
     
     switch(idd) {
     case IDD_PROFILE :
-        CheckDlgButton(hDlg, IDC_PROFILE_BVOP, profiles[config->profile].flags&PROFILE_BVOP ? BST_CHECKED : BST_UNCHECKED);
-        CheckDlgButton(hDlg, IDC_PROFILE_MPEGQUANT, profiles[config->profile].flags&PROFILE_MPEGQUANT ? BST_CHECKED : BST_UNCHECKED);
-        CheckDlgButton(hDlg, IDC_PROFILE_INTERLACE, profiles[config->profile].flags&PROFILE_INTERLACE ? BST_CHECKED : BST_UNCHECKED);
-        CheckDlgButton(hDlg, IDC_PROFILE_QPEL, profiles[config->profile].flags&PROFILE_QPEL ? BST_CHECKED : BST_UNCHECKED);
-        CheckDlgButton(hDlg, IDC_PROFILE_GMC, profiles[config->profile].flags&PROFILE_GMC ? BST_CHECKED : BST_UNCHECKED);
-        CheckDlgButton(hDlg, IDC_PROFILE_REDUCED, profiles[config->profile].flags&PROFILE_REDUCED ? BST_CHECKED : BST_UNCHECKED);
+        profile = SendDlgItemMessage(hDlg, IDC_PROFILE_PROFILE, CB_GETCURSEL, 0, 0);
+        EnableDlgWindow(hDlg, IDC_BVOP, profiles[profile].flags&PROFILE_BVOP);
+        
+        EnableDlgWindow(hDlg, IDC_QUANTTYPE_S, profiles[profile].flags&PROFILE_MPEGQUANT);
+        EnableDlgWindow(hDlg, IDC_QUANTTYPE_S, profiles[profile].flags&PROFILE_MPEGQUANT);
+        EnableDlgWindow(hDlg, IDC_QUANTTYPE, profiles[profile].flags&PROFILE_MPEGQUANT);
+        custom_quant = (profiles[profile].flags&PROFILE_MPEGQUANT) && SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_GETCURSEL, 0, 0)==QUANT_MODE_CUSTOM;
+        EnableDlgWindow(hDlg, IDC_QUANTMATRIX, custom_quant);
+        EnableDlgWindow(hDlg, IDC_LUMMASK, profiles[profile].flags&PROFILE_ADAPTQUANT);
+        EnableDlgWindow(hDlg, IDC_INTERLACING, profiles[profile].flags&PROFILE_INTERLACE);
+        EnableDlgWindow(hDlg, IDC_QPEL, profiles[profile].flags&PROFILE_QPEL);
+        EnableDlgWindow(hDlg, IDC_GMC, profiles[profile].flags&PROFILE_GMC);
+        EnableDlgWindow(hDlg, IDC_REDUCED, profiles[profile].flags&PROFILE_REDUCED);
+
+        bvops = (profiles[profile].flags&PROFILE_BVOP) && IsDlgChecked(hDlg, IDC_BVOP);
+		EnableDlgWindow(hDlg, IDC_MAXBFRAMES,       bvops);
+		EnableDlgWindow(hDlg, IDC_BQUANTRATIO,      bvops);
+		EnableDlgWindow(hDlg, IDC_BQUANTOFFSET,     bvops);
+		EnableDlgWindow(hDlg, IDC_MAXBFRAMES_S,     bvops);
+		EnableDlgWindow(hDlg, IDC_BQUANTRATIO_S,    bvops);
+		EnableDlgWindow(hDlg, IDC_BQUANTOFFSET_S,   bvops);
+		EnableDlgWindow(hDlg, IDC_PACKED,           bvops);
+		EnableDlgWindow(hDlg, IDC_CLOSEDGOV,        bvops);
+
+    case IDD_LEVEL :
+        profile = SendDlgItemMessage(hDlg, IDC_LEVEL_PROFILE, CB_GETCURSEL, 0, 0);
+        SetDlgItemInt(hDlg, IDC_LEVEL_WIDTH, profiles[profile].width, FALSE);
+        SetDlgItemInt(hDlg, IDC_LEVEL_HEIGHT, profiles[profile].height, FALSE);
+        SetDlgItemInt(hDlg, IDC_LEVEL_FPS, profiles[profile].fps, FALSE);
+        SetDlgItemInt(hDlg, IDC_LEVEL_VMV, profiles[profile].max_vmv_buffer_sz, FALSE);
+        SetDlgItemInt(hDlg, IDC_LEVEL_VCV, profiles[profile].vcv_decoder_rate, FALSE);
+        SetDlgItemInt(hDlg, IDC_LEVEL_VBV, profiles[profile].max_vbv_size, FALSE);
+        SetDlgItemInt(hDlg, IDC_LEVEL_BITRATE, profiles[profile].max_bitrate, FALSE);
         break;
 
     case IDD_RC_2PASS2_ALT :
@@ -642,20 +703,28 @@ void adv_mode(HWND hDlg, int idd, CONFIG * config)
 	    EnableDlgWindow(hDlg, IDC_MINQUAL,		use_alt && !use_alt_auto);
         break;
 
-    case IDD_TOOLS :
-        bvops = IsDlgChecked(hDlg, IDC_BVOP);
-		EnableDlgWindow(hDlg, IDC_MAXBFRAMES,   bvops);
-		EnableDlgWindow(hDlg, IDC_BQUANTRATIO,  bvops);
-		EnableDlgWindow(hDlg, IDC_BQUANTOFFSET, bvops);
-        EnableDlgWindow(hDlg, IDC_BVOP_THRESHOLD, bvops);
+    case IDD_ZONE :
+        weight_en = IsDlgChecked(hDlg, IDC_ZONE_MODE_WEIGHT);
+        quant_en =   IsDlgChecked(hDlg, IDC_ZONE_MODE_QUANT);
+        EnableDlgWindow(hDlg, IDC_ZONE_WEIGHT, weight_en);
+        EnableDlgWindow(hDlg, IDC_ZONE_QUANT, quant_en);
+        EnableDlgWindow(hDlg, IDC_ZONE_SLIDER, weight_en|quant_en);
 
-		EnableDlgWindow(hDlg, IDC_MAXBFRAMES_S,   bvops);
-		EnableDlgWindow(hDlg, IDC_BQUANTRATIO_S,  bvops);
-		EnableDlgWindow(hDlg, IDC_BQUANTOFFSET_S, bvops);
-        EnableDlgWindow(hDlg, IDC_BVOP_THRESHOLD_S, bvops);
+        if (weight_en) {
+        	SendDlgItemMessage(hDlg, IDC_ZONE_SLIDER, TBM_SETRANGE, TRUE, MAKELONG(001,200));
+            SendDlgItemMessage(hDlg, IDC_ZONE_SLIDER, TBM_SETPOS, TRUE, get_dlgitem_float(hDlg, IDC_ZONE_WEIGHT, 100));
+            SetDlgItemText(hDlg, IDC_ZONE_MIN, "0.01");
+            SetDlgItemText(hDlg, IDC_ZONE_MAX, "2.00");
+        }else if (quant_en) {
+            SendDlgItemMessage(hDlg, IDC_ZONE_SLIDER, TBM_SETRANGE, TRUE, MAKELONG(100,3100));
+            SendDlgItemMessage(hDlg, IDC_ZONE_SLIDER, TBM_SETPOS, TRUE, get_dlgitem_float(hDlg, IDC_ZONE_QUANT, 100));
+            SetDlgItemText(hDlg, IDC_ZONE_MIN, "1");
+            SetDlgItemText(hDlg, IDC_ZONE_MAX, "31");
+        }
 
-		EnableDlgWindow(hDlg, IDC_PACKED,       bvops);
-		EnableDlgWindow(hDlg, IDC_CLOSEDGOV,     bvops);
+        bvops = (profiles[config->profile].flags&PROFILE_BVOP) && config->use_bvop;
+        EnableDlgWindow(hDlg, IDC_ZONE_BVOPTHRESHOLD_S, bvops);
+        EnableDlgWindow(hDlg, IDC_ZONE_BVOPTHRESHOLD, bvops);
         break;
 
     case IDD_DEBUG :
@@ -671,7 +740,6 @@ void adv_mode(HWND hDlg, int idd, CONFIG * config)
 }
 
 
-
 /* upload config data into dialog */
 void adv_upload(HWND hDlg, int idd, CONFIG * config)
 {
@@ -679,14 +747,25 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
 	{
 	case IDD_PROFILE :
 		SendDlgItemMessage(hDlg, IDC_PROFILE_PROFILE, CB_SETCURSEL, config->profile, 0);
-        SetDlgItemInt(hDlg, IDC_PROFILE_WIDTH, profiles[config->profile].width, FALSE);
-        SetDlgItemInt(hDlg, IDC_PROFILE_HEIGHT, profiles[config->profile].height, FALSE);
-        SetDlgItemInt(hDlg, IDC_PROFILE_FPS, profiles[config->profile].fps, FALSE);
-        SetDlgItemInt(hDlg, IDC_PROFILE_VMV, profiles[config->profile].max_vmv_buffer_sz, FALSE);
-        SetDlgItemInt(hDlg, IDC_PROFILE_VCV, profiles[config->profile].vcv_decoder_rate, FALSE);
-        SetDlgItemInt(hDlg, IDC_PROFILE_VBV, profiles[config->profile].max_vbv_size, FALSE);
-        SetDlgItemInt(hDlg, IDC_PROFILE_BITRATE, profiles[config->profile].max_bitrate, FALSE);
+
+        SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_SETCURSEL, config->quant_type, 0);
+        CheckDlg(hDlg, IDC_LUMMASK, config->lum_masking);
+  		CheckDlg(hDlg, IDC_INTERLACING, config->interlacing);
+        CheckDlg(hDlg, IDC_QPEL, config->qpel);
+  		CheckDlg(hDlg, IDC_GMC, config->gmc);
+	    CheckDlg(hDlg, IDC_REDUCED, config->reduced_resolution);
+        CheckDlg(hDlg, IDC_BVOP, config->use_bvop);
+		
+        SetDlgItemInt(hDlg, IDC_MAXBFRAMES, config->max_bframes, FALSE);
+        set_dlgitem_float(hDlg, IDC_BQUANTRATIO, config->bquant_ratio);
+		set_dlgitem_float(hDlg, IDC_BQUANTOFFSET, config->bquant_offset);
+        CheckDlg(hDlg, IDC_PACKED, config->packed);
+		CheckDlg(hDlg, IDC_CLOSEDGOV, config->closed_gov);
 		break;
+
+    case IDD_LEVEL :
+        SendDlgItemMessage(hDlg, IDC_LEVEL_PROFILE, CB_SETCURSEL, config->profile, 0);
+        break;
 
 	case IDD_RC_CBR :
 		SetDlgItemInt(hDlg, IDC_CBR_REACTIONDELAY, config->rc_reaction_delay_factor, FALSE);
@@ -696,7 +775,7 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
 
     case IDD_RC_2PASS1 :
         SetDlgItemText(hDlg, IDC_STATS, config->stats);
-        CheckDlgButton(hDlg, IDC_DISCARD1PASS, config->discard1pass ? BST_CHECKED : BST_UNCHECKED);
+        CheckDlg(hDlg, IDC_DISCARD1PASS, config->discard1pass);
         break;
 
 	case IDD_RC_2PASS2 :
@@ -704,6 +783,10 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
         SetDlgItemInt(hDlg, IDC_KFBOOST, config->keyframe_boost, FALSE);
 		SetDlgItemInt(hDlg, IDC_KFTRESHOLD, config->kftreshold, FALSE);
 		SetDlgItemInt(hDlg, IDC_KFREDUCTION, config->kfreduction, FALSE);
+
+        SetDlgItemInt(hDlg, IDC_OVERIMP, config->twopass_max_overflow_improvement, FALSE);
+		SetDlgItemInt(hDlg, IDC_OVERDEG, config->twopass_max_overflow_degradation, FALSE);
+
 		SetDlgItemInt(hDlg, IDC_CURVECOMPH, config->curve_compression_high, FALSE);
 		SetDlgItemInt(hDlg, IDC_CURVECOMPL, config->curve_compression_low, FALSE);
 		SetDlgItemInt(hDlg, IDC_PAYBACK, config->bitrate_payback_delay, FALSE);
@@ -712,124 +795,72 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
 		break;
 
 	case IDD_RC_2PASS2_ALT :
-		CheckDlgButton(hDlg, IDC_USEALT, config->use_alt_curve ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlg(hDlg, IDC_USEALT, config->use_alt_curve);
 
 		SendDlgItemMessage(hDlg, IDC_CURVETYPE, CB_SETCURSEL, config->alt_curve_type, 0);
 		SetDlgItemInt(hDlg, IDC_ALTCURVEHIGH, config->alt_curve_high_dist, FALSE);
 		SetDlgItemInt(hDlg, IDC_ALTCURVELOW, config->alt_curve_low_dist, FALSE);
 		SetDlgItemInt(hDlg, IDC_MINQUAL, config->alt_curve_min_rel_qual, FALSE);
 
-		CheckDlgButton(hDlg, IDC_USEAUTO, config->alt_curve_use_auto ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlg(hDlg, IDC_USEAUTO, config->alt_curve_use_auto);
 		SetDlgItemInt(hDlg, IDC_AUTOSTR, config->alt_curve_auto_str, FALSE);
 
-		CheckDlgButton(hDlg, IDC_USEAUTOBONUS, config->alt_curve_use_auto_bonus_bias ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlg(hDlg, IDC_USEAUTOBONUS, config->alt_curve_use_auto_bonus_bias);
 		SetDlgItemInt(hDlg, IDC_BONUSBIAS, config->alt_curve_bonus_bias, FALSE);
-
-		SetDlgItemInt(hDlg, IDC_MAXBITRATE, config->twopass_max_bitrate / CONFIG_KBPS, FALSE);
-		SetDlgItemInt(hDlg, IDC_OVERIMP, config->twopass_max_overflow_improvement, FALSE);
-		SetDlgItemInt(hDlg, IDC_OVERDEG, config->twopass_max_overflow_degradation, FALSE);
 		break;
 
+    case IDD_ZONE :
+        SetDlgItemInt(hDlg, IDC_ZONE_FRAME, config->zones[config->cur_zone].frame, FALSE);
+        SendDlgItemMessage(hDlg, IDC_ZONE_FRAME, EM_SETREADONLY, config->cur_zone==0?TRUE:FALSE, 0);
+
+        CheckDlgButton(hDlg, IDC_ZONE_MODE_WEIGHT,   config->zones[config->cur_zone].mode == RC_ZONE_WEIGHT);
+        CheckDlgButton(hDlg, IDC_ZONE_MODE_QUANT,         config->zones[config->cur_zone].mode == RC_ZONE_QUANT);
+
+        set_dlgitem_float(hDlg, IDC_ZONE_WEIGHT, config->zones[config->cur_zone].weight);
+        set_dlgitem_float(hDlg, IDC_ZONE_QUANT, config->zones[config->cur_zone].quant);
+
+       
+        CheckDlgButton(hDlg, IDC_ZONE_GREYSCALE, config->zones[config->cur_zone].greyscale);
+        CheckDlgButton(hDlg, IDC_ZONE_CHROMAOPT, config->zones[config->cur_zone].chroma_opt);
+
+        SetDlgItemInt(hDlg, IDC_ZONE_BVOPTHRESHOLD, config->zones[config->cur_zone].bvop_threshold, TRUE);
+        break;
 	
 	case IDD_MOTION :
 		SendDlgItemMessage(hDlg, IDC_MOTION, CB_SETCURSEL, config->motion_search, 0);
 		SendDlgItemMessage(hDlg, IDC_VHQ, CB_SETCURSEL, config->vhq_mode, 0);
-		CheckDlgButton(hDlg, IDC_CHROMAME, config->chromame ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(hDlg, IDC_GREYSCALE, config->greyscale ? BST_CHECKED : BST_UNCHECKED);
-        break;
-        
-    case IDD_TOOLS :
-        if (profiles[config->profile].flags & PROFILE_MPEGQUANT) {
-            EnableDlgWindow(hDlg, IDC_QUANTTYPE, TRUE);
-            SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_SETCURSEL, config->quant_type, 0);
-        }else{
-            SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_SETCURSEL, 0 /* h263 */, 0);
-            EnableDlgWindow(hDlg, IDC_QUANTTYPE, FALSE);
-        }
-
-        if (profiles[config->profile].flags & PROFILE_INTERLACE) {
-            EnableDlgWindow(hDlg, IDC_INTERLACING, TRUE);
-    		CheckDlgButton(hDlg, IDC_INTERLACING, config->interlacing ? BST_CHECKED : BST_UNCHECKED);
-        }else{
-            CheckDlgButton(hDlg, IDC_INTERLACING, BST_UNCHECKED);
-            EnableDlgWindow(hDlg, IDC_INTERLACING, FALSE);
-        }
-
-        if (profiles[config->profile].flags & PROFILE_QPEL) {
-            EnableDlgWindow(hDlg, IDC_QPEL, TRUE);
-            CheckDlgButton(hDlg, IDC_QPEL, config->qpel ? BST_CHECKED : BST_UNCHECKED);
-        }else{
-            CheckDlgButton(hDlg, IDC_QPEL, BST_UNCHECKED);
-            EnableDlgWindow(hDlg, IDC_QPEL, FALSE);
-        }
-
-        if (profiles[config->profile].flags & PROFILE_GMC) {
-            EnableDlgWindow(hDlg, IDC_GMC, TRUE);
-    		CheckDlgButton(hDlg, IDC_GMC, config->gmc ? BST_CHECKED : BST_UNCHECKED);
-        }else{
-            CheckDlgButton(hDlg, IDC_GMC, BST_UNCHECKED);
-            EnableDlgWindow(hDlg, IDC_GMC, FALSE);
-        }
-
-        if (profiles[config->profile].flags & PROFILE_REDUCED) {
-            EnableDlgWindow(hDlg, IDC_REDUCED, TRUE);
-		    CheckDlgButton(hDlg, IDC_REDUCED, config->reduced_resolution ? BST_CHECKED : BST_UNCHECKED);
-        }else{
-            CheckDlgButton(hDlg, IDC_REDUCED, BST_UNCHECKED);
-            EnableDlgWindow(hDlg, IDC_REDUCED, FALSE);
-        }
-
-        if (profiles[config->profile].flags & PROFILE_BVOP) {
-            EnableDlgWindow(hDlg, IDC_BVOP, TRUE);
-            CheckDlgButton(hDlg, IDC_BVOP, config->use_bvop ? BST_CHECKED : BST_UNCHECKED);
-        }else{
-            EnableDlgWindow(hDlg, IDC_BVOP, FALSE);
-            CheckDlgButton(hDlg, IDC_BVOP, BST_UNCHECKED);
-        }
-		SetDlgItemInt(hDlg, IDC_MAXBFRAMES, config->max_bframes, FALSE);
-		SetDlgItemInt(hDlg, IDC_BQUANTRATIO, config->bquant_ratio, FALSE);
-		SetDlgItemInt(hDlg, IDC_BQUANTOFFSET, config->bquant_offset, FALSE);
-        SetDlgItemInt(hDlg, IDC_BVOP_THRESHOLD, config->bvop_threshold, FALSE);
-        CheckDlgButton(hDlg, IDC_PACKED, config->packed ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(hDlg, IDC_CLOSEDGOV, config->closed_gov ? BST_CHECKED : BST_UNCHECKED);
-		
-		CheckDlgButton(hDlg, IDC_LUMMASK, config->lum_masking ? BST_CHECKED : BST_UNCHECKED);
+        CheckDlg(hDlg, IDC_CHROMAME, config->chromame);
+		SetDlgItemInt(hDlg, IDC_FRAMEDROP, config->frame_drop_ratio, FALSE);
 		SetDlgItemInt(hDlg, IDC_MAXKEY, config->max_key_interval, FALSE);
 		SetDlgItemInt(hDlg, IDC_MINKEY, config->min_key_interval, FALSE);
-
-		break;
-
+        break;
+        
 	case IDD_QUANT :
 		SetDlgItemInt(hDlg, IDC_MINIQUANT, config->min_iquant, FALSE);
 		SetDlgItemInt(hDlg, IDC_MAXIQUANT, config->max_iquant, FALSE);
 		SetDlgItemInt(hDlg, IDC_MINPQUANT, config->min_pquant, FALSE);
 		SetDlgItemInt(hDlg, IDC_MAXPQUANT, config->max_pquant, FALSE);
+		SetDlgItemInt(hDlg, IDC_MINBQUANT, config->min_bquant, FALSE);
+		SetDlgItemInt(hDlg, IDC_MAXBQUANT, config->max_bquant, FALSE);
+        CheckDlg(hDlg, IDC_TRELLISQUANT, config->trellis_quant);
 		break;
 
 	case IDD_DEBUG :
-		CheckDlgButton(hDlg, IDC_CPU_MMX, (config->cpu & XVID_CPU_MMX) ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(hDlg, IDC_CPU_MMXEXT, (config->cpu & XVID_CPU_MMXEXT) ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(hDlg, IDC_CPU_SSE, (config->cpu & XVID_CPU_SSE) ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(hDlg, IDC_CPU_SSE2, (config->cpu & XVID_CPU_SSE2) ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(hDlg, IDC_CPU_3DNOW, (config->cpu & XVID_CPU_3DNOW) ? BST_CHECKED : BST_UNCHECKED);
-		CheckDlgButton(hDlg, IDC_CPU_3DNOWEXT, (config->cpu & XVID_CPU_3DNOWEXT) ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlg(hDlg, IDC_CPU_MMX, (config->cpu & XVID_CPU_MMX));
+		CheckDlg(hDlg, IDC_CPU_MMXEXT, (config->cpu & XVID_CPU_MMXEXT));
+		CheckDlg(hDlg, IDC_CPU_SSE, (config->cpu & XVID_CPU_SSE));
+		CheckDlg(hDlg, IDC_CPU_SSE2, (config->cpu & XVID_CPU_SSE2));
+		CheckDlg(hDlg, IDC_CPU_3DNOW, (config->cpu & XVID_CPU_3DNOW));
+		CheckDlg(hDlg, IDC_CPU_3DNOWEXT, (config->cpu & XVID_CPU_3DNOWEXT));
 
 		CheckRadioButton(hDlg, IDC_CPU_AUTO, IDC_CPU_FORCE, 
 			config->cpu & XVID_CPU_FORCE ? IDC_CPU_FORCE : IDC_CPU_AUTO );
 
 		SetDlgItemInt(hDlg, IDC_NUMTHREADS, config->num_threads, FALSE);
-		CheckDlgButton(hDlg, IDC_CHROMA_OPT, (config->chroma_opt) ? BST_CHECKED : BST_UNCHECKED);
-		SetDlgItemInt(hDlg, IDC_FRAMEDROP, config->frame_drop_ratio, FALSE);
 
-		CheckDlgButton(hDlg, IDC_DEBUG, config->debug ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlg(hDlg, IDC_DEBUG, config->debug);
 		SendDlgItemMessage(hDlg, IDC_FOURCC, CB_SETCURSEL, config->fourcc_used, 0);
 		break;
-
-	case IDD_POSTPROC :
-//		CheckDlgButton(hDlg, IDC_DEBLOCK_Y,  config->deblock_y ? BST_CHECKED : BST_UNCHECKED);
-//		CheckDlgButton(hDlg, IDC_DEBLOCK_UV, config->deblock_uv ? BST_CHECKED : BST_UNCHECKED);
-		break;
-
 	}
 }
 
@@ -842,7 +873,25 @@ void adv_download(HWND hDlg, int idd, CONFIG * config)
 	{
 	case IDD_PROFILE :
 		config->profile = SendDlgItemMessage(hDlg, IDC_PROFILE_PROFILE, CB_GETCURSEL, 0, 0);
+
+        config->quant_type = SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_GETCURSEL, 0, 0);
+        config->lum_masking = IsDlgChecked(hDlg, IDC_LUMMASK);
+		config->interlacing = IsDlgChecked(hDlg, IDC_INTERLACING);
+        config->qpel = IsDlgChecked(hDlg, IDC_QPEL);
+		config->gmc = IsDlgChecked(hDlg, IDC_GMC);
+		config->reduced_resolution = IsDlgChecked(hDlg, IDC_REDUCED);
+
+        config->use_bvop = IsDlgChecked(hDlg, IDC_BVOP);
+		config->max_bframes = config_get_uint(hDlg, IDC_MAXBFRAMES, config->max_bframes);
+		config->bquant_ratio = get_dlgitem_float(hDlg, IDC_BQUANTRATIO, config->bquant_ratio);
+		config->bquant_offset = get_dlgitem_float(hDlg, IDC_BQUANTOFFSET, config->bquant_offset);
+		config->packed = IsDlgChecked(hDlg, IDC_PACKED);
+		config->closed_gov = IsDlgChecked(hDlg, IDC_CLOSEDGOV);
 		break;
+
+    case IDD_LEVEL :
+        config->profile = SendDlgItemMessage(hDlg, IDC_LEVEL_PROFILE, CB_GETCURSEL, 0, 0);
+        break;
 
 	case IDD_RC_CBR :
 		config->rc_reaction_delay_factor = config_get_uint(hDlg, IDC_CBR_REACTIONDELAY, config->rc_reaction_delay_factor);
@@ -863,12 +912,16 @@ void adv_download(HWND hDlg, int idd, CONFIG * config)
         config->keyframe_boost = GetDlgItemInt(hDlg, IDC_KFBOOST, NULL, FALSE);
 		config->kftreshold = GetDlgItemInt(hDlg, IDC_KFTRESHOLD, NULL, FALSE);
 		config->kfreduction = GetDlgItemInt(hDlg, IDC_KFREDUCTION, NULL, FALSE);
+
+		config->twopass_max_overflow_improvement = config_get_uint(hDlg, IDC_OVERIMP, config->twopass_max_overflow_improvement);
+		config->twopass_max_overflow_degradation = config_get_uint(hDlg, IDC_OVERDEG, config->twopass_max_overflow_degradation);
+		CONSTRAINVAL(config->twopass_max_overflow_improvement, 1, 80);
+		CONSTRAINVAL(config->twopass_max_overflow_degradation, 1, 80);
 		
 		config->curve_compression_high = GetDlgItemInt(hDlg, IDC_CURVECOMPH, NULL, FALSE);
 		config->curve_compression_low = GetDlgItemInt(hDlg, IDC_CURVECOMPL, NULL, FALSE);
 		config->bitrate_payback_delay = config_get_uint(hDlg, IDC_PAYBACK, config->bitrate_payback_delay);
 		config->bitrate_payback_method = IsDlgChecked(hDlg, IDC_PAYBACKPROP);
-
 
 		CONSTRAINVAL(config->bitrate_payback_delay, 1, 10000);
 		CONSTRAINVAL(config->keyframe_boost, 0, 1000);
@@ -889,58 +942,53 @@ void adv_download(HWND hDlg, int idd, CONFIG * config)
 		config->alt_curve_high_dist = config_get_uint(hDlg, IDC_ALTCURVEHIGH, config->alt_curve_high_dist);
 		config->alt_curve_low_dist = config_get_uint(hDlg, IDC_ALTCURVELOW, config->alt_curve_low_dist);
 		config->alt_curve_min_rel_qual = config_get_uint(hDlg, IDC_MINQUAL, config->alt_curve_min_rel_qual);
-
-		config->twopass_max_bitrate /= CONFIG_KBPS;
-		config->twopass_max_bitrate = config_get_uint(hDlg, IDC_MAXBITRATE, config->twopass_max_bitrate);
-		config->twopass_max_bitrate *= CONFIG_KBPS;
-		config->twopass_max_overflow_improvement = config_get_uint(hDlg, IDC_OVERIMP, config->twopass_max_overflow_improvement);
-		config->twopass_max_overflow_degradation = config_get_uint(hDlg, IDC_OVERDEG, config->twopass_max_overflow_degradation);
-
-		CONSTRAINVAL(config->twopass_max_overflow_improvement, 1, 80);
-		CONSTRAINVAL(config->twopass_max_overflow_degradation, 1, 80);
 		break;
+
+    case IDD_ZONE :
+        config->zones[config->cur_zone].frame = config_get_uint(hDlg, IDC_ZONE_FRAME, config->zones[config->cur_zone].frame);
+
+        if (IsDlgChecked(hDlg, IDC_ZONE_MODE_WEIGHT)) {
+            config->zones[config->cur_zone].mode = RC_ZONE_WEIGHT;
+        }else if (IsDlgChecked(hDlg, IDC_ZONE_MODE_QUANT)) {
+            config->zones[config->cur_zone].mode = RC_ZONE_QUANT;
+        }
+
+        config->zones[config->cur_zone].weight = get_dlgitem_float(hDlg, IDC_ZONE_WEIGHT, config->zones[config->cur_zone].weight);
+        config->zones[config->cur_zone].quant =  get_dlgitem_float(hDlg, IDC_ZONE_QUANT, config->zones[config->cur_zone].quant);
+
+        config->zones[config->cur_zone].greyscale = IsDlgButtonChecked(hDlg, IDC_ZONE_GREYSCALE);
+        config->zones[config->cur_zone].chroma_opt = IsDlgButtonChecked(hDlg, IDC_ZONE_CHROMAOPT);
+
+        config->zones[config->cur_zone].bvop_threshold = config_get_int(hDlg, IDC_ZONE_BVOPTHRESHOLD, config->zones[config->cur_zone].bvop_threshold);
+        break;
 
 	case IDD_MOTION :
 		config->motion_search = SendDlgItemMessage(hDlg, IDC_MOTION, CB_GETCURSEL, 0, 0);
 		config->vhq_mode = SendDlgItemMessage(hDlg, IDC_VHQ, CB_GETCURSEL, 0, 0);
-
 		config->chromame = IsDlgChecked(hDlg, IDC_CHROMAME);
-		config->greyscale = IsDlgChecked(hDlg, IDC_GREYSCALE);
 
-		config->chroma_opt = IsDlgChecked(hDlg, IDC_CHROMA_OPT);
-		config->frame_drop_ratio = config_get_uint(hDlg, IDC_FRAMEDROP, config->frame_drop_ratio);
-		break;
+        config->frame_drop_ratio = config_get_uint(hDlg, IDC_FRAMEDROP, config->frame_drop_ratio);
 
-    case IDD_TOOLS :
-		config->quant_type = SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_GETCURSEL, 0, 0);
-		config->interlacing = IsDlgChecked(hDlg, IDC_INTERLACING);
-        config->qpel = IsDlgChecked(hDlg, IDC_QPEL);
-		config->gmc = IsDlgChecked(hDlg, IDC_GMC);
-		config->reduced_resolution = IsDlgChecked(hDlg, IDC_REDUCED);
-
-        config->use_bvop = IsDlgChecked(hDlg, IDC_BVOP);
-		config->max_bframes = config_get_int(hDlg, IDC_MAXBFRAMES, config->max_bframes);
-		config->bquant_ratio = config_get_uint(hDlg, IDC_BQUANTRATIO, config->bquant_ratio);
-		config->bquant_offset = config_get_uint(hDlg, IDC_BQUANTOFFSET, config->bquant_offset);
-        config->bvop_threshold = config_get_uint(hDlg, IDC_BVOP_THRESHOLD, config->bvop_threshold);
-		config->packed = IsDlgChecked(hDlg, IDC_PACKED);
-		config->closed_gov = IsDlgChecked(hDlg, IDC_CLOSEDGOV);
-
-        config->lum_masking = IsDlgChecked(hDlg, IDC_LUMMASK);
 		config->max_key_interval = config_get_uint(hDlg, IDC_MAXKEY, config->max_key_interval);
 		config->min_key_interval = config_get_uint(hDlg, IDC_MINKEY, config->min_key_interval);
-        break;
+		break;
 
 	case IDD_QUANT :
 		config->min_iquant = config_get_uint(hDlg, IDC_MINIQUANT, config->min_iquant);
 		config->max_iquant = config_get_uint(hDlg, IDC_MAXIQUANT, config->max_iquant);
 		config->min_pquant = config_get_uint(hDlg, IDC_MINPQUANT, config->min_pquant);
 		config->max_pquant = config_get_uint(hDlg, IDC_MAXPQUANT, config->max_pquant);
+		config->min_bquant = config_get_uint(hDlg, IDC_MINBQUANT, config->min_bquant);
+		config->max_bquant = config_get_uint(hDlg, IDC_MAXBQUANT, config->max_bquant);
 
 		CONSTRAINVAL(config->min_iquant, 1, 31);
 		CONSTRAINVAL(config->max_iquant, config->min_iquant, 31);
 		CONSTRAINVAL(config->min_pquant, 1, 31);
 		CONSTRAINVAL(config->max_pquant, config->min_pquant, 31);
+		CONSTRAINVAL(config->min_bquant, 1, 31);
+		CONSTRAINVAL(config->max_bquant, config->min_bquant, 31);
+
+        config->trellis_quant = IsDlgChecked(hDlg, IDC_TRELLISQUANT);
 		break;
 
 	case IDD_DEBUG :
@@ -957,12 +1005,6 @@ void adv_download(HWND hDlg, int idd, CONFIG * config)
 
         config->fourcc_used = SendDlgItemMessage(hDlg, IDC_FOURCC, CB_GETCURSEL, 0, 0);
 		config->debug = IsDlgChecked(hDlg, IDC_DEBUG);
-		break;
-
-
-	case IDD_POSTPROC :
-//		config->deblock_y = IsDlgChecked(hDlg, IDC_DEBLOCK_Y);
-//		config->deblock_uv = IsDlgChecked(hDlg, IDC_DEBLOCK_UV);
 		break;
 	}
 }
@@ -987,8 +1029,6 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			EnumChildWindows(hDlg, enum_tooltips, 0);
 
         adv_init(hDlg, psi->idd, psi->config);
-		adv_upload(hDlg, psi->idd, psi->config);
-		adv_mode(hDlg, psi->idd, psi->config);
 		break;
 
 	case WM_COMMAND :
@@ -996,16 +1036,13 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 			switch (LOWORD(wParam))
 			{
-            case IDC_PROFILE_MPEGQUANT :
-            case IDC_PROFILE_INTERLACE :
-            case IDC_PROFILE_QPEL :
-            case IDC_PROFILE_GMC :
-            case IDC_PROFILE_REDUCED :
-            case IDC_PROFILE_BVOP :
+            case IDC_BVOP :
 			case IDC_USEALT :
 			case IDC_USEAUTO :
 			case IDC_USEAUTOBONUS :
-            case IDC_BVOP :
+            case IDC_ZONE_MODE_WEIGHT :
+            case IDC_ZONE_MODE_QUANT :
+            case IDC_ZONE_BVOPTHRESHOLD_ENABLE :
 			case IDC_CPU_AUTO :
 			case IDC_CPU_FORCE :
 				adv_mode(hDlg, psi->idd, psi->config);
@@ -1042,29 +1079,58 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				    SetDlgItemText(hDlg, IDC_STATS, tmp);
                 }
             }
+
+            case IDC_ZONE_FETCH :
+                SetDlgItemInt(hDlg, IDC_ZONE_FRAME, psi->config->ci.ciActiveFrame, FALSE);
+                break;
+
+            default :
+                return TRUE;
             }
-		}else if (LOWORD(wParam) == IDC_PROFILE_PROFILE && HIWORD(wParam) == LBN_SELCHANGE)
+		}else if (HIWORD(wParam) == LBN_SELCHANGE &&
+            (LOWORD(wParam) == IDC_PROFILE_PROFILE ||
+             LOWORD(wParam) == IDC_LEVEL_PROFILE ||
+             LOWORD(wParam) == IDC_QUANTTYPE))
 		{
-			adv_download(hDlg, psi->idd, psi->config);
-            adv_upload(hDlg, psi->idd, psi->config);
             adv_mode(hDlg, psi->idd, psi->config);
+        }else if (HIWORD(wParam) == EN_UPDATE && (LOWORD(wParam)==IDC_ZONE_WEIGHT || LOWORD(wParam)==IDC_ZONE_QUANT)) {
+
+            SendDlgItemMessage(hDlg, IDC_ZONE_SLIDER, TBM_SETPOS, TRUE, 
+                    get_dlgitem_float(hDlg, LOWORD(wParam), 100));
+        }else {
+            return 0;
         }
 		break;
 
+	case WM_HSCROLL :
+		if((HWND)lParam == GetDlgItem(hDlg, IDC_ZONE_SLIDER)) {
+            int idc = IsDlgChecked(hDlg, IDC_ZONE_MODE_WEIGHT) ? IDC_ZONE_WEIGHT : IDC_ZONE_QUANT;
+            set_dlgitem_float(hDlg, idc, SendMessage((HWND)lParam, TBM_GETPOS, 0, 0) );
+            break;
+        }
+        return 0;
+
+   
 	case WM_NOTIFY :
 		switch (((NMHDR *)lParam)->code)
 		{
-		case PSN_KILLACTIVE :	
-			/* validate */
-			adv_download(hDlg, psi->idd, psi->config);
+        case PSN_SETACTIVE :
+            OutputDebugString("PSN_SET");
+            adv_upload(hDlg, psi->idd, psi->config);
+		    adv_mode(hDlg, psi->idd, psi->config);
+            SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
+            break;
+
+        case PSN_KILLACTIVE :
+            OutputDebugString("PSN_KILL");
+            adv_download(hDlg, psi->idd, psi->config);
 			SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
 			break;
 
 		case PSN_APPLY :
-			/* apply */
-			adv_download(hDlg, psi->idd, psi->config);
-			SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
+            OutputDebugString("PSN_APPLY");
 			psi->config->save = TRUE;
+			SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
 			break;
 		}
 		break;
@@ -1079,8 +1145,12 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 
 
-/* load advanced options property sheet */
-void adv_dialog(HWND hParent, CONFIG * config, const int * dlgs, int size)
+/* load advanced options property sheet 
+  returns true, if the user accepted the changes
+  or fasle if changes were canceled.
+
+  */
+BOOL adv_dialog(HWND hParent, CONFIG * config, const int * dlgs, int size)
 {
 	PROPSHEETINFO psi[6];
 	PROPSHEETPAGE psp[6];
@@ -1116,10 +1186,10 @@ void adv_dialog(HWND hParent, CONFIG * config, const int * dlgs, int size)
 	psh.pfnCallback = NULL;
 	PropertySheet(&psh);
 
-	if (temp.save)
-	{
+    if (temp.save)
 		memcpy(config, &temp, sizeof(CONFIG));
-	}
+
+    return temp.save;
 }
 
 /* ===================================================================================== */
@@ -1127,157 +1197,137 @@ void adv_dialog(HWND hParent, CONFIG * config, const int * dlgs, int size)
 /* ===================================================================================== */
 
 
-/* downloads data from main dialog */
+void main_insert_zone(HWND hDlg, zone_t * s, int i, BOOL insert)
+{
+    char tmp[32];
 
+    wsprintf(tmp,"%i",s->frame);
+
+    if (insert) {
+        LVITEM lvi; 
+
+        lvi.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM | LVIF_STATE; 
+        lvi.state = 0; 
+        lvi.stateMask = 0; 
+        lvi.iImage = 0;
+        lvi.pszText = tmp;
+        lvi.cchTextMax = strlen(tmp);
+        lvi.iItem = i;
+        lvi.iSubItem = 0;
+        ListView_InsertItem(hDlg, &lvi);
+    }else{
+        ListView_SetItemText(hDlg, i, 0, tmp);
+    }
+
+    if (s->mode == RC_ZONE_WEIGHT) {
+        sprintf(tmp,"%.2f",(float)s->weight/100);
+    }else if (s->mode == RC_ZONE_QUANT) {
+        sprintf(tmp,"( %.2f )",(float)s->quant/100);
+    }else {
+        strcpy(tmp,"EXT");
+    }
+    ListView_SetItemText(hDlg, i, 1, tmp);
+
+    tmp[0] = '\0';
+    if (s->greyscale)
+        strcat(tmp, "G ");
+    
+    if (s->chroma_opt)
+        strcat(tmp, "C ");
+
+    ListView_SetItemText(hDlg, i, 2, tmp);
+}
+
+
+void main_mode(HWND hDlg, CONFIG * config)
+{
+    char buf[16];
+    int profile = SendDlgItemMessage(hDlg, IDC_PROFILE, CB_GETCURSEL, 0, 0);
+    int bitrate_en;
+    int max;
+       
+    wsprintf(buf, "%i kbps", DEFAULT_MIN_KBPS);
+    SetDlgItemText(hDlg, IDC_BITRATE_MIN, buf);
+
+    max = profiles[profile].max_bitrate;
+    if (max == 0) max = DEFAULT_MAX_KBPS;
+    wsprintf(buf, "%i kbps", max);
+    SetDlgItemText(hDlg, IDC_BITRATE_MAX, buf);
+
+  	SendDlgItemMessage(hDlg, IDC_SLIDER, TBM_SETRANGE, TRUE, MAKELONG(DEFAULT_MIN_KBPS, max));
+    SendDlgItemMessage(hDlg, IDC_SLIDER, TBM_SETPOS, TRUE, 
+                    config_get_uint(hDlg, IDC_BITRATE, DEFAULT_MIN_KBPS) );
+
+    bitrate_en = SendDlgItemMessage(hDlg, IDC_MODE, CB_GETCURSEL, 0, 0);
+    bitrate_en = bitrate_en==RC_MODE_1PASS || bitrate_en==RC_MODE_2PASS2;
+
+    EnableDlgWindow(hDlg, IDC_BITRATE_S, bitrate_en);
+    EnableDlgWindow(hDlg, IDC_BITRATE, bitrate_en);
+    EnableDlgWindow(hDlg, IDC_BITRATE_MIN, bitrate_en);
+    EnableDlgWindow(hDlg, IDC_BITRATE_MAX, bitrate_en);
+    EnableDlgWindow(hDlg, IDC_SLIDER, bitrate_en);
+}
+
+void main_upload(HWND hDlg, CONFIG * config)
+{
+    int i;
+
+    SendDlgItemMessage(hDlg, IDC_PROFILE, CB_SETCURSEL, config->profile, 0);
+	SendDlgItemMessage(hDlg, IDC_MODE, CB_SETCURSEL, config->mode, 0);    
+    SetDlgItemInt(hDlg, IDC_BITRATE, config->bitrate, FALSE);
+
+    ListView_DeleteAllItems(GetDlgItem(hDlg,IDC_ZONES));
+    for (i=0; i < config->num_zones; i++) {
+        main_insert_zone(GetDlgItem(hDlg,IDC_ZONES), &config->zones[i], i, TRUE);
+    }  
+}
+
+
+/* downloads data from main dialog */
 void main_download(HWND hDlg, CONFIG * config)
 {
-
-	config->profile = SendDlgItemMessage(hDlg, IDC_PROFILE, CB_GETCURSEL, 0, 0);
-
-	switch(config->mode)
-	{
-	default :
-	case RC_MODE_CBR :
-		config->rc_bitrate = config_get_uint(hDlg, IDC_VALUE, config->rc_bitrate) * CONFIG_KBPS;
-		break;
-
-	/* case RC_MODE_VBR_QUAL :
-		config->quality = config_get_uint(hDlg, IDC_VALUE, config->quality);
-		break; */
-
-	case RC_MODE_FIXED :
-		config->quant = config_get_uint(hDlg, IDC_VALUE, config->quant);
-		break;
-
-	case RC_MODE_2PASS2_INT :
-		config->desired_size = config_get_uint(hDlg, IDC_VALUE, config->desired_size);
-		break;
-	}
-
+    config->profile = SendDlgItemMessage(hDlg, IDC_PROFILE, CB_GETCURSEL, 0, 0);
 	config->mode = SendDlgItemMessage(hDlg, IDC_MODE, CB_GETCURSEL, 0, 0);
+    config->bitrate = config_get_uint(hDlg, IDC_BITRATE, config->bitrate);
 }
 
 
-/* updates the edit box */
-
-void main_value(HWND hDlg, CONFIG* config)
-{
-	char* text;
-	int value;
-	int enabled = TRUE;
-
-	switch (config->mode)
-	{
-	default :
-		enabled = FALSE;
-
-	case RC_MODE_CBR :
-		text = "Bitrate (Kbps):";
-		value = config->rc_bitrate / CONFIG_KBPS;
-		break;
-
-	/* case DLG_MODE_VBR_QUAL :
-		text = "Quality:";
-		value = config->quality;
-		break; */
-
-	case RC_MODE_FIXED :
-		text = "Quantizer:";
-		value = config->quant;
-		break;
-
-	case RC_MODE_2PASS2_INT :
-		text = "Desired size (Kbtyes):";
-		value = config->desired_size;
-		break;
-	}
-
-	SetDlgItemText(hDlg, IDC_VALUE_STATIC, text);
-	SetDlgItemInt(hDlg, IDC_VALUE, value, FALSE);
-
-	EnableWindow(GetDlgItem(hDlg, IDC_VALUE_STATIC), enabled);
-	EnableWindow(GetDlgItem(hDlg, IDC_VALUE), enabled);
-
-	if (config->mode == RC_MODE_CBR || config->mode == RC_MODE_2PASS1 || 
-        config->mode == RC_MODE_2PASS2_INT || config->mode == RC_MODE_2PASS2_EXT) {
-		EnableWindow(GetDlgItem(hDlg, IDC_MODE_ADV), TRUE);
-    }else{
-		EnableWindow(GetDlgItem(hDlg, IDC_MODE_ADV), FALSE);
-    }
-}
-
-
-/* updates the slider */
-
-void main_slider(HWND hDlg, CONFIG * config)
-{
-	char* text;
-	long range;
-	int pos;
-	int enabled = TRUE;
-
-	switch (config->mode)
-	{
-	default :
-		enabled = FALSE;
-
-	case RC_MODE_CBR :
-		text = "Bitrate (Kbps):";
-		range = MAKELONG(0,10000);
-		pos = config->rc_bitrate / CONFIG_KBPS;
-		break;
-
-	/* case RC_MODE_VBR_QUAL :
-		text = "Quality:";
-		range = MAKELONG(0,100);
-		pos = config->quality;
-		break; */
-
-	case RC_MODE_FIXED :
-		text = "Quantizer:";
-		range = MAKELONG(1,31);
-		pos = config->quant;
-		break;
-	}
-
-	SetDlgItemText(hDlg, IDC_SLIDER_STATIC, text);
-	SendDlgItemMessage(hDlg, IDC_SLIDER, TBM_SETRANGE, TRUE, range);
-	SendDlgItemMessage(hDlg, IDC_SLIDER, TBM_SETPOS, TRUE, pos);
-
-	EnableWindow(GetDlgItem(hDlg, IDC_SLIDER_STATIC), enabled);
-	EnableWindow(GetDlgItem(hDlg, IDC_SLIDER), enabled);
-}
 
 
 /* main dialog proc */
 
+static const int profile_dlgs[] = { IDD_PROFILE, IDD_LEVEL };
+static const int single_dlgs[] = { IDD_RC_CBR };
+static const int pass1_dlgs[] = { IDD_RC_2PASS1 };
+static const int pass2_dlgs[] = { IDD_RC_2PASS2, IDD_RC_2PASS2_ALT};
+static const int zone_dlgs[] = { IDD_ZONE };
+static const int bitrate_dlgs[] = { IDD_CALC };
+static const int adv_dlgs[] = { IDD_MOTION, IDD_QUANT, IDD_DEBUG};
+
+
 BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	CONFIG* config = (CONFIG*)GetWindowLong(hDlg, GWL_USERDATA);
-	unsigned int i;
+    CONFIG* config = (CONFIG*)GetWindowLong(hDlg, GWL_USERDATA);
+    unsigned int i;
 
 	switch (uMsg)
 	{
 	case WM_INITDIALOG :
 		SetWindowLong(hDlg, GWL_USERDATA, lParam);
-
 		config = (CONFIG*)lParam;
 
 		for (i=0; i<sizeof(profiles)/sizeof(profile_t); i++)
 			SendDlgItemMessage(hDlg, IDC_PROFILE, CB_ADDSTRING, 0, (LPARAM)profiles[i].name);
-		SendDlgItemMessage(hDlg, IDC_PROFILE, CB_SETCURSEL, config->profile, 0);
 
-		SendDlgItemMessage(hDlg, IDC_MODE, CB_ADDSTRING, 0, (LPARAM)"1 Pass - CBR");
-		SendDlgItemMessage(hDlg, IDC_MODE, CB_ADDSTRING, 0, (LPARAM)"1 Pass - quality");
-		SendDlgItemMessage(hDlg, IDC_MODE, CB_ADDSTRING, 0, (LPARAM)"1 Pass - quantizer");
-		SendDlgItemMessage(hDlg, IDC_MODE, CB_ADDSTRING, 0, (LPARAM)"2 Pass - 1st pass");
-		SendDlgItemMessage(hDlg, IDC_MODE, CB_ADDSTRING, 0, (LPARAM)"2 Pass - 2nd pass Ext.");
-		SendDlgItemMessage(hDlg, IDC_MODE, CB_ADDSTRING, 0, (LPARAM)"2 Pass - 2nd pass Int.");
-		SendDlgItemMessage(hDlg, IDC_MODE, CB_ADDSTRING, 0, (LPARAM)"Null - test speed");
-
-		SendDlgItemMessage(hDlg, IDC_MODE, CB_SETCURSEL, config->mode, 0);
+        SendDlgItemMessage(hDlg, IDC_MODE, CB_ADDSTRING, 0, (LPARAM)"Single pass");
+		SendDlgItemMessage(hDlg, IDC_MODE, CB_ADDSTRING, 0, (LPARAM)"Twopass - 1st pass");
+		SendDlgItemMessage(hDlg, IDC_MODE, CB_ADDSTRING, 0, (LPARAM)"Twopass - 2nd pass");
+#ifdef _DEBUG
+        SendDlgItemMessage(hDlg, IDC_MODE, CB_ADDSTRING, 0, (LPARAM)"Null test speed");
+#endif
 
 		InitCommonControls();
+
 
 		if ((g_hTooltip = CreateWindow(TOOLTIPS_CLASS, NULL, TTS_ALWAYSTIP,
 				CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
@@ -1290,121 +1340,220 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			EnumChildWindows(hDlg, enum_tooltips, 0);
 		}
 
-		main_slider(hDlg, config);
-		main_value(hDlg, config);
+        {
+            DWORD ext_style = ListView_GetExtendedListViewStyle(GetDlgItem(hDlg,IDC_ZONES));
+            ext_style |= LVS_EX_FULLROWSELECT | LVS_EX_FLATSB ;
+            ListView_SetExtendedListViewStyle(GetDlgItem(hDlg,IDC_ZONES), ext_style);
+        }
+
+        {
+            typedef struct {
+                char * name;
+                int value;
+            } char_int_t;
+
+            const static char_int_t columns[] = { 
+                {"Frame #",     64},
+                {"Weight (Q)",  72},
+                {"Modifiers",   120}};
+
+            LVCOLUMN lvc; 
+            int i;
+ 
+            // Initialize the LVCOLUMN structure. 
+            lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM; 
+            lvc.fmt = LVCFMT_LEFT; 
+  
+            // Add the columns. 
+            for (i=0; i<sizeof(columns)/sizeof(char_int_t); i++) {
+                lvc.pszText = (char*)columns[i].name; 
+                lvc.cchTextMax = strlen(columns[i].name);
+                lvc.iSubItem = i;
+                lvc.cx = columns[i].value;  /* column width, pixels */
+                ListView_InsertColumn(GetDlgItem(hDlg,IDC_ZONES), i, &lvc);
+            }
+        }
+
+        main_upload(hDlg, config);
+        main_mode(hDlg, config);
+		break;
+
+    case WM_NOTIFY :
+        {
+            NMHDR * n = (NMHDR*)lParam;
+            int idc = (int)wParam;
+
+            if (n->code == NM_DBLCLK) {
+                 NMLISTVIEW * nmlv = (NMLISTVIEW*) lParam;
+                 config->cur_zone = nmlv->iItem;
+
+                 main_download(hDlg, config);
+                 if (config->cur_zone >= 0 && adv_dialog(hDlg, config, zone_dlgs, sizeof(zone_dlgs)/sizeof(int))) {
+                     main_insert_zone(GetDlgItem(hDlg, IDC_ZONES), &config->zones[config->cur_zone], config->cur_zone, FALSE);
+                 }
+                 break;
+            }
+
+            if (n->code == NM_RCLICK) {
+                OutputDebugString("Right click");
+            }
+        break;
+        }
+
+	case WM_COMMAND :
+        if (HIWORD(wParam) == BN_CLICKED) {
+
+            switch(LOWORD(wParam)) {
+            case IDC_PROFILE_ADV :
+                main_download(hDlg, config);
+			    adv_dialog(hDlg, config, profile_dlgs, sizeof(profile_dlgs)/sizeof(int));
+
+                SendDlgItemMessage(hDlg, IDC_PROFILE, CB_SETCURSEL, config->profile, 0);
+                main_mode(hDlg, config);
+                break;
+
+            case IDC_MODE_ADV :
+                main_download(hDlg, config);
+    			if (config->mode == RC_MODE_1PASS) {
+				    adv_dialog(hDlg, config, single_dlgs, sizeof(single_dlgs)/sizeof(int));
+			    }else if (config->mode == RC_MODE_2PASS1) {
+				    adv_dialog(hDlg, config, pass1_dlgs, sizeof(pass1_dlgs)/sizeof(int));
+			    }else if (config->mode == RC_MODE_2PASS2) {
+				    adv_dialog(hDlg, config, pass2_dlgs, sizeof(pass2_dlgs)/sizeof(int));
+			    }
+                break;
+
+            case IDC_BITRATE_CALC :
+                main_download(hDlg, config);
+                adv_dialog(hDlg, config, bitrate_dlgs, sizeof(bitrate_dlgs)/sizeof(int));
+                SetDlgItemInt(hDlg, IDC_BITRATE, config->bitrate, FALSE);
+                main_mode(hDlg, config);
+                break;
+
+            case IDC_ADD :
+            {
+                int i, sel, new_frame;
+
+                if (config->num_zones >= MAX_ZONES) {
+                    MessageBox(hDlg, "MAX_ZONES", "Warning", 0);
+                    break;
+                }
+
+                sel = ListView_GetNextItem(GetDlgItem(hDlg, IDC_ZONES), -1, LVNI_SELECTED);
+
+                if (sel<0) {
+                    if (config->ci_valid && config->ci.ciActiveFrame>0) {
+                        for(sel=0; sel<config->num_zones-1 && config->zones[sel].frame<config->ci.ciActiveFrame; sel++) ;
+                        sel--;
+                        new_frame = config->ci.ciActiveFrame;
+                    }else{
+                        sel = config->num_zones-1;
+                        new_frame = config->zones[sel].frame + 1;
+                    }
+                }else{
+                    new_frame = config->zones[sel].frame + 1;
+                }
+
+                if (sel+1<config->num_zones && config->zones[sel+1].frame==new_frame) {
+                    MessageBox(hDlg, "CANT ADD HERE", "Warning", 0);
+                    break;
+                }
+
+                for(i=config->num_zones-1; i>sel; i--) {
+                    config->zones[i+1] = config->zones[i];
+                }
+                config->num_zones++;
+                config->zones[sel+1].frame = new_frame;
+                config->zones[sel+1].mode = RC_ZONE_WEIGHT;
+                config->zones[sel+1].weight = 100;
+                config->zones[sel+1].quant = 500;
+                config->zones[sel+1].greyscale = 0;
+                config->zones[sel+1].chroma_opt = 0;
+                config->zones[sel+1].bvop_threshold = 0;
+
+                ListView_SetItemState(GetDlgItem(hDlg, IDC_ZONES), sel, 0x00000000, LVIS_SELECTED);
+                main_insert_zone(GetDlgItem(hDlg, IDC_ZONES), &config->zones[sel+1], sel+1, TRUE);
+                ListView_SetItemState(GetDlgItem(hDlg, IDC_ZONES), sel+1, 0xffffffff, LVIS_SELECTED);
+                break;
+            }
+
+            case IDC_REMOVE :
+            {
+                int i, sel;
+                sel = ListView_GetNextItem(GetDlgItem(hDlg, IDC_ZONES), -1, LVNI_SELECTED);
+
+                if (sel == -1) {
+                    MessageBox(hDlg, "Nothing selected", "Warning", 0);
+                    break;
+                }
+
+                if (sel == 0) {
+                    MessageBox(hDlg, "Can't remove first zone", "Warning", 0);
+                    break;
+                }
+
+                for (i=sel; i<config->num_zones-1; i++) {
+                    config->zones[i] = config->zones[i+1];
+                }
+                config->num_zones--;
+                ListView_DeleteItem(GetDlgItem(hDlg, IDC_ZONES), sel);
+
+
+                sel--;
+                if (sel==0 && config->num_zones>1) {
+                    sel=1;
+                }
+                ListView_SetItemState(GetDlgItem(hDlg, IDC_ZONES), sel, 0xffffffff, LVIS_SELECTED);
+                break;
+            }
+
+            case IDC_EDIT :
+                main_download(hDlg, config);
+                config->cur_zone = ListView_GetNextItem(GetDlgItem(hDlg, IDC_ZONES), -1, LVNI_SELECTED);
+                if (config->cur_zone != -1 && adv_dialog(hDlg, config, zone_dlgs, sizeof(zone_dlgs)/sizeof(int))) {
+                    main_insert_zone(GetDlgItem(hDlg, IDC_ZONES), &config->zones[config->cur_zone], config->cur_zone, FALSE);
+                }
+                break;
+
+            case IDC_ADVANCED :
+                main_download(hDlg, config);
+                adv_dialog(hDlg, config, adv_dlgs, sizeof(adv_dlgs)/sizeof(int));
+                break;
+
+            case IDC_DEFAULTS : 
+			    config_reg_default(config);
+                main_upload(hDlg, config);
+                break;
+
+            case IDOK :
+			    main_download(hDlg, config);
+			    config->save = TRUE;
+			    EndDialog(hDlg, IDOK);
+                break;
+
+            case IDCANCEL :
+    			config->save = FALSE;
+	    		EndDialog(hDlg, IDCANCEL);
+                break;
+            }
+        }else if (HIWORD(wParam) == LBN_SELCHANGE && 
+            (LOWORD(wParam)==IDC_PROFILE || LOWORD(wParam)==IDC_MODE)) {
+            main_mode(hDlg, config);
+        }else if (HIWORD(wParam)==EN_UPDATE && LOWORD(wParam)==IDC_BITRATE) {
+
+            SendDlgItemMessage(hDlg, IDC_SLIDER, TBM_SETPOS, TRUE, 
+                    config_get_uint(hDlg, IDC_BITRATE, DEFAULT_MIN_KBPS) );
+        }else {
+            return 0;
+        }
 		break;
 
 	case WM_HSCROLL :
-		if((HWND)lParam == GetDlgItem(hDlg, IDC_SLIDER))
-		{
-			SetDlgItemInt(hDlg, IDC_VALUE, SendMessage((HWND)lParam, TBM_GETPOS, 0, 0), FALSE);
-		}
-		else
-		{
-			return 0;
-		}
-		break;
-
-	case WM_COMMAND :
-		if (HIWORD(wParam) == LBN_SELCHANGE && (LOWORD(wParam) == IDC_PROFILE || LOWORD(wParam) == IDC_MODE))
-		{
-			main_download(hDlg, config);
-			main_slider(hDlg, config);
-			main_value(hDlg, config);
-		}
-		else if (LOWORD(wParam) == IDC_PROFILE_ADV && HIWORD(wParam) == BN_CLICKED)	/* profile dlg */
-		{
-			static const int dlgs[] = { IDD_PROFILE };
-
-			adv_dialog(hDlg, config, dlgs, sizeof(dlgs)/sizeof(int));
-			if (config->save)
-			{
-				config_reg_set(config);
-			}
-			SendDlgItemMessage(hDlg, IDC_PROFILE, CB_SETCURSEL, config->profile, 0);
-		}
-		else if (LOWORD(wParam) == IDC_MODE_ADV && HIWORD(wParam) == BN_CLICKED)	/* rate control dialog */
-		{
-			if (config->mode == RC_MODE_CBR) {
-				static const int dlgs[] = { IDD_RC_CBR };
-				adv_dialog(hDlg, config, dlgs, sizeof(dlgs)/sizeof(int));
-			}else if (config->mode == RC_MODE_2PASS1) {
-				static const int dlgs[] = { IDD_RC_2PASS1 };
-				adv_dialog(hDlg, config, dlgs, sizeof(dlgs)/sizeof(int));
-			}else if (config->mode == RC_MODE_2PASS2_INT || config->mode == RC_MODE_2PASS2_EXT) {
-				static const int dlgs[] = { IDD_RC_2PASS2, IDD_RC_2PASS2_ALT};
-				adv_dialog(hDlg, config, dlgs, sizeof(dlgs)/sizeof(int));
-			}
-			if (config->save)
-			{
-				config_reg_set(config);
-			}
-		}
-		else if (LOWORD(wParam) == IDC_ADVANCED && HIWORD(wParam) == BN_CLICKED)
-		{
-			static const int dlgs[] = { IDD_MOTION, IDD_TOOLS, IDD_QUANT, IDD_DEBUG};
-			adv_dialog(hDlg, config, dlgs, sizeof(dlgs)/sizeof(int));
-
-			if (config->save)
-			{
-				config_reg_set(config);
-			}
-		}
-		else if (LOWORD(wParam) == IDC_DECODER && HIWORD(wParam) == BN_CLICKED)
-		{
-			static const int dlgs[] = { IDD_POSTPROC };
-			adv_dialog(hDlg, config, dlgs, sizeof(dlgs)/sizeof(int));
-
-			if (config->save)
-			{
-				config_reg_set(config);
-			}
-		}
-		else if (LOWORD(wParam) == IDC_DEFAULTS && HIWORD(wParam) == BN_CLICKED)
-		{
-			config_reg_default(config);
-
-			SendDlgItemMessage(hDlg, IDC_MODE, CB_SETCURSEL, config->mode, 0);
-
-			main_slider(hDlg, config);
-			main_value(hDlg, config);
-		}
-		else if (HIWORD(wParam) == EN_UPDATE && LOWORD(wParam) == IDC_VALUE)
-		{
-			int value = config_get_uint(hDlg, IDC_VALUE, 1);
-			int max = 1;
-
-			max = (config->mode == RC_MODE_CBR) ? 10000 :
-				/*((config->mode == DLG_MODE_VBR_QUAL) ? 100 :*/
-				((config->mode == RC_MODE_FIXED) ? 31 : 1<<30)	/*)*/;
-
-			if (value < 1)
-			{
-				value = 1;
-			}
-			if (value > max)
-			{
-				value = max;
-				SetDlgItemInt(hDlg, IDC_VALUE, value, FALSE);
-			}
-
-			if (config->mode != RC_MODE_2PASS2_INT)
-			{
-				SendDlgItemMessage(hDlg, IDC_SLIDER, TBM_SETPOS, TRUE, value);
-			}
-		}
-		else if (LOWORD(wParam) == IDOK && HIWORD(wParam) == BN_CLICKED)
-		{
-			main_download(hDlg, config);
-			config->save = TRUE;
-			EndDialog(hDlg, IDOK);
-		}
-		else if (LOWORD(wParam) == IDCANCEL)
-		{
-			config->save = FALSE;
-			EndDialog(hDlg, IDCANCEL);
-		}
-		break;
+		if((HWND)lParam == GetDlgItem(hDlg, IDC_SLIDER)) {
+            SetDlgItemInt(hDlg, IDC_BITRATE, SendMessage((HWND)lParam, TBM_GETPOS, 0, 0), FALSE);
+            break;
+        }
+        return 0;
 
 	default :
 		return 0;
@@ -1446,13 +1595,11 @@ BOOL CALLBACK about_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 			hFont = (HFONT)SendDlgItemMessage(hDlg, IDC_WEBSITE, WM_GETFONT, 0, 0L);
 
-			if (GetObject(hFont, sizeof(LOGFONT), &lfData))
-			{
+			if (GetObject(hFont, sizeof(LOGFONT), &lfData)) {
 				lfData.lfUnderline = 1;
 
 				hFont = CreateFontIndirect(&lfData);
-				if (hFont)
-				{
+				if (hFont) {
 					SendDlgItemMessage(hDlg, IDC_WEBSITE, WM_SETFONT, (WPARAM)hFont, 1L);
 				}
 			}
