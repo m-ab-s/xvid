@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: config.h,v 1.1.2.16 2004-01-02 13:18:28 syskin Exp $
+ * $Id: config.h,v 1.1.2.17 2004-01-20 14:11:39 syskin Exp $
  *
  ****************************************************************************/
 #ifndef _CONFIG_H_
@@ -253,6 +253,9 @@ extern const profile_t profiles[];
 
 void config_reg_get(CONFIG * config);
 void config_reg_set(CONFIG * config);
+
+static void
+zones_update(HWND hDlg, CONFIG * config);
 
 BOOL CALLBACK main_proc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK about_proc(HWND, UINT, WPARAM, LPARAM);
