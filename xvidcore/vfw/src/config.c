@@ -202,6 +202,7 @@ static const REG_INT reg_ints[] = {
 	{"vhq_mode",				&reg.vhq_mode,					1},
     {"chromame",				&reg.chromame,					1},
     {"cartoon_mode",			&reg.cartoon_mode,				0},
+	{"turbo",					&reg.turbo,						0},
 	{"max_key_interval",		&reg.max_key_interval,			300},
 	{"frame_drop_ratio",		&reg.frame_drop_ratio,			0},	
 	
@@ -876,6 +877,7 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
 		SendDlgItemMessage(hDlg, IDC_VHQ, CB_SETCURSEL, config->vhq_mode, 0);
         CheckDlg(hDlg, IDC_CHROMAME, config->chromame);
         CheckDlg(hDlg, IDC_CARTOON, config->cartoon_mode);
+        CheckDlg(hDlg, IDC_TURBO, config->turbo);
 		SetDlgItemInt(hDlg, IDC_FRAMEDROP, config->frame_drop_ratio, FALSE);
 		SetDlgItemInt(hDlg, IDC_MAXKEY, config->max_key_interval, FALSE);
         break;
@@ -1011,6 +1013,7 @@ void adv_download(HWND hDlg, int idd, CONFIG * config)
 		config->vhq_mode = SendDlgItemMessage(hDlg, IDC_VHQ, CB_GETCURSEL, 0, 0);
 		config->chromame = IsDlgChecked(hDlg, IDC_CHROMAME);
 		config->cartoon_mode = IsDlgChecked(hDlg, IDC_CARTOON);
+		config->turbo = IsDlgChecked(hDlg, IDC_TURBO);
 
         config->frame_drop_ratio = config_get_uint(hDlg, IDC_FRAMEDROP, config->frame_drop_ratio);
 

@@ -595,6 +595,11 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		frame.motion |= XVID_ME_DETECT_STATIC_MOTION;
 	}
 
+	if (codec->config.turbo)
+ 		frame.motion |= XVID_ME_FASTREFINE16 | XVID_ME_FASTREFINE8 | 
+						XVID_ME_SKIP_DELTASEARCH | XVID_ME_FAST_MODEINTERPOLATE | 
+						XVID_ME_BFRAME_EARLYSTOP;
+
 	frame.motion |= pmvfast_presets[codec->config.motion_search];
 
 	switch (codec->config.vhq_mode)
