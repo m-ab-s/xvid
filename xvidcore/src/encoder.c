@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.22 2003-05-15 12:58:26 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.95.2.23 2003-05-16 17:16:21 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -678,6 +678,11 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
     data.mb_height = pEnc->mbParam.mb_height;
     data.fincr = frame->fincr;
     data.fbase = pEnc->mbParam.fbase;
+
+    for (i=0; i<3; i++) {
+        data.min_quant[i] = pEnc->mbParam.min_quant[i];
+        data.max_quant[i] = pEnc->mbParam.max_quant[i];
+    }
     
     data.reference.csp = XVID_CSP_USER;
     data.reference.plane[0] = pEnc->reference->image.y;
