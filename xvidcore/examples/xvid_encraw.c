@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.9 2003-03-20 14:14:52 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.10 2003-03-20 17:59:07 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -709,7 +709,7 @@ enc_init(int use_assembler)
 {
 	int xerr;
 
-	xvid_enc_plugin_t plugins[2];
+	xvid_enc_plugin_t plugins[3];
 
 	xvid_gbl_init_t xvid_gbl_init;
 	xvid_enc_create_t xvid_enc_create;
