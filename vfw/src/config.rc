@@ -720,7 +720,7 @@ BEGIN
     IDC_AUTOSTR             "How much influence a poor desired quality (file size) has on minimum relative quality"
     IDC_BONUSBIAS           "The percentage of the bonus that will be applied with bias (the rest is proportionally distributed)"
     IDC_CURVETYPE           "How aggressively the curve affects bitrate distribution"
-    IDC_ALTCURVEHIGH        "Distance from the average framesize where the worst quality will be applied"
+    IDC_ALTCURVEHIGH        "Distance from the average framesize where the minimum relative quality will be applied"
 END
 
 STRINGTABLE DISCARDABLE 
