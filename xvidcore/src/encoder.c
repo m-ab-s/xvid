@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.16 2003-03-27 17:09:48 edgomez Exp $
+ *  $Id: encoder.c,v 1.95.2.17 2003-03-30 00:36:53 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1353,11 +1353,16 @@ FrameCodeI(Encoder * pEnc,
 	}
 	emms();
 
+/* XXX: Remove the two #if 0 blocks when we are sure we must always pad the stream */
+#if 0
 	/* for divx5 compatibility, we must always pad between the packed p and b frames */
 	if ((pEnc->mbParam.global_flags & XVID_GLOBAL_PACKED) && pEnc->bframenum_tail > 0)
+#endif
 		BitstreamPadAlways(bs);
+#if 0
 	else
 		BitstreamPad(bs);
+#endif
     pEnc->current->length = (BitstreamPos(bs) - bits) / 8;
 
 	pEnc->fMvPrevSigma = -1;
@@ -1754,11 +1759,16 @@ FrameCodeP(Encoder * pEnc,
 	} 
 	*/
 
+/* XXX: Remove the two #if 0 blocks when we are sure we must always pad the stream */
+#if 0
    	/* for divx5 compatibility, we must always pad between the packed p and b frames */
 	if ((pEnc->mbParam.global_flags & XVID_GLOBAL_PACKED) && pEnc->bframenum_tail > 0)
+#endif
 		BitstreamPadAlways(bs);
+#if 0
 	else
 		BitstreamPad(bs);
+#endif
 
     pEnc->current->length = (BitstreamPos(bs) - bits) / 8;
 
@@ -1890,7 +1900,7 @@ FrameCodeB(Encoder * pEnc,
 
 	/* TODO: dynamic fcode/bcode ??? */
 
-    BitstreamPad(bs);
+    BitstreamPadAlways(bs);
 	frame->length = (BitstreamPos(bs) - bits) / 8;
 
 #ifdef BFRAMES_DEC_DEBUG
