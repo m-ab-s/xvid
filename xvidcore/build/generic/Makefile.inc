@@ -17,6 +17,7 @@ SRC = \
 	$(SRCDIR)/image/colorspace.c \
 	$(SRCDIR)/image/image.c \
 	$(SRCDIR)/image/interpolate8x8.c \
+	$(SRCDIR)/image/reduced.c \
 	$(SRCDIR)/image/font.c \
 	$(SRCDIR)/motion/motion_comp.c \
 	$(SRCDIR)/motion/motion_est.c \
@@ -53,6 +54,7 @@ SRC_INTEL = \
 	$(SRCDIR)/dct/x86_asm/fdct_mmx.asm \
 	$(SRCDIR)/dct/x86_asm/idct_mmx.asm \
 	$(SRCDIR)/image/x86_asm/interpolate8x8_mmx.asm \
+	$(SRCDIR)/image/x86_asm/reduced_mmx.asm \
 	$(SRCDIR)/image/x86_asm/colorspace_rgb_mmx.asm \
 	$(SRCDIR)/image/x86_asm/colorspace_yuyv_mmx.asm \
 	$(SRCDIR)/image/x86_asm/colorspace_yuv_mmx.asm \
