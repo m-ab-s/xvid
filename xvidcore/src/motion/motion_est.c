@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.c,v 1.58.2.19 2003-06-26 11:50:37 syskin Exp $
+ * $Id: motion_est.c,v 1.58.2.20 2003-06-28 15:52:10 chl Exp $
  *
  ****************************************************************************/
 
@@ -34,12 +34,13 @@
 #include "../encoder.h"
 #include "../utils/mbfunctions.h"
 #include "../prediction/mbprediction.h"
-#include "../global.h"
+#include "../global.h"  
 #include "../utils/timer.h"
 #include "../image/interpolate8x8.h"
 #include "motion_est.h"
 #include "motion.h"
 #include "sad.h"
+#include "gmc.h"
 #include "../utils/emms.h"
 #include "../dct/fdct.h"
 
@@ -450,6 +451,34 @@ CheckCandidate16no4v(const int x, const int y, const int Direction, int * const 
 	if (sad < *(data->iMinSAD)) {
 		*(data->iMinSAD) = sad;
 		current->x = x; current->y = y;
+		*dir = Direction;
+	}
+}
+
+static void
+CheckCandidate16I(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
+{
+	int sad;
+//	int xc, yc;
+	const uint8_t * Reference;
+//	VECTOR * current;
+
+	if ( (x > data->max_dx) || ( x < data->min_dx)
+		|| (y > data->max_dy) || (y < data->min_dy) ) return;
+
+	Reference = GetReference(x, y, data);
+//	xc = x; yc = y;
+
+	sad = sad16(data->Cur, Reference, data->iEdgedWidth, 256*4096);
+//	sad += d_mv_bits(x, y, data->predMV, data->iFcode, 0, 0);
+
+/*	if (data->chroma) sad += ChromaSAD((xc >> 1) + roundtab_79[xc & 0x3],
+										(yc >> 1) + roundtab_79[yc & 0x3], data);
+*/
+
+	if (sad < data->iMinSAD[0]) {
+		data->iMinSAD[0] = sad;
+		data->currentMV[0].x = x; data->currentMV[0].y = y;
 		*dir = Direction;
 	}
 }
@@ -1065,6 +1094,7 @@ MotionEstimation(MBParam * const pParam,
 				 const IMAGE * const pRefH,
 				 const IMAGE * const pRefV,
 				 const IMAGE * const pRefHV,
+				const IMAGE * const pGMC,
 				 const uint32_t iLimit)
 {
 	MACROBLOCK *const pMBs = current->mbs;
@@ -1079,8 +1109,7 @@ MotionEstimation(MBParam * const pParam,
 	uint32_t x, y;
 	uint32_t iIntra = 0;
 	int32_t quant = current->quant, sad00;
-	int skip_thresh = \
-		INITIAL_SKIP_THRESH * \
+	int skip_thresh = INITIAL_SKIP_THRESH * \
 		(current->vop_flags & XVID_VOP_REDUCED ? 4:1) * \
 		(current->vop_flags & XVID_VOP_MODEDECISION_BITS ? 2:1);
 
@@ -1101,7 +1130,7 @@ MotionEstimation(MBParam * const pParam,
 	Data.rounding = pParam->m_rounding_type;
 	Data.qpel = (current->vol_flags & XVID_VOL_QUARTERPEL ? 1:0);
 	Data.chroma = MotionFlags & XVID_ME_CHROMA16;
-	Data.rrv = (current->vop_flags & XVID_VOP_REDUCED ? 1:0);
+	Data.rrv = (current->vop_flags & XVID_VOP_REDUCED) ? 1:0;
 	Data.dctSpace = dct_space;
 	Data.quant_type = !(pParam->vol_flags & XVID_VOL_MPEGQUANT);
 
@@ -1168,10 +1197,10 @@ MotionEstimation(MBParam * const pParam,
 		}
 	}
 
-	if (current->vol_flags & XVID_VOL_GMC )	/* GMC only for S(GMC)-VOPs */
-	{
-		current->warp = GlobalMotionEst( pMBs, pParam, current, reference, pRefH, pRefV, pRefHV);
-	}
+//	if (current->vol_flags & XVID_VOL_GMC )	/* GMC only for S(GMC)-VOPs */
+//	{
+//		current->warp = GlobalMotionEst( pMBs, pParam, current, reference, pRefH, pRefV, pRefHV);
+//	}
 	return 0;
 }
 
@@ -2179,7 +2208,7 @@ MEanalysis(	const IMAGE * const pRef,
 	MACROBLOCK * const pMBs = Current->mbs;
 	const IMAGE * const pCurrent = &Current->image;
 	int IntraThresh = INTRA_THRESH, InterThresh = INTER_THRESH + b_thresh;
-	int s = 0, blocks = 0;
+	int blocks = 0;
 	int complexity = 0;
 
 	int32_t iMinSAD[5], temp[5];
@@ -2251,187 +2280,6 @@ MEanalysis(	const IMAGE * const pRef,
 	return B_VOP;
 }
 
-static WARPPOINTS
-GlobalMotionEst(const MACROBLOCK * const pMBs,
-				const MBParam * const pParam,
-				const FRAMEINFO * const current,
-				const FRAMEINFO * const reference,
-				const IMAGE * const pRefH,
-				const IMAGE * const pRefV,
-				const IMAGE * const pRefHV	)
-{
-
-	const int deltax=8;		/* upper bound for difference between a MV and it's neighbour MVs */
-	const int deltay=8;
-	const int grad=512;		/* lower bound for deviation in MB */
-
-	WARPPOINTS gmc;
-
-	uint32_t mx, my;
-
-	int MBh = pParam->mb_height;
-	int MBw = pParam->mb_width;
-
-	int *MBmask= calloc(MBh*MBw,sizeof(int));
-	double DtimesF[4] = { 0.,0., 0., 0. };
-	double sol[4] = { 0., 0., 0., 0. };
-	double a,b,c,n,denom;
-	double meanx,meany;
-	int num,oldnum;
-
-	if (!MBmask) {	fprintf(stderr,"Mem error\n");
-					gmc.duv[0].x= gmc.duv[0].y =
-						gmc.duv[1].x= gmc.duv[1].y =
-						gmc.duv[2].x= gmc.duv[2].y = 0;
-					return gmc; }
-
-	/* filter mask of all blocks */
-
-	for (my = 1; my < (uint32_t)MBh-1; my++)
-	for (mx = 1; mx < (uint32_t)MBw-1; mx++)
-	{
-		const int mbnum = mx + my * MBw;
-		const MACROBLOCK *pMB = &pMBs[mbnum];
-		const VECTOR mv = pMB->mvs[0];
-
-		if (pMB->mode == MODE_INTRA || pMB->mode == MODE_NOT_CODED)
-			continue;
-
-		if ( ( (abs(mv.x -   (pMB-1)->mvs[0].x) < deltax) && (abs(mv.y -   (pMB-1)->mvs[0].y) < deltay) )
-		&&   ( (abs(mv.x -   (pMB+1)->mvs[0].x) < deltax) && (abs(mv.y -   (pMB+1)->mvs[0].y) < deltay) )
-		&&   ( (abs(mv.x - (pMB-MBw)->mvs[0].x) < deltax) && (abs(mv.y - (pMB-MBw)->mvs[0].y) < deltay) )
-		&&   ( (abs(mv.x - (pMB+MBw)->mvs[0].x) < deltax) && (abs(mv.y - (pMB+MBw)->mvs[0].y) < deltay) ) )
-			MBmask[mbnum]=1;
-	}
-
-	for (my = 1; my < (uint32_t)MBh-1; my++)
-	for (mx = 1; mx < (uint32_t)MBw-1; mx++)
-	{
-		const uint8_t *const pCur = current->image.y + 16*my*pParam->edged_width + 16*mx;
-
-		const int mbnum = mx + my * MBw;
-		if (!MBmask[mbnum])
-			continue;
-
-		if (sad16 ( pCur, pCur+1 , pParam->edged_width, 65536) <= (uint32_t)grad )
-			MBmask[mbnum] = 0;
-		if (sad16 ( pCur, pCur+pParam->edged_width, pParam->edged_width, 65536) <= (uint32_t)grad )
-			MBmask[mbnum] = 0;
-
-	}
-
-	emms();
-
-	do {		/* until convergence */
-
-	a = b = c = n = 0;
-	DtimesF[0] = DtimesF[1] = DtimesF[2] = DtimesF[3] = 0.;
-	for (my = 0; my < (uint32_t)MBh; my++)
-		for (mx = 0; mx < (uint32_t)MBw; mx++)
-		{
-			const int mbnum = mx + my * MBw;
-			const MACROBLOCK *pMB = &pMBs[mbnum];
-			const VECTOR mv = pMB->mvs[0];
-
-			if (!MBmask[mbnum])
-				continue;
-
-			n++;
-			a += 16*mx+8;
-			b += 16*my+8;
-			c += (16*mx+8)*(16*mx+8)+(16*my+8)*(16*my+8);
-
-			DtimesF[0] += (double)mv.x;
-			DtimesF[1] += (double)mv.x*(16*mx+8) + (double)mv.y*(16*my+8);
-			DtimesF[2] += (double)mv.x*(16*my+8) - (double)mv.y*(16*mx+8);
-			DtimesF[3] += (double)mv.y;
-		}
-
-	denom = a*a+b*b-c*n;
-
-/* Solve the system:	sol = (D'*E*D)^{-1} D'*E*F   */
-/* D'*E*F has been calculated in the same loop as matrix */
-
-	sol[0] = -c*DtimesF[0] + a*DtimesF[1] + b*DtimesF[2];
-	sol[1] =  a*DtimesF[0] - n*DtimesF[1]                + b*DtimesF[3];
-	sol[2] =  b*DtimesF[0]                - n*DtimesF[2] - a*DtimesF[3];
-	sol[3] =                 b*DtimesF[1] - a*DtimesF[2] - c*DtimesF[3];
-
-	sol[0] /= denom;
-	sol[1] /= denom;
-	sol[2] /= denom;
-	sol[3] /= denom;
-
-	meanx = meany = 0.;
-	oldnum = 0;
-	for (my = 0; my < (uint32_t)MBh; my++)
-		for (mx = 0; mx < (uint32_t)MBw; mx++)
-		{
-			const int mbnum = mx + my * MBw;
-			const MACROBLOCK *pMB = &pMBs[mbnum];
-			const VECTOR mv = pMB->mvs[0];
-
-			if (!MBmask[mbnum])
-				continue;
-
-			oldnum++;
-			meanx += fabs(( sol[0] + (16*mx+8)*sol[1] + (16*my+8)*sol[2] ) - mv.x );
-			meany += fabs(( sol[3] - (16*mx+8)*sol[2] + (16*my+8)*sol[1] ) - mv.y );
-		}
-
-	if (4*meanx > oldnum)	/* better fit than 0.25 is useless */
-		meanx /= oldnum;
-	else
-		meanx = 0.25;
-
-	if (4*meany > oldnum)
-		meany /= oldnum;
-	else
-		meany = 0.25;
-
-/*	fprintf(stderr,"sol = (%8.5f, %8.5f, %8.5f, %8.5f)\n",sol[0],sol[1],sol[2],sol[3]);
-	fprintf(stderr,"meanx = %8.5f  meany = %8.5f   %d\n",meanx,meany, oldnum);
-*/
-	num = 0;
-	for (my = 0; my < (uint32_t)MBh; my++)
-		for (mx = 0; mx < (uint32_t)MBw; mx++)
-		{
-			const int mbnum = mx + my * MBw;
-			const MACROBLOCK *pMB = &pMBs[mbnum];
-			const VECTOR mv = pMB->mvs[0];
-
-			if (!MBmask[mbnum])
-				continue;
-
-			if  ( ( fabs(( sol[0] + (16*mx+8)*sol[1] + (16*my+8)*sol[2] ) - mv.x ) > meanx )
-				|| ( fabs(( sol[3] - (16*mx+8)*sol[2] + (16*my+8)*sol[1] ) - mv.y ) > meany ) )
-				MBmask[mbnum]=0;
-			else
-				num++;
-		}
-
-	} while ( (oldnum != num) && (num>=4) );
-
-	if (num < 4)
-	{
-		gmc.duv[0].x= gmc.duv[0].y= gmc.duv[1].x= gmc.duv[1].y= gmc.duv[2].x= gmc.duv[2].y=0;
-	} else {
-
-		gmc.duv[0].x=(int)(sol[0]+0.5);
-		gmc.duv[0].y=(int)(sol[3]+0.5);
-
-		gmc.duv[1].x=(int)(sol[1]*pParam->width+0.5);
-		gmc.duv[1].y=(int)(-sol[2]*pParam->width+0.5);
-
-		gmc.duv[2].x=0;
-		gmc.duv[2].y=0;
-	}
-/*	fprintf(stderr,"wp1 = ( %4d, %4d)  wp2 = ( %4d, %4d) \n", gmc.duv[0].x, gmc.duv[0].y, gmc.duv[1].x, gmc.duv[1].y); */
-
-	free(MBmask);
-
-	return gmc;
-}
 
 /* functions which perform BITS-based search/bitcount */
 
@@ -2668,3 +2516,593 @@ CountMBBitsIntra(const SearchData * const Data)
 
 	return bits;
 }
+
+
+
+
+
+static __inline void
+GMEanalyzeMB (	const uint8_t * const pCur,
+				const uint8_t * const pRef,
+				const uint8_t * const pRefH,
+				const uint8_t * const pRefV,
+				const uint8_t * const pRefHV,
+				const int x,
+				const int y,
+				const MBParam * const pParam,
+				MACROBLOCK * const pMBs,
+				SearchData * const Data)
+{
+
+	int i=0;
+//	VECTOR pmv[3];
+	MACROBLOCK * const pMB = &pMBs[x + y * pParam->mb_width];
+
+	Data->iMinSAD[0] = MV_MAX_ERROR;
+
+	//median is only used as prediction. it doesn't have to be real
+	if (x == 0 && y == 0) 
+		Data->predMV.x = Data->predMV.y = 0;
+	else
+		if (x == 0) //left macroblock does not have any vector now
+			Data->predMV = (pMB - pParam->mb_width)->mvs[0]; // top instead of median
+		else if (y == 0) // top macroblock doesn't have it's vector
+			Data->predMV = (pMB-1)->mvs[0]; // left instead of median
+			else Data->predMV = get_pmv2(pMBs, pParam->mb_width, 0, x, y, 0); //else median
+
+	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
+				pParam->width, pParam->height, Data->iFcode - ((pParam->vol_flags & XVID_VOL_QUARTERPEL)?1:0), 0, 0);
+
+	Data->Cur = pCur + 16*(x + y * pParam->edged_width);
+	Data->RefP[0] = pRef + 16*(x + y * pParam->edged_width);
+	Data->RefP[1] = pRefV + 16*(x + y * pParam->edged_width);
+	Data->RefP[2] = pRefH + 16*(x + y * pParam->edged_width);
+	Data->RefP[3] = pRefHV + 16*(x + y * pParam->edged_width);
+
+	Data->currentMV[0].x = Data->currentMV[0].y = 0;
+	CheckCandidate16I(0, 0, 255, &i, Data);
+
+	if ( (Data->predMV.x !=0) || (Data->predMV.y != 0) )
+		CheckCandidate16I(Data->predMV.x, Data->predMV.y, 255, &i, Data);
+
+	if (Data->iMinSAD[0] > 256 /*4 * MAX_SAD00_FOR_SKIP*/) // diamond only if needed
+		DiamondSearch(Data->currentMV[0].x, Data->currentMV[0].y, Data, 255);
+
+	SubpelRefine(Data);	
+	
+	
+	/* for QPel halfpel positions are worse than in halfpel mode :( */
+/*	if (Data->qpel) {
+		Data->currentQMV->x = 2*Data->currentMV->x;
+		Data->currentQMV->y = 2*Data->currentMV->y;
+		Data->qpel_precision = 1;
+		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
+					pParam->width, pParam->height, iFcode, 1, 0);
+		SubpelRefine(Data);
+	}
+*/
+
+	pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = Data->currentMV[0];
+	pMB->sad16 = Data->iMinSAD[0];
+	pMB->sad16 += d_mv_bits(pMB->mvs[0].x, pMB->mvs[0].y, Data->predMV, Data->iFcode, 0, 0);
+	return;
+}
+
+void
+GMEanalysis(const MBParam * const pParam,
+			const FRAMEINFO * const current,
+			const FRAMEINFO * const reference,
+			const IMAGE * const pRefH,
+			const IMAGE * const pRefV,
+			const IMAGE * const pRefHV)
+{
+	uint32_t x, y;
+	MACROBLOCK * const pMBs = current->mbs;
+	const IMAGE * const pCurrent = &current->image;
+	const IMAGE * const pReference = &reference->image;
+
+	int32_t iMinSAD[5], temp[5];
+	VECTOR currentMV[5];
+	SearchData Data;
+	memset(&Data, 0, sizeof(SearchData));
+	
+	Data.iEdgedWidth = pParam->edged_width;
+	Data.qpel = ((pParam->vol_flags & XVID_VOL_QUARTERPEL)?1:0);
+	Data.qpel_precision = 0;
+	Data.rounding = pParam->m_rounding_type;
+	Data.chroma = current->motion_flags & XVID_ME_CHROMA16;
+	Data.rrv = current->vop_flags & XVID_VOL_REDUCED_ENABLE;
+	
+	Data.currentMV = &currentMV[0];
+	Data.iMinSAD = &iMinSAD[0];
+	Data.iFcode = current->fcode;
+	Data.temp = temp;
+	Data.RefP[0] = pReference->y;
+	Data.RefP[1] = pRefV->y;
+	Data.RefP[2] = pRefH->y;
+	Data.RefP[3] = pRefHV->y;
+
+	CheckCandidate = CheckCandidate16I;
+	
+	if (sadInit) (*sadInit) ();
+
+	for (y = 0; y < pParam->mb_height; y ++) {
+		for (x = 0; x < pParam->mb_width; x ++) {
+
+			GMEanalyzeMB(pCurrent->y, pReference->y, pRefH->y, pRefV->y, pRefHV->y, x, y, pParam, pMBs, &Data);
+		}
+	}
+	return;
+}
+
+
+WARPPOINTS
+GlobalMotionEst(MACROBLOCK * const pMBs,
+				const MBParam * const pParam,
+				const FRAMEINFO * const current,
+				const FRAMEINFO * const reference,
+				const IMAGE * const pRefH,
+				const IMAGE * const pRefV,
+				const IMAGE * const pRefHV)
+{
+
+	const unsigned int deltax=8;		// upper bound for difference between a MV and it's neighbour MVs
+	const unsigned int deltay=8;
+	const unsigned int gradx=512;		// lower bound for gradient in MB (ignore "flat" blocks)
+	const unsigned int grady=512;		
+
+	double sol[4] = { 0., 0., 0., 0. };
+		
+	WARPPOINTS gmc;
+
+	uint32_t mx, my;
+
+	int MBh = pParam->mb_height;
+	int MBw = pParam->mb_width;
+	const int minblocks = 9; //MBh*MBw/32+3;		/* just some reasonable number 3% + 3 */
+	const int maxblocks = MBh*MBw/4;		/* just some reasonable number 3% + 3 */
+
+	int num=0;
+	int oldnum;
+
+	gmc.duv[0].x = gmc.duv[0].y = gmc.duv[1].x = gmc.duv[1].y = gmc.duv[2].x = gmc.duv[2].y = 0;
+
+	GMEanalysis(pParam,current, reference, pRefH, pRefV, pRefHV);
+
+	/* block based ME isn't done, yet, so do a quick presearch */
+
+// filter mask of all blocks
+
+	for (my = 0; my < (uint32_t)MBh; my++)
+	for (mx = 0; mx < (uint32_t)MBw; mx++)
+	{
+		const int mbnum = mx + my * MBw;
+			pMBs[mbnum].mcsel = 0;
+	}
+	
+	
+	for (my = 1; my < (uint32_t)MBh-1; my++) /* ignore boundary blocks */ 
+	for (mx = 1; mx < (uint32_t)MBw-1; mx++) /* theirs MVs are often wrong */
+	{
+		const int mbnum = mx + my * MBw;
+		MACROBLOCK *const pMB = &pMBs[mbnum];
+		const VECTOR mv = pMB->mvs[0];
+
+		/* don't use object boundaries */
+		if   ( (abs(mv.x -   (pMB-1)->mvs[0].x) < deltax) 
+			&& (abs(mv.y -   (pMB-1)->mvs[0].y) < deltay)
+			&& (abs(mv.x -   (pMB+1)->mvs[0].x) < deltax) 
+			&& (abs(mv.y -   (pMB+1)->mvs[0].y) < deltay)
+			&& (abs(mv.x - (pMB-MBw)->mvs[0].x) < deltax) 
+			&& (abs(mv.y - (pMB-MBw)->mvs[0].y) < deltay)
+			&& (abs(mv.x - (pMB+MBw)->mvs[0].x) < deltax) 
+			&& (abs(mv.y - (pMB+MBw)->mvs[0].y) < deltay) )
+		{	const int iEdgedWidth = pParam->edged_width;
+			const uint8_t *const pCur = current->image.y + 16*(my*iEdgedWidth + mx);
+			if ( (sad16 ( pCur, pCur+1 , iEdgedWidth, 65536) >= gradx )
+			 &&  (sad16 ( pCur, pCur+iEdgedWidth, iEdgedWidth, 65536) >= grady ) )
+			 {	pMB->mcsel = 1;	
+				num++;
+			 }
+
+		/* only use "structured" blocks */
+		}
+	}
+	emms();
+
+	/* 	further filtering would be possible, but during iteration, remaining 
+		outliers usually are removed, too */
+
+	if (num>= minblocks)
+	do {		/* until convergence */
+		double DtimesF[4];
+		double a,b,c,n,invdenom;
+		double meanx,meany;
+
+		a = b = c = n = 0;
+		DtimesF[0] = DtimesF[1] = DtimesF[2] = DtimesF[3] = 0.;
+		for (my = 1; my < (uint32_t)MBh-1; my++)
+		for (mx = 1; mx < (uint32_t)MBw-1; mx++)
+		{
+			const int mbnum = mx + my * MBw;
+			const VECTOR mv = pMBs[mbnum].mvs[0];
+
+			if (!pMBs[mbnum].mcsel)
+				continue;
+
+			n++;
+			a += 16*mx+8;
+			b += 16*my+8;
+			c += (16*mx+8)*(16*mx+8)+(16*my+8)*(16*my+8);
+
+			DtimesF[0] += (double)mv.x;
+			DtimesF[1] += (double)mv.x*(16*mx+8) + (double)mv.y*(16*my+8);
+			DtimesF[2] += (double)mv.x*(16*my+8) - (double)mv.y*(16*mx+8);
+			DtimesF[3] += (double)mv.y;
+		}
+		
+	invdenom = a*a+b*b-c*n;
+
+/* Solve the system:	sol = (D'*E*D)^{-1} D'*E*F   */
+/* D'*E*F has been calculated in the same loop as matrix */
+
+	sol[0] = -c*DtimesF[0] + a*DtimesF[1] + b*DtimesF[2];
+	sol[1] =  a*DtimesF[0] - n*DtimesF[1]				+ b*DtimesF[3];
+	sol[2] =  b*DtimesF[0]				- n*DtimesF[2] - a*DtimesF[3];
+	sol[3] =				 b*DtimesF[1] - a*DtimesF[2] - c*DtimesF[3];
+
+	sol[0] /= invdenom;
+	sol[1] /= invdenom;
+	sol[2] /= invdenom;
+	sol[3] /= invdenom;
+
+	meanx = meany = 0.;
+	oldnum = 0;
+	for (my = 1; my < (uint32_t)MBh-1; my++)
+		for (mx = 1; mx < (uint32_t)MBw-1; mx++)
+		{
+			const int mbnum = mx + my * MBw;
+			const VECTOR mv = pMBs[mbnum].mvs[0];
+
+			if (!pMBs[mbnum].mcsel)
+				continue;
+
+			oldnum++;
+			meanx += fabs(( sol[0] + (16*mx+8)*sol[1] + (16*my+8)*sol[2] ) - (double)mv.x );
+			meany += fabs(( sol[3] - (16*mx+8)*sol[2] + (16*my+8)*sol[1] ) - (double)mv.y );
+		}
+
+	if (4*meanx > oldnum)	/* better fit than 0.25 (=1/4pel) is useless */
+		meanx /= oldnum;
+	else
+		meanx = 0.25;
+
+	if (4*meany > oldnum)
+		meany /= oldnum;
+	else
+		meany = 0.25;
+
+	num = 0;
+	for (my = 0; my < (uint32_t)MBh; my++)
+		for (mx = 0; mx < (uint32_t)MBw; mx++)
+		{
+			const int mbnum = mx + my * MBw;
+			const VECTOR mv = pMBs[mbnum].mvs[0];
+
+			if (!pMBs[mbnum].mcsel)
+				continue;
+
+			if  ( ( fabs(( sol[0] + (16*mx+8)*sol[1] + (16*my+8)*sol[2] ) - (double)mv.x ) > meanx )
+				|| ( fabs(( sol[3] - (16*mx+8)*sol[2] + (16*my+8)*sol[1] ) - (double)mv.y ) > meany ) )
+				pMBs[mbnum].mcsel=0;
+			else
+				num++;
+		}
+
+	} while ( (oldnum != num) && (num>= minblocks) );
+
+	if (num < minblocks)
+	{
+		const int iEdgedWidth = pParam->edged_width;
+		num = 0;
+
+/*		fprintf(stderr,"Warning! Unreliable GME (%d/%d blocks), falling back to translation.\n",num,MBh*MBw);
+*/		
+		gmc.duv[0].x= gmc.duv[0].y= gmc.duv[1].x= gmc.duv[1].y= gmc.duv[2].x= gmc.duv[2].y=0;
+
+		if (!(current->motion_flags & XVID_GME_REFINE))
+			return gmc;
+		
+		for (my = 1; my < (uint32_t)MBh-1; my++) /* ignore boundary blocks */ 
+		for (mx = 1; mx < (uint32_t)MBw-1; mx++) /* theirs MVs are often wrong */
+		{
+			const int mbnum = mx + my * MBw;
+			MACROBLOCK *const pMB = &pMBs[mbnum];
+			const uint8_t *const pCur = current->image.y + 16*(my*iEdgedWidth + mx);
+			if ( (sad16 ( pCur, pCur+1 , iEdgedWidth, 65536) >= gradx )
+			 &&  (sad16 ( pCur, pCur+iEdgedWidth, iEdgedWidth, 65536) >= grady ) )
+			 {	pMB->mcsel = 1;	
+				gmc.duv[0].x += pMB->mvs[0].x;
+				gmc.duv[0].y += pMB->mvs[0].y;
+				num++;
+			 }
+		}
+		
+		if (gmc.duv[0].x)
+			gmc.duv[0].x /= num;
+		if (gmc.duv[0].y) 
+			gmc.duv[0].y /= num;
+	} else {
+
+		gmc.duv[0].x=(int)(sol[0]+0.5);
+		gmc.duv[0].y=(int)(sol[3]+0.5);
+
+		gmc.duv[1].x=(int)(sol[1]*pParam->width+0.5);
+		gmc.duv[1].y=(int)(-sol[2]*pParam->width+0.5);
+
+		gmc.duv[2].x=-gmc.duv[1].y;		/* two warp points only */
+		gmc.duv[2].y=gmc.duv[1].x;
+	}
+	if (num>maxblocks)
+	{	for (my = 1; my < (uint32_t)MBh-1; my++)
+		for (mx = 1; mx < (uint32_t)MBw-1; mx++)
+		{
+			const int mbnum = mx + my * MBw;
+			if (pMBs[mbnum-1].mcsel)
+				pMBs[mbnum].mcsel=0;
+			else 
+				if (pMBs[mbnum-MBw].mcsel)
+					pMBs[mbnum].mcsel=0;
+		}
+	}
+	return gmc;
+}
+
+int
+GlobalMotionEstRefine(
+				WARPPOINTS *const startwp,
+				MACROBLOCK * const pMBs,
+				const MBParam * const pParam,
+				const FRAMEINFO * const current,
+				const FRAMEINFO * const reference,
+				const IMAGE * const pCurr,
+				const IMAGE * const pRef,
+				const IMAGE * const pRefH,
+				const IMAGE * const pRefV,
+				const IMAGE * const pRefHV)
+{
+	uint8_t* GMCblock = (uint8_t*)malloc(16*pParam->edged_width);
+	WARPPOINTS bestwp=*startwp;
+	WARPPOINTS centerwp,currwp;
+	int gmcminSAD=0;
+	int gmcSAD=0;
+	int direction;
+//	int mx,my;
+
+/* use many blocks... */
+/*		for (my = 0; my < (uint32_t)pParam->mb_height; my++)
+		for (mx = 0; mx < (uint32_t)pParam->mb_width; mx++)
+		{
+			const int mbnum = mx + my * pParam->mb_width;
+			pMBs[mbnum].mcsel=1; 
+		}
+*/
+
+/* or rather don't use too many blocks... */
+/*
+		for (my = 1; my < (uint32_t)MBh-1; my++)
+		for (mx = 1; mx < (uint32_t)MBw-1; mx++)
+		{
+			const int mbnum = mx + my * MBw;
+			if (MBmask[mbnum-1])
+				MBmask[mbnum-1]=0;
+			else 
+				if (MBmask[mbnum-MBw])
+					MBmask[mbnum-1]=0;
+	
+		}
+*/
+		gmcminSAD = globalSAD(&bestwp, pParam, pMBs, current, pRef, pCurr, GMCblock);
+
+		if ( (reference->coding_type == S_VOP) 
+			&& ( (reference->warp.duv[1].x != bestwp.duv[1].x) 
+			  || (reference->warp.duv[1].y != bestwp.duv[1].y) 
+			  || (reference->warp.duv[0].x != bestwp.duv[0].x)  
+			  || (reference->warp.duv[0].y != bestwp.duv[0].y) 
+			  || (reference->warp.duv[2].x != bestwp.duv[2].x) 
+			  || (reference->warp.duv[2].y != bestwp.duv[2].y) ) ) 
+		{
+			gmcSAD = globalSAD(&reference->warp, pParam, pMBs, 
+								current, pRef, pCurr, GMCblock);
+		
+			if (gmcSAD < gmcminSAD)
+			{	bestwp = reference->warp;
+				gmcminSAD = gmcSAD;
+			}
+		}
+
+	do {
+		direction = 0;
+		centerwp = bestwp;
+		
+		currwp = centerwp; 
+
+		currwp.duv[0].x--;
+		gmcSAD = globalSAD(&currwp, pParam, pMBs, current, pRef, pCurr, GMCblock);
+		if (gmcSAD < gmcminSAD)
+		{	bestwp = currwp;
+			gmcminSAD = gmcSAD;
+			direction = 1; 
+		}
+		else 
+		{		
+		currwp = centerwp; currwp.duv[0].x++;
+		gmcSAD = globalSAD(&currwp, pParam, pMBs, current, pRef, pCurr, GMCblock);
+		if (gmcSAD < gmcminSAD)
+		{	bestwp = currwp;
+			gmcminSAD = gmcSAD;
+			direction = 2; 
+		}
+		}
+		if (direction) continue;
+
+		currwp = centerwp; currwp.duv[0].y--;
+		gmcSAD = globalSAD(&currwp, pParam, pMBs, current, pRef, pCurr, GMCblock);
+		if (gmcSAD < gmcminSAD)
+		{	bestwp = currwp;
+			gmcminSAD = gmcSAD;
+			direction = 4; 
+		}  
+		else 
+		{
+		currwp = centerwp; currwp.duv[0].y++;
+		gmcSAD = globalSAD(&currwp, pParam, pMBs, current, pRef, pCurr, GMCblock);
+		if (gmcSAD < gmcminSAD)
+		{	bestwp = currwp;
+			gmcminSAD = gmcSAD;
+			direction = 8; 
+		} 
+		}
+		if (direction) continue;
+				
+		currwp = centerwp; currwp.duv[1].x++;
+		gmcSAD = globalSAD(&currwp, pParam, pMBs, current, pRef, pCurr, GMCblock);
+		if (gmcSAD < gmcminSAD)
+		{	bestwp = currwp;
+			gmcminSAD = gmcSAD;
+			direction = 32; 
+		} 
+		currwp.duv[2].y++;
+		gmcSAD = globalSAD(&currwp, pParam, pMBs, current, pRef, pCurr, GMCblock);
+		if (gmcSAD < gmcminSAD)
+		{	bestwp = currwp;
+			gmcminSAD = gmcSAD;
+			direction = 1024; 
+		} 
+
+		currwp = centerwp; currwp.duv[1].x--;
+		gmcSAD = globalSAD(&currwp, pParam, pMBs, current, pRef, pCurr, GMCblock);
+		if (gmcSAD < gmcminSAD)
+		{	bestwp = currwp;
+			gmcminSAD = gmcSAD;
+			direction = 16; 
+		} 
+		else 
+		{
+		currwp = centerwp; currwp.duv[1].x++;
+		gmcSAD = globalSAD(&currwp, pParam, pMBs, current, pRef, pCurr, GMCblock);
+		if (gmcSAD < gmcminSAD)
+		{	bestwp = currwp;
+			gmcminSAD = gmcSAD;
+			direction = 32; 
+		} 
+		}
+		if (direction) continue;
+
+
+		currwp = centerwp; currwp.duv[1].y--;
+		gmcSAD = globalSAD(&currwp, pParam, pMBs, current, pRef, pCurr, GMCblock);
+		if (gmcSAD < gmcminSAD)
+		{	bestwp = currwp;
+			gmcminSAD = gmcSAD;
+			direction = 64; 
+		}  
+		else 
+		{
+		currwp = centerwp; currwp.duv[1].y++;
+		gmcSAD = globalSAD(&currwp, pParam, pMBs, current, pRef, pCurr, GMCblock);
+		if (gmcSAD < gmcminSAD)
+		{	bestwp = currwp;
+			gmcminSAD = gmcSAD;
+			direction = 128; 
+		}
+		}
+		if (direction) continue;
+		
+		currwp = centerwp; currwp.duv[2].x--;
+		gmcSAD = globalSAD(&currwp, pParam, pMBs, current, pRef, pCurr, GMCblock);
+		if (gmcSAD < gmcminSAD)
+		{	bestwp = currwp;
+			gmcminSAD = gmcSAD;
+			direction = 256; 
+		} 
+		else 
+		{
+		currwp = centerwp; currwp.duv[2].x++;
+		gmcSAD = globalSAD(&currwp, pParam, pMBs, current, pRef, pCurr, GMCblock);
+		if (gmcSAD < gmcminSAD)
+		{	bestwp = currwp;
+			gmcminSAD = gmcSAD;
+			direction = 512; 
+		}
+		}
+		if (direction) continue;
+		
+		currwp = centerwp; currwp.duv[2].y--;
+		gmcSAD = globalSAD(&currwp, pParam, pMBs, current, pRef, pCurr, GMCblock);
+		if (gmcSAD < gmcminSAD)
+		{	bestwp = currwp;
+			gmcminSAD = gmcSAD;
+			direction = 1024; 
+		} 
+		else
+		{		
+		currwp = centerwp; currwp.duv[2].y++;
+		gmcSAD = globalSAD(&currwp, pParam, pMBs, current, pRef, pCurr, GMCblock);
+		if (gmcSAD < gmcminSAD)
+		{	bestwp = currwp;
+			gmcminSAD = gmcSAD;
+			direction = 2048; 
+		}
+		}
+	} while (direction);
+	free(GMCblock);
+	
+	*startwp = bestwp;
+
+	return gmcminSAD;
+}
+
+int
+globalSAD(const WARPPOINTS *const wp, 
+		  const MBParam * const pParam, 
+		  const MACROBLOCK * const pMBs,
+		  const FRAMEINFO * const current,
+		  const IMAGE * const pRef,
+		  const IMAGE * const pCurr,
+		  uint8_t *const GMCblock)
+{
+	NEW_GMC_DATA gmc_data;
+	int iSAD, gmcSAD=0;
+	int num=0;
+	unsigned int mx, my;
+	
+	generate_GMCparameters(	3, 3, wp, pParam->width, pParam->height, &gmc_data);
+	
+	for (my = 0; my < (uint32_t)pParam->mb_height; my++)
+		for (mx = 0; mx < (uint32_t)pParam->mb_width; mx++) {
+
+		const int mbnum = mx + my * pParam->mb_width;
+		const int iEdgedWidth = pParam->edged_width;
+		
+		if (!pMBs[mbnum].mcsel)
+			continue;
+		
+		gmc_data.predict_16x16(&gmc_data, GMCblock, 
+						pRef->y,
+						iEdgedWidth, 
+						iEdgedWidth, 
+						mx, my, 
+						pParam->m_rounding_type);
+
+		iSAD = sad16 ( pCurr->y + 16*(my*iEdgedWidth + mx),
+						  GMCblock , iEdgedWidth, 65536);
+		iSAD -= pMBs[mbnum].sad16;
+		
+		if (iSAD<0) 
+			gmcSAD += iSAD;
+		num++;
+	}
+	return gmcSAD;
+}
+

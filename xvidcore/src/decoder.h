@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.h,v 1.13.2.4 2003-06-09 19:42:02 edgomez Exp $
+ * $Id: decoder.h,v 1.13.2.5 2003-06-28 15:49:02 chl Exp $
  *
  ****************************************************************************/
 
@@ -148,6 +148,7 @@ typedef struct
 	
 	IMAGE gmc;		/* gmc tmp buffer, remove for blockbased compensation */
 	GMC_DATA gmc_data;
+	NEW_GMC_DATA new_gmc_data;
 	
 	xvid_image_t* out_frm;                /* This is used for slice rendering */
 }

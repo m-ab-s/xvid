@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.h,v 1.27.2.10 2003-06-09 13:50:44 edgomez Exp $
+ * $Id: encoder.h,v 1.27.2.11 2003-06-28 15:49:11 chl Exp $
  *
  ****************************************************************************/
 
@@ -143,6 +143,7 @@ typedef struct
 
 	WARPPOINTS warp;		/* as in bitstream */
 	GMC_DATA gmc_data;		/* common data for all MBs */
+	NEW_GMC_DATA new_gmc_data;		/* common data for all MBs */
 
     int length;         /* the encoded size of this frame */
 		

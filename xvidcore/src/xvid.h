@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.25 2003-06-11 14:10:45 Isibaar Exp $
+ * $Id: xvid.h,v 1.27.2.26 2003-06-28 15:50:10 chl Exp $
  *
  ****************************************************************************/
 
@@ -558,7 +558,10 @@ typedef enum {
     XVID_ME_UNRESTRICTED16      = 0x00200000, /* unrestricted ME, not implemented */
     XVID_ME_OVERLAPPING16       = 0x00400000, /* overlapping ME, not implemented */
     XVID_ME_UNRESTRICTED8       = 0x20000000, /* unrestricted ME, not implemented */
-    XVID_ME_OVERLAPPING8        = 0x40000000 /* overlapping ME, not implemented */
+    XVID_ME_OVERLAPPING8        = 0x40000000, /* overlapping ME, not implemented */
+
+    XVID_GME_REFINE  = 0x00010000
+
 } xvid_motion_t;
 
 

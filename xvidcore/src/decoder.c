@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.8 2003-06-09 19:41:53 edgomez Exp $
+ * $Id: decoder.c,v 1.49.2.9 2003-06-28 15:48:39 chl Exp $
  *
  ****************************************************************************/
 
@@ -54,6 +54,7 @@
 #include "utils/timer.h"
 #include "utils/emms.h"
 #include "motion/motion.h"
+#include "motion/gmc.h"
 
 #include "image/image.h"
 #include "image/colorspace.h"
@@ -583,19 +584,6 @@ decoder_mbinter(DECODER * dec,
 	stop_transfer_timer();
 }
 
-static __inline int gmc_sanitize(int value, int quarterpel, int fcode)
-{
-	int length = 1 << (fcode+4);
-
-/*	if (quarterpel) value *= 2; */
-
-	if (value < -length) 
-		return -length;
-	else if (value >= length) 
-		return length-1;
-	else return value;
-}
-
 
 static void
 decoder_mbgmc(DECODER * dec,
@@ -628,9 +616,18 @@ decoder_mbgmc(DECODER * dec,
 	
 /* this is where the calculations are done */
 	
-	{
-		pMB->amv = generate_GMCimageMB(&dec->gmc_data, &dec->refn[0], x_pos, y_pos, 
-					stride, stride2, dec->quarterpel, rounding, &dec->cur);
+	{	NEW_GMC_DATA * gmc_data = &dec->new_gmc_data;
+
+			gmc_data->predict_16x16(gmc_data, 
+					dec->cur.y + y_pos*16*stride + x_pos*16, dec->refn[0].y, 
+					stride, stride, x_pos, y_pos, rounding);
+
+			gmc_data->predict_8x8(gmc_data,
+					dec->cur.u + y_pos*8*stride2 + x_pos*8, dec->refn[0].u,
+					dec->cur.v + y_pos*8*stride2 + x_pos*8, dec->refn[0].v,
+					stride2, stride2, x_pos, y_pos, rounding);
+
+			gmc_data->get_average_mv(gmc_data, &pMB->amv, x_pos, y_pos, dec->quarterpel);
 
 		pMB->amv.x = gmc_sanitize(pMB->amv.x, dec->quarterpel, fcode);
 		pMB->amv.y = gmc_sanitize(pMB->amv.y, dec->quarterpel, fcode);
@@ -861,25 +858,17 @@ decoder_pframe(DECODER * dec,
 	{	
 
 		/* accuracy:  0==1/2, 1=1/4, 2=1/8, 3=1/16 */
-		if ( (dec->sprite_warping_accuracy != 3) || (dec->sprite_warping_points != 2) )
-		{	
-			fprintf(stderr,"Wrong GMC parameters acc=%d(-> 1/%d), %d!!!\n",
+/*		{	
+			fprintf(stderr,"GMC parameters acc=%d(-> 1/%d), %d pts!!!\n",
 				dec->sprite_warping_accuracy,(2<<dec->sprite_warping_accuracy),
 				dec->sprite_warping_points);
-		}
-		
+		}*/
+
 		generate_GMCparameters(	dec->sprite_warping_points, 
-				(2 << dec->sprite_warping_accuracy), gmc_warp, 
-				dec->width, dec->height, &dec->gmc_data);
+				dec->sprite_warping_accuracy, gmc_warp, 
+				dec->width, dec->height, &dec->new_gmc_data);
 
 /* image warping is done block-based  in decoder_mbgmc(), now */	
-/*
-	generate_GMCimage(&dec->gmc_data, &dec->refn[0], 
-					mb_width, mb_height, 
-					dec->edged_width, dec->edged_width/2,
-					fcode, dec->quarterpel, 0, 
-					rounding, dec->mbs, &dec->gmc);
-*/
 	}
 
 	bound = 0;

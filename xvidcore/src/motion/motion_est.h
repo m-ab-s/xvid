@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.h,v 1.3.2.11 2003-06-26 11:50:27 syskin Exp $
+ * $Id: motion_est.h,v 1.3.2.12 2003-06-28 15:51:54 chl Exp $
  *
  ****************************************************************************/
 
@@ -208,6 +208,7 @@ MotionEstimation(MBParam * const pParam,
 				const IMAGE * const pRefH,
 				const IMAGE * const pRefV,
 				const IMAGE * const pRefHV,
+				const IMAGE * const pGMC,
 				const uint32_t iLimit);
 
 static void
@@ -227,14 +228,61 @@ SearchP(const IMAGE * const pRef,
 		const MACROBLOCK * const prevMBs,
 		MACROBLOCK * const pMB);
 
-static WARPPOINTS
-GlobalMotionEst(const MACROBLOCK * const pMBs, 
+static __inline void
+GMEanalyzeMB (const uint8_t * const pCur,
+              const uint8_t * const pRef,
+              const uint8_t * const pRefH,
+              const uint8_t * const pRefV,
+              const uint8_t * const pRefHV,
+              const int x,
+              const int y,
+              const MBParam * const pParam,
+              MACROBLOCK * const pMBs,
+              SearchData * const Data);
+
+void
+GMEanalysis(const MBParam * const pParam,
+            const FRAMEINFO * const current,
+            const FRAMEINFO * const reference,
+            const IMAGE * const pRefH,
+            const IMAGE * const pRefV,
+            const IMAGE * const pRefHV);
+
+
+
+WARPPOINTS
+GlobalMotionEst(MACROBLOCK * const pMBs, 
 				const MBParam * const pParam,
 				const FRAMEINFO * const current,
 				const FRAMEINFO * const reference,
 				const IMAGE * const pRefH,
 				const IMAGE * const pRefV,
 				const IMAGE * const pRefHV	);
+
+
+int
+GlobalMotionEstRefine(WARPPOINTS *const startwp,
+                      MACROBLOCK * const pMBs,
+                      const MBParam * const pParam,
+                      const FRAMEINFO * const current,
+                      const FRAMEINFO * const reference,
+                      const IMAGE * const pCurr,
+                      const IMAGE * const pRef,
+                      const IMAGE * const pRefH,
+                      const IMAGE * const pRefV,
+                      const IMAGE * const pRefHV);
+
+
+
+
+int
+globalSAD(const WARPPOINTS *const wp,
+                const MBParam * const pParam,
+                const MACROBLOCK * const pMBs,
+                const FRAMEINFO * const current,
+                const IMAGE * const pRef,
+                const IMAGE * const pCurr,
+                uint8_t *const GMCblock);
 
 #define iDiamondSize 2
 

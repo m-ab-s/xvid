@@ -19,6 +19,7 @@ SRC_GENERIC = \
 	$(SRCDIR)/motion/motion_est.c \
 	$(SRCDIR)/motion/smp_motion_est.c \
 	$(SRCDIR)/motion/sad.c \
+	$(SRCDIR)/motion/gmc.c \
 	$(SRCDIR)/prediction/mbprediction.c \
 	$(SRCDIR)/plugins/plugin_single.c \
 	$(SRCDIR)/plugins/plugin_2pass1.c \

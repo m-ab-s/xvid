@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: global.h,v 1.21.2.6 2003-06-09 13:50:57 edgomez Exp $
+ * $Id: global.h,v 1.21.2.7 2003-06-28 15:50:55 chl Exp $
  *
  ****************************************************************************/
 
@@ -135,6 +135,26 @@ typedef struct
 }
 GMC_DATA;
 
+typedef struct NEW_GMC_DATA NEW_GMC_DATA;
+struct NEW_GMC_DATA
+{
+  int num_wp;   //  0=none, 1=translation, 2,3 = warping
+                //  a value of -1 means: "structure not initialized!"
+  int accuracy;     // {0,1,2,3}  =>   {1/2,1/4,1/8,1/16} pel
+
+  int sW, sH;   // sprite size * 16
+  int dU[2], dV[2], Uo, Vo, Uco, Vco;   // gradient, calculated from warp points
+
+  void (*predict_16x16)(const NEW_GMC_DATA * const This,
+                        uint8_t *dst, const uint8_t *src,
+                        int dststride, int srcstride, int x, int y, int rounding);
+  void (*predict_8x8)  (const NEW_GMC_DATA * const This,
+                        uint8_t *uDst, const uint8_t *uSrc,
+                        uint8_t *vDst, const uint8_t *vSrc,
+                        int dststride, int srcstride, int x, int y, int rounding);
+  void (*get_average_mv)(NEW_GMC_DATA *Dsp, VECTOR * const mv,
+                         int x, int y, int qpel);
+};
 
 typedef struct
 {
