@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.34 2003-07-28 12:28:55 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.35 2003-07-29 23:02:29 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -904,13 +904,13 @@ enc_encode(Encoder * pEnc,
 
 		if (xFrame->quant_intra_matrix)
 		{
-			memcpy(q->quant_intra_matrix, xFrame->quant_intra_matrix, sizeof(xFrame->quant_intra_matrix));
+			memcpy(q->quant_intra_matrix, xFrame->quant_intra_matrix, 64*sizeof(unsigned char));
 			q->frame.quant_intra_matrix = q->quant_intra_matrix;
 		}
 
 		if (xFrame->quant_inter_matrix)
 		{
-			memcpy(q->quant_inter_matrix, xFrame->quant_inter_matrix, sizeof(xFrame->quant_inter_matrix));
+			memcpy(q->quant_inter_matrix, xFrame->quant_inter_matrix, 64*sizeof(unsigned char));
 			q->frame.quant_inter_matrix = q->quant_inter_matrix;
 		}
 

@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass1.c,v 1.1.2.5 2003-06-09 13:55:07 edgomez Exp $
+ * $Id: plugin_2pass1.c,v 1.1.2.6 2003-07-29 23:02:34 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -48,7 +48,8 @@ static int rc_2pass1_create(xvid_plg_create_t * create, rc_2pass1_t ** handle)
 	rc_2pass1_t * rc;
 
     /* check filename */
-    if (param->filename == NULL || param->filename[0] == '\0')
+    if ((param->filename == NULL) ||
+		(param->filename != NULL && param->filename[0] == '\0'))
         return XVID_ERR_FAIL;
 
     /* allocate context struct */
