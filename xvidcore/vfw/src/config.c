@@ -692,7 +692,7 @@ void adv_mode(HWND hDlg, int idd, CONFIG * config)
     int weight_en, quant_en;
     int cpu_force;
     int custom_quant, bvops;
-	int ar_mode, ar_par, ar_select;
+	int ar_mode, ar_par;
     
     switch(idd) {
     case IDD_PROFILE :
