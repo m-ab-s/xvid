@@ -4,7 +4,7 @@
 # 
 # Edit this file to enable/disable optimizations
 #
-# $Id: Makefile.linuxx86,v 1.5 2002-12-14 09:28:56 suxen_drol Exp $
+# $Id: Makefile.linuxx86,v 1.5.2.1 2002-12-14 09:35:11 suxen_drol Exp $
 # 
 #############################################################################
 
@@ -60,8 +60,8 @@ else
 
 
   # General Optimization options
-      # on gcc 2.95 using -Os (which implies -O2) might be faster
-  CFLAGS += -O2
+      # Optimize code for size (implies -O2)
+  CFLAGS += -Os
       # Unroll loops code, this might speed up loops
   CFLAGS += -funroll-loops
       # Generates FPU math code
@@ -140,6 +140,7 @@ endif
 
 %.o: %.asm
 	$(AS) $(AFLAGS) -I$(<D) $< -o $@
+
 
 RM = rm -rf
 
