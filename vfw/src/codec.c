@@ -172,7 +172,7 @@ LRESULT compress_query(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	}
 
 	if (inhdr->biWidth != outhdr->biWidth || inhdr->biHeight != outhdr->biHeight ||
-		(outhdr->biCompression != FOURCC_XVID && outhdr->biCompression != FOURCC_DIVX))
+		(outhdr->biCompression != FOURCC_XVID && outhdr->biCompression != FOURCC_DIVX && outhdr->biCompression != FOURCC_DX50))
 	{
 		return ICERR_BADFORMAT;
 	}
@@ -610,13 +610,11 @@ LRESULT decompress_query(CODEC * codec, BITMAPINFO *lpbiInput, BITMAPINFO *lpbiO
 	{
 		return ICERR_ERROR;
 	}
-/* --- yv12 --- */
-	if (inhdr->biCompression == FOURCC_YV12) {
-		return ICERR_OK;
-	}
-/* --- yv12 --- */
 
-	if (inhdr->biCompression != FOURCC_XVID && inhdr->biCompression != FOURCC_DIVX)
+	if (inhdr->biCompression != FOURCC_XVID && 
+		inhdr->biCompression != FOURCC_DIVX &&
+		inhdr->biCompression != FOURCC_DX50 &&
+		get_colorspace(inhdr) == XVID_CSP_NULL)
 	{
 		return ICERR_BADFORMAT;
 	}
@@ -649,9 +647,9 @@ LRESULT decompress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO 
 	}
 
 	/* --- yv12 --- */
-
-	if (lpbiInput->bmiHeader.biCompression == FOURCC_YV12) {
+	if (get_colorspace(inhdr) != XVID_CSP_NULL) {
 		memcpy(outhdr, inhdr, sizeof(BITMAPINFOHEADER));
+		// XXX: should we set outhdr->biSize ??
 		return ICERR_OK;
 	}
 	/* --- yv12 --- */
@@ -732,11 +730,34 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 	frame.stride = (((icd->lpbiOutput->biWidth * icd->lpbiOutput->biBitCount) + 31) & ~31) >> 3;
 
 	/* --- yv12 --- */	
-	if (icd->lpbiInput->biCompression == FOURCC_YV12) {
+	if (icd->lpbiInput->biCompression != FOURCC_XVID &&
+		icd->lpbiInput->biCompression != FOURCC_DIVX && 
+		icd->lpbiInput->biCompression != FOURCC_DX50) 
+	{
+		XVID_INIT_CONVERTINFO convert;
+
+		DEBUGFOURCC("input", icd->lpbiInput->biCompression);
 		DEBUGFOURCC("output", icd->lpbiOutput->biCompression);
-		if (icd->lpbiOutput->biCompression == FOURCC_YV12) {
-			memcpy(frame.image,codec->dhandle,icd->lpbiInput->biSizeImage);
-		}    
+
+		convert.input.colorspace = get_colorspace(icd->lpbiInput);
+		convert.input.y = icd->lpInput;
+		convert.input.y_stride = (((icd->lpbiInput->biWidth * icd->lpbiInput->biBitCount) + 31) & ~31) >> 3;
+
+		convert.output.colorspace = get_colorspace(icd->lpbiOutput);
+		convert.output.y = icd->lpOutput;
+		convert.output.y_stride = (((icd->lpbiOutput->biWidth * icd->lpbiOutput->biBitCount) + 31) & ~31) >> 3;
+		
+		convert.width = icd->lpbiInput->biWidth;
+		convert.height = icd->lpbiInput->biHeight;
+		convert.interlacing = 0;
+
+		if (convert.input.colorspace == XVID_CSP_NULL ||
+			convert.output.colorspace == XVID_CSP_NULL ||
+			xvid_init(NULL, XVID_INIT_CONVERT, &convert, NULL) != XVID_ERR_OK)
+		{
+			return ICERR_BADFORMAT;
+		}
+
 		return ICERR_OK;
 	}
 	/* --- yv12 --- */

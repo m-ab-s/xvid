@@ -1,3 +1,4 @@
+#define KOEPI_2PASS
 /*****************************************************************************
 *
 *  XVID MPEG-4 VIDEO CODEC
@@ -28,7 +29,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.9 2002-11-07 10:28:15 suxen_drol Exp $
+*  $Id: xvid.h,v 1.17.2.10 2002-11-08 10:10:48 suxen_drol Exp $
 *
 *****************************************************************************/
 
@@ -110,6 +111,18 @@ extern "C" {
 #define XVID_CPU_CHKONLY	0x40000000		/* check cpu only; dont init globals */
 #define XVID_CPU_FORCE		0x80000000
 
+	typedef struct
+	{
+		int colorspace;
+		void * y;
+		void * u;
+		void * v;
+		int y_stride;
+		int uv_stride;
+	} XVID_IMAGE;		/* from yv12 */
+
+#define XVID_INIT_INIT		0
+#define XVID_INIT_CONVERT	1
 
 /*****************************************************************************
  *  Initialization structures
@@ -122,6 +135,15 @@ extern "C" {
 		int core_build;
 	}
 	XVID_INIT_PARAM;
+
+	typedef struct
+	{
+		XVID_IMAGE input;
+		XVID_IMAGE output;
+		int width;
+		int height;
+		int interlacing;
+	} XVID_INIT_CONVERTINFO;
 
 /*****************************************************************************
  *  Initialization entry point
@@ -373,7 +395,6 @@ extern "C" {
 		int quant;				/* [out] frame quantizer */
 		int hlength;			/* [out] header length (bytes) */
 		int kblks, mblks, ublks;	/* [out] */
-
 	}
 	XVID_ENC_STATS;
 

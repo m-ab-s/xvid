@@ -37,7 +37,7 @@
  *  - 22.12.2001  API change: added xvid_init() - Isibaar
  *  - 16.12.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: xvid.c,v 1.33.2.12 2002-11-07 15:21:31 Isibaar Exp $
+ *  $Id: xvid.c,v 1.33.2.13 2002-11-08 10:10:48 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -140,16 +140,11 @@ sigill_check(void (*func)())
  *
  ****************************************************************************/
 
-int
-xvid_init(void *handle,
-		  int opt,
-		  void *param1,
-		  void *param2)
+
+static 
+int xvid_init_init(XVID_INIT_PARAM * init_param)
 {
 	int cpu_flags;
-	XVID_INIT_PARAM *init_param;
-
-	init_param = (XVID_INIT_PARAM *) param1;
 
 	/* Inform the client the API version */
 	init_param->api_version = API_VERSION;
@@ -485,6 +480,58 @@ xvid_init(void *handle,
 #endif
 
 	return XVID_ERR_OK;
+}
+
+
+
+static int
+xvid_init_convert(XVID_INIT_CONVERTINFO* convert)
+{
+	const int flip1 = (convert->input.colorspace & XVID_CSP_VFLIP) ^ (convert->output.colorspace & XVID_CSP_VFLIP);
+	const int width = convert->width;
+	const int height = convert->height;
+	const int width2 = convert->width/2;
+	const int height2 = convert->height/2;
+	IMAGE img;
+
+	switch (convert->input.colorspace & ~XVID_CSP_VFLIP)
+	{
+		case XVID_CSP_YV12 :
+			img.y = convert->input.y;
+			img.v = (uint8_t*)convert->input.y + width*height; 
+			img.u = (uint8_t*)convert->input.y + width*height + width2*height2;
+			image_output(&img, width, height, width,
+						convert->output.y, convert->output.y_stride,
+						convert->output.colorspace, convert->interlacing);
+			break;
+
+		default :
+			return XVID_ERR_FORMAT;
+	}
+
+
+	emms();
+	return XVID_ERR_OK;
+}
+
+
+int
+xvid_init(void *handle,
+		  int opt,
+		  void *param1,
+		  void *param2)
+{
+	switch(opt)
+	{
+		case XVID_INIT_INIT :
+			return xvid_init_init((XVID_INIT_PARAM*)param1);
+
+		case XVID_INIT_CONVERT :
+			return xvid_init_convert((XVID_INIT_CONVERTINFO*)param1);
+
+		default :
+			return XVID_ERR_FAIL;
+	}
 }
 
 /*****************************************************************************
