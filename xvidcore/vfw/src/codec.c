@@ -348,6 +348,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	case RC_MODE_2PASS1 :
     	memset(&pass1, 0, sizeof(pass1));
 	    pass1.version = XVID_VERSION;
+        pass1.filename = codec->config.stats;
 
         plugins[create.num_plugins].func = xvid_plugin_2pass1;
         plugins[create.num_plugins].param = &pass1;
