@@ -21,7 +21,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.35 2003-08-10 13:10:09 Isibaar Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.36 2003-10-27 00:48:29 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -152,6 +152,7 @@ static int ARG_DEBUG = 0;
 static int ARG_VOPDEBUG = 0;
 static int ARG_GMC = 0;
 static int ARG_QPEL = 0;
+static int ARG_CLOSED_GOP = 0;
 
 #ifndef READ_PNM
 #define IMAGE_SIZE(x,y) ((x)*(y)*3/2)
@@ -343,6 +344,8 @@ main(int argc,
 			ARG_QPEL = 1;
 		} else if (strcmp("-gmc", argv[i]) == 0) {
 			ARG_GMC = 1;
+		} else if (strcmp("-closed_gop", argv[i]) == 0) {
+			ARG_CLOSED_GOP = 1;
 		} else if (strcmp("-help", argv[i])) {
 			usage();
 			return (0);
@@ -691,6 +694,7 @@ usage()
 	fprintf(stderr, " -qpel           : use quarter pixel ME\n");
 	fprintf(stderr, " -gmc            : use global motion compensation\n");
 	fprintf(stderr, " -packed         : packed mode\n");
+	fprintf(stderr, " -closed_gop     : closed GOP mode\n");
 	fprintf(stderr, " -lumimasking    : use lumimasking algorithm\n");
 	fprintf(stderr, " -stats          : print stats about encoded frames\n");
 	fprintf(stderr, " -debug          : activates xvidcore internal debugging output\n");
@@ -1008,10 +1012,13 @@ enc_init(int use_assembler)
 	xvid_enc_create.global = 0;
 
 	if (ARG_PACKED)
-		xvid_enc_create.global |=XVID_GLOBAL_PACKED;
+		xvid_enc_create.global |= XVID_GLOBAL_PACKED;
+
+	if (ARG_CLOSED_GOP)
+		xvid_enc_create.global |= XVID_GLOBAL_CLOSED_GOP;
 
 	if (ARG_STATS)
-		xvid_enc_create.global |=XVID_GLOBAL_EXTRASTATS_ENABLE;
+		xvid_enc_create.global |= XVID_GLOBAL_EXTRASTATS_ENABLE;
 
 	/* I use a small value here, since will not encode whole movies, but short clips */
 	xerr = xvid_encore(NULL, XVID_ENC_CREATE, &xvid_enc_create, NULL);
