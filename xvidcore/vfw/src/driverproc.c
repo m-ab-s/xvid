@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: driverproc.c,v 1.1.2.6 2003-10-04 00:38:49 edgomez Exp $
+ * $Id: driverproc.c,v 1.1.2.7 2004-01-03 12:06:11 syskin Exp $
  *
  ****************************************************************************/
 
@@ -43,7 +43,7 @@ BOOL WINAPI DllMain(
     return TRUE;
 }
 
-
+extern HINSTANCE m_hdll;
 
 /* __declspec(dllexport) */ LRESULT WINAPI DriverProc(
 	DWORD dwDriverId, 
@@ -65,6 +65,7 @@ BOOL WINAPI DllMain(
 
 	case DRV_OPEN :
 		DPRINTF("DRV_OPEN");
+		m_hdll = NULL;
 		{
 			ICOPEN * icopen = (ICOPEN *)lParam2;
 			

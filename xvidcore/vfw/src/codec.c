@@ -303,7 +303,7 @@ int vfw_debug(void *handle,
 
 static int init_dll()
 {
-	/*if (m_hdll != NULL) return;*/
+	if (m_hdll != NULL) return 0;
 
 	DPRINTF("init_dll");
 	m_hdll = LoadLibrary(XVID_DLL_NAME);
