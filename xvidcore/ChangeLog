@@ -6,6 +6,228 @@
 #
 
 
+2004-02-07 13:54:24 GMT	                                	patch-31
+
+    Summary:
+      Win32 project outputs dll lib for linking.
+    Revision:
+      xvidcore--devapi4--1.0--patch-31
+
+    From pete:
+     * output a lib to link against the dll (xvidcore.dll.a).
+
+    modified files:
+     build/win32/libxvidcore.dsp
+
+
+2004-02-07 13:51:01 GMT	                                	patch-30
+
+    Summary:
+      DShow update.
+    Revision:
+      xvidcore--devapi4--1.0--patch-30
+
+    From pete:
+     * cmd line driving
+    
+    From sysKin(?):
+     * bugfixes related to video flipping
+     * bugfix for the 'crash at the end" bug
+
+    modified files:
+     TODO dshow/dshow.dsp dshow/src/CAbout.cpp dshow/src/CAbout.h
+     dshow/src/CXvidDecoder.cpp dshow/src/CXvidDecoder.h
+     dshow/src/xvid.ax.def
+
+
+2004-02-07 13:47:45 GMT	                                	patch-29
+
+    Summary:
+      VFW updates
+    Revision:
+      xvidcore--devapi4--1.0--patch-29
+
+    Sorry feeling lazy about splitting this patch...
+    
+    From peter:
+     * bitrate calculator
+    
+    From sysKin:
+     * WMP9 bugfix
+
+    modified files:
+     TODO vfw/src/codec.c vfw/src/config.c vfw/src/config.h
+     vfw/src/resource.h vfw/src/resource.rc
+
+
+2004-02-07 13:43:26 GMT	                                	patch-28
+
+    Summary:
+      Implicit overflow tuning for 2nd pass.
+    Revision:
+      xvidcore--devapi4--1.0--patch-28
+
+    From sysKin:
+     * When doing a bigger 2nd pass, the overflow loop must be more
+       aggressive else no bonus bits are reinjected. So we can auto
+       tune the overlow values in that case.
+
+    modified files:
+     src/plugins/plugin_2pass2.c
+
+
+2004-02-07 13:38:33 GMT	                                	patch-27
+
+    Summary:
+      GMC+interlaced bugfix in decoder.
+    Revision:
+      xvidcore--devapi4--1.0--patch-27
+
+    From sysKin:
+     * GMC+interlaced bugfix in decoder.
+
+    modified files:
+     src/decoder.c
+
+
+2004-02-07 13:35:16 GMT	                                	patch-26
+
+    Summary:
+      Reverted patch-23
+    Revision:
+      xvidcore--devapi4--1.0--patch-26
+
+    From christoph:
+     * reverted patch-23, old code was right.
+     * Important typo for the YVYU csp (passing the y plane instead of u).
+
+    modified files:
+     src/image/image.c src/xvid.h
+
+
+2004-01-31 11:20:36 GMT	                                	patch-25
+
+    Summary:
+      DShow support for more mpeg4 fourccs.
+    Revision:
+      xvidcore--devapi4--1.0--patch-25
+
+    From sysKin:
+     * Added support for the MP4V fourcc.
+
+    modified files:
+     dshow/src/CAbout.cpp dshow/src/CAbout.h
+     dshow/src/CXvidDecoder.cpp dshow/src/CXvidDecoder.h
+     dshow/src/resource.h dshow/src/xvid.ax.rc
+
+
+2004-01-31 11:12:38 GMT	                                	patch-24
+
+    Summary:
+      DivX decoder compatibility
+    Revision:
+      xvidcore--devapi4--1.0--patch-24
+
+    From sysKin:
+     * DivX decoder compatibility improved for packed bitstreams.
+       It should now detect them and play them fine.
+
+    modified files:
+     src/bitstream/bitstream.c
+
+
+2004-01-31 11:10:26 GMT	                                	patch-23
+
+    Summary:
+      YV12/I420 confusion fixed.
+    Revision:
+      xvidcore--devapi4--1.0--patch-23
+
+    From christoph:
+     * I420/YV12 were swapped since ... ages.
+     * CSP_USER renamed to CSP_PLANAR
+
+    modified files:
+     src/encoder.c src/image/image.c src/xvid.h
+
+
+2004-01-31 10:53:20 GMT	                                	patch-22
+
+    Summary:
+      Arch separation for mem transfer functions
+    Revision:
+      xvidcore--devapi4--1.0--patch-22
+
+    Arch separation for mem transfer functions
+    
+
+    modified files:
+     src/utils/mem_transfer.h
+
+
+2004-01-27 14:47:08 GMT	                                	patch-21
+
+    Summary:
+      Write to registry Flip video flag in dshow
+    Revision:
+      xvidcore--devapi4--1.0--patch-21
+
+    From sysKin:
+     * The flip video flag is now saved in registry.
+     * Changed internal flags name convention (use n prefix for all now)
+
+    modified files:
+     dshow/src/CAbout.cpp dshow/src/CAbout.h
+     dshow/src/CXvidDecoder.cpp
+
+
+2004-01-27 14:42:52 GMT	                                	patch-20
+
+    Summary:
+      Added bitrate calc to VFW
+    Revision:
+      xvidcore--devapi4--1.0--patch-20
+
+    From Pete:
+     * Added bitrate calculator.
+     * Changed up a few function calls to static type.
+
+    modified files:
+     vfw/src/codec.c vfw/src/codec.h vfw/src/config.c
+     vfw/src/config.h vfw/src/resource.h vfw/src/resource.rc
+     vfw/vfw.dsp
+
+
+2004-01-27 14:29:49 GMT	                                	patch-19
+
+    Summary:
+      Bugfix in decoder
+    Revision:
+      xvidcore--devapi4--1.0--patch-19
+
+    From sysKin:
+     * when stats are not used, don't write to the stats pointer.
+
+    modified files:
+     src/decoder.c
+
+#########################################################################
+# 1.0.0 RC1
+#########################################################################
+
+2004-01-25 16:01:06 GMT	                                	patch-18
+
+    Summary:
+      Marking RC1
+    Revision:
+      xvidcore--devapi4--1.0--patch-18
+
+    Marking RC1
+
+    modified files:
+     ChangeLog build/generic/configure.in src/xvid.h
+
+
 2004-01-25 15:37:57 GMT	                                	patch-17
 
     Summary:
@@ -843,7 +1065,7 @@
        the bvop lag frame (black with error message).
     
     Fixing previous patch a bit:
-     * added $Id: ChangeLog,v 1.1.2.6 2004-01-26 00:12:16 edgomez Exp $ fields
+     * added $Id: ChangeLog,v 1.1.2.7 2004-02-08 13:16:37 edgomez Exp $ fields
      * Fixed copyright
 
     modified files:
