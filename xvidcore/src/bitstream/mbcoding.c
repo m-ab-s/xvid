@@ -627,6 +627,13 @@ CodeCoeffInter_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag)
 
 #endif
 
+
+static int iDQtab[5] = {
+	1, 0, -1 /* no change */, 2, 3
+};
+#define DQ_VALUE2INDEX(value)  iDQtab[(value)+2]
+
+
 static __inline void
 CodeBlockIntra(const FRAMEINFO * const frame,
 			   const MACROBLOCK * pMB,
@@ -661,7 +668,7 @@ CodeBlockIntra(const FRAMEINFO * const frame,
 
 	// write dquant
 	if (pMB->mode == MODE_INTRA_Q)
-		BitstreamPutBits(bs, pMB->dquant, 2);
+		BitstreamPutBits(bs, DQ_VALUE2INDEX(pMB->dquant), 2);
 
 	// write interlacing
 	if (frame->vol_flags & XVID_INTERLACING) {
@@ -723,7 +730,7 @@ CodeBlockInter(const FRAMEINFO * const frame,
 
 	// write dquant
 	if (pMB->mode == MODE_INTER_Q)
-		BitstreamPutBits(bs, pMB->dquant, 2);
+		BitstreamPutBits(bs, DQ_VALUE2INDEX(pMB->dquant), 2);
 
 	// interlacing
 	if (frame->vol_flags & XVID_INTERLACING) {

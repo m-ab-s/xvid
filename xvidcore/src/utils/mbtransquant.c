@@ -85,7 +85,7 @@ MBTransQuantIntra(const MBParam * pParam,
 	uint32_t stride2 = stride / 2;
 	uint32_t next_block = stride * ((frame->vop_flags & XVID_REDUCED)?16:8);
 	uint32_t i;
-	uint32_t iQuant = frame->quant;
+	const uint32_t iQuant = pMB->quant;
 	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
 	IMAGE *pCurrent = &frame->image;
 
@@ -209,7 +209,7 @@ MBTransQuantInter(const MBParam * pParam,
 	uint32_t stride2 = stride / 2;
 	uint32_t next_block = stride * ((frame->vop_flags & XVID_REDUCED)?16:8);
 	uint32_t i;
-	uint32_t iQuant = frame->quant;
+	const uint32_t iQuant = pMB->quant;
 	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
 	uint8_t cbp = 0;
 	uint32_t sum;
@@ -329,7 +329,7 @@ MBTransQuantIntra2(const MBParam * pParam,
 	MBTrans(pParam,frame,pMB,x_pos,y_pos,data);
 	MBfDCT(pParam,frame,pMB,data);
 	MBQuantIntra(pParam,frame,pMB,data,qcoeff);
-	MBDeQuantIntra(pParam,frame->quant,data,qcoeff);
+	MBDeQuantIntra(pParam,pMB->quant,data,qcoeff);
 	MBiDCT(data,0x3F);
 	MBTransAdd(pParam,frame,pMB,x_pos,y_pos,data,0x3F);
 }
@@ -349,8 +349,8 @@ MBTransQuantInter2(const MBParam * pParam,
 /* there is no MBTrans for Inter block, that's done in motion compensation already */
 
 	MBfDCT(pParam,frame,pMB,data);
-	cbp = MBQuantInter(pParam,frame->quant,data,qcoeff);
-	MBDeQuantInter(pParam,frame->quant,data,qcoeff,cbp);
+	cbp = MBQuantInter(pParam,pMB->quant,data,qcoeff);
+	MBDeQuantInter(pParam,pMB->quant,data,qcoeff,cbp);
 	MBiDCT(data,cbp);
 	MBTransAdd(pParam,frame,pMB,x_pos,y_pos,data,cbp);
 	
@@ -371,7 +371,7 @@ MBTransQuantInterBVOP(const MBParam * pParam,
 /* there is no MBTrans for Inter block, that's done in motion compensation already */
 
 	MBfDCT(pParam,frame,pMB,data);
-	cbp = MBQuantInter(pParam,frame->quant,data,qcoeff);
+	cbp = MBQuantInter(pParam,pMB->quant,data,qcoeff);
 
 	/*
 	 * History comment:
@@ -383,7 +383,7 @@ MBTransQuantInterBVOP(const MBParam * pParam,
 	 * stats then we have to DeQuant, iDCT and Transfer back the data :-)
 	 */
 	if((pParam->plugin_flags & XVID_REQORIGINAL)) {
-		MBDeQuantInter(pParam,frame->quant,data,qcoeff,cbp);
+		MBDeQuantInter(pParam,pMB->quant,data,qcoeff,cbp);
 		MBiDCT(data,cbp);
 		MBTransAdd(pParam,frame,pMB,x_pos,y_pos,data,cbp);
 	}
@@ -422,7 +422,7 @@ MBQuantDeQuantIntra(const MBParam * pParam,
   				  	int16_t data[6*64])
 {
 	int i;
-	int iQuant = frame->quant;
+	int iQuant = pMB->quant;
 
 	start_timer();
 	pMB->field_dct = 0;
@@ -462,7 +462,7 @@ MBQuantIntra(const MBParam * pParam,
 			 int16_t data[6*64])
 {
 	int i;
-	int iQuant = frame->quant;
+	int iQuant = pMB->quant;
 
 	start_timer();
 	pMB->field_dct = 0;

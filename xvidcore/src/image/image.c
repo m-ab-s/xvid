@@ -131,19 +131,9 @@ void
 image_swap(IMAGE * image1,
 		   IMAGE * image2)
 {
-	uint8_t *tmp;
-
-	tmp = image1->y;
-	image1->y = image2->y;
-	image2->y = tmp;
-
-	tmp = image1->u;
-	image1->u = image2->u;
-	image2->u = tmp;
-
-	tmp = image1->v;
-	image1->v = image2->v;
-	image2->v = tmp;
+    SWAP(uint8_t*, image1->y, image2->y);
+    SWAP(uint8_t*, image1->u, image2->u);
+    SWAP(uint8_t*, image1->v, image2->v);
 }
 
 

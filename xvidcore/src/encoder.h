@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.27.2.4 2003-03-15 17:03:17 suxen_drol Exp $
+ *  $Id: encoder.h,v 1.27.2.5 2003-03-16 12:04:14 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -51,13 +51,6 @@
 /*****************************************************************************
  * Constants
  ****************************************************************************/
-
-/* Quatization type */
-#define H263_QUANT	0
-#define MPEG4_QUANT	1
-
-/* Indicates no quantizer changes in INTRA_Q/INTER_Q modes */
-#define NO_CHANGE 64
 
 /*****************************************************************************
  * Types
@@ -178,7 +171,7 @@ typedef struct
 	int bitrate;
 
     // plugins
-    int num_plugins;    /* note: we store plugin flags in MBPARAM */
+    unsigned int num_plugins;    /* note: we store plugin flags in MBPARAM */
     xvid_enc_plugin_t * plugins;
 
     // dquant

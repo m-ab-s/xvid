@@ -1367,6 +1367,10 @@ SOURCE=..\..\src\plugins\plugin_dump.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\plugins\plugin_lumimasking.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\plugins\plugin_psnr.c
 # End Source File
 # End Group

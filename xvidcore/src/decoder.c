@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.1 2003-02-22 08:49:44 suxen_drol Exp $
+ * $Id: decoder.c,v 1.49.2.2 2003-03-16 12:04:13 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -1705,16 +1705,6 @@ decoder_bframe(DECODER * dec,
 #endif
 }
 
-/* swap two MACROBLOCK array */
-void
-mb_swap(MACROBLOCK ** mb1,
-		MACROBLOCK ** mb2)
-{
-	MACROBLOCK *temp = *mb1;
-
-	*mb1 = *mb2;
-	*mb2 = temp;
-}
 
 
 /* perform post processing if necessary, and output the image */
@@ -1892,7 +1882,7 @@ repeat:
 
 		image_swap(&dec->refn[0], &dec->refn[1]);
 		image_swap(&dec->cur, &dec->refn[0]);
-		mb_swap(&dec->mbs, &dec->last_mbs);
+        SWAP(MACROBLOCK *, dec->mbs, dec->last_mbs);
 		dec->last_reduced_resolution = reduced_resolution;
         dec->last_coding_type = coding_type;
 

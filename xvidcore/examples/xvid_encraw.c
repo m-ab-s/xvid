@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.7 2003-03-15 16:41:32 suxen_drol Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.8 2003-03-16 12:04:13 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -87,6 +87,7 @@ static xvid_vop_t const vop_presets[] = {
 
 static int   ARG_STATS = 0;
 static int   ARG_DUMP = 0;
+static int   ARG_LUMIMASKING = 0;
 static int   ARG_BITRATE = 900;
 static int   ARG_QUANTI = 0;
 static int   ARG_QUALITY = 5;
@@ -237,6 +238,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp("-dump", argv[i]) == 0) {
 			ARG_DUMP = 1;
+		}
+		else if (strcmp("-lumimasking", argv[i]) == 0) {
+			ARG_LUMIMASKING = 1;
 		}
 		else if (strcmp("-t", argv[i]) == 0 && i < argc - 1 ) {
 			i++;
@@ -480,6 +484,9 @@ int main(int argc, char *argv[])
  *         Calculate totals and averages for output, print results
  ****************************************************************************/
 
+	printf("Tot: enctime(ms) =%7.2f,               length(bytes) = %7d\n",
+		   totalenctime, (int)totalsize);
+
     if (input_num > 0) {
 	    totalsize    /= input_num;
 	    totalenctime /= input_num;
@@ -659,17 +666,31 @@ int rawenc_debug(void * handle, int opt, void * param1, void * param2)
     switch(opt)
     {
     case XVID_PLG_INFO :
+        {
+        xvid_plg_info_t * info = (xvid_plg_info_t*)param1;
+        info->flags = XVID_REQDQUANTS;
+        return 0;
+        }
+
     case XVID_PLG_CREATE :
     case XVID_PLG_DESTROY :
     case XVID_PLG_BEFORE :
-       return 0;
+        return 0;
 
     case XVID_PLG_AFTER :
-       {
-       xvid_plg_data_t * data = (xvid_plg_data_t*)param1;
-       printf("type=%i, quant=%i, length=%i\n", data->type, data->quant, data->length);
-       return 0;
-       }
+        {
+        xvid_plg_data_t * data = (xvid_plg_data_t*)param1;
+        int i,j;
+
+        printf("---[ frame: %5i   quant: %2i   length: %6i ]---\n", data->frame_num, data->quant, data->length);
+        for (j=0; j<data->mb_height; j++) {
+            for (i = 0; i<data->mb_width; i++)
+                printf("%2i ",  data->dquant[j*data->dquant_stride + i]);
+            printf("\n");
+        }
+       
+        return 0;
+        }
     }
 
     return XVID_ERR_FAIL;
@@ -683,8 +704,8 @@ static int enc_init(int use_assembler)
 {
 	int xerr;
 
-    xvid_enc_plugin_t plugins[1];
-	
+    xvid_enc_plugin_t plugins[2];
+
 	xvid_gbl_init_t   xvid_gbl_init;
 	xvid_enc_create_t xvid_enc_create;
 
@@ -729,11 +750,22 @@ static int enc_init(int use_assembler)
 
     xvid_enc_create.plugins = plugins;
     xvid_enc_create.num_plugins = 0;
+   
+    if (ARG_LUMIMASKING) {
+        plugins[xvid_enc_create.num_plugins].func = xvid_plugin_lumimasking;
+        plugins[xvid_enc_create.num_plugins].param = NULL;
+        xvid_enc_create.num_plugins++; 
+    }
+
     if (ARG_DUMP) {
         plugins[xvid_enc_create.num_plugins].func = xvid_plugin_dump;
         plugins[xvid_enc_create.num_plugins].param = NULL;
         xvid_enc_create.num_plugins++;
     }
+
+/*   plugins[xvid_enc_create.num_plugins].func = rawenc_debug;
+     plugins[xvid_enc_create.num_plugins].param = NULL;
+     xvid_enc_create.num_plugins++; */
 
 	/* No fancy thread tests */
 	xvid_enc_create.num_threads = 0;
@@ -827,7 +859,6 @@ static int enc_main(unsigned char* image,
 
 	/* Force the right quantizer */
 	xvid_enc_frame.quant  = ARG_QUANTI;
-	xvid_enc_frame.bquant = 0;
 	
 	/* Set up motion estimation flags */
 	xvid_enc_frame.motion = motion_presets[ARG_QUALITY];

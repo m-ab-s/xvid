@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.8 2003-03-15 17:03:17 suxen_drol Exp $
+ * $Id: xvid.h,v 1.27.2.9 2003-03-16 12:04:14 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -239,7 +239,7 @@ typedef struct
 			int time_increment;	/* [out]	time increment */
 
 			/* XXX: external deblocking stuff */
-			unsigned char * qscale;	/* [out]	pointer to quantizer table */
+			int * qscale;	/* [out]	pointer to quantizer table */
 			int qscale_stride;		/* [out]	quantizer scale stride */
 
 		} vop;
@@ -273,6 +273,7 @@ typedef struct
 /* xvid_plg_info_t.flags */
 #define XVID_REQORIGINAL    1  /* plugin requires a copy of the original (uncompressed) image */
 #define XVID_REQPSNR        2  /* plugin requires psnr between the uncompressed and compressed image*/
+#define XVID_REQDQUANTS      3  /* plugin requires access to the dquant table */
 
 
 typedef struct
@@ -286,8 +287,12 @@ typedef struct
 {
     int version;
 
-    int width, height;
-	int fincr, fbase;
+    int width;
+    int height;
+    int mb_width;
+    int mb_height;
+	int fincr;
+    int fbase;
 
     void * param;
 } xvid_plg_create_t;
@@ -299,6 +304,8 @@ typedef struct
 
     int width;              /* [out] */
     int height;             /* [out] */
+    int mb_width;           /* [out] */
+    int mb_height;          /* [out] */
 	int fincr;              /* [out] */
     int fbase;              /* [out] */
     
@@ -310,8 +317,8 @@ typedef struct
     int type;               /* [in,out] */
     int quant;              /* [in,out] */
 
-    unsigned char * qscale;	/* [in,out]	pointer to quantizer table */
-	int qscale_stride;		/* [in,out]	quantizer scale stride */
+    int * dquant;	        /* [in,out]	pointer to diff quantizer table */
+	int dquant_stride;		/* [in,out]	diff quantizer stride */
 
     int vop_flags;          /* [in,out] */
     int vol_flags;          /* [in,out] */
@@ -351,9 +358,9 @@ typedef struct
     void * param;
 } xvid_enc_plugin_t;
 
-xvid_plugin_func xvid_plugin_psnr;  /* stdout psnr calculator */
+xvid_plugin_func xvid_plugin_psnr;  /* write psnr values to stdout */
 xvid_plugin_func xvid_plugin_dump;  /* dump before and after yuvpgms */
-
+xvid_plugin_func xvid_plugin_lumimasking;  /* lumimasking */
 
 
 /*****************************************************************************
@@ -398,7 +405,6 @@ typedef enum {
 
     XVID_HALFPEL            = 0x00000004, /* use halfpel interpolation */
     XVID_INTER4V            = 0x00000008,
-    XVID_LUMIMASKING        = 0x00000010,
     
     XVID_CHROMAOPT          = 0x00000020, /* enable chroma optimization pre-filter */
     XVID_GREYSCALE          = 0x00000040, /* enable greyscale only mode (even for
@@ -542,7 +548,6 @@ typedef struct {
 	
 	int type;				/* [in:opt] coding type */
 	int quant;				/* [in] frame quantizer; if <=0, automatatic (ratecontrol) */
-	int bquant;				/* [in:opt] bframe quantizer; if <=0, automatic*/
 
 	void *bitstream;		/* [in:opt] bitstream ptr (written to)*/
 	int length;				/* [in:opt] bitstream length (bytes) */

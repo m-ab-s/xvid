@@ -999,7 +999,7 @@ MotionEstimation(MBParam * const pParam,
 
 	uint32_t x, y;
 	uint32_t iIntra = 0;
-	int32_t quant = current->quant, sad00;
+    int32_t sad00;
 
 	// some pre-initialized thingies for SearchP
 	int32_t temp[8];
@@ -1052,21 +1052,10 @@ MotionEstimation(MBParam * const pParam,
 
 			sad00 = pMB->sad16;
 
-			if (!(current->vop_flags & XVID_LUMIMASKING)) {
-				pMB->dquant = NO_CHANGE;
-			} else {
-				if (pMB->dquant != NO_CHANGE) {
-					quant += DQtab[pMB->dquant];
-					if (quant > 31) quant = 31;
-					else if (quant < 1) quant = 1;
-				}
-			}
-			pMB->quant = current->quant;
-
 //initial skip decision
 /* no early skip for GMC (global vector = skip vector is unknown!)  */
 			if (!(current->vol_flags & XVID_GMC))	{ /* no fast SKIP for S(GMC)-VOPs */
-				if (pMB->dquant == NO_CHANGE && sad00 < pMB->quant * INITIAL_SKIP_THRESH * (Data.rrv ? 4:1) )
+				if (pMB->dquant == 0 && sad00 < pMB->quant * INITIAL_SKIP_THRESH * (Data.rrv ? 4:1) )
 					if (Data.chroma || SkipDecisionP(pCurrent, pRef, x, y, iEdgedWidth/2, pMB->quant, Data.rrv)) {
 						SkipMacroblockP(pMB, sad00);
 						continue;
@@ -1080,7 +1069,7 @@ MotionEstimation(MBParam * const pParam,
 
 /* final skip decision, a.k.a. "the vector you found, really that good?" */
 			if (!(current->vol_flags & XVID_GMC))	{
-				if ( pMB->dquant == NO_CHANGE && sad00 < pMB->quant * MAX_SAD00_FOR_SKIP) {
+				if ( pMB->dquant == 0 && sad00 < pMB->quant * MAX_SAD00_FOR_SKIP) {
 					if (!(current->vop_flags & XVID_MODEDECISION_BITS)) {
 						if ( (100*pMB->sad16)/(sad00+1) > FINAL_SKIP_THRESH * (Data.rrv ? 4:1) )
 							if (Data.chroma || SkipDecisionP(pCurrent, pRef, x, y, iEdgedWidth/2, pMB->quant, Data.rrv))
@@ -1289,7 +1278,7 @@ SearchP(const IMAGE * const pRef,
 	Data->lambda8 = lambda_vec8[iQuant];
 	Data->qpel_precision = 0;
 
-	if (pMB->dquant != NO_CHANGE) inter4v = 0;
+	if (pMB->dquant != 0) inter4v = 0;
 
 	for(i = 0; i < 5; i++)
 		Data->currentMV[i].x = Data->currentMV[i].y = 0;
@@ -2063,7 +2052,6 @@ MotionEstimationBVOP(MBParam * const pParam,
 			Data.Cur = frame->image.y + (j * Data.iEdgedWidth + i) * 16;
 			Data.CurU = frame->image.u + (j * Data.iEdgedWidth/2 + i) * 8;
 			Data.CurV = frame->image.v + (j * Data.iEdgedWidth/2 + i) * 8;
-			pMB->quant = frame->quant;
 
 /* direct search comes first, because it (1) checks for SKIP-mode
 	and (2) sets very good predictions for forward and backward search */

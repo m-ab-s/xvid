@@ -438,11 +438,12 @@ MBPrediction(FRAMEINFO * frame,
 {
 
 	int32_t j;
-	int32_t iDcScaler, iQuant = frame->quant;
+	int32_t iDcScaler, iQuant;
 	int S = 0;
 	int16_t predictors[6][8];
 
 	MACROBLOCK *pMB = &frame->mbs[x + y * mb_width];
+    iQuant = pMB->quant;
 
 	if ((pMB->mode == MODE_INTRA) || (pMB->mode == MODE_INTRA_Q)) {
 

@@ -241,6 +241,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	xvid_gbl_init_t init;
 	xvid_enc_create_t create;
 	xvid_enc_rc_t rc;
+    xvid_enc_plugin_t plugins[1];
 
 	memset(&rc, 0, sizeof(rc));
 	rc.version = XVID_VERSION;
@@ -304,6 +305,14 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	create.height = lpbiInput->bmiHeader.biHeight;
 	create.fincr = codec->fincr;
 	create.fbase = codec->fbase;
+
+    create.plugins = plugins;
+    create.num_plugins = 0;
+   	if (codec->config.lum_masking) {
+        plugins[create.num_plugins].func = xvid_plugin_lumimasking;
+        plugins[create.num_plugins].param = NULL;
+        create.num_plugins++; 
+    }
 
     if (codec->config.packed) 
         create.global |= XVID_PACKED;
@@ -447,9 +456,6 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 
 	if (codec->config.motion_search > 4)
 		frame.vop_flags |= XVID_INTER4V;
-
-	if (codec->config.lum_masking)
-		frame.vop_flags |= XVID_LUMIMASKING;
 
 	if (codec->config.chromame)
 		frame.vop_flags |= PMV_CHROMA16 + PMV_CHROMA8;
@@ -599,8 +605,6 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		DEBUG("current frame forced to p-frame");
 		frame.type = XVID_TYPE_PVOP;
 	}
-
-	frame.bquant = 0;
 
 	memset(&stats, 0, sizeof(stats));
 	stats.version = XVID_VERSION;

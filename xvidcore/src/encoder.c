@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.8 2003-03-15 17:06:53 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.95.2.9 2003-03-16 12:04:13 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -54,12 +54,6 @@
 #include "utils/mem_align.h"
 
 /*****************************************************************************
- * Local macros
- ****************************************************************************/
-
-#define SWAP(_T_,A,B)    { _T_ tmp = A; A = B; B = tmp; }
-
-/*****************************************************************************
  * Local function prototypes
  ****************************************************************************/
 
@@ -74,18 +68,6 @@ static int FrameCodeP(Encoder * pEnc,
 static void FrameCodeB(Encoder * pEnc,
 					   FRAMEINFO * frame,
 					   Bitstream * bs);
-
-/*****************************************************************************
- * Local data
- ****************************************************************************/
-
-static int DQtab[4] = {
-	-1, -2, 1, 2
-};
-
-static int iDQtab[5] = {
-	1, 0, NO_CHANGE, 2, 3
-};
 
 
 /*****************************************************************************
@@ -205,8 +187,10 @@ enc_create(xvid_enc_create_t * create, xvid_enc_rc_t * rc)
     }
 
     /* temp dquants */
-	pEnc->temp_dquants = (int *) xvid_malloc(pEnc->mbParam.mb_width *
-					pEnc->mbParam.mb_height * sizeof(int), CACHE_LINE);
+    if ((pEnc->mbParam.plugin_flags & XVID_REQDQUANTS)) {
+	    pEnc->temp_dquants = (int *) xvid_malloc(pEnc->mbParam.mb_width *
+					    pEnc->mbParam.mb_height * sizeof(int), CACHE_LINE);
+    }
     /* XXX: error checking */
 
 	/* bframes */
@@ -504,7 +488,9 @@ enc_create(xvid_enc_create_t * create, xvid_enc_rc_t * rc)
 	xvid_free(pEnc->current);
 	xvid_free(pEnc->reference);
 
-	xvid_free(pEnc->temp_dquants);
+    if ((pEnc->mbParam.plugin_flags & XVID_REQDQUANTS)) {
+	    xvid_free(pEnc->temp_dquants);
+    }
 
   xvid_err_memory0:
     for (n=0; n<pEnc->num_plugins;n++) {
@@ -607,7 +593,9 @@ enc_destroy(Encoder * pEnc)
 	xvid_free(pEnc->reference->mbs);
 	xvid_free(pEnc->reference);
 	
-    xvid_free(pEnc->temp_dquants);
+    if ((pEnc->mbParam.plugin_flags & XVID_REQDQUANTS)) {
+        xvid_free(pEnc->temp_dquants);
+    }
 
     for (i=0; i<pEnc->num_plugins;i++) {
         if (pEnc->plugins[i].func) {
@@ -629,14 +617,26 @@ enc_destroy(Encoder * pEnc)
 static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original, 
                          int opt, int * type, int * quant, xvid_enc_stats_t * stats)
 {
-    int i;
+    unsigned int i, j;
     xvid_plg_data_t data;
+
+    if (pEnc->num_plugins == 0) {
+        for (j=0; j<pEnc->mbParam.mb_height; j++)
+        for (i=0; i<pEnc->mbParam.mb_width; i++) {
+            frame->mbs[j*pEnc->mbParam.mb_width + i].dquant = 0;
+        }
+        return;
+    }
+
+    /* set data struct */
 
     memset(&data, 0, sizeof(xvid_plg_data_t));
     data.version = XVID_VERSION;
 
     data.width = pEnc->mbParam.width;
     data.height = pEnc->mbParam.height;
+    data.mb_width = pEnc->mbParam.mb_width;
+    data.mb_height = pEnc->mbParam.mb_height;
     data.fincr = frame->fincr;
     data.fbase = pEnc->mbParam.fbase;
 
@@ -661,10 +661,14 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
     if (opt == XVID_PLG_BEFORE) {
         data.type = XVID_TYPE_AUTO;
         data.quant = 2;
-        //memset(pEnc->temp_dquants, NO_CHANGE, pEnc->mbParam.width * pEnc->mbParam.height);
-        //data.qscale_stride = pEnc->mbParam.width;
-        //data.qscale_table = pEnc->temp_dquants;
-        /* todo: vol,vop,motion flags */
+        
+        if ((pEnc->mbParam.plugin_flags & XVID_REQDQUANTS)) {
+            data.dquant = pEnc->temp_dquants;
+            data.dquant_stride = pEnc->mbParam.mb_width;
+            memset(data.dquant, 0, data.mb_width*data.mb_height);
+        }
+       
+        /* todo: [vol,vop,motion]_flags*/
     
     } else { // XVID_PLG_AFTER
         if ((pEnc->mbParam.plugin_flags & XVID_REQORIGINAL)) {
@@ -698,7 +702,17 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
 
         data.type = coding2type(frame->coding_type);
         data.quant = frame->quant;
-        /* todo: data.qscale */
+
+        if ((pEnc->mbParam.plugin_flags & XVID_REQDQUANTS)) {
+            data.dquant = pEnc->temp_dquants;
+            data.dquant_stride = pEnc->mbParam.mb_width;
+
+            for (j=0; j<pEnc->mbParam.mb_height; j++)
+            for (i=0; i<pEnc->mbParam.mb_width; i++) {
+                data.dquant[j*data.dquant_stride + i] = frame->mbs[j*pEnc->mbParam.mb_width + i].dquant;;
+            }
+        }
+
         data.vol_flags = frame->vol_flags;
         data.vop_flags = frame->vop_flags;
         data.motion_flags = frame->motion_flags;
@@ -708,8 +722,7 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
         data.mblks = frame->sStat.mblks;
         data.ublks = frame->sStat.ublks;
 
-        if (stats)
-        {
+        if (stats) {
 	        stats->type = coding2type(frame->coding_type);
 	        stats->quant = frame->quant;
 	        stats->vol_flags = frame->vol_flags;
@@ -725,8 +738,9 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
         }
     }
 
-    emms();
+    /* call plugins */
     for (i=0; i<pEnc->num_plugins;i++) {
+        emms();
         if (pEnc->plugins[i].func) {
             if (pEnc->plugins[i].func(pEnc->plugins[i].param, opt, &data, 0) < 0) {
                 continue;
@@ -735,12 +749,24 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
     }
     emms();
 
+    /* copy modified values back into frame*/
     if (opt == XVID_PLG_BEFORE) {
         *type = data.type;
         *quant = data.quant;
-        /* todo: copy modified qscale,vol,vop,motion flags into the frame*/
-    }
 
+        if ((pEnc->mbParam.plugin_flags & XVID_REQDQUANTS)) {
+            for (j=0; j<pEnc->mbParam.mb_height; j++)
+            for (i=0; i<pEnc->mbParam.mb_width; i++) {
+                frame->mbs[j*pEnc->mbParam.mb_width + i].dquant = data.dquant[j*data.mb_width + i];
+            }
+        }else{
+            for (j=0; j<pEnc->mbParam.mb_height; j++)
+            for (i=0; i<pEnc->mbParam.mb_width; i++) {
+                frame->mbs[j*pEnc->mbParam.mb_width + i].dquant = 0;
+            }
+        }
+        /* todo: [vol,vop,motion]_flags*/
+    }
 }
 
 
@@ -978,7 +1004,6 @@ repeat:
 	 * init pEnc->current fields
 	 * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
 
-    
     pEnc->current->fincr = pEnc->mbParam.fincr>0 ? pEnc->mbParam.fincr : frame->fincr; 
     pEnc->current->vol_flags = pEnc->mbParam.vol_flags;
     pEnc->current->vop_flags = frame->vop_flags;
@@ -990,34 +1015,6 @@ repeat:
 	    image_chroma_optimize(&pEnc->current->image, 
 		    pEnc->mbParam.width, pEnc->mbParam.height, pEnc->mbParam.edged_width);
     }
-
-	emms();		/* float-point region */
-	if ((pEnc->current->vop_flags & XVID_LUMIMASKING)) {
-        unsigned int x, y;
-
-		pEnc->current->quant =
-			adaptive_quantization(pEnc->current->image.y,
-							  pEnc->mbParam.edged_width, pEnc->temp_dquants,
-							  pEnc->current->quant, pEnc->current->quant,
-							  2 * pEnc->current->quant,
-							  pEnc->mbParam.mb_width,
-							  pEnc->mbParam.mb_height);
-
-		for (y = 0; y < pEnc->mbParam.mb_height; y++) {
-
-#define OFFSET(x,y) ((x) + (y)*pEnc->mbParam.mb_width)
-
-			for (x = 0; x < pEnc->mbParam.mb_width; x++) {
-				MACROBLOCK *pMB = &pEnc->current->mbs[OFFSET(x, y)];
-
-				pMB->dquant = iDQtab[pEnc->temp_dquants[OFFSET(x, y)] + 2];
-			}
-
-#undef OFFSET
-		}
-
-	}
-    emms();		/* END floating-point region */
 
 	/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	 * frame type & quant selection
@@ -1074,12 +1071,12 @@ repeat:
 			image_printf(&pEnc->current->image, pEnc->mbParam.edged_width, pEnc->mbParam.height, 5, 200, "BVOP");
 		}
 
-		if (frame->bquant < 1) {
+		if (frame->quant < 1) {
 			pEnc->current->quant = ((((pEnc->reference->quant + pEnc->current->quant) * 
 				pEnc->mbParam.bquant_ratio) / 2) + pEnc->mbParam.bquant_offset)/100;
 
 		} else {
-			pEnc->current->quant = frame->bquant;
+			pEnc->current->quant = frame->quant;
 		}
 
 		if (pEnc->current->quant < 1)
@@ -1239,6 +1236,24 @@ done:
 }
 
 
+static void SetMacroblockQuants(MBParam * const pParam, FRAMEINFO * frame)
+{
+    unsigned int i,j;
+    int quant = frame->quant;
+
+    for (j=0; j<pParam->mb_height; j++)
+    for (i=0; i<pParam->mb_width; i++) {
+        MACROBLOCK * pMB = &frame->mbs[j*pParam->mb_width + i];
+        quant += pMB->dquant;
+        if (quant > 31)
+			quant = 31;
+		if (quant < 1)
+			quant = 1;
+        pMB->quant = quant;
+    }
+}
+
+
 static __inline void
 CodeIntraMB(Encoder * pEnc,
 			MACROBLOCK * pMB)
@@ -1252,19 +1267,9 @@ CodeIntraMB(Encoder * pEnc,
 	pMB->sad8[0] = pMB->sad8[1] = pMB->sad8[2] = pMB->sad8[3] = 0;
 	pMB->sad16 = 0;
 
-	if ((pEnc->current->vop_flags & XVID_LUMIMASKING)) {
-		if (pMB->dquant != NO_CHANGE) {
-			pMB->mode = MODE_INTRA_Q;
-			pEnc->current->quant += DQtab[pMB->dquant];
-
-			if (pEnc->current->quant > 31)
-				pEnc->current->quant = 31;
-			if (pEnc->current->quant < 1)
-				pEnc->current->quant = 1;
-		}
-	}
-
-	pMB->quant = pEnc->current->quant;
+	if (pMB->dquant != 0) {
+		pMB->mode = MODE_INTRA_Q;
+    }
 }
 
 
@@ -1299,6 +1304,8 @@ FrameCodeI(Encoder * pEnc,
 	pEnc->mbParam.m_rounding_type = 1;
 	pEnc->current->rounding_type = pEnc->mbParam.m_rounding_type;
 	pEnc->current->coding_type = I_VOP;
+    
+    SetMacroblockQuants(&pEnc->mbParam, pEnc->current);
 
 	BitstreamWriteVolHeader(bs, &pEnc->mbParam);
 
@@ -1423,6 +1430,9 @@ FrameCodeP(Encoder * pEnc,
 	}
 
 	pEnc->current->coding_type = P_VOP;
+
+
+    SetMacroblockQuants(&pEnc->mbParam, pEnc->current);
 	
 	start_timer();
 	/*if (pEnc->current->global_flags & XVID_HINTEDME_SET)
@@ -1537,17 +1547,9 @@ FrameCodeP(Encoder * pEnc,
 
 			stop_comp_timer();
 
-			if ((pEnc->current->vop_flags & XVID_LUMIMASKING)) {
-				if (pMB->dquant != NO_CHANGE) {
-					pMB->mode = MODE_INTER_Q;
-					pEnc->current->quant += DQtab[pMB->dquant];
-					if (pEnc->current->quant > 31)
-						pEnc->current->quant = 31;
-					else if (pEnc->current->quant < 1)
-						pEnc->current->quant = 1;
-				}
+			if (pMB->dquant != 0) {
+                pMB->mode = MODE_INTER_Q;
 			}
-			pMB->quant = pEnc->current->quant;
 
 			pMB->field_pred = 0;
 
@@ -1570,7 +1572,7 @@ FrameCodeP(Encoder * pEnc,
 			/* Finished processing the MB, now check if to CODE or SKIP */
 
 			skip_possible = (pMB->cbp == 0) && (pMB->mode == MODE_INTER) &&
-							(pMB->dquant == NO_CHANGE);
+							(pMB->dquant == 0);
 			
 			if (pEnc->current->coding_type == S_VOP)
 				skip_possible &= (pMB->mcsel == 1);
