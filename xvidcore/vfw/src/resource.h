@@ -1,27 +1,3 @@
-/*****************************************************************************
- *
- *  XVID MPEG-4 VIDEO CODEC
- *  -   -
- *
- *  Copyright(C) 2002-2003 Anonymous <xvid-devel@xvid.org>
- *
- *  This program is free software ; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation ; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY ; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program ; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
- *
- * $Id: resource.h,v 1.1.2.6 2003-06-10 10:07:03 suxen_drol Exp $
- *
- ****************************************************************************/
 //{{NO_DEPENDENCIES}}
 // Microsoft Developer Studio generated include file.
 // Used by config.rc
@@ -390,10 +366,11 @@
 #define IDC_STATUS_BL_AVG               1336
 #define IDC_CHECK1                      1336
 #define IDC_STATUS_L_AVG                1337
-#define IDC_STATUS_I_NUM                1338
-#define IDC_STATUS_P_NUM                1339
-#define IDC_STATUS_B_NUM                1340
-#define IDC_STATUS_NUM                  1341
+#define IDC_ZONE_FORCEIVOP              1338
+#define IDC_STATUS_I_NUM                1339
+#define IDC_STATUS_P_NUM                1340
+#define IDC_STATUS_B_NUM                1341
+#define IDC_STATUS_NUM                  1342
 
 // Next default values for new objects
 // 
@@ -401,7 +378,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        126
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1337
+#define _APS_NEXT_CONTROL_VALUE         1343
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -486,6 +486,8 @@ static void apply_zone_modifiers(xvid_enc_frame_t * frame, CONFIG * config, int 
     for (i=0; i<config->num_zones && config->zones[i].frame <= framenum; i++) ;
     i--;
 
+    frame->type = config->zones[i].type;
+
     if (config->zones[i].greyscale) {
         frame->vop_flags |= XVID_VOP_GREYSCALE;
     }

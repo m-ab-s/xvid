@@ -110,6 +110,7 @@ const profile_t profiles[] =
     { "Simple @ L0",       0x08,  176, 144, 15,  1,  198,   99,   1485, 100,  10*16368,  2048,   64, 0 },
             /* simple@l0: max f_code=1, intra_dc_vlc_threshold=0
             /* if ac preidition is used, adaptive quantization must not be used */
+            /* <=qcif must be used */
 	{ "Simple @ L1",       0x01,  176, 144, 15,  4,  198,   99,   1485, 100,  10*16368,  2048,   64, PROFILE_ADAPTQUANT },
 	{ "Simple @ L2",       0x02,  352, 288, 15,  4,  792,  396,   5940, 100,  40*16368,  4096,  128, PROFILE_ADAPTQUANT },
 	{ "Simple @ L3",       0x03,  352, 288, 15,  4,  792,  396,  11880, 100,  40*16368,  8192,  384, PROFILE_ADAPTQUANT },
@@ -123,6 +124,7 @@ const profile_t profiles[] =
 	{ "AS @ L1",	       0xf1,  176, 144, 30,  4,  297,   99,   2970, 100,  10*16368,  2048,  128, PROFILE_AS },
 	{ "AS @ L2",	       0xf2,  352, 288, 15,  4, 1188,  396,   5940, 100,  40*16368,  4096,  384, PROFILE_AS },
 	{ "AS @ L3",	       0xf3,  352, 288, 30,  4, 1188,  396,  11880, 100,  40*16368,  4096,  768, PROFILE_AS },
+ /*  ISMA Profile 1, (ASP) @ L3b (CIF, 1.5 Mb/s) CIF(352x288), 30fps, 1.5Mbps max ??? */
 	{ "AS @ L4",	       0xf4,  352, 576, 30,  4, 2376,  792,  23760,  50,  80*16368,  8192, 3000, PROFILE_AS },
 	{ "AS @ L5",	       0xf5,  720, 576, 30,  4, 4860, 1620,  48600,  25, 112*16368, 16384, 8000, PROFILE_AS },
 
@@ -222,6 +224,7 @@ static const REG_INT reg_zone[] = {
     {"zone%i_mode",             &stmp.mode,                      RC_ZONE_WEIGHT},
     {"zone%i_weight",           &stmp.weight,                    100},      /* 100-base float */
     {"zone%i_quant",            &stmp.quant,                     500},      /* 100-base float */
+    {"zone%i_type",             &stmp.type,                      XVID_TYPE_AUTO},
     {"zone%i_greyscale",        &stmp.greyscale,                 0},
     {"zone%i_chroma_opt",       &stmp.chroma_opt,                0},
     {"zone%i_bvop_threshold",   &stmp.bvop_threshold,            0},
@@ -631,8 +634,7 @@ void adv_init(HWND hDlg, int idd, CONFIG * config)
         break;
 		
     case IDD_ZONE :
-        EnableDlgWindow(hDlg, IDC_ZONE_FETCH, 
-            config->cur_zone>0 && config->ci_valid && config->ci.ciActiveFrame>0);
+        EnableDlgWindow(hDlg, IDC_ZONE_FETCH, config->ci_valid);
         break;
 
     case IDD_MOTION :
@@ -803,15 +805,14 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
 
     case IDD_ZONE :
         SetDlgItemInt(hDlg, IDC_ZONE_FRAME, config->zones[config->cur_zone].frame, FALSE);
-        SendDlgItemMessage(hDlg, IDC_ZONE_FRAME, EM_SETREADONLY, config->cur_zone==0?TRUE:FALSE, 0);
 
         CheckDlgButton(hDlg, IDC_ZONE_MODE_WEIGHT,   config->zones[config->cur_zone].mode == RC_ZONE_WEIGHT);
         CheckDlgButton(hDlg, IDC_ZONE_MODE_QUANT,         config->zones[config->cur_zone].mode == RC_ZONE_QUANT);
 
         set_dlgitem_float(hDlg, IDC_ZONE_WEIGHT, config->zones[config->cur_zone].weight);
         set_dlgitem_float(hDlg, IDC_ZONE_QUANT, config->zones[config->cur_zone].quant);
-
        
+        CheckDlgButton(hDlg, IDC_ZONE_FORCEIVOP, config->zones[config->cur_zone].type==XVID_TYPE_IVOP);
         CheckDlgButton(hDlg, IDC_ZONE_GREYSCALE, config->zones[config->cur_zone].greyscale);
         CheckDlgButton(hDlg, IDC_ZONE_CHROMAOPT, config->zones[config->cur_zone].chroma_opt);
 
@@ -935,6 +936,7 @@ void adv_download(HWND hDlg, int idd, CONFIG * config)
         config->zones[config->cur_zone].weight = get_dlgitem_float(hDlg, IDC_ZONE_WEIGHT, config->zones[config->cur_zone].weight);
         config->zones[config->cur_zone].quant =  get_dlgitem_float(hDlg, IDC_ZONE_QUANT, config->zones[config->cur_zone].quant);
 
+        config->zones[config->cur_zone].type = IsDlgButtonChecked(hDlg, IDC_ZONE_FORCEIVOP)?XVID_TYPE_IVOP:XVID_TYPE_AUTO;
         config->zones[config->cur_zone].greyscale = IsDlgButtonChecked(hDlg, IDC_ZONE_GREYSCALE);
         config->zones[config->cur_zone].chroma_opt = IsDlgButtonChecked(hDlg, IDC_ZONE_CHROMAOPT);
 
@@ -1207,6 +1209,9 @@ void main_insert_zone(HWND hDlg, zone_t * s, int i, BOOL insert)
     ListView_SetItemText(hDlg, i, 1, tmp);
 
     tmp[0] = '\0';
+    if (s->type==XVID_TYPE_IVOP)
+        strcat(tmp, "K ");
+
     if (s->greyscale)
         strcat(tmp, "G ");
     
@@ -1446,7 +1451,7 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 int i, sel, new_frame;
 
                 if (config->num_zones >= MAX_ZONES) {
-                    MessageBox(hDlg, "MAX_ZONES", "Warning", 0);
+                    MessageBox(hDlg, "Exceeded maximum number of zones.\nIncrease config.h:MAX_ZONES and rebuild.", "Warning", 0);
                     break;
                 }
 
@@ -1459,15 +1464,10 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
                         new_frame = config->ci.ciActiveFrame;
                     }else{
                         sel = config->num_zones-1;
-                        new_frame = config->zones[sel].frame + 1;
+                        new_frame = sel<0 ? 0 : config->zones[sel].frame + 1;
                     }
                 }else{
                     new_frame = config->zones[sel].frame + 1;
-                }
-
-                if (sel+1<config->num_zones && config->zones[sel+1].frame==new_frame) {
-                    MessageBox(hDlg, "CANT ADD HERE", "Warning", 0);
-                    break;
                 }
 
                 for(i=config->num_zones-1; i>sel; i--) {
@@ -1478,6 +1478,7 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 config->zones[sel+1].mode = RC_ZONE_WEIGHT;
                 config->zones[sel+1].weight = 100;
                 config->zones[sel+1].quant = 500;
+                config->zones[sel+1].type = XVID_TYPE_AUTO;
                 config->zones[sel+1].greyscale = 0;
                 config->zones[sel+1].chroma_opt = 0;
                 config->zones[sel+1].bvop_threshold = 0;
@@ -1498,17 +1499,11 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
                     break;
                 }
 
-                if (sel == 0) {
-                    MessageBox(hDlg, "Can't remove first zone", "Warning", 0);
-                    break;
-                }
-
                 for (i=sel; i<config->num_zones-1; i++) {
                     config->zones[i] = config->zones[i+1];
                 }
                 config->num_zones--;
                 ListView_DeleteItem(GetDlgItem(hDlg, IDC_ZONES), sel);
-
 
                 sel--;
                 if (sel==0 && config->num_zones>1) {
