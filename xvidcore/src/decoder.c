@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.51.2.5 2004-06-04 11:54:41 edgomez Exp $
+ * $Id: decoder.c,v 1.51.2.6 2004-07-03 09:18:35 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1556,7 +1556,7 @@ repeat:
 
 		if (dec->low_delay) {
 			DPRINTF(XVID_DEBUG_ERROR, "warning: bvop found in low_delay==1 stream\n");
-			dec->low_delay = 1;
+			dec->low_delay = 0;
 		}
 
 		if (dec->frames < 2) {
