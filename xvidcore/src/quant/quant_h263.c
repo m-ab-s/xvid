@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: quant_h263.c,v 1.7.2.2 2003-10-07 13:02:35 edgomez Exp $
+ * $Id: quant_h263.c,v 1.7.2.3 2003-10-09 18:50:22 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -75,11 +75,9 @@ quant_h263_intra_c(int16_t * coeff,
 {
 	const uint32_t mult = multipliers[quant];
 	const uint16_t quant_m_2 = quant << 1;
-	uint32_t sum = 0;
 	int i;
 
 	coeff[0] = DIV_DIV(data[0], (int32_t) dcscalar);
-	sum += coeff[0];
 
 	for (i = 1; i < 64; i++) {
 		int16_t acLevel = data[i];
@@ -91,7 +89,6 @@ quant_h263_intra_c(int16_t * coeff,
 				continue;
 			}
 			acLevel = (acLevel * mult) >> SCALEBITS;
-			sum += acLevel;
 			coeff[i] = -acLevel;
 		} else {
 			if (acLevel < quant_m_2) {
@@ -99,12 +96,11 @@ quant_h263_intra_c(int16_t * coeff,
 				continue;
 			}
 			acLevel = (acLevel * mult) >> SCALEBITS;
-			sum += acLevel;
 			coeff[i] = acLevel;
 		}
 	}
 
-	return(sum);
+	return(0);
 }
 
 

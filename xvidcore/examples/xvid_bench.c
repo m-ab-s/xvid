@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_bench.c,v 1.9.2.4 2003-08-13 11:43:45 edgomez Exp $
+ * $Id: xvid_bench.c,v 1.9.2.5 2003-10-09 18:50:22 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -54,8 +54,7 @@
 #include "image/colorspace.h"
 #include "image/interpolate8x8.h"
 #include "utils/mem_transfer.h"
-#include "quant/quant_h263.h"
-#include "quant/quant_mpeg4.h"
+#include "quant/quant.h"
 #include "motion/sad.h"
 #include "utils/emms.h"
 #include "utils/timer.h"
@@ -149,16 +148,11 @@ int init_cpu(CPU *cpu)
 	int xerr, cpu_type;
 	xvid_gbl_init_t xinit;
 
-#ifdef ARCH_IS_IA32
-	cpu_type = check_cpu_features() & cpu->cpu;
-#else
-	cpu_type = XVID_CPU_ASM;
-#endif
 	memset(&xinit, 0, sizeof(xinit));
-	xinit.cpu_flags = cpu_type | XVID_CPU_FORCE;
+	xinit.cpu_flags = cpu->cpu | XVID_CPU_FORCE;
 	xinit.version = XVID_VERSION;
 	xerr = xvid_global(NULL, 0, &xinit, NULL);
-	if (cpu->cpu>0 && (cpu_type==0 || xerr==XVID_ERR_FAIL)) {
+	if (cpu->cpu>0 && xerr==XVID_ERR_FAIL) {
 		printf( "%s - skipped...\n", cpu->name );
 		return 0;
 	}
@@ -452,7 +446,7 @@ void test_transfer()
 
 	printf( "\n ===  test transfer ===\n" );
 
-	for(cpu = cpu_short_list; cpu->name!=0; ++cpu)
+	for(cpu = cpu_list; cpu->name!=0; ++cpu)
 	{
 		double t, overhead;
 		int tst, s;
@@ -547,7 +541,7 @@ void test_quant()
 		Dst[i] = 0;
 	}
 
-	for(cpu = cpu_short_list; cpu->name!=0; ++cpu)
+	for(cpu = cpu_list; cpu->name!=0; ++cpu)
 	{
 		double t, overhead;
 		int tst, q;
@@ -566,39 +560,39 @@ void test_quant()
 		overhead += gettime_usec();
 
 #if 1
-		TEST_QUANT2(quant4_intra, Dst, Src);
-		printf( "%s -   quant4_intra %.3f usec       crc=%d\n", cpu->name, t, s );
+		TEST_QUANT2(quant_mpeg_intra, Dst, Src);
+		printf( "%s -   quant_mpeg_intra %.3f usec       crc=%d\n", cpu->name, t, s );
 		if (s!=29809) printf( "*** CRC ERROR! ***\n" );
 
-		TEST_QUANT(quant4_inter, Dst, Src);
-		printf( "%s -   quant4_inter %.3f usec       crc=%d\n", cpu->name, t, s );
+		TEST_QUANT(quant_mpeg_inter, Dst, Src);
+		printf( "%s -   quant_mpeg_inter %.3f usec       crc=%d\n", cpu->name, t, s );
 		if (s!=12574) printf( "*** CRC ERROR! ***\n" );
 #endif
 #if 1
-		TEST_QUANT2(dequant4_intra, Dst, Src);
-		printf( "%s - dequant4_intra %.3f usec       crc=%d\n", cpu->name, t, s );
+		TEST_QUANT2(dequant_mpeg_intra, Dst, Src);
+		printf( "%s - dequant_mpeg_intra %.3f usec       crc=%d\n", cpu->name, t, s );
 		if (s!=24052) printf( "*** CRC ERROR! ***\n" );
 
-		TEST_QUANT(dequant4_inter, Dst, Src);
-		printf( "%s - dequant4_inter %.3f usec       crc=%d\n", cpu->name, t, s );
+		TEST_QUANT(dequant_mpeg_inter, Dst, Src);
+		printf( "%s - dequant_mpeg_inter %.3f usec       crc=%d\n", cpu->name, t, s );
 		if (s!=63847) printf( "*** CRC ERROR! ***\n" );
 #endif
 #if 1
-		TEST_QUANT2(quant_intra, Dst, Src);
-		printf( "%s -    quant_intra %.3f usec       crc=%d\n", cpu->name, t, s );
+		TEST_QUANT2(quant_h263_intra, Dst, Src);
+		printf( "%s -   quant_h263_intra %.3f usec       crc=%d\n", cpu->name, t, s );
 		if (s!=25662) printf( "*** CRC ERROR! ***\n" );
 
-		TEST_QUANT(quant_inter, Dst, Src);
-		printf( "%s -    quant_inter %.3f usec       crc=%d\n", cpu->name, t, s );
+		TEST_QUANT(quant_h263_inter, Dst, Src);
+		printf( "%s -   quant_h263_inter %.3f usec       crc=%d\n", cpu->name, t, s );
 		if (s!=23972) printf( "*** CRC ERROR! ***\n" );
 #endif
 #if 1
-		TEST_QUANT2(dequant_intra, Dst, Src);
-		printf( "%s -  dequant_intra %.3f usec       crc=%d\n", cpu->name, t, s );
+		TEST_QUANT2(dequant_h263_intra, Dst, Src);
+		printf( "%s - dequant_h263_intra %.3f usec       crc=%d\n", cpu->name, t, s );
 		if (s!=49900) printf( "*** CRC ERROR! ***\n" );
 
-		TEST_QUANT(dequant_inter, Dst, Src);
-		printf( "%s -  dequant_inter %.3f usec       crc=%d\n", cpu->name, t, s );
+		TEST_QUANT(dequant_h263_inter, Dst, Src);
+		printf( "%s - dequant_h263_inter %.3f usec       crc=%d\n", cpu->name, t, s );
 		if (s!=48899) printf( "*** CRC ERROR! ***\n" );
 #endif
 		printf( " --- \n" );
@@ -634,7 +628,7 @@ void test_cbp()
 		Src4[i] = (i==(3*64+2) || i==(5*64+9));
 	}
 
-	for(cpu = cpu_short_list2; cpu->name!=0; ++cpu)
+	for(cpu = cpu_list; cpu->name!=0; ++cpu)
 	{
 		double t;
 		int tst, cbp;
@@ -1159,7 +1153,7 @@ void test_bugs1()
 
 	printf( "\n =====  (de)quant4_intra saturation bug? =====\n" );
 
-	for(cpu = cpu_short_list; cpu->name!=0; ++cpu)
+	for(cpu = cpu_list; cpu->name!=0; ++cpu)
 	{
 		int i;
 		int16_t  Src[8*8], Dst[8*8];
@@ -1169,8 +1163,8 @@ void test_bugs1()
 
 		for(i=0; i<64; ++i) Src[i] = i-32;
 		set_intra_matrix( get_default_intra_matrix() );
-		dequant4_intra(Dst, Src, 31, 5);
-		printf( "dequant4_intra with CPU=%s:  ", cpu->name);
+		dequant_mpeg_intra(Dst, Src, 31, 5);
+		printf( "dequant_mpeg_intra with CPU=%s:  ", cpu->name);
 		printf( "  Out[]= " );
 		for(i=0; i<64; ++i) printf( "[%d]", Dst[i]);
 		printf( "\n" );
@@ -1178,7 +1172,7 @@ void test_bugs1()
 
 	printf( "\n =====  (de)quant4_inter saturation bug? =====\n" );
 
-	for(cpu = cpu_short_list; cpu->name!=0; ++cpu)
+	for(cpu = cpu_list; cpu->name!=0; ++cpu)
 	{
 		int i;
 		int16_t  Src[8*8], Dst[8*8];
@@ -1188,8 +1182,8 @@ void test_bugs1()
 
 		for(i=0; i<64; ++i) Src[i] = i-32;
 		set_inter_matrix( get_default_inter_matrix() );
-		dequant4_inter(Dst, Src, 31);
-		printf( "dequant4_inter with CPU=%s:  ", cpu->name);
+		dequant_mpeg_inter(Dst, Src, 31);
+		printf( "dequant_mpeg_inter with CPU=%s:  ", cpu->name);
 		printf( "  Out[]= " );
 		for(i=0; i<64; ++i) printf( "[%d]", Dst[i]);
 		printf( "\n" ); 
@@ -1203,7 +1197,7 @@ void test_dct_precision_diffs()
 
 	printf( "\n =====  fdct/idct precision diffs =====\n" );
 
-	for(cpu = cpu_short_list; cpu->name!=0; ++cpu)
+	for(cpu = cpu_list; cpu->name!=0; ++cpu)
 	{
 		int i;
 
@@ -1256,7 +1250,7 @@ void test_quant_bug()
 
 			for(q=1; q<=max_Q; ++q) {
 				emms();
-				quant4_inter( Dst, Src, q );
+				quant_mpeg_inter( Dst, Src, q );
 				emms();
 				for(s=0, i=0; i<64; ++i) s+=((uint16_t)Dst[i])^i;
 				Crcs_Inter[n][q] = s;
@@ -1286,7 +1280,7 @@ void test_quant_bug()
 
 			for(q=1; q<=max_Q; ++q) {
 				emms();
-				quant4_intra( Dst, Src, q, q);
+				quant_mpeg_intra( Dst, Src, q, q);
 				emms();
 				for(s=0, i=0; i<64; ++i) s+=((uint16_t)Dst[i])^i;
 				Crcs_Intra[n][q] = s;

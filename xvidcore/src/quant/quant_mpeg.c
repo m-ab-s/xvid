@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: quant_mpeg.c,v 1.1.2.1 2003-10-07 13:02:35 edgomez Exp $
+ * $Id: quant_mpeg.c,v 1.1.2.2 2003-10-09 18:50:22 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -84,11 +84,9 @@ quant_mpeg_intra_c(int16_t * coeff,
 	const uint32_t quantd = ((VM18P * quant) + (VM18Q / 2)) / VM18Q;
 	const uint32_t mult = multipliers[quant];
 	const int16_t *intra_matrix = get_intra_matrix();
-	uint32_t sum = 0;
 	int i;
 
 	coeff[0] = DIV_DIV(data[0], (int32_t) dcscalar);
-	sum += coeff[0];
 
 	for (i = 1; i < 64; i++) {
 		if (data[i] < 0) {
@@ -96,21 +94,19 @@ quant_mpeg_intra_c(int16_t * coeff,
 
 			level = ((level << 4) + (intra_matrix[i] >> 1)) / intra_matrix[i];
 			level = ((level + quantd) * mult) >> SCALEBITS;
-			sum += level;
 			coeff[i] = -(int16_t) level;
 		} else if (data[i] > 0) {
 			uint32_t level = data[i];
 
 			level = ((level << 4) + (intra_matrix[i] >> 1)) / intra_matrix[i];
 			level = ((level + quantd) * mult) >> SCALEBITS;
-			sum += level;
 			coeff[i] = level;
 		} else {
 			coeff[i] = 0;
 		}
 	}
 
-	return(sum);
+	return(0);
 }
 
 /* quantize inter-block

@@ -56,14 +56,13 @@ bits 32
 %define EXT_CPUID_AMD_3DNOWEXT	0x40000000
 %define EXT_CPUID_AMD_MMXEXT	0x00400000
 
-%define XVID_CPU_MMX			0x00000001
-%define XVID_CPU_MMXEXT			0x00000002
-%define XVID_CPU_SSE	        0x00000004
-%define XVID_CPU_SSE2			0x00000008
-%define XVID_CPU_3DNOW          0x00000010
-%define XVID_CPU_3DNOWEXT		0x00000020
-%define XVID_CPU_TSC            0x00000040
-
+%define XVID_CPU_MMX      (1<< 0)
+%define XVID_CPU_MMXEXT   (1<< 1)
+%define XVID_CPU_SSE      (1<< 2)
+%define XVID_CPU_SSE2     (1<< 3)
+%define XVID_CPU_3DNOW    (1<< 4)
+%define XVID_CPU_3DNOWEXT (1<< 5)
+%define XVID_CPU_TSC      (1<< 6)
 
 %macro cglobal 1
 	%ifdef PREFIX

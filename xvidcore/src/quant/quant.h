@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: quant.h,v 1.1.2.1 2003-10-07 14:16:29 edgomez Exp $
+ * $Id: quant.h,v 1.1.2.2 2003-10-09 18:50:22 edgomez Exp $
  *
  ****************************************************************************/
 

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.40 2003-10-07 13:02:35 edgomez Exp $
+ * $Id: xvid.h,v 1.27.2.41 2003-10-09 18:50:22 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -159,7 +159,7 @@ typedef struct {
  * xvid_global()
  ****************************************************************************/
 
-/* cpu_flags definitions */
+/* cpu_flags definitions (make sure to sync this with cpuid.asm for ia32) */
 
 #define XVID_CPU_FORCE    (1<<31) /* force passed cpu flags */
 #define XVID_CPU_ASM      (1<< 7) /* native assembly */
