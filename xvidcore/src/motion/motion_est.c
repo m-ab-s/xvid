@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.c,v 1.58.2.20 2003-06-28 15:52:10 chl Exp $
+ * $Id: motion_est.c,v 1.58.2.21 2003-07-10 17:41:48 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -492,7 +492,7 @@ CheckCandidate32I(const int x, const int y, const int Direction, int * const dir
 	if ( (x > data->max_dx) || (x < data->min_dx)
 		|| (y > data->max_dy) || (y < data->min_dy) ) return;
 
-	sad = sad32v_c(data->Cur, data->RefP[0] + (x>>1) + (y>>1)*(data->iEdgedWidth),
+	sad = sad32v_c(data->Cur, data->RefP[0] + (int)((x>>1) + (y>>1)*(data->iEdgedWidth)),
 					data->iEdgedWidth, data->temp+1);
 
 	if (sad < *(data->iMinSAD)) {

@@ -21,7 +21,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.28 2003-06-25 23:23:21 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.29 2003-07-10 17:39:40 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -887,7 +887,7 @@ enc_init(int use_assembler)
 	if (use_assembler) {
 
 #ifdef ARCH_IS_IA64
-		xvid_gbl_init.cpu_flags = XVID_CPU_FORCE | XVID_CPU_IA64;
+		xvid_gbl_init.cpu_flags = XVID_CPU_FORCE | XVID_CPU_ASM;
 #else
 		xvid_gbl_init.cpu_flags = 0;
 #endif

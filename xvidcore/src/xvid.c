@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.8 2003-06-11 14:10:40 Isibaar Exp $
+ * $Id: xvid.c,v 1.45.2.9 2003-07-10 17:39:51 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -517,7 +517,6 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	  transfer_8to16sub2 = transfer_8to16sub2_ia64;
 	  transfer_16to8add = transfer_16to8add_ia64;
 	  transfer8x8_copy = transfer8x8_copy_ia64;
-	  DPRINTF(DPRINTF_DEBUG, "Using IA-64 assembler routines.");
 	}
 #endif 
 
