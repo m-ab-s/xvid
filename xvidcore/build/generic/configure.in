@@ -266,8 +266,8 @@ case "$target_os" in
      darwin*|raphsody*)
 	AC_MSG_RESULT([-dynamiclib -flat_namespace])
 	STATIC_LIB="libxvidcore.\$(STATIC_EXTENSION)"
-	SHARED_LIB="libxvidcore.\$(SHARED_EXTENSION)"
-	SPECIFIC_LDFLAGS="-dynamiclib -flat_namespace"
+	SHARED_LIB="libxvidcore.\$(API_MAJOR).\$(SHARED_EXTENSION)"
+	SPECIFIC_LDFLAGS="-dynamiclib -flat_namespace -compatibility_version \$(API_MAJOR) -current_version \$(API_MINOR) -install_name \$(libdir)/\$(SHARED_LIB)"
 	SPECIFIC_CFLAGS="-fPIC -fno-common -no-cpp-precomp"
 	;;
      beos)
