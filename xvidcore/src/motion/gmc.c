@@ -35,7 +35,6 @@
 // of pixel 0,0), not the macroblock one.
 // Conversely, *dst is the macroblock top-left adress.
 
-
 void Predict_16x16_C(const NEW_GMC_DATA * const This,
 					 uint8_t *dst, const uint8_t *src,
 					 int dststride, int srcstride, int x, int y, int rounding)
@@ -56,44 +55,39 @@ void Predict_16x16_C(const NEW_GMC_DATA * const This,
 	int i, j;
 
 	dst += 16;
-	for (j=16; j>0; --j)
-	{
-	int U = Uo, V = Vo;
-	Uo += dUy; Vo += dVy;
-	for (i=-16; i<0; ++i)
-	{
-		unsigned int f0, f1, ri, rj;
-		int Offset;
+	for (j=16; j>0; --j) {
+		int U = Uo, V = Vo;
+		Uo += dUy; Vo += dVy;
+		for (i=-16; i<0; ++i) {
+			unsigned int f0, f1, ri = 16, rj = 16;
+			int Offset;
+			int u = ( U >> 16 ) << rho;
+			int v = ( V >> 16 ) << rho;
 
-		int u = ( U >> 16 ) << rho;
-		int v = ( V >> 16 ) << rho;
-		U += dUx; V += dVx;
+			U += dUx; V += dVx;
 
-		ri = 16;
-		if ((uint32_t)u<=(uint32_t)W) { ri = MTab[u&15]; Offset = u>>4;	}
-		else if (u>W) Offset = W>>4;
-		else Offset = -1;
-	 
-		rj = 16;
-		if ((uint32_t)v<=(uint32_t)H) { rj = MTab[v&15]; Offset += (v>>4)*srcstride; }
-		else if (v>H) Offset += (H>>4)*srcstride;
-		else Offset -= srcstride;
+			if (u > 0 && u <= W) { ri = MTab[u&15]; Offset = u>>4;	}
+			else if (u > W) Offset = W>>4;
+			else Offset = -1;
+ 
+			if (v > 0 && v <= H) { rj = MTab[v&15]; Offset += (v>>4)*srcstride; }
+			else if (v > H) Offset += (H>>4)*srcstride;
+			else Offset -= srcstride;
 
-		f0	= src[ Offset	 +0 ];
-		f0 |= src[ Offset	 +1 ] << 16;
-		f1	= src[ Offset+srcstride +0 ];
-		f1 |= src[ Offset+srcstride +1 ] << 16;
-		f0 = (ri*f0)>>16;
-		f1 = (ri*f1) & 0x0fff0000;
-		f0 |= f1;
-		f0 = ( rj*f0 + Rounder ) >> 24;
+			f0	= src[Offset + 0];
+			f0 |= src[Offset + 1] << 16;
+			f1	= src[Offset + srcstride + 0];
+			f1 |= src[Offset + srcstride + 1] << 16;
+			f0 = (ri*f0)>>16;
+			f1 = (ri*f1) & 0x0fff0000;
+			f0 |= f1;
+			f0 = (rj*f0 + Rounder) >> 24;
 
-		dst[i] = (uint8_t)f0;
-	}
-	dst += dststride;
+			dst[i] = (uint8_t)f0;
+		}
+		dst += dststride;
 	}
 }
-
 
 void Predict_8x8_C(const NEW_GMC_DATA * const This,
 					 uint8_t *uDst, const uint8_t *uSrc,
@@ -117,67 +111,63 @@ void Predict_8x8_C(const NEW_GMC_DATA * const This,
 
 	uDst += 8;
 	vDst += 8;
-	for (j=8; j>0; --j)
-	{
-	int32_t U = Uo, V = Vo;
-	Uo += dUy; Vo += dVy;
+	for (j=8; j>0; --j) {
+		int32_t U = Uo, V = Vo;
+		Uo += dUy; Vo += dVy;
 
-	for (i=-8; i<0; ++i)
-	{
-		int Offset;
-		uint32_t f0, f1, ri, rj;
-		int32_t u, v;
+		for (i=-8; i<0; ++i) {
+			int Offset;
+			uint32_t f0, f1, ri, rj;
+			int32_t u, v;
 
-		u = ( U >> 16 ) << rho;
-		v = ( V >> 16 ) << rho;
-		U += dUx; V += dVx;
+			u = ( U >> 16 ) << rho;
+			v = ( V >> 16 ) << rho;
+			U += dUx; V += dVx;
 
-		if ((uint32_t)u<=(uint32_t)W) {
-		ri = MTab[u&15];
-		Offset = u>>4;
+			if (u > 0 && u <= W) {
+				ri = MTab[u&15];
+				Offset = u>>4;
+			} else {
+				ri = 16;
+				if (u>W) Offset = W>>4;
+				else Offset = -1;
+			}
+			
+			if (v > 0 && v <= H) {
+				rj = MTab[v&15];
+				Offset += (v>>4)*srcstride;
+			} else {
+				rj = 16;
+				if (v>H) Offset += (H>>4)*srcstride;
+				else Offset -= srcstride;
+			}
+
+			f0	= uSrc[Offset + 0];
+			f0 |= uSrc[Offset + 1] << 16;
+			f1	= uSrc[Offset + srcstride + 0];
+			f1 |= uSrc[Offset + srcstride + 1] << 16;
+			f0 = (ri*f0)>>16;
+			f1 = (ri*f1) & 0x0fff0000;
+			f0 |= f1;
+			f0 = (rj*f0 + Rounder) >> 24;
+
+			uDst[i] = (uint8_t)f0;
+
+			f0	= vSrc[Offset + 0];
+			f0 |= vSrc[Offset + 1] << 16;
+			f1	= vSrc[Offset + srcstride + 0];
+			f1 |= vSrc[Offset + srcstride + 1] << 16;
+			f0 = (ri*f0)>>16; 
+			f1 = (ri*f1) & 0x0fff0000;
+			f0 |= f1; 
+			f0 = (rj*f0 + Rounder) >> 24;
+
+			vDst[i] = (uint8_t)f0;
 		}
-		else {
-		ri = 16;
-		if (u>W) Offset = W>>4;
-		else Offset = -1;
-		}
-		if ((uint32_t)v<=(uint32_t)H) {
-		rj = MTab[v&15];
-		Offset += (v>>4)*srcstride;
-		}
-		else {
-		rj = 16;
-		if (v>H) Offset += (H>>4)*srcstride;
-		else Offset -= srcstride;
-		}
-
-		f0	= uSrc[ Offset		+0 ];
-		f0 |= uSrc[ Offset		+1 ] << 16;
-		f1	= uSrc[ Offset+srcstride +0 ];
-		f1 |= uSrc[ Offset+srcstride +1 ] << 16;
-		f0 = (ri*f0)>>16;
-		f1 = (ri*f1) & 0x0fff0000;
-		f0 |= f1;
-		f0 = ( rj*f0 + Rounder ) >> 24;
-
-		uDst[i] = (uint8_t)f0;
-
-		f0	= vSrc[ Offset		+0 ];
-		f0 |= vSrc[ Offset		+1 ] << 16;
-		f1	= vSrc[ Offset+srcstride +0 ];
-		f1 |= vSrc[ Offset+srcstride +1 ] << 16;
-		f0 = (ri*f0)>>16; 
-		f1 = (ri*f1) & 0x0fff0000;
-		f0 |= f1; 
-		f0 = ( rj*f0 + Rounder ) >> 24;
-
-		vDst[i] = (uint8_t)f0;
-	}
-	uDst += dststride;
-	vDst += dststride;
+		uDst += dststride;
+		vDst += dststride;
 	}
 }
-
 
 void get_average_mv_C(const NEW_GMC_DATA * const Dsp, VECTOR * const mv,
 						int x, int y, int qpel)
@@ -207,7 +197,6 @@ void get_average_mv_C(const NEW_GMC_DATA * const Dsp, VECTOR * const mv,
 
 //////////////////////////////////////////////////////////
 // simplified version for 1 warp point
-
 
 void Predict_1pt_16x16_C(const NEW_GMC_DATA * const This,
 						 uint8_t *Dst, const uint8_t *Src, 
@@ -253,7 +242,6 @@ void Predict_1pt_16x16_C(const NEW_GMC_DATA * const This,
 	Dst += dststride;
 	}
 }	 
-
 
 void Predict_1pt_8x8_C(const NEW_GMC_DATA * const This,
 						 uint8_t *uDst, const uint8_t *uSrc,
@@ -310,7 +298,6 @@ void Predict_1pt_8x8_C(const NEW_GMC_DATA * const This,
 	vDst += dststride;
 	}
 }
-
 
 void get_average_mv_1pt_C(const NEW_GMC_DATA * const Dsp, VECTOR * const mv,
 							int x, int y, int qpel)
@@ -417,7 +404,6 @@ void generate_GMCparameters( int nb_pts, const int accuracy,
 }
 
 //////////////////////////////////////////////////////////
-
 
 /* quick and dirty routine to generate the full warped image (pGMC != NULL)
 	or just all average Motion Vectors (pGMC == NULL) */
