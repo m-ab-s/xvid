@@ -59,6 +59,15 @@ AC_ARG_ENABLE(iprofile,
 		     FEATURES="$FEATURES -D_PROFILING_"
 		  fi])
 
+dnl GNU Profiling options
+AC_ARG_ENABLE(gnuprofile,
+		AC_HELP_STRING([--enable-gnuprofile],
+				 [Enable profiling informations for gprof]),
+		 [if test "$enable_gnuprofile" = "yes" ; then
+		     GNU_PROF_CFLAGS="-pg -fprofile-arcs -ftest-coverage"
+		     GNU_PROF_LDFLAGS="-pg"
+		  fi])
+
 dnl Assembly code
 AC_ARG_ENABLE(assembly,
 		AC_HELP_STRING([--disable-assembly],
@@ -81,7 +90,6 @@ AC_ARG_ENABLE(divx4compat,
 		     DIVX4_ENCORE="encore;"
 		     DIVX4_DECORE="decore;"
 		  fi])
-
 
 dnl ==========================================================================
 dnl Default install prefix and checks build type
@@ -245,40 +253,47 @@ case "$target_os" in
 	;;
 esac
 
+dnl ==========================================================================
+dnl
+dnl Determines best options for CC and LD
+dnl  - STATIC_LIB, SHARED_LIB, SPECIFIC_CFLAGS, SPECIFIC_LDLAGS
+dnl
+dnl ==========================================================================
+
 AC_MSG_CHECKING(for platform specific LDFLAGS/CFLAGS)
 SPECIFIC_LDFLAGS=""
 SPECIFIC_CFLAGS=""
 case "$target_os" in
      *bsd*|linux*|irix*|solaris*)
-	AC_MSG_RESULT([-Wl,-soname,libxvidcore.so -shared -lc -lm])
+	AC_MSG_RESULT([ok])
 	STATIC_LIB="libxvidcore.\$(STATIC_EXTENSION)"
 	SHARED_LIB="libxvidcore.\$(SHARED_EXTENSION).\$(API_MAJOR).\$(API_MINOR)"
 	SPECIFIC_LDFLAGS="-Wl,-soname,libxvidcore.\$(SHARED_EXTENSION) -shared -lc -lm"
 	SPECIFIC_CFLAGS="-fPIC"
 	;;
      [[cC]][[yY]][[gG]][[wW]][[iI]][[nN]]|mingw32|mks)
-	AC_MSG_RESULT([-shared -Wl,--dll,--out-implib,\$@.a])
+	AC_MSG_RESULT([ok])
 	STATIC_LIB="libxvidcore.\$(STATIC_EXTENSION)"
 	SHARED_LIB="libxvidcore.\$(SHARED_EXTENSION)"
 	SPECIFIC_LDFLAGS="-mno-cygwin -shared -Wl,--dll,--out-implib,\$@.a libxvidcore.def"
 	SPECIFIC_CFLAGS="-mno-cygwin"
 	;;
      darwin*|raphsody*)
-	AC_MSG_RESULT([-dynamiclib -flat_namespace])
+	AC_MSG_RESULT([ok])
 	STATIC_LIB="libxvidcore.\$(STATIC_EXTENSION)"
-	SHARED_LIB="libxvidcore.\$(SHARED_EXTENSION)"
-	SPECIFIC_LDFLAGS="-dynamiclib -flat_namespace"
+	SHARED_LIB="libxvidcore.\$(API_MAJOR).\$(SHARED_EXTENSION)"
+	SPECIFIC_LDFLAGS="-dynamiclib -flat_namespace -compatibility_version \$(API_MAJOR) -current_version \$(API_MINOR) -install_name \$(libdir)/\$(SHARED_LIB)"
 	SPECIFIC_CFLAGS="-fPIC -fno-common -no-cpp-precomp"
 	;;
      beos)
+	AC_MSG_RESULT([ok])
 	STATIC_LIB="libxvidcore.\$(STATIC_EXTENSION)"
 	SHARED_LIB="libxvidcore.\$(SHARED_EXTENSION)"
-	AC_MSG_RESULT([-nostart])
 	SPECIFIC_LDFLAGS="-nostart"
 	SPECIFIC_CFLAGS="-fPIC"
 	;;
      *)
-        AC_MSG_RESULT([Unknown OS - -shared -lc -lm])
+        AC_MSG_RESULT([Unknown Platform (Using default -shared -lc -lm)])
 	STATIC_LIB="libxvidcore.\$(STATIC_EXTENSION)"
 	SHARED_LIB="libxvidcore.\$(SHARED_EXTENSION)"
 	SPECIFIC_LDFLAGS=""
@@ -288,7 +303,8 @@ esac
 
 dnl ==========================================================================
 dnl
-dnl Assembler stuff - AS, AFLAGS, ASSEMBLY_EXTENSION, SOURCES
+dnl Assembler stuff
+dnl  - AS, AFLAGS, ASSEMBLY_EXTENSION, SOURCES
 dnl
 dnl ==========================================================================
 
@@ -422,6 +438,21 @@ dnl ==========================================================================
 
 if test "$force_default_cc_options" = "yes" ; then
    CFLAGS="$our_cflags_defaults"
+fi
+
+dnl ==========================================================================
+dnl
+dnl Profiling stuff goes here
+dnl  - adds options to SPECIFIC_CFLAGS, SPECIFIC_LDLAGS
+dnl  - removes incompatible options from CFLAGS
+dnl
+dnl ==========================================================================
+
+SPECIFIC_LDFLAGS="$SPECIFIC_LDFLAGS $GNU_PROF_LDFLAGS"
+SPECIFIC_CFLAGS="$SPECIFIC_CFLAG $GNU_PROF_CFLAGS"
+
+if test "$enable_gnuprofile" = "yes" ; then
+   CFLAGS=`echo $CFLAGS | sed s/'-fomit-frame-pointer'/''/`
 fi
 
 dnl ==========================================================================
