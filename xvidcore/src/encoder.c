@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.32 2003-07-02 13:15:01 syskin Exp $
+ * $Id: encoder.c,v 1.95.2.33 2003-07-13 09:57:51 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1559,9 +1559,6 @@ FrameCodeP(Encoder * pEnc,
 			MACROBLOCK *pMB =
 				&current->mbs[x + y * pParam->mb_width];
 
-/* Mode decision: Check, if the block should be INTRA / INTER or GMC-coded */
-/* For a start, leave INTRA decision as is, only choose only between INTER/GMC  - gruel, 9.1.2002 */
-
 			bIntra = (pMB->mode == MODE_INTRA) || (pMB->mode == MODE_INTRA_Q);
 
 			if (bIntra) {
@@ -1578,37 +1575,6 @@ FrameCodeP(Encoder * pEnc,
 				MBCoding(current, pMB, qcoeff, bs, &current->sStat);
 				stop_coding_timer();
 				continue;
-			}
-				
-			if (current->coding_type == S_VOP) {
-
-				int32_t iSAD = sad16(current->image.y + 16*y*pParam->edged_width + 16*x,
-					pEnc->vGMC.y + 16*y*pParam->edged_width + 16*x, 
-					pParam->edged_width, 65536);
-				
-				if (current->motion_flags & XVID_ME_CHROMA16) {
-					iSAD += sad8(current->image.u + 8*y*(pParam->edged_width/2) + 8*x,
-					pEnc->vGMC.u + 8*y*(pParam->edged_width/2) + 8*x, pParam->edged_width/2);
-
-					iSAD += sad8(current->image.v + 8*y*(pParam->edged_width/2) + 8*x,
-					pEnc->vGMC.v + 8*y*(pParam->edged_width/2) + 8*x, pParam->edged_width/2);
-				}
-
-				if (iSAD <= pMB->sad16) {		/* mode decision GMC */
-
-					if ((pParam->vol_flags & XVID_VOL_QUARTERPEL))
-						pMB->qmvs[0] = pMB->qmvs[1] = pMB->qmvs[2] = pMB->qmvs[3] = pMB->amv;
-					else
-						pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = pMB->amv;
-
-					pMB->mode = MODE_INTER;
-					pMB->mcsel = 1;
-					pMB->sad16 = iSAD;
-				} else {
-					pMB->mcsel = 0;
-				}
-			} else {
-				pMB->mcsel = 0;	/* just a precaution */
 			}
 
 			start_timer();
