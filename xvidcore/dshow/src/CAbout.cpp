@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CAbout.cpp,v 1.1.2.5 2003-12-18 14:47:44 edgomez Exp $
+ * $Id: CAbout.cpp,v 1.1.2.6 2004-01-26 05:49:42 syskin Exp $
  *
  ****************************************************************************/
 
@@ -58,11 +58,12 @@ void SaveRegistryInfo()
 	}
 
 	REG_SET_N("Brightness", PPSettings.nBrightness);
-	REG_SET_N("Deblock_Y",  PPSettings.bDeblock_Y);
-	REG_SET_N("Deblock_UV", PPSettings.bDeblock_UV);
-	REG_SET_N("Dering", PPSettings.bDering);
-	REG_SET_N("FilmEffect", PPSettings.bFilmEffect);
+	REG_SET_N("Deblock_Y",  PPSettings.nDeblock_Y);
+	REG_SET_N("Deblock_UV", PPSettings.nDeblock_UV);
+	REG_SET_N("Dering", PPSettings.nDering);
+	REG_SET_N("FilmEffect", PPSettings.nFilmEffect);
 	REG_SET_N("ForceColorspace", PPSettings.nForceColorspace);
+	REG_SET_N("FlipVideo", PPSettings.nFlipVideo);
 
 	RegCloseKey(hKey);
 }
@@ -123,11 +124,11 @@ BOOL CAbout::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		SendMessage(hBrightness, TBM_SETPOS, (WPARAM) (BOOL) TRUE, (LPARAM) PPSettings.nBrightness);
 
 		// Load Buttons
-		SendMessage(GetDlgItem(hwnd, IDC_DEBLOCK_Y), BM_SETCHECK, (BOOL)PPSettings.bDeblock_Y, 0);
-		SendMessage(GetDlgItem(hwnd, IDC_DEBLOCK_UV), BM_SETCHECK, (BOOL)PPSettings.bDeblock_UV, 0);
-		SendMessage(GetDlgItem(hwnd, IDC_DERING), BM_SETCHECK, (BOOL)PPSettings.bDering, 0);
-		SendMessage(GetDlgItem(hwnd, IDC_FILMEFFECT), BM_SETCHECK, (BOOL)PPSettings.bFilmEffect, 0);
-		SendMessage(GetDlgItem(hwnd, IDC_FLIPVIDEO), BM_SETCHECK, (BOOL)PPSettings.bFlipVideo, 0);
+		SendMessage(GetDlgItem(hwnd, IDC_DEBLOCK_Y), BM_SETCHECK, PPSettings.nDeblock_Y, 0);
+		SendMessage(GetDlgItem(hwnd, IDC_DEBLOCK_UV), BM_SETCHECK, PPSettings.nDeblock_UV, 0);
+		SendMessage(GetDlgItem(hwnd, IDC_DERING), BM_SETCHECK, PPSettings.nDering, 0);
+		SendMessage(GetDlgItem(hwnd, IDC_FILMEFFECT), BM_SETCHECK, PPSettings.nFilmEffect, 0);
+		SendMessage(GetDlgItem(hwnd, IDC_FLIPVIDEO), BM_SETCHECK, PPSettings.nFlipVideo, 0);
 
 		// Set Date & Time of Compilation
 		DPRINTF("(%s %s)", __DATE__, __TIME__);
@@ -142,34 +143,34 @@ BOOL CAbout::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			hBrightness = GetDlgItem(hwnd, IDC_BRIGHTNESS);
 			SendMessage(hBrightness, TBM_SETPOS, (WPARAM) (BOOL) TRUE, (LPARAM) PPSettings.nBrightness);
 			// Load Buttons
-			SendMessage(GetDlgItem(hwnd, IDC_DEBLOCK_Y), BM_SETCHECK, (BOOL)PPSettings.bDeblock_Y, 0);
-			SendMessage(GetDlgItem(hwnd, IDC_DEBLOCK_UV), BM_SETCHECK, (BOOL)PPSettings.bDeblock_UV, 0);
-			SendMessage(GetDlgItem(hwnd, IDC_DERING), BM_SETCHECK, (BOOL)PPSettings.bDering, 0);
-			SendMessage(GetDlgItem(hwnd, IDC_FILMEFFECT), BM_SETCHECK, (BOOL)PPSettings.bFilmEffect, 0);
-			SendMessage(GetDlgItem(hwnd, IDC_FLIPVIDEO), BM_SETCHECK, (BOOL)PPSettings.bFlipVideo, 0);
+			SendMessage(GetDlgItem(hwnd, IDC_DEBLOCK_Y), BM_SETCHECK, PPSettings.nDeblock_Y, 0);
+			SendMessage(GetDlgItem(hwnd, IDC_DEBLOCK_UV), BM_SETCHECK, PPSettings.nDeblock_UV, 0);
+			SendMessage(GetDlgItem(hwnd, IDC_DERING), BM_SETCHECK, PPSettings.nDering, 0);
+			SendMessage(GetDlgItem(hwnd, IDC_FILMEFFECT), BM_SETCHECK, PPSettings.nFilmEffect, 0);
+			SendMessage(GetDlgItem(hwnd, IDC_FLIPVIDEO), BM_SETCHECK, PPSettings.nFlipVideo, 0);
 			PPSettings.nForceColorspace = 0;
 			SendMessage(GetDlgItem(hwnd, IDC_COLORSPACE), CB_SETCURSEL, PPSettings.nForceColorspace, 0); 
 			SaveRegistryInfo();
 
 			break;
 		case IDC_DEBLOCK_Y:
-			PPSettings.bDeblock_Y = !PPSettings.bDeblock_Y;
+			PPSettings.nDeblock_Y = !PPSettings.nDeblock_Y;
 			SaveRegistryInfo();
 			break;
 		case IDC_DEBLOCK_UV:
-			PPSettings.bDeblock_UV = !PPSettings.bDeblock_UV;
+			PPSettings.nDeblock_UV = !PPSettings.nDeblock_UV;
 			SaveRegistryInfo();
 			break;
 		case IDC_DERING:
-			PPSettings.bDering = !PPSettings.bDering;
+			PPSettings.nDering = !PPSettings.nDering;
 			SaveRegistryInfo();
 			break;
 		case IDC_FILMEFFECT:
-			PPSettings.bFilmEffect = !PPSettings.bFilmEffect;
+			PPSettings.nFilmEffect = !PPSettings.nFilmEffect;
 			SaveRegistryInfo();
 			break;
 		case IDC_FLIPVIDEO:
-			PPSettings.bFlipVideo = !PPSettings.bFlipVideo;
+			PPSettings.nFlipVideo = !PPSettings.nFlipVideo;
 			SaveRegistryInfo();
 			break;
 		}

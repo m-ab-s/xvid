@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CAbout.h,v 1.1.2.5 2004-01-22 15:56:24 syskin Exp $
+ * $Id: CAbout.h,v 1.1.2.6 2004-01-26 05:49:42 syskin Exp $
  *
  ****************************************************************************/
 
@@ -41,11 +41,11 @@ DEFINE_GUID(CLSID_CABOUT,
 struct PostProcessing_Settings
 {
 	int nBrightness;
-	int bDeblock_Y;
-	int bDeblock_UV;
-	int bDering;
-	int bFilmEffect;
-	int bFlipVideo;
+	int nDeblock_Y;
+	int nDeblock_UV;
+	int nDering;
+	int nFilmEffect;
+	int nFlipVideo;
 	int nForceColorspace;
 };
 
