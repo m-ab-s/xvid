@@ -50,7 +50,7 @@
  *              now get Core Version use xvid_init()
  *	05.03.2002  Min Chen <chenm001@163.com>
  *				Add Core version display to about box
- *	01.12.2001	inital version; (c)2001 peter ross <suxen_drol@hotmail.com>
+ *	01.12.2001	inital version; (c)2001 peter ross <pross@xvid.org>
  *
  *************************************************************************/
 
