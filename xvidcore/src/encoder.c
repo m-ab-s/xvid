@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.1 2002-09-23 20:36:01 chl Exp $
+ *  $Id: encoder.c,v 1.76.2.2 2002-09-26 01:54:54 h Exp $
  *
  ****************************************************************************/
 
@@ -1100,6 +1100,13 @@ encoder_encode(Encoder * pEnc,
 	pEnc->current->ticks = pEnc->mbParam.m_ticks;
 	pEnc->mbParam.hint = &pFrame->hint;
 
+	/* disable alternate scan flag if interlacing is not enabled */
+	if ((pEnc->current->global_flags & XVID_ALTERNATESCAN) &&
+		!(pEnc->current->global_flags & XVID_INTERLACING))
+	{
+		pEnc->current->global_flags -= XVID_ALTERNATESCAN;
+	}
+
 	start_timer();
 	if (image_input
 		(&pEnc->current->image, pEnc->mbParam.width, pEnc->mbParam.height,
@@ -1560,8 +1567,7 @@ FrameCodeP(Encoder * pEnc,
 
 	start_timer();
 	image_setedges(pRef, pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
-				   pEnc->mbParam.width, pEnc->mbParam.height,
-				   pEnc->current->global_flags & XVID_INTERLACING);
+				   pEnc->mbParam.width, pEnc->mbParam.height);
 	stop_edges_timer();
 
 	pEnc->mbParam.m_rounding_type = 1 - pEnc->mbParam.m_rounding_type;
@@ -1809,8 +1815,7 @@ FrameCodeB(Encoder * pEnc,
 	// forward 
 	image_setedges(f_ref, pEnc->mbParam.edged_width,
 				   pEnc->mbParam.edged_height, pEnc->mbParam.width,
-				   pEnc->mbParam.height,
-				   frame->global_flags & XVID_INTERLACING);
+				   pEnc->mbParam.height);
 	start_timer();
 	image_interpolate(f_ref, &pEnc->f_refh, &pEnc->f_refv, &pEnc->f_refhv,
 					  pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
@@ -1820,8 +1825,7 @@ FrameCodeB(Encoder * pEnc,
 	// backward
 	image_setedges(b_ref, pEnc->mbParam.edged_width,
 				   pEnc->mbParam.edged_height, pEnc->mbParam.width,
-				   pEnc->mbParam.height,
-				   frame->global_flags & XVID_INTERLACING);
+				   pEnc->mbParam.height);
 	start_timer();
 	image_interpolate(b_ref, &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV,
 					  pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
@@ -1859,6 +1863,7 @@ FrameCodeB(Encoder * pEnc,
 	for (y = 0; y < pEnc->mbParam.mb_height; y++) {
 		for (x = 0; x < pEnc->mbParam.mb_width; x++) {
 			MACROBLOCK * const mb = &frame->mbs[x + y * pEnc->mbParam.mb_width];
+			int direction = pEnc->global & XVID_ALTERNATESCAN ? 2 : 0;
 
 			// decoder ignores mb when refence block is INTER(0,0), CBP=0 
 			if (mb->mode == MODE_NOT_CODED) {
@@ -1890,7 +1895,7 @@ FrameCodeB(Encoder * pEnc,
 #endif
 			start_timer();
 			MBCodingBVOP(mb, qcoeff, frame->fcode, frame->bcode, bs,
-						 &pEnc->sStat);
+						 &pEnc->sStat, direction);
 			stop_coding_timer();
 		}
 	}

@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37 2002-09-04 03:23:23 h Exp $
+ *  $Id: decoder.c,v 1.37.2.1 2002-09-26 01:54:54 h Exp $
  *
  *************************************************************************/
 
@@ -268,8 +268,10 @@ decoder_mbintra(DECODER * dec,
 		start_timer();
 		if (cbp & (1 << (5 - i)))	// coded
 		{
-			get_intra_block(bs, &block[i * 64], pMB->acpred_directions[i],
-							start_coeff);
+			int direction = dec->alternate_vertical_scan ?
+				2 : pMB->acpred_directions[i];
+
+			get_intra_block(bs, &block[i * 64], direction, start_coeff);
 		}
 		stop_coding_timer();
 
@@ -407,12 +409,14 @@ decoder_mbinter(DECODER * dec,
 	stop_comp_timer();
 
 	for (i = 0; i < 6; i++) {
+		int direction = dec->alternate_vertical_scan ? 2 : 0;
+
 		if (cbp & (1 << (5 - i)))	// coded
 		{
 			memset(&block[i * 64], 0, 64 * sizeof(int16_t));	// clear
 
 			start_timer();
-			get_inter_block(bs, &block[i * 64]);
+			get_inter_block(bs, &block[i * 64], direction);
 			stop_coding_timer();
 
 			start_timer();
@@ -585,7 +589,7 @@ decoder_pframe(DECODER * dec,
 
 	start_timer();
 	image_setedges(&dec->refn[0], dec->edged_width, dec->edged_height,
-				   dec->width, dec->height, dec->interlacing);
+				   dec->width, dec->height);
 	stop_edges_timer();
 
 	bound = 0;
@@ -876,12 +880,14 @@ decoder_bf_mbinter(DECODER * dec,
 	stop_comp_timer();
 
 	for (i = 0; i < 6; i++) {
+		int direction = dec->alternate_vertical_scan ? 2 : 0;
+
 		if (cbp & (1 << (5 - i)))	// coded
 		{
 			memset(&block[i * 64], 0, 64 * sizeof(int16_t));	// clear
 
 			start_timer();
-			get_inter_block(bs, &block[i * 64]);
+			get_inter_block(bs, &block[i * 64], direction);
 			stop_coding_timer();
 
 			start_timer();
@@ -1042,12 +1048,14 @@ decoder_bf_interpolate_mbinter(DECODER * dec,
 	stop_comp_timer();
 
 	for (i = 0; i < 6; i++) {
+		int direction = dec->alternate_vertical_scan ? 2 : 0;
+
 		if (cbp & (1 << (5 - i)))	// coded
 		{
 			memset(&block[i * 64], 0, 64 * sizeof(int16_t));	// clear
 
 			start_timer();
-			get_inter_block(bs, &block[i * 64]);
+			get_inter_block(bs, &block[i * 64], direction);
 			stop_coding_timer();
 
 			start_timer();
@@ -1142,9 +1150,9 @@ decoder_bframe(DECODER * dec,
 
 	start_timer();
 	image_setedges(&dec->refn[0], dec->edged_width, dec->edged_height,
-				   dec->width, dec->height, dec->interlacing);
+				   dec->width, dec->height);
 	image_setedges(&dec->refn[1], dec->edged_width, dec->edged_height,
-				   dec->width, dec->height, dec->interlacing);
+				   dec->width, dec->height);
 	stop_edges_timer();
 
 #ifdef BFRAMES_DEC_DEBUG

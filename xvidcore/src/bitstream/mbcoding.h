@@ -32,7 +32,8 @@ void get_intra_block(Bitstream * bs,
 					 int direction,
 					 int coeff);
 void get_inter_block(Bitstream * bs,
-					 int16_t * block);
+					 int16_t * block,
+					 int direction);
 
 
 void MBCodingBVOP(const MACROBLOCK * mb,
@@ -40,7 +41,8 @@ void MBCodingBVOP(const MACROBLOCK * mb,
 				  const int32_t fcode,
 				  const int32_t bcode,
 				  Bitstream * bs,
-				  Statistics * pStat);
+				  Statistics * pStat,
+				  int alternate_scan);
 
 
 static __inline void

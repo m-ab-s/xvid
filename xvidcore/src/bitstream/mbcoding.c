@@ -330,10 +330,13 @@ CodeBlockIntra(const FRAMEINFO * frame,
 							 dcc_tab[qcoeff[i * 64 + 0] + 255].len);
 
 		if (pMB->cbp & (1 << (5 - i))) {
+			const uint16_t *scan_table =
+				frame->global_flags & XVID_ALTERNATESCAN ?
+				scan_tables[2] : scan_tables[pMB->acpred_directions[i]];
+
 			bits = BitstreamPos(bs);
 
-			CodeCoeff(bs, &qcoeff[i * 64], intra_table,
-					  scan_tables[pMB->acpred_directions[i]], 1);
+			CodeCoeff(bs, &qcoeff[i * 64], intra_table, scan_table, 1);
 
 			bits = BitstreamPos(bs) - bits;
 			pStat->iTextBits += bits;
@@ -398,7 +401,13 @@ CodeBlockInter(const FRAMEINFO * frame,
 	// code block coeffs
 	for (i = 0; i < 6; i++)
 		if (pMB->cbp & (1 << (5 - i)))
-			CodeCoeff(bs, &qcoeff[i * 64], inter_table, scan_tables[0], 0);
+		{
+			const uint16_t *scan_table =
+				frame->global_flags & XVID_ALTERNATESCAN ?
+				scan_tables[2] : scan_tables[0];
+
+			CodeCoeff(bs, &qcoeff[i * 64], inter_table, scan_table, 0);
+		}
 
 	bits = BitstreamPos(bs) - bits;
 	pStat->iTextBits += bits;
@@ -502,7 +511,8 @@ MBCodingBVOP(const MACROBLOCK * mb,
 			 const int32_t fcode,
 			 const int32_t bcode,
 			 Bitstream * bs,
-			 Statistics * pStat)
+			 Statistics * pStat,
+			 int direction)
 {
 	int vcode = fcode;
 	unsigned int i;
@@ -553,7 +563,7 @@ MBCodingBVOP(const MACROBLOCK * mb,
 
 	for (i = 0; i < 6; i++) {
 		if (mb->cbp & (1 << (5 - i))) {
-			CodeCoeff(bs, &qcoeff[i * 64], inter_table, scan_tables[0], 0);
+			CodeCoeff(bs, &qcoeff[i * 64], inter_table, scan_tables[direction], 0);
 		}
 	}
 }
@@ -777,10 +787,11 @@ get_intra_block(Bitstream * bs,
 
 void
 get_inter_block(Bitstream * bs,
-				int16_t * block)
+				int16_t * block,
+				int direction)
 {
 
-	const uint16_t *scan = scan_tables[0];
+	const uint16_t *scan = scan_tables[direction];
 	int p;
 	int level;
 	int run;

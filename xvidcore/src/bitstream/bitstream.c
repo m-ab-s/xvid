@@ -619,6 +619,9 @@ BitstreamReadHeaders(Bitstream * bs,
 				*intra_dc_threshold =
 					intra_dc_threshold_table[BitstreamGetBits(bs, 3)];
 
+				dec->top_field_first = 0;
+				dec->alternate_vertical_scan = 0;
+
 				if (dec->interlacing) {
 					dec->top_field_first = BitstreamGetBit(bs);
 					DPRINTF(DPRINTF_HEADER, "interlace top_field_first %i", dec->top_field_first);
@@ -849,8 +852,8 @@ BitstreamWriteVopHeader(Bitstream * const bs,
 	BitstreamPutBits(bs, 0, 3);	// intra_dc_vlc_threshold
 
 	if (frame->global_flags & XVID_INTERLACING) {
-		BitstreamPutBit(bs, 1);	// top field first
-		BitstreamPutBit(bs, 0);	// alternate vertical scan
+		BitstreamPutBit(bs, (frame->global_flags & XVID_TOPFIELDFIRST));
+		BitstreamPutBit(bs, (frame->global_flags & XVID_ALTERNATESCAN));
 	}
 
 	BitstreamPutBits(bs, frame->quant, 5);	// quantizer
