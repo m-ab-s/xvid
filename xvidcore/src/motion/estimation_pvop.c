@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_pvop.c,v 1.1.2.11 2003-12-18 02:02:08 Isibaar Exp $
+ * $Id: estimation_pvop.c,v 1.1.2.12 2003-12-18 17:49:28 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -169,6 +169,39 @@ CheckCandidate8(const int x, const int y, SearchData * const data, const unsigne
 		*(data->iMinSAD) = sad;
 		current->x = x; current->y = y;
 		data->dir = Direction;
+	}
+}
+
+static void
+CheckCandidate8_qpel(const int x, const int y, SearchData * const data, const unsigned int Direction)
+{
+	int32_t sad; uint32_t t;
+	const uint8_t * Reference;
+	VECTOR * current;
+
+	if ( (x > data->max_dx) || (x < data->min_dx)
+		|| (y > data->max_dy) || (y < data->min_dy) ) return;
+
+	/* x and y are in 1/4 precision */
+	Reference = xvid_me_interpolate8x8qpel(x, y, 0, 0, data);
+	current = data->currentQMV;
+
+	sad = sad8(data->Cur, Reference, data->iEdgedWidth);
+	t = d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
+
+	sad += (data->lambda8 * t * (sad+NEIGH_8X8_BIAS))>>10;
+
+	if (sad < *(data->iMinSAD)) {
+		data->iMinSAD2 = *(data->iMinSAD);
+		data->currentQMV2.x = data->currentQMV->x;
+		data->currentQMV2.y = data->currentQMV->y;
+
+		*(data->iMinSAD) = sad;
+		data->currentQMV->x = x; data->currentQMV->y = y;
+		data->dir = Direction;
+	} else if (sad < data->iMinSAD2) {
+		data->iMinSAD2 = sad;
+		data->currentQMV2.x = x; data->currentQMV2.y = y;
 	}
 }
 
@@ -573,11 +606,15 @@ Search8(SearchData * const OldData,
 			}
 		}
 
-		if (Data->qpel && MotionFlags & XVID_ME_QUARTERPELREFINE8) {
+		if ((Data->qpel && MotionFlags & XVID_ME_QUARTERPELREFINE8)) {
 				Data->qpel_precision = 1;
 				get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 3,
 					pParam->width, pParam->height, Data->iFcode, 2, 0);
-				xvid_me_SubpelRefine(Data, CheckCandidate);
+
+				if((MotionFlags & XVID_ME_FASTREFINE16) && (!Data->rrv))
+					SubpelRefine_Fast(Data, CheckCandidate8_qpel);
+				else
+					xvid_me_SubpelRefine(Data, CheckCandidate);
 		}
 	}
 
@@ -759,7 +796,7 @@ SearchP(const IMAGE * const pRef,
 		}
 	}
 
-	if (Data->iMinSAD[0] < (int32_t)pMB->quant * 30)
+	if (Data->iMinSAD[0] < (int32_t)pMB->quant * 30*((MotionFlags & XVID_ME_FASTREFINE16) ? 8 : 1))
 		inter4v = 0;
 
 	if (inter4v) {
