@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.6 2003-03-15 14:32:56 suxen_drol Exp $
+ * $Id: xvid.h,v 1.27.2.7 2003-03-15 16:04:38 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -272,6 +272,7 @@ typedef struct
 
 /* xvid_plg_info_t.flags */
 #define XVID_REQORIGINAL    1  /* plugin requires a copy of the original (uncompressed) image */
+#define XVID_REQPSNR        2  /* plugin requires psnr between the uncompressed and compressed image*/
 
 
 typedef struct
@@ -318,6 +319,7 @@ typedef struct
 
     int length;                 /* [out] after: length of encoded frame */
     int kblks, mblks, ublks;	/* [out] after: */
+    int sse_y, sse_u, sse_v;    /* [out] */
 } xvid_plg_data_t;
 
 
@@ -372,6 +374,7 @@ typedef enum
 {
     XVID_PACKED		        = 0x00000001,	/* packed bitstream */
     XVID_CLOSED_GOP	        = 0x00000002,	/* closed_gop:	was DX50BVOP dx50 bvop compatibility */
+    XVID_EXTRASTATS_ENABLE  = 0x00000004
 /*define XVID_VOL_AT_IVOP	0x00000008	 write vol at every ivop: WIN32/divx compatibility */
 /*define XVID_FORCE_VOL		0x00000008	 XXX: when vol-based parameters are changed, insert an ivop NOT recommended */
 } xvid_global_t;
@@ -381,6 +384,7 @@ typedef enum
 /* vol-based flags */
 typedef enum {
     XVID_MPEGQUANT          = 0x00000001,
+    XVID_EXTRASTATS         = 0x00000002,
     XVID_QUARTERPEL	        = 0x00000004,	/* enable quarterpel: frames will encoded as quarterpel */
     XVID_GMC			    = 0x00000008,	/* enable GMC; frames will be checked for gmc suitability */
     XVID_REDUCED_ENABLE	    = 0x00000010,	/* enable reduced resolution vops: frames will be checked for rrv suitability */
