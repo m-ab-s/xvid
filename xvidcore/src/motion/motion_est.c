@@ -50,8 +50,7 @@
 #define MAX_SAD00_FOR_SKIP	(20)
 #define MAX_CHROMA_SAD_FOR_SKIP	(22)
 
-#define CHECK_CANDIDATE(X,Y,D) { \
-(*CheckCandidate)((const int)(X),(const int)(Y), (D), &iDirection, data ); }
+#define CHECK_CANDIDATE(X,Y,D) { CheckCandidate((X),(Y), (D), &iDirection, data ); }
 
 static __inline uint32_t
 d_mv_bits(int x, int y, const VECTOR pred, const uint32_t iFcode, const int qpel, const int rrv)
@@ -1112,7 +1111,7 @@ SearchP(const IMAGE * const pRef,
 
 	for (i = 1; i < 7; i++) {
 		if (!(mask = make_mask(pmv, i)) ) continue;
-		(*CheckCandidate)(pmv[i].x, pmv[i].y, mask, &iDirection, Data);
+		CheckCandidate(pmv[i].x, pmv[i].y, mask, &iDirection, Data);
 		if (Data->iMinSAD[0] <= threshA) break;
 	}
 
@@ -1145,7 +1144,7 @@ SearchP(const IMAGE * const pRef,
 			if (!(MVequal(startMV, backupMV))) {
 				bSAD = Data->iMinSAD[0]; Data->iMinSAD[0] = MV_MAX_ERROR;
 
-				(*CheckCandidate)(startMV.x, startMV.y, 255, &iDirection, Data);
+				CheckCandidate(startMV.x, startMV.y, 255, &iDirection, Data);
 				(*MainSearchPtr)(startMV.x, startMV.y, Data, 255);
 				if (bSAD < Data->iMinSAD[0]) {
 					Data->currentMV[0] = backupMV;
@@ -1158,7 +1157,7 @@ SearchP(const IMAGE * const pRef,
 			if (!(MVequal(startMV, backupMV))) {
 				bSAD = Data->iMinSAD[0]; Data->iMinSAD[0] = MV_MAX_ERROR;
 
-				(*CheckCandidate)(startMV.x, startMV.y, 255, &iDirection, Data);
+				CheckCandidate(startMV.x, startMV.y, 255, &iDirection, Data);
 				(*MainSearchPtr)(startMV.x, startMV.y, Data, 255);
 				if (bSAD < Data->iMinSAD[0]) {
 					Data->currentMV[0] = backupMV;
@@ -1590,7 +1589,7 @@ SearchDirect(const IMAGE * const f_Ref,
 
 	CheckCandidate = b_mb->mode == MODE_INTER4V ? CheckCandidateDirect : CheckCandidateDirectno4v;
 
-	(*CheckCandidate)(0, 0, 255, &k, Data);
+	CheckCandidate(0, 0, 255, &k, Data);
 
 // initial (fast) skip decision
 	if (*Data->iMinSAD < pMB->quant * INITIAL_SKIP_THRESH * (2 + Data->chroma?1:0)) {
