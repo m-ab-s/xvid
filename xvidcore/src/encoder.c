@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.36 2003-08-02 15:08:19 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.37 2003-08-03 10:20:12 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1285,6 +1285,10 @@ static void SetMacroblockQuants(MBParam * const pParam, FRAMEINFO * frame)
 {
     unsigned int i,j;
     int quant = frame->quant;
+    if (quant > 31)
+		frame->quant = quant = 31;
+	else if (quant < 1)
+		frame->quant = quant = 1;
 
     for (j=0; j<pParam->mb_height; j++)
     for (i=0; i<pParam->mb_width; i++) {
@@ -1292,7 +1296,7 @@ static void SetMacroblockQuants(MBParam * const pParam, FRAMEINFO * frame)
         quant += pMB->dquant;
         if (quant > 31)
 			quant = 31;
-		if (quant < 1)
+		else if (quant < 1)
 			quant = 1;
         pMB->quant = quant;
     }
