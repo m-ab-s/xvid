@@ -1355,7 +1355,8 @@ int codec_2pass_update(CODEC* codec, XVID_ENC_FRAME* frame, XVID_ENC_STATS* stat
 	}
 
 	quant_type = (frame->general & XVID_H263QUANT) ? "H.263" :
-		(frame->general & XVID_MPEGQUANT) ? "MPEG" : "Cust";
+		((frame->general & XVID_MPEGQUANT) && (frame->general & XVID_CUSTOM_QMATRIX)) ?
+		"Cust" : "MPEG";
 
 	switch (codec->config.mode)
 	{
