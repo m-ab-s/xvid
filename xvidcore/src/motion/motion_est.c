@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.c,v 1.58.2.31 2003-08-28 11:17:29 syskin Exp $
+ * $Id: motion_est.c,v 1.58.2.32 2003-08-29 13:47:21 syskin Exp $
  *
  ****************************************************************************/
 
@@ -487,7 +487,7 @@ CheckCandidate32I(const int x, const int y, const SearchData * const data, const
 	if ( (x > data->max_dx) || (x < data->min_dx)
 		|| (y > data->max_dy) || (y < data->min_dy) ) return;
 
-	sad = sad32v_c(data->Cur, data->RefP[0] + (x>>1) + (y>>1)*((int)data->iEdgedWidth),
+	sad = sad32v_c(data->Cur, data->RefP[0] + x + y*((int)data->iEdgedWidth),
 					data->iEdgedWidth, data->temp);
 
 	if (sad < *(data->iMinSAD)) {
@@ -1671,7 +1671,7 @@ SearchBF(	const IMAGE * const pRef,
 			SearchData * const Data)
 {
 
-	int i, mask;
+	int i;
 	VECTOR pmv[7];
 	MainSearchFunc *MainSearchPtr;
 	*Data->iMinSAD = MV_MAX_ERROR;
@@ -1707,9 +1707,10 @@ SearchBF(	const IMAGE * const pRef,
 	else if (MotionFlags & XVID_ME_ADVANCEDDIAMOND16) MainSearchPtr = AdvDiamondSearch;
 		else MainSearchPtr = DiamondSearch;
 
-	mask = make_mask(pmv, 7, *Data->dir);
-
-	MainSearchPtr(Data->currentMV->x, Data->currentMV->y, Data, mask, CheckCandidate16no4v);
+	if (*Data->iMinSAD > 512) {
+		unsigned int mask = make_mask(pmv, 7, *Data->dir);
+		MainSearchPtr(Data->currentMV->x, Data->currentMV->y, Data, mask, CheckCandidate16no4v);
+	}
 
 	SubpelRefine(Data, CheckCandidate16no4v);
 
@@ -1759,16 +1760,15 @@ SkipDecisionB(const IMAGE * const pCur,
 {
 	int dx = 0, dy = 0, b_dx = 0, b_dy = 0;
 	int32_t sum;
-	const int div = 1 + Data->qpel;
 	int k;
 	const uint32_t stride = Data->iEdgedWidth/2;
 	/* this is not full chroma compensation, only it's fullpel approximation. should work though */
 
 	for (k = 0; k < 4; k++) {
-		dy += Data->directmvF[k].y / div;
-		dx += Data->directmvF[k].x / div;
-		b_dy += Data->directmvB[k].y / div;
-		b_dx += Data->directmvB[k].x / div;
+		dy += Data->directmvF[k].y >> Data->qpel;
+		dx += Data->directmvF[k].x >> Data->qpel;
+		b_dy += Data->directmvB[k].y >> Data->qpel;
+		b_dx += Data->directmvB[k].x >> Data->qpel;
 	}
 
 	dy = (dy >> 3) + roundtab_76[dy & 0xf];
@@ -1781,14 +1781,14 @@ SkipDecisionB(const IMAGE * const pCur,
 					b_Ref->u + (y*8 + b_dy/2) * stride + x*8 + b_dx/2,
 					stride);
 
-	if (sum >= MAX_CHROMA_SAD_FOR_SKIP * pMB->quant) return; /* no skip */
+	if (sum >= MAX_CHROMA_SAD_FOR_SKIP * Data->iQuant) return; /* no skip */
 
 	sum += sad8bi(pCur->v + 8*x + 8 * y * stride,
 					f_Ref->v + (y*8 + dy/2) * stride + x*8 + dx/2,
 					b_Ref->v + (y*8 + b_dy/2) * stride + x*8 + b_dx/2,
 					stride);
 
-	if (sum < MAX_CHROMA_SAD_FOR_SKIP * pMB->quant) {
+	if (sum < MAX_CHROMA_SAD_FOR_SKIP * Data->iQuant) {
 		pMB->mode = MODE_DIRECT_NONE_MV; /* skipped */
 		for (k = 0; k < 4; k++) {
 			pMB->qmvs[k] = pMB->mvs[k];
@@ -1873,7 +1873,7 @@ SearchDirect(const IMAGE * const f_Ref,
 	CheckCandidate(0, 0, Data, 255);
 
 	/* initial (fast) skip decision */
-	if (*Data->iMinSAD < pMB->quant * INITIAL_SKIP_THRESH * (Data->chroma?3:2)) {
+	if (*Data->iMinSAD < Data->iQuant * INITIAL_SKIP_THRESH * (Data->chroma?3:2)) {
 		/* possible skip */
 		if (Data->chroma) {
 			pMB->mode = MODE_DIRECT_NONE_MV;
@@ -2102,12 +2102,13 @@ MotionEstimationBVOP(MBParam * const pParam,
 	Data.iEdgedWidth = pParam->edged_width;
 	Data.currentMV = currentMV; Data.currentQMV = currentQMV;
 	Data.iMinSAD = &iMinSAD;
-	Data.lambda16 = lambda_vec16[frame->quant];
+	Data.lambda16 = lambda_vec16[MAX(frame->quant-2, 2)];
 	Data.qpel = pParam->vol_flags & XVID_VOL_QUARTERPEL ? 1 : 0;
 	Data.rounding = 0;
 	Data.chroma = frame->motion_flags & XVID_ME_CHROMA_BVOP;
 	Data.temp = temp;
 	Data.dir = &dir;
+	Data.iQuant = frame->quant;
 
 	Data.RefQ = f_refV->u; /* a good place, also used in MC (for similar purpose) */
 
@@ -2130,7 +2131,6 @@ MotionEstimationBVOP(MBParam * const pParam,
 			Data.Cur = frame->image.y + (j * Data.iEdgedWidth + i) * 16;
 			Data.CurU = frame->image.u + (j * Data.iEdgedWidth/2 + i) * 8;
 			Data.CurV = frame->image.v + (j * Data.iEdgedWidth/2 + i) * 8;
-			pMB->quant = frame->quant;
 
 /* direct search comes first, because it (1) checks for SKIP-mode
 	and (2) sets very good predictions for forward and backward search */
@@ -2176,7 +2176,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 						&Data);
 
 			/* final skip decision */
-			if ( (skip_sad < frame->quant * MAX_SAD00_FOR_SKIP * 2)
+			if ( (skip_sad < Data.iQuant * MAX_SAD00_FOR_SKIP * 2)
 					&& ((100*best_sad)/(skip_sad+1) > FINAL_SKIP_THRESH) )
 				SkipDecisionB(&frame->image, f_ref, b_ref, pMB, i, j, &Data);
 
@@ -2218,54 +2218,63 @@ MEanalyzeMB (	const uint8_t * const pRef,
 	VECTOR pmv[3];
 	MACROBLOCK * const pMB = &pMBs[x + y * pParam->mb_width];
 
+	unsigned int simplicity = 0;
+
 	for (i = 0; i < 5; i++) Data->iMinSAD[i] = MV_MAX_ERROR;
 
-	/* median is only used as prediction. it doesn't have to be real */
-	if (x == 1 && y == 1) Data->predMV.x = Data->predMV.y = 0;
-	else
-		if (x == 1) /* left macroblock does not have any vector now */
-			Data->predMV = (pMB - pParam->mb_width)->mvs[0]; /* top instead of median */
-		else if (y == 1) /* top macroblock doesn't have it's vector */
-			Data->predMV = (pMB - 1)->mvs[0]; /* left instead of median */
-			else Data->predMV = get_pmv2(pMBs, pParam->mb_width, 0, x, y, 0); /* else median */
-
 	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
-			pParam->width, pParam->height, Data->iFcode - Data->qpel, 1, 0);
+			pParam->width, pParam->height, Data->iFcode - Data->qpel - 1, 0, 0);
 
 	Data->Cur = pCur + (x + y * pParam->edged_width) * 16;
 	Data->RefP[0] = pRef + (x + y * pParam->edged_width) * 16;
 
-	pmv[1].x = EVEN(pMB->mvs[0].x);
-	pmv[1].y = EVEN(pMB->mvs[0].y);
-	pmv[2].x = EVEN(Data->predMV.x);
-	pmv[2].y = EVEN(Data->predMV.y);
-	pmv[0].x = pmv[0].y = 0;
+	pmv[0].x = pMB->mvs[0].x;
+	pmv[0].y = pMB->mvs[0].y;
 
-	CheckCandidate32I(0, 0, Data, 0);
+	CheckCandidate32I(pmv[0].x, pmv[0].y, Data, 0);
 
-	if (*Data->iMinSAD > 4 * MAX_SAD00_FOR_SKIP) {
+	if (*Data->iMinSAD > 200) {
+
+		pmv[1].x = pmv[1].y = 0;
+
+		/* median is only used as prediction. it doesn't have to be real */
+		if (x == 1 && y == 1) Data->predMV.x = Data->predMV.y = 0;
+		else
+			if (x == 1) /* left macroblock does not have any vector now */
+				Data->predMV = (pMB - pParam->mb_width)->mvs[0]; /* top instead of median */
+			else if (y == 1) /* top macroblock doesn't have it's vector */
+				Data->predMV = (pMB - 1)->mvs[0]; /* left instead of median */
+			else Data->predMV = get_pmv2(pMBs, pParam->mb_width, 0, x, y, 0); /* else median */
+
+		pmv[2].x = Data->predMV.x;
+		pmv[2].y = Data->predMV.y;
 
 		if (!vector_repeats(pmv, 1))
 			CheckCandidate32I(pmv[1].x, pmv[1].y, Data, 1);
 		if (!vector_repeats(pmv, 2))
 			CheckCandidate32I(pmv[2].x, pmv[2].y, Data, 2);
 
-		if (*Data->iMinSAD > 4 * MAX_SAD00_FOR_SKIP) { /* diamond only if needed */
+		if (*Data->iMinSAD > 500) { /* diamond only if needed */
 			unsigned int mask = make_mask(pmv, 3, *Data->dir);
 			DiamondSearch(Data->currentMV->x, Data->currentMV->y, Data, mask, CheckCandidate32I);
-		}
-	}
+		} else simplicity++;
+
+		if (*Data->iMinSAD > 500) /* refinement from 2-pixel to 1-pixel */
+			SubpelRefine(Data, CheckCandidate32I);
+		else simplicity++;
+	} else simplicity++;
 
 	for (i = 0; i < 4; i++) {
 		MACROBLOCK * MB = &pMBs[x + (i&1) + (y+(i>>1)) * pParam->mb_width];
 		MB->mvs[0] = MB->mvs[1] = MB->mvs[2] = MB->mvs[3] = Data->currentMV[i];
 		MB->mode = MODE_INTER;
-		MB->sad16 = Data->iMinSAD[i+1];
+		/* if we skipped some search steps, we have to assume that SAD would be lower with them */
+		MB->sad16 = Data->iMinSAD[i+1] - (simplicity<<7);
 	}
 }
 
 #define INTRA_THRESH	2200
-#define INTER_THRESH	50
+#define INTER_THRESH	40
 #define INTRA_THRESH2	95
 
 int
@@ -2296,6 +2305,7 @@ MEanalysis(	const IMAGE * const pRef,
 	Data.temp = temp;
 	Data.dir = &dir;
 	Data.qpel = (pParam->vol_flags & XVID_VOL_QUARTERPEL)? 1: 0;
+	Data.qpel_precision = 0;
 
 	if (intraCount != 0) {
 		if (intraCount < 10) // we're right after an I frame
@@ -2305,8 +2315,8 @@ MEanalysis(	const IMAGE * const pRef,
 				IntraThresh -= (IntraThresh * (maxIntra - 8*(maxIntra - intraCount)))/maxIntra;
 	}
 
-	InterThresh -= 12 * bCount;
-	if (InterThresh < 15 + b_thresh) InterThresh = 15 + b_thresh;
+	InterThresh -= 20 * bCount;
+	if (InterThresh < 10 + b_thresh) InterThresh = 10 + b_thresh;
 
 	if (sadInit) (*sadInit) ();
 
@@ -2338,10 +2348,10 @@ MEanalysis(	const IMAGE * const pRef,
 				}
 
 				if (pMB->mvs[0].x == 0 && pMB->mvs[0].y == 0)
-					if (dev > 500 && pMB->sad16 < 1000)
+					if (dev > 1000 && pMB->sad16 < 1000)
 						sSAD += 1000;
 
-				sSAD += (dev < 3000) ? pMB->sad16 : pMB->sad16/2; /* blocks with big contrast differences usually have large SAD - while they look very good in b-frames */
+				sSAD += (dev < 4000) ? pMB->sad16 : pMB->sad16/2; /* blocks with big contrast differences usually have large SAD - while they look very good in b-frames */
 			}
 		}
 	}
