@@ -1130,18 +1130,23 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	static const unsigned int vol_id = 0;
 	int vol_ver_id=1;
 	int profile = 0x03;	/* simple profile/level 3 */
+    int vol_type_ind=VIDOBJLAY_TYPE_SIMPLE;
 
 	if ( (pParam->vol_flags & XVID_QUARTERPEL) ||  
          (pParam->vol_flags & XVID_GMC) || 
 		 (pParam->vol_flags & XVID_REDUCED_ENABLE))
 		vol_ver_id = 2;
 
-	if ((pParam->vol_flags & XVID_REDUCED_ENABLE))
+    if ((pParam->vol_flags & XVID_REDUCED_ENABLE)) {
 		profile = 0x93;	/* advanced realtime simple profile/level 3 */
+        vol_type_ind = VIDOBJLAY_TYPE_ART_SIMPLE;
+    }
 
 	if ((pParam->vol_flags & XVID_QUARTERPEL) || 
-        (pParam->vol_flags & XVID_GMC))
+        (pParam->vol_flags & XVID_GMC)) {
 		profile = 0xf3;	/* advanced simple profile/level 2 */
+        vol_type_ind = VIDOBJLAY_TYPE_ASP;
+    }
 
 	// visual_object_sequence_start_code
 //	BitstreamPad(bs);
