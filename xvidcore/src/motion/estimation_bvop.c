@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_bvop.c,v 1.1.2.9 2003-12-18 02:53:30 Isibaar Exp $
+ * $Id: estimation_bvop.c,v 1.1.2.10 2003-12-18 13:26:48 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -841,6 +841,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 	uint32_t skip_sad;
 
 	const MACROBLOCK * const b_mbs = b_reference->mbs;
+	MACROBLOCK *const pMBs = frame->mbs;
 
 	VECTOR f_predMV, b_predMV;
 
@@ -869,12 +870,15 @@ MotionEstimationBVOP(MBParam * const pParam,
 			MACROBLOCK * const pMB = frame->mbs + i + j * pParam->mb_width;
 			const MACROBLOCK * const b_mb = b_mbs + i + j * pParam->mb_width;
 			int interpol_search;
+			int bf_search = 0;
+			int bf_thresh1, bf_thresh2;
 
 /* special case, if collocated block is SKIPed in P-VOP: encoding is forward (0,0), cpb=0 without further ado */
 			if (b_reference->coding_type != S_VOP)
 				if (b_mb->mode == MODE_NOT_CODED) {
 					pMB->mode = MODE_NOT_CODED;
 					pMB->mvs[0] = pMB->b_mvs[0] = zeroMV;
+					pMB->sad16 = 0;
 					continue;
 				}
 			
@@ -897,7 +901,37 @@ MotionEstimationBVOP(MBParam * const pParam,
 									&best_sad,
 									&Data);
 
-			if (pMB->mode == MODE_DIRECT_NONE_MV) continue;
+			if (pMB->mode == MODE_DIRECT_NONE_MV) {
+				pMB->sad16 = best_sad;
+				continue;
+			}
+
+			if (frame->motion_flags & XVID_ME_BFRAME_EARLYSTOP) {
+
+				if(i > 0 && j > 0 && i < pParam->mb_width) {
+					bf_thresh1 = ((&pMBs[(i-1) + j * pParam->mb_width])->sad16 + 
+								(&pMBs[i + (j-1) * pParam->mb_width])->sad16 +
+								(&pMBs[(i+1) + (j-1) * pParam->mb_width])->sad16) / 3;
+
+					if (((&pMBs[(i-1) + j * pParam->mb_width])->mode != MODE_FORWARD) &&
+						((&pMBs[(i-1) + j * pParam->mb_width])->mode != MODE_BACKWARD) &&
+						((&pMBs[(i-1) + j * pParam->mb_width])->mode != MODE_INTERPOLATE))
+							bf_search++;
+
+					if (((&pMBs[i + (j - 1) * pParam->mb_width])->mode != MODE_FORWARD) &&
+						((&pMBs[i + (j - 1) * pParam->mb_width])->mode != MODE_BACKWARD) &&
+						((&pMBs[i + (j - 1) * pParam->mb_width])->mode != MODE_INTERPOLATE))
+							bf_search++;
+
+					if (((&pMBs[(i + 1) + (j - 1) * pParam->mb_width])->mode != MODE_FORWARD) &&
+						((&pMBs[(i + 1) + (j - 1) * pParam->mb_width])->mode != MODE_BACKWARD) &&
+						((&pMBs[(i + 1) + (j - 1) * pParam->mb_width])->mode != MODE_INTERPOLATE))
+						bf_search++;
+				}
+
+				if ((best_sad < bf_thresh1) && (bf_search == 3))
+					continue;
+			}
 
 			/* forward search */
 			SearchBF(f_ref, f_refH->y, f_refV->y, f_refHV->y,
@@ -942,15 +976,19 @@ MotionEstimationBVOP(MBParam * const pParam,
 			switch (pMB->mode) {
 				case MODE_FORWARD:
 					f_predMV = Data.qpel ? pMB->qmvs[0] : pMB->mvs[0];
+					pMB->sad16 = best_sad;
 					break;
 				case MODE_BACKWARD:
 					b_predMV = Data.qpel ? pMB->b_qmvs[0] : pMB->b_mvs[0];
+					pMB->sad16 = best_sad;
 					break;
 				case MODE_INTERPOLATE:
 					f_predMV = Data.qpel ? pMB->qmvs[0] : pMB->mvs[0];
 					b_predMV = Data.qpel ? pMB->b_qmvs[0] : pMB->b_mvs[0];
+					pMB->sad16 = best_sad;
 					break;
 				default:
+					pMB->sad16 = best_sad;
 					break;
 			}
 		}

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.56 2003-12-18 02:53:30 Isibaar Exp $
+ * $Id: xvid.h,v 1.27.2.57 2003-12-18 13:26:40 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -659,6 +659,8 @@ extern int xvid_encore(void *handle, int opt, void *param1, void *param2);
 #define XVID_ME_DETECT_STATIC_MOTION  (1<<24) /* speed-up ME by detecting stationary scenes */
 #define XVID_ME_SKIP_DELTASEARCH	  (1<<26) /* speed-up by skipping b-frame delta search */
 #define XVID_ME_FAST_MODEINTERPOLATE  (1<<27) /* speed-up by partly skipping interpolate mode */
+#define XVID_ME_BFRAME_EARLYSTOP	  (1<<28) /* speed-up by early exiting b-search */
+
 /* Unused */
 #define XVID_ME_UNRESTRICTED16        (1<<20) /* unrestricted ME, not implemented */
 #define XVID_ME_OVERLAPPING16         (1<<21) /* overlapping ME, not implemented */
