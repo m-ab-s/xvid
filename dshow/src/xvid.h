@@ -9,8 +9,8 @@ extern "C" {
 //	global
 // ==========================================
 
-// API Version: 2.0
-#define API_VERSION ((2 << 16) | (0))
+// API Version: 2.1
+#define API_VERSION ((2 << 16) | (1))
 
 // cpu features
 #define XVID_CPU_MMX		0x00000001
@@ -104,13 +104,22 @@ int xvid_decore(void * handle,
 #define XVID_HALFPEL			0x00000040		/* use halfpel interpolation */
 #define XVID_ADAPTIVEQUANT		0x00000080
 #define XVID_LUMIMASKING		0x00000100
+#define XVID_LATEINTRA			0x00000200
 
-#define XVID_INTER4V			0x00000800
+#define XVID_INTERLACING		0x00000400		/* enable interlaced encoding */
+#define XVID_TOPFIELDFIRST		0x00000800		/* set top-field-first flag (cosmetic only) */
+#define XVID_ALTERNATESCAN		0x00001000		/* ?? sets alternate vertical scan flag */
 
-#define XVID_ME_ZERO			0x00001000
-#define XVID_ME_LOGARITHMIC		0x00002000
-#define XVID_ME_FULLSEARCH		0x00004000
-#define XVID_ME_PMVFAST			0x00008000
+#define XVID_HINTEDME_GET		0x00002000		/* receive mv hint data from core (1st pass) */
+#define XVID_HINTEDME_SET		0x00004000		/* send mv hint data to core (2nd pass) */
+
+#define XVID_INTER4V			0x00008000
+
+#define XVID_ME_ZERO			0x00010000
+#define XVID_ME_LOGARITHMIC		0x00020000
+#define XVID_ME_FULLSEARCH		0x00040000
+#define XVID_ME_PMVFAST			0x00080000
+#define XVID_ME_EPZS			0x00100000
 
 #define PMV_HALFPELDIAMOND16 	0x00010000
 #define PMV_HALFPELREFINE16 	0x00020000
@@ -119,6 +128,7 @@ int xvid_decore(void * handle,
 #define PMV_QUICKSTOP16	   		0x00100000 		/* like early, but without any more refinement */
 #define PMV_UNRESTRICTED16   	0x00200000		/* unrestricted ME, not implemented */
 #define PMV_OVERLAPPING16   	0x00400000		/* overlapping ME, not implemented */
+#define PMV_USESQUARES16		0x00800000		
 
 #define PMV_HALFPELDIAMOND8 	0x01000000
 #define PMV_HALFPELREFINE8 		0x02000000
@@ -127,21 +137,59 @@ int xvid_decore(void * handle,
 #define PMV_QUICKSTOP8	   		0x10000000 		/* like early, but without any more refinement */
 #define PMV_UNRESTRICTED8   	0x20000000		/* unrestricted ME, not implemented */
 #define PMV_OVERLAPPING8   		0x40000000		/* overlapping ME, not implemented */
+#define PMV_USESQUARES8			0x80000000		
+
 
 typedef struct
 {
 	int width, height;
 	int fincr, fbase;		// frame increment, fbase. each frame = "fincr/fbase" seconds
-	int bitrate;			// the bitrate of the target encoded stream, in bits/second
-	int rc_buffersize;		// the rate control buffersize / max. allowed deviation
+	int rc_bitrate;					// the bitrate of the target encoded stream, in bits/second
+	int rc_reaction_delay_factor;	// how fast the rate control reacts - lower values are faster
+	int rc_averaging_period;		// as above
+	int rc_buffer;					// as above
 	int max_quantizer;		// the upper limit of the quantizer
 	int min_quantizer;		// the lower limit of the quantizer
 	int max_key_interval;	// the maximum interval between key frames
-
+#ifdef BFRAMES
+	int max_bframes;		// max sequential bframes (0=disable bframes)
+	int bquant_ratio;		// bframe quantizer multipier (percentage).
+							// used only when bquant < 1
+							// eg. 200 = x2 multiplier
+	                        //		quant = ((past_quant + future_quant) * bquant_ratio)/200
+#endif
 	void * handle;			// [out] encoder instance handle
 						
 } XVID_ENC_PARAM;
 
+
+typedef struct
+{
+	int x;
+	int y;
+} VECTOR;
+
+typedef struct
+{
+	int mode;				// macroblock mode
+	VECTOR mvs[4];
+} MVBLOCKHINT;
+
+typedef struct
+{
+	int intra;				// frame intra choice
+	int fcode;				// frame fcode
+	MVBLOCKHINT * block;	// caller-allocated array of block hints (mb_width * mb_height)
+} MVFRAMEHINT;
+
+typedef struct
+{
+	int rawhints;			// if set, use MVFRAMEHINT, else use compressed buffer
+
+	MVFRAMEHINT mvhint;
+	void * hintstream;		// compressed hint buffer
+	int hintlength;			// length of buffer (bytes)
+} HINTINFO;
 
 typedef struct
 {
@@ -158,6 +206,13 @@ typedef struct
     int quant;				// [in] frame quantizer (vbr)
     int intra;				// [in]	force intra frame (vbr only)
 							// [out] intra state
+	HINTINFO hint;			// [in/out] mv hint information
+
+#ifdef BFRAMES
+	int bquant;				// [in] bframe quantizer
+	int input_consumed;		// [out]
+#endif
+
 } XVID_ENC_FRAME;
 
 
