@@ -21,7 +21,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.38 2003-12-10 22:58:32 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.39 2003-12-16 09:24:48 chl Exp $
  *
  ****************************************************************************/
 
@@ -363,7 +363,7 @@ main(int argc,
  *                            Arguments checking
  ****************************************************************************/
 
-	if (XDIM <= 0 || XDIM >= 2048 || YDIM <= 0 || YDIM >= 2048) {
+	if (XDIM <= 0 || XDIM >= 4096 || YDIM <= 0 || YDIM >= 4096) {
 		fprintf(stderr,
 				"Trying to retreive width and height from PGM header\n");
 		ARG_INPUTTYPE = 1;		/* pgm */
@@ -1095,7 +1095,7 @@ enc_main(unsigned char *image,
 	/* Set up core's general features */
 	xvid_enc_frame.vop_flags = vop_presets[ARG_QUALITY];
 	if (ARG_GMC)
-		xvid_enc_frame.vop_flags |= XVID_ME_GME_REFINE;
+		xvid_enc_frame.vol_flags |= XVID_ME_GME_REFINE;
 
     if (ARG_VOPDEBUG) {
         xvid_enc_frame.vop_flags |= XVID_VOP_DEBUG;
