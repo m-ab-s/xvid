@@ -2,7 +2,11 @@ EXPORTS
 	xvid_global; 
 	xvid_decore; 
 	xvid_encore; 
+	xvid_plugin_fixed;
+	xvid_plugin_cbr;
+	xvid_plugin_2pass1;
 	xvid_plugin_lumimasking; 
 	xvid_plugin_dump; 
+	xvid_plugin_psnr; 
 	@DIVX4_ENCORE@
 	@DIVX4_DECORE@

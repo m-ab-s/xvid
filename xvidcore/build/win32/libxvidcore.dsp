@@ -1363,7 +1363,19 @@ SOURCE=..\..\src\xvid.h
 # End Group
 # Begin Source File
 
+SOURCE=..\..\src\plugins\plugin_2pass1.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\plugins\plugin_cbr.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\plugins\plugin_dump.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\plugins\plugin_fixed.c
 # End Source File
 # Begin Source File
 
