@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.31 2004-02-03 02:56:57 syskin Exp $
+ * $Id: decoder.c,v 1.49.2.32 2004-02-15 13:26:04 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1526,7 +1526,7 @@ repeat:
 		dec->frames++;
 	}
 
-	BitstreamByteAlign(&bs);
+	/* BitstreamByteAlign(&bs); */
 
 	/* low_delay_default mode: repeat in packed_mode */
 	if (dec->low_delay_default && dec->packed_mode && output == 0 && success == 0) {
@@ -1557,5 +1557,5 @@ done :
 	emms();
 	stop_global_timer();
 
-	return BitstreamPos(&bs) / 8;	/* number of bytes consumed */
+	return (BitstreamPos(&bs) + 7) / 8;	/* number of bytes consumed */
 }
