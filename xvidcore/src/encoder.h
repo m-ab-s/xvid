@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.27.2.2 2003-03-13 11:07:20 suxen_drol Exp $
+ *  $Id: encoder.h,v 1.27.2.3 2003-03-15 14:32:56 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -79,6 +79,8 @@ typedef struct
 	uint32_t edged_height;
 	uint32_t mb_width;
 	uint32_t mb_height;
+
+    int plugin_flags;
 
 	/* frame rate increment & base */
 	uint32_t fincr;
@@ -138,6 +140,7 @@ typedef struct
 
 typedef struct
 {
+    int frame_num;
 	xvid_vol_t vol_flags;
     xvid_vop_t vop_flags;
 	xvid_motion_t motion_flags;
@@ -174,9 +177,7 @@ typedef struct
 	int bitrate;
 
     // plugins
-
-    int plugin_flags;
-    int num_plugins;
+    int num_plugins;    /* note: we store plugin flags in MBPARAM */
     xvid_enc_plugin_t * plugins;
 
     // dquant
@@ -188,7 +189,8 @@ typedef struct
 	FRAMEINFO *current;
 	FRAMEINFO *reference;
 
-	IMAGE sOriginal;
+	IMAGE sOriginal;    /* original image copy for i/p frames */
+    IMAGE sOriginal2;   /* original image copy for b-frames */
 	IMAGE vInterH;
 	IMAGE vInterV;
 	IMAGE vInterVf;

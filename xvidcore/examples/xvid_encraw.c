@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.5 2003-03-13 11:07:20 suxen_drol Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.6 2003-03-15 14:32:56 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -45,6 +45,7 @@
 #endif
 
 #include "xvid.h"
+
 
 /*****************************************************************************
  *                            Quality presets
@@ -85,6 +86,7 @@ static xvid_vop_t const vop_presets[] = {
 #define ABS_MAXFRAMENR 9999
 
 static int   ARG_STATS = 0;
+static int   ARG_DUMP = 0;
 static int   ARG_BITRATE = 900;
 static int   ARG_QUANTI = 0;
 static int   ARG_QUALITY = 5;
@@ -114,7 +116,7 @@ static int   ARG_PACKED = 0;
  *                     Nasty global vars ;-)
  ***************************************************************************/
 
-static int i,filenr = 0;
+static int i;
 
 /* the path where to save output */
 static char filepath[256] = "./";
@@ -163,13 +165,16 @@ int main(int argc, char *argv[])
 	double totalenctime=0.;
   
 	int totalsize;
-	int status;
+	int result;
 	int m4v_size;
     int key;
 	int stats_type;
     int stats_quant;
     int stats_length;
 	int use_assembler=0;
+
+    int input_num;
+    int output_num;
   
 	char filename[256];
   
@@ -229,6 +234,9 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp("-s", argv[i]) == 0) {
 			ARG_STATS = 1;
+		}
+		else if (strcmp("-dump", argv[i]) == 0) {
+			ARG_DUMP = 1;
 		}
 		else if (strcmp("-t", argv[i]) == 0 && i < argc - 1 ) {
 			i++;
@@ -323,10 +331,10 @@ int main(int argc, char *argv[])
  ****************************************************************************/
 
 
-	status = enc_init(use_assembler);
-	if (status)    
+	result = enc_init(use_assembler);
+	if (result)    
 	{ 
-		fprintf(stderr, "Encore INIT problem, return value %d\n", status);
+		fprintf(stderr, "Encore INIT problem, return value %d\n", result);
 		goto release_all;
 	}
 
@@ -352,36 +360,44 @@ int main(int argc, char *argv[])
 
 	totalsize = 0;
 
+    result = 0;
+
+    input_num = 0;  /* input frame counter */
+    output_num = 0; /* output frame counter */
+
 	do {
 
 		char *type;
 		int stats[3];
 
-		if(ARG_INPUTTYPE) {
-			/* read PGM data (YUV-format) */
-			status = read_pgmdata(in_file, in_buffer);
-		} else {
-			/* read raw data (YUV-format) */
-			status = read_yuvdata(in_file, in_buffer);
-		}
-	      
-		if(status) {
-			/* Couldn't read image, most likely end-of-file */
-			continue;
-		}
+        if (input_num >= ARG_MAXFRAMENR)
+        {
+            result = 1;
+        }
+
+        if (!result)
+        {
+		    if(ARG_INPUTTYPE) {
+			    /* read PGM data (YUV-format) */
+			    result = read_pgmdata(in_file, in_buffer);
+		    } else {
+			    /* read raw data (YUV-format) */
+			    result = read_yuvdata(in_file, in_buffer);
+		    }
+        }
 
 /*****************************************************************************
  *                       Encode and decode this frame
  ****************************************************************************/
 
 		enctime = msecond();
-		m4v_size = enc_main(in_buffer, mp4_buffer, &key, &stats_type, &stats_quant, &stats_length, stats);
+        m4v_size = enc_main(!result?in_buffer:0, mp4_buffer, &key, &stats_type, &stats_quant, &stats_length, stats);
 		enctime = msecond() - enctime;
 
 		/* Write the Frame statistics */
        
-		printf("Frame %5d: key=%i, time(ms)=%6.1f, length=%7d",
-			   (int)filenr,
+		printf("%5d: key=%i, time(ms)=%6.1f, length=%7d",
+            !result?input_num:-1,
 			   key,
 			   (float)enctime,
 			   (int)m4v_size);
@@ -407,39 +423,32 @@ int main(int argc, char *argv[])
 	        }
 
             printf(" | type=%s quant=%2d, length=%7d", type, stats_quant, stats_length);
-
-            if(ARG_STATS) {
-		        printf(", psnr y = %2.2f, psnr u = %2.2f, psnr v = %2.2f",
-			           (stats[0] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[0]/((float)(XDIM)*(YDIM))),
-			           (stats[1] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[1]/((float)(XDIM)*(YDIM)/4)),
-			           (stats[2] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[2]/((float)(XDIM)*(YDIM)/4)));
-            }
 		}
 
 		printf("\n");
 
+        if (m4v_size < 0) {
+            break;
+        }
 
 		/* Update encoding time stats */
 		totalenctime += enctime;
 		totalsize += m4v_size;
 
-        /* Not coded frames return 0 */
-		if(m4v_size == 0) goto next_frame;
-
-
 /*****************************************************************************
  *                       Save stream to file
  ****************************************************************************/
 
-		if (ARG_SAVEMPEGSTREAM)
+		if (m4v_size>0 && ARG_SAVEMPEGSTREAM)
 		{
 			/* Save single files */
 			if (out_file == NULL) {
-				sprintf(filename, "%sframe%05d.m4v", filepath, filenr);
+				sprintf(filename, "%sframe%05d.m4v", filepath, output_num);
 				out_file = fopen(filename, "wb");
 				fwrite(mp4_buffer, m4v_size, 1, out_file);
 				fclose(out_file);
 				out_file = NULL;
+                output_num++;
 			}
 			else {
 
@@ -449,14 +458,13 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		filenr++;
+		input_num++;
 
-	next_frame:
 		/* Read the header if it's pgm stream */ 
-		if (ARG_INPUTTYPE)
-			status = read_pgmheader(in_file);
+        if (!result && ARG_INPUTTYPE)
+			result = read_pgmheader(in_file);
 
-	} while ( (!status) && (filenr<ARG_MAXFRAMENR) );
+	} while (1);
 
 	
       
@@ -464,8 +472,13 @@ int main(int argc, char *argv[])
  *         Calculate totals and averages for output, print results
  ****************************************************************************/
 
-	totalsize    /= filenr;
-	totalenctime /= filenr;
+    if (input_num > 0) {
+	    totalsize    /= input_num;
+	    totalenctime /= input_num;
+    }else{
+        totalsize = -1;
+        totalenctime = -1;
+    }
 
 	printf("Avg: enctime(ms) =%7.2f, fps =%7.2f, length(bytes) = %7d\n",
 		   totalenctime, 1000/totalenctime, (int)totalsize);
@@ -479,9 +492,9 @@ int main(int argc, char *argv[])
 
 	if (enc_handle)
 	{	
-		status = enc_stop();
-		if (status)    
-			fprintf(stderr, "Encore RELEASE problem return value %d\n", status);
+		result = enc_stop();
+		if (result)    
+			fprintf(stderr, "Encore RELEASE problem return value %d\n", result);
 	}
 
 	if(in_file)
@@ -662,7 +675,7 @@ static int enc_init(int use_assembler)
 {
 	int xerr;
 
-    /* xvid_enc_plugin_t plugins[1]; */
+    xvid_enc_plugin_t plugins[2];
 	
 	xvid_gbl_init_t   xvid_gbl_init;
 	xvid_enc_create_t xvid_enc_create;
@@ -704,11 +717,20 @@ static int enc_init(int use_assembler)
 	xvid_enc_create.width = XDIM;
 	xvid_enc_create.height = YDIM;
 
-    /* init plugins 
-    plugins[0].func =  rawenc_debug;
-    plugins[0].param = NULL;
-    xvid_enc_create.num_plugins = 1;
-    xvid_enc_create.plugins = plugins; */
+    /* init plugins  */
+
+    xvid_enc_create.plugins = plugins;
+    xvid_enc_create.num_plugins = 0;
+    if (ARG_STATS) {
+        plugins[xvid_enc_create.num_plugins].func = xvid_plugin_psnr;
+        plugins[xvid_enc_create.num_plugins].param = NULL;
+        xvid_enc_create.num_plugins++;
+    }
+    if (ARG_DUMP) {
+        plugins[xvid_enc_create.num_plugins].func = xvid_plugin_dump;
+        plugins[xvid_enc_create.num_plugins].param = NULL;
+        xvid_enc_create.num_plugins++;
+    }
 
 	/* No fancy thread tests */
 	xvid_enc_create.num_threads = 0;
@@ -735,7 +757,6 @@ static int enc_init(int use_assembler)
 
 	/* Global encoder options */
 	xvid_enc_create.global = 0;
-    if (ARG_STATS) xvid_enc_create.global |= XVID_EXTRASTATS_ENABLE;
     if (ARG_PACKED) xvid_enc_create.global |= XVID_PACKED;
 
 	/* I use a small value here, since will not encode whole movies, but short clips */
@@ -782,9 +803,13 @@ static int enc_main(unsigned char* image,
 	xvid_enc_frame.length = -1;
 
 	/* Initialize input image fields */
-	xvid_enc_frame.input.plane[0]  = image;
-	xvid_enc_frame.input.csp       = XVID_CSP_I420;
-	xvid_enc_frame.input.stride[0] = XDIM;
+    if (image) {
+	    xvid_enc_frame.input.plane[0]  = image;
+	    xvid_enc_frame.input.csp       = XVID_CSP_I420;
+	    xvid_enc_frame.input.stride[0] = XDIM;
+    }else{
+        xvid_enc_frame.input.csp       = XVID_CSP_NULL;
+    }
 
 	/* Set up core's general features */
 	xvid_enc_frame.vol_flags = vol_presets[ARG_QUALITY];
@@ -807,7 +832,6 @@ static int enc_main(unsigned char* image,
 	xvid_enc_frame.quant_inter_matrix = NULL;
 
 	/* Encode the frame */
-	xvid_enc_frame.vop_flags |= (ARG_STATS)?XVID_EXTRASTATS:0;
 	ret = xvid_encore(enc_handle, XVID_ENC_ENCODE, &xvid_enc_frame, &xvid_enc_stats);
 
     *key = (xvid_enc_frame.out_flags & XVID_KEYFRAME);

@@ -1068,7 +1068,7 @@ BitstreamReadHeaders(Bitstream * bs,
 				BitstreamSkip(bs, 8);
 			}
 
-			DPRINTF(DPRINTF_STARTCODE, "<user_data>: %s\n", tmp);
+			DPRINTF(DPRINTF_STARTCODE, "<user_data>: %s", tmp);
 
 		    /* divx detection */
 			i = sscanf(tmp, "DivX%dBuild%d%c", &version, &build, &packed);

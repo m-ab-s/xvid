@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.5 2003-03-13 11:07:20 suxen_drol Exp $
+ * $Id: xvid.h,v 1.27.2.6 2003-03-15 14:32:56 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -177,8 +177,8 @@ typedef struct {
 	int version;
 	xvid_image_t input;	/* [in]	input image & colorspace */
 	xvid_image_t output;	/* [in]	output image & colorspace */
-	int width;				/* [in] width */
-	int height;				/* [in] height */
+ 	int width;				/* [in] width */
+ 	int height;				/* [in] height */
 	int interlacing;		/* [in] interlacing */
 } xvid_gbl_convert_t;
 
@@ -271,7 +271,7 @@ typedef struct
 #define XVID_PLG_AFTER      4
 
 /* xvid_plg_info_t.flags */
-#define XVID_PLG_ORIGINAL   1  /* plugin requires a copy of the original (uncompressed) image */
+#define XVID_REQORIGINAL    1  /* plugin requires a copy of the original (uncompressed) image */
 
 
 typedef struct
@@ -295,13 +295,19 @@ typedef struct
 typedef struct
 {
     int version;
-   
-    xvid_image_t reference;
-    xvid_image_t current;
-    xvid_image_t original;	    /* after: points the original (uncompressed) copy of the current frame */
 
-    int type;                   /* [in,out] */
-    int quant;                  /* [in,out] */
+    int width;              /* [out] */
+    int height;             /* [out] */
+	int fincr;              /* [out] */
+    int fbase;              /* [out] */
+    
+    xvid_image_t reference; /* [out] -> [out] */
+    xvid_image_t current;   /* [out] -> [in,out] */
+    xvid_image_t original;	/* [out] after: points the original (uncompressed) copy of the current frame */
+    int frame_num;          /* [out] frame number */
+
+    int type;               /* [in,out] */
+    int quant;              /* [in,out] */
 
     unsigned char * qscale;	/* [in,out]	pointer to quantizer table */
 	int qscale_stride;		/* [in,out]	quantizer scale stride */
@@ -343,6 +349,9 @@ typedef struct
     void * param;
 } xvid_enc_plugin_t;
 
+xvid_plugin_func xvid_plugin_psnr;  /* stdout psnr calculator */
+xvid_plugin_func xvid_plugin_dump;  /* dump before and after yuvpgms */
+
 
 
 /*****************************************************************************
@@ -363,7 +372,6 @@ typedef enum
 {
     XVID_PACKED		        = 0x00000001,	/* packed bitstream */
     XVID_CLOSED_GOP	        = 0x00000002,	/* closed_gop:	was DX50BVOP dx50 bvop compatibility */
-    XVID_EXTRASTATS_ENABLE  = 0x00000004
 /*define XVID_VOL_AT_IVOP	0x00000008	 write vol at every ivop: WIN32/divx compatibility */
 /*define XVID_FORCE_VOL		0x00000008	 XXX: when vol-based parameters are changed, insert an ivop NOT recommended */
 } xvid_global_t;
@@ -383,7 +391,7 @@ typedef enum {
 /* vop-based flags */
 typedef enum {
     XVID_DEBUG              = 0x00000001,
-    XVID_EXTRASTATS         = 0x00000002,
+
     XVID_HALFPEL            = 0x00000004, /* use halfpel interpolation */
     XVID_INTER4V            = 0x00000008,
     XVID_LUMIMASKING        = 0x00000010,

@@ -382,7 +382,7 @@ MBTransQuantInterBVOP(const MBParam * pParam,
 	 * As an exception to the previous rule, if we are willing to have extra
 	 * stats then we have to DeQuant, iDCT and Transfer back the data :-)
 	 */
-	if(frame->vop_flags & XVID_EXTRASTATS) {
+	if((pParam->plugin_flags & XVID_REQORIGINAL)) {
 		MBDeQuantInter(pParam,frame->quant,data,qcoeff,cbp);
 		MBiDCT(data,cbp);
 		MBTransAdd(pParam,frame,pMB,x_pos,y_pos,data,cbp);

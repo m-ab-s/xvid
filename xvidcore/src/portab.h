@@ -23,7 +23,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: portab.h,v 1.46.2.1 2003-02-22 08:49:44 suxen_drol Exp $
+ * $Id: portab.h,v 1.46.2.2 2003-03-15 14:32:56 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -136,8 +136,9 @@
             char buf[DPRINTF_BUF_SZ];
             va_start(args, fmt);
             vsprintf(buf, fmt, args);
+            strcat(buf,"\n");
             OutputDebugString(buf);
-            fprintf(stderr, "%s\n", buf);
+            fputs(buf, stderr);
          }
      }
 #    else

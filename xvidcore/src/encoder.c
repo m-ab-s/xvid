@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.4 2003-03-13 11:07:20 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.95.2.5 2003-03-15 14:32:56 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -47,7 +47,6 @@
 #include "utils/mbfunctions.h"
 #include "bitstream/bitstream.h"
 #include "bitstream/mbcoding.h"
-#include "utils/ratecontrol.h"
 #include "utils/emms.h"
 #include "bitstream/mbcoding.h"
 #include "quant/adapt_quant.h"
@@ -182,7 +181,7 @@ enc_create(xvid_enc_create_t * create, xvid_enc_rc_t * rc)
         memset(&pinfo, 0, sizeof(xvid_plg_info_t));
         pinfo.version = XVID_VERSION;
         if (create->plugins[n].func(0, XVID_PLG_INFO, &pinfo, 0) >= 0) {
-            pEnc->plugin_flags |= pinfo.flags;
+            pEnc->mbParam.plugin_flags |= pinfo.flags;
         }
 
         memset(&pcreate, 0, sizeof(xvid_plg_create_t));
@@ -197,7 +196,6 @@ enc_create(xvid_enc_create_t * create, xvid_enc_rc_t * rc)
         if (create->plugins[n].func(0, XVID_PLG_CREATE, &pcreate, &pEnc->plugins[n].param) >= 0) {
             pEnc->plugins[n].func = create->plugins[n].func;
         }
-
     }
 
     /* temp dquants */
@@ -219,20 +217,6 @@ enc_create(xvid_enc_create_t * create, xvid_enc_rc_t * rc)
 
 	/* Bitrate allocator defaults 
 
-	if (create->rc_bitrate <= 0)
-		create->rc_bitrate = 900000;
-
-	if (create->rc_reaction_delay_factor <= 0)
-		create->rc_reaction_delay_factor = 16;
-
-	if (create->rc_averaging_period <= 0)
-		create->rc_averaging_period = 100;
-
-	if (create->rc_buffer <= 0)
-		create->rc_buffer = 100;
-
-	
-
 	if ((create->min_quantizer <= 0) || (create->min_quantizer > 31))
 		create->min_quantizer = 1;
 
@@ -240,9 +224,7 @@ enc_create(xvid_enc_create_t * create, xvid_enc_rc_t * rc)
 		create->max_quantizer = 31;
 
 	if (create->max_quantizer < create->min_quantizer)
-		create->max_quantizer = create->min_quantizer;
-
-	pEnc->bitrate = create->rc_bitrate; */
+		create->max_quantizer = create->min_quantizer; */
 	
 
     /* allocate working frame-image memory */
@@ -267,8 +249,10 @@ enc_create(xvid_enc_create_t * create, xvid_enc_rc_t * rc)
 
 	/* allocate interpolation image memory */
 
-	if (create->global & XVID_EXTRASTATS_ENABLE)
-		image_null(&pEnc->sOriginal);
+    if ((pEnc->mbParam.plugin_flags & XVID_REQORIGINAL)) {
+        image_null(&pEnc->sOriginal);
+        image_null(&pEnc->sOriginal2);
+    }
 
 	image_null(&pEnc->f_refh);
 	image_null(&pEnc->f_refv);
@@ -282,9 +266,14 @@ enc_create(xvid_enc_create_t * create, xvid_enc_rc_t * rc)
 	image_null(&pEnc->vInterHV);
 	image_null(&pEnc->vInterHVf);
 
-	if (create->global & XVID_EXTRASTATS_ENABLE)
-	{	if (image_create
+	if ((pEnc->mbParam.plugin_flags & XVID_REQORIGINAL)) {	
+        if (image_create
 			(&pEnc->sOriginal, pEnc->mbParam.edged_width,
+			 pEnc->mbParam.edged_height) < 0)
+			goto xvid_err_memory3;
+
+        if (image_create
+			(&pEnc->sOriginal2, pEnc->mbParam.edged_width,
 			 pEnc->mbParam.edged_height) < 0)
 			goto xvid_err_memory3;
 	}
@@ -421,15 +410,6 @@ enc_create(xvid_enc_create_t * create, xvid_enc_rc_t * rc)
 	pEnc->iFrameNum = 0;
 	pEnc->fMvPrevSigma = -1;
 
-    /* XXX: cleanup ratecontol when new code is ready */
-/*	if (create->rc_bitrate) {
-		RateControlInit(&pEnc->rate_control, create->rc_bitrate,
-						create->rc_reaction_delay_factor,
-						create->rc_averaging_period, create->rc_buffer,
-						create->fbase * 1000 / create->fincr,
-						create->max_quantizer, create->min_quantizer);
-	} */
-
     create->handle = (void *) pEnc;
 
 	init_timer();
@@ -476,8 +456,10 @@ enc_create(xvid_enc_create_t * create, xvid_enc_rc_t * rc)
 
   xvid_err_memory3:
 
-	if (pEnc->mbParam.global_flags & XVID_EXTRASTATS_ENABLE)
-	{	image_destroy(&pEnc->sOriginal, pEnc->mbParam.edged_width,
+	if ((pEnc->mbParam.plugin_flags & XVID_REQORIGINAL)) {	
+		image_destroy(&pEnc->sOriginal, pEnc->mbParam.edged_width,
+					  pEnc->mbParam.edged_height);
+		image_destroy(&pEnc->sOriginal2, pEnc->mbParam.edged_width,
 					  pEnc->mbParam.edged_height);
 	}
 
@@ -604,8 +586,10 @@ enc_destroy(Encoder * pEnc)
 	image_destroy(&pEnc->f_refhv, pEnc->mbParam.edged_width,
 				  pEnc->mbParam.edged_height);
 
-	if (pEnc->mbParam.global_flags & XVID_EXTRASTATS_ENABLE)
-	{	image_destroy(&pEnc->sOriginal, pEnc->mbParam.edged_width,
+	if ((pEnc->mbParam.plugin_flags & XVID_REQORIGINAL)) {	
+		image_destroy(&pEnc->sOriginal, pEnc->mbParam.edged_width,
+					  pEnc->mbParam.edged_height);
+		image_destroy(&pEnc->sOriginal2, pEnc->mbParam.edged_width,
 					  pEnc->mbParam.edged_height);
 	}
 
@@ -636,13 +620,18 @@ enc_destroy(Encoder * pEnc)
   call the plugins
   */
 
-static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, int opt, int * type, int * quant)
+static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original, int opt, int * type, int * quant)
 {
     int i;
     xvid_plg_data_t data;
 
     memset(&data, 0, sizeof(xvid_plg_data_t));
     data.version = XVID_VERSION;
+
+    data.width = pEnc->mbParam.width;
+    data.height = pEnc->mbParam.height;
+    data.fincr = pEnc->mbParam.fincr;
+    data.fbase = pEnc->mbParam.fbase;
 
     data.reference.csp = XVID_CSP_USER;
     data.reference.plane[0] = pEnc->reference->image.y;
@@ -660,8 +649,7 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, int opt, int * type,
     data.current.stride[1] = pEnc->mbParam.edged_width/2;
     data.current.stride[2] = pEnc->mbParam.edged_width/2;
 
-    data.original.csp = XVID_CSP_NULL;
-    /* todo: data.original */
+    data.frame_num = frame->frame_num;
 
     if (opt == XVID_PLG_BEFORE) {
         data.type = XVID_TYPE_AUTO;
@@ -672,6 +660,15 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, int opt, int * type,
         /* todo: vol,vop,motion flags */
     
     } else { // XVID_PLG_AFTER
+        if ((pEnc->mbParam.plugin_flags & XVID_REQORIGINAL)) {
+            data.original.csp = XVID_CSP_USER;
+            data.original.plane[0] = original->y;
+            data.original.plane[1] = original->u;
+            data.original.plane[2] = original->v;
+            data.original.stride[0] = pEnc->mbParam.edged_width;
+            data.original.stride[1] = pEnc->mbParam.edged_width/2;
+            data.original.stride[2] = pEnc->mbParam.edged_width/2;
+        }
 
         data.type = coding2type(frame->coding_type);
         data.quant = frame->quant;
@@ -707,10 +704,17 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, int opt, int * type,
 
 static __inline void inc_frame_num(Encoder * pEnc)
 {
+    pEnc->current->frame_num = pEnc->m_framenum;
 	pEnc->current->stamp = pEnc->mbParam.m_stamp;	/* first frame is zero */
-	pEnc->mbParam.m_stamp += pEnc->mbParam.fincr;
-
+	
+    pEnc->mbParam.m_stamp += pEnc->mbParam.fincr;
     pEnc->m_framenum++;	/* debug ticker */
+}
+
+static __inline void dec_frame_num(Encoder * pEnc)
+{
+    pEnc->mbParam.m_stamp -= pEnc->mbParam.fincr;
+    pEnc->m_framenum--;	/* debug ticker */
 }
 
 
@@ -736,8 +740,7 @@ set_timecodes(FRAMEINFO* pCur,FRAMEINFO *pRef, int32_t time_base)
 
 
 static void
-set_stats(xvid_enc_stats_t * stats, RateControl * rc,
-		  const MBParam * pParam, const FRAMEINFO * frame)
+set_stats(xvid_enc_stats_t * stats, const MBParam * pParam, const FRAMEINFO * frame)
 {
 	if (stats)
 	{
@@ -751,8 +754,6 @@ set_stats(xvid_enc_stats_t * stats, RateControl * rc,
 		stats->mblks = frame->sStat.mblks;
 		stats->ublks = frame->sStat.ublks;
 	}
-
-	RateControlUpdate(rc, frame->quant, frame->length, frame->coding_type==I_VOP );
 }
 
 
@@ -770,8 +771,6 @@ set_stats(xvid_enc_stats_t * stats, RateControl * rc,
  ****************************************************************************/
 
 
-/* XXX: dx50bvop broken! something todo with queue */
-
 int
 enc_encode(Encoder * pEnc,
 			   xvid_enc_frame_t * xFrame,
@@ -779,7 +778,6 @@ enc_encode(Encoder * pEnc,
 {
 	xvid_enc_frame_t * frame;
 	int type;
-	uint16_t x, y;
 	Bitstream bs;
 
 	if (XVID_MAJOR(xFrame->version) != 1 || (stats && XVID_MAJOR(stats->version) != 1))	/* v1.x.x */
@@ -835,59 +833,35 @@ enc_encode(Encoder * pEnc,
 
 
 	/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	 * bframe flush code
+	 * bframe flush code 
 	 * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
 
 repeat:
 
 	if (pEnc->flush_bframes)
 	{
-		if (pEnc->bframenum_head < pEnc->bframenum_tail)
-		{
+		if (pEnc->bframenum_head < pEnc->bframenum_tail) {
 		
 			DPRINTF(DPRINTF_DEBUG,"*** BFRAME (flush) bf: head=%i tail=%i   queue: head=%i tail=%i size=%i",
 					pEnc->bframenum_head, pEnc->bframenum_tail,
 					pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
 
-			if (pEnc->bframes[pEnc->bframenum_head]->vop_flags & XVID_EXTRASTATS) {
-				image_copy(&pEnc->sOriginal, &pEnc->bframes[pEnc->bframenum_head]->image,
+            if ((pEnc->mbParam.plugin_flags & XVID_REQORIGINAL)) {
+				image_copy(&pEnc->sOriginal2, &pEnc->bframes[pEnc->bframenum_head]->image,
 						   pEnc->mbParam.edged_width, pEnc->mbParam.height);
 			}
 
 			FrameCodeB(pEnc, pEnc->bframes[pEnc->bframenum_head], &bs);
 
-			if (pEnc->bframes[pEnc->bframenum_head]->vop_flags & XVID_EXTRASTATS) {
-				stats->sse_y =
-					plane_sse( pEnc->sOriginal.y, pEnc->bframes[pEnc->bframenum_head]->image.y,
-							   pEnc->mbParam.edged_width, pEnc->mbParam.width,
-							   pEnc->mbParam.height);
-
-				stats->sse_u =
-					plane_sse( pEnc->sOriginal.u, pEnc->bframes[pEnc->bframenum_head]->image.u,
-							   pEnc->mbParam.edged_width/2, pEnc->mbParam.width/2,
-							   pEnc->mbParam.height/2);
-
-				stats->sse_v =
-					plane_sse( pEnc->sOriginal.v, pEnc->bframes[pEnc->bframenum_head]->image.v,
-							   pEnc->mbParam.edged_width/2, pEnc->mbParam.width/2,
-							   pEnc->mbParam.height/2);		
-			}
-
-			set_stats(stats, &pEnc->rate_control, &pEnc->mbParam, pEnc->bframes[pEnc->bframenum_head]);
             emms();
-            call_plugins(pEnc, pEnc->current, XVID_PLG_AFTER, 0, 0);
+            set_stats(stats, &pEnc->mbParam, pEnc->bframes[pEnc->bframenum_head]);
+            call_plugins(pEnc, pEnc->bframes[pEnc->bframenum_head], &pEnc->sOriginal2, XVID_PLG_AFTER, 0, 0);
             emms();
 
 			pEnc->bframenum_head++;
 
-
 			goto done;
 		}
-
-		/* flush complete: reset counters */
-
-		pEnc->flush_bframes = 0;
-		pEnc->bframenum_head = pEnc->bframenum_tail = 0;
 
 		/* write an empty marker to the bitstream.
 	   
@@ -896,7 +870,7 @@ repeat:
 		   indentical to the future-referece frame.
 		*/
 
-		if ((pEnc->mbParam.global_flags & XVID_PACKED)) {
+		if ((pEnc->mbParam.global_flags & XVID_PACKED && pEnc->bframenum_tail > 0)) {
 			int tmp;
 			int bits;
 			
@@ -915,18 +889,22 @@ repeat:
 
 			/* add the not-coded length to the reference frame size */
 			pEnc->current->length += (BitstreamPos(&bs) - bits) / 8;
-			set_stats(stats, &pEnc->rate_control, &pEnc->mbParam, pEnc->current);
             emms();
-            call_plugins(pEnc, pEnc->current, XVID_PLG_AFTER, 0, 0);
+            set_stats(stats, &pEnc->mbParam, pEnc->current);
+            call_plugins(pEnc, pEnc->current, &pEnc->sOriginal, XVID_PLG_AFTER, 0, 0);
             emms();
 
-			// xFrame->out_flags |= XVID_PACKED_FIXUP?;
-
+            /* flush complete: reset counters */
+    		pEnc->flush_bframes = 0;
+		    pEnc->bframenum_head = pEnc->bframenum_tail = 0;
 			goto done;
 
 		}
-	}
 
+        /* flush complete: reset counters */
+		pEnc->flush_bframes = 0;
+		pEnc->bframenum_head = pEnc->bframenum_tail = 0;
+	}
 
 	/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	 * dequeue frame from the encoding queue
@@ -936,19 +914,35 @@ repeat:
 	{
 		if (xFrame->input.csp == XVID_CSP_NULL)	/* no futher input */
 		{
-			if (pEnc->bframenum_tail > 0)	/* are bframes */
+
+            if (!(pEnc->mbParam.global_flags & XVID_PACKED) && pEnc->mbParam.max_bframes > 0) {
+                emms();
+			    set_stats(stats, &pEnc->mbParam, pEnc->current);
+                call_plugins(pEnc, pEnc->current, &pEnc->sOriginal, XVID_PLG_AFTER, 0, 0);
+                emms();
+            }
+
+            /* if the very last frame is to be b-vop, we must change it to a p-vop */
+            if (pEnc->bframenum_tail > 0)
 			{
+
 				SWAP(FRAMEINFO*, pEnc->current, pEnc->reference);
 				pEnc->bframenum_tail--;
 				SWAP(FRAMEINFO*, pEnc->current, pEnc->bframes[pEnc->bframenum_tail]);
 
-				/* XXX: convert B-VOP to P-VOP */
-				pEnc->current->quant *= 2;
+				/* convert B-VOP to P-VOP */
+                pEnc->current->quant = ((pEnc->current->quant*100) - pEnc->mbParam.bquant_offset) / pEnc->mbParam.bquant_ratio;
+
+                if ((pEnc->mbParam.plugin_flags & XVID_REQORIGINAL)) {
+		            image_copy(&pEnc->sOriginal, &pEnc->current->image,
+		                   pEnc->mbParam.edged_width, pEnc->mbParam.height);
+                }
 
 				FrameCodeP(pEnc, &bs, 1, 0);
+
 				goto done_flush;
 			}
-			
+
 			emms();
 			return XVID_ERR_END;	/* end of stream reached */
 		}
@@ -961,15 +955,13 @@ repeat:
 	// remove frame from encoding-queue (head), and move it into the current
 	image_swap(&pEnc->current->image, &pEnc->queue[pEnc->queue_head].image);
 	frame = &pEnc->queue[pEnc->queue_head].frame;
-	pEnc->queue_head = (pEnc->queue_head+1) % (pEnc->mbParam.max_bframes+1);
+	pEnc->queue_head = (pEnc->queue_head + 1) % (pEnc->mbParam.max_bframes+1);
 	pEnc->queue_size--;
 
 
 	/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	 * init pEnc->current field
+	 * init pEnc->current fields
 	 * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
-
-	emms();		/* float-point region */
 
     pEnc->current->vol_flags = pEnc->mbParam.vol_flags;
     pEnc->current->vop_flags = frame->vop_flags;
@@ -982,12 +974,10 @@ repeat:
 		    pEnc->mbParam.width, pEnc->mbParam.height, pEnc->mbParam.edged_width);
     }
 
-    if (xFrame->vop_flags & XVID_EXTRASTATS) {
-		image_copy(&pEnc->sOriginal, &pEnc->current->image,
-		       pEnc->mbParam.edged_width, pEnc->mbParam.height);
-    }
+	emms();		/* float-point region */
 
 	if ((pEnc->current->vop_flags & XVID_LUMIMASKING)) {
+        unsigned int x, y;
 
 		pEnc->current->quant =
 			adaptive_quantization(pEnc->current->image.y,
@@ -1012,8 +1002,12 @@ repeat:
 
 	}
 
+	/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	 * frame type & quant selection
+	 * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
+
 	emms();		/* END floating-point region */
-    call_plugins(pEnc, pEnc->current, XVID_PLG_BEFORE, &type, &pEnc->current->quant);
+    call_plugins(pEnc, pEnc->current, NULL, XVID_PLG_BEFORE, &type, &pEnc->current->quant);
     emms();
 
     if (frame->type > 0)
@@ -1022,112 +1016,45 @@ repeat:
     if (frame->quant > 0)
 		pEnc->current->quant = frame->quant;
 
-    if (type > 0) 	/* XVID_TYPE_?VOP */
-	{
+    if (type > 0){ 	/* XVID_TYPE_?VOP */
 		type = type2coding(type);	/* convert XVID_TYPE_?VOP to bitstream coding type */
-	}
-	else			/* XVID_TYPE_AUTO */
-	{
-		if (pEnc->iFrameNum == 0 || 
-			(pEnc->mbParam.iMaxKeyInterval > 0 && pEnc->iFrameNum >= pEnc->mbParam.iMaxKeyInterval))
-		{
+    } else{		/* XVID_TYPE_AUTO */
+		if (pEnc->iFrameNum == 0 || (pEnc->mbParam.iMaxKeyInterval > 0 && pEnc->iFrameNum >= pEnc->mbParam.iMaxKeyInterval)){
 			pEnc->iFrameNum = 0;
 			type = I_VOP;
 		}else{
 			type = MEanalysis(&pEnc->reference->image, pEnc->current,
 					&pEnc->mbParam, pEnc->mbParam.iMaxKeyInterval,
 					pEnc->iFrameNum, pEnc->bframenum_tail);
+
+            if (type == B_VOP && !(pEnc->current->vop_flags & XVID_DYNAMIC_BFRAMES)) {
+                type = P_VOP;   /* disable dynamic bframes */
+            }
 		}
 	}
+
+    /* bframes buffer overflow check */
+    if (type != I_VOP) {
+        if (pEnc->bframenum_tail >= pEnc->mbParam.max_bframes) {
+            type = P_VOP;
+        }else{
+            type = B_VOP;
+        }
+    }
+
 	inc_frame_num(pEnc);
 	pEnc->iFrameNum++;
 
-
 	if ((pEnc->current->vop_flags & XVID_DEBUG)) {
 		image_printf(&pEnc->current->image, pEnc->mbParam.edged_width, pEnc->mbParam.height, 5, 5, 
-			"%i  st:%i  if:%i", pEnc->m_framenum, pEnc->current->stamp, pEnc->iFrameNum);
+			"%i  st:%i  if:%i", pEnc->current->frame_num, pEnc->current->stamp, pEnc->iFrameNum);
 	}
 
 	/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	 * ivop/pvop/bvop selection
+	 * encode this frame as a b-vop
+     * (we dont encode here, rather we store the frame in the bframes queue, to be encoded later)
 	 * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
-
-	if (type == I_VOP) {
-
-		DPRINTF(DPRINTF_DEBUG,"*** IFRAME bf: head=%i tail=%i   queue: head=%i tail=%i size=%i",
-				pEnc->bframenum_head, pEnc->bframenum_tail,
-				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
-		
-		if ((pEnc->current->vop_flags & XVID_DEBUG)) {
-			image_printf(&pEnc->current->image, pEnc->mbParam.edged_width, pEnc->mbParam.height, 5, 200, "IVOP");
-		}
-
-		// when we reach an iframe in CLOSED_GOP mode, encode the last bframe as a xFrame
-		if ((pEnc->mbParam.global_flags & XVID_CLOSED_GOP) && pEnc->bframenum_tail > 0) {
-
-			// place this frame back on the encoding-queue (head)
-			// we will deal with it next time
-			pEnc->queue_head = (pEnc->queue_head + (pEnc->mbParam.max_bframes+1) - 1) % (pEnc->mbParam.max_bframes+1);
-			image_swap(&pEnc->current->image, &pEnc->queue[pEnc->queue_head].image);
-
-			// grab the last frame from the bframe-queue
-
-			pEnc->bframenum_tail--;
-			SWAP(FRAMEINFO*, pEnc->current, pEnc->bframes[pEnc->bframenum_tail]);
-
-			if ((pEnc->current->vop_flags & XVID_DEBUG)) {
-				image_printf(&pEnc->current->image, pEnc->mbParam.edged_width, pEnc->mbParam.height, 5, 100, "DX50 BVOP->PVOP");
-			}
-
-			/* XXX: convert B-VOP to P-VOP */
-			pEnc->current->quant *= 2;
-
-			FrameCodeP(pEnc, &bs, 1, 0);
-			
-		} else {
-
-			/* ---- update vol flags at IVOP ----------- */
-			pEnc->current->vol_flags = pEnc->mbParam.vol_flags = frame->vol_flags;
-
-            if ((pEnc->mbParam.vol_flags & XVID_MPEGQUANT)) {
-				if (frame->quant_intra_matrix != NULL)
-					set_intra_matrix(frame->quant_intra_matrix);	
-				if (frame->quant_inter_matrix != NULL)
-					set_inter_matrix(frame->quant_inter_matrix);
-			}
-
-            /* prevent vol/vop misuse */
-
-            if (!(pEnc->current->vol_flags & XVID_REDUCED_ENABLE))
-                pEnc->current->vop_flags &= ~XVID_REDUCED;
-
-            if (!(pEnc->current->vol_flags & XVID_INTERLACING))
-                pEnc->current->vop_flags &= ~(XVID_TOPFIELDFIRST|XVID_ALTERNATESCAN);
-
-			/* ^^^------------------------ */
-
-			FrameCodeI(pEnc, &bs);
-			xFrame->out_flags |= XVID_KEYFRAME;
-		}
-
-	} else if (((pEnc->current->vop_flags & XVID_DYNAMIC_BFRAMES) && type == P_VOP) || 
-				pEnc->bframenum_tail >= pEnc->mbParam.max_bframes) {
-		/*
-		 * This will be coded as a Predicted Frame
-		 */
-
-		DPRINTF(DPRINTF_DEBUG,"*** xFrame bf: head=%i tail=%i   queue: head=%i tail=%i size=%i",
-				pEnc->bframenum_head, pEnc->bframenum_tail,
-				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
-		
-		if ((pEnc->current->vop_flags & XVID_DEBUG)) {
-			image_printf(&pEnc->current->image, pEnc->mbParam.edged_width, pEnc->mbParam.height, 5, 200, "PVOP");
-		}
-
-		FrameCodeP(pEnc, &bs, 1, 0);
-
-	} else {	/* type == B_VOP */
-
+	if (type == B_VOP) {
 		if ((pEnc->current->vop_flags & XVID_DEBUG)) {
 			image_printf(&pEnc->current->image, pEnc->mbParam.edged_width, pEnc->mbParam.height, 5, 200, "BVOP");
 		}
@@ -1145,7 +1072,7 @@ repeat:
 		else if (pEnc->current->quant > 31)
             pEnc->current->quant = 31;
  
-		DPRINTF(DPRINTF_DEBUG,"*** BFRAME (store) bf: head=%i tail=%i   queue: head=%i tail=%i size=%i  quant=%i\n",
+		DPRINTF(DPRINTF_DEBUG,"*** BFRAME (store) bf: head=%i tail=%i   queue: head=%i tail=%i size=%i  quant=%i",
 				pEnc->bframenum_head, pEnc->bframenum_tail,
 				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size,pEnc->current->quant);
 
@@ -1156,67 +1083,139 @@ repeat:
 		pEnc->bframenum_tail++;
 
 		goto repeat;
-
     }
 
-	if (xFrame->vop_flags & XVID_EXTRASTATS) {
-		stats->sse_y =
-			plane_sse( pEnc->sOriginal.y, pEnc->current->image.y,
-					   pEnc->mbParam.edged_width, pEnc->mbParam.width,
-					   pEnc->mbParam.height);
-
-		stats->sse_u =
-			plane_sse( pEnc->sOriginal.u, pEnc->current->image.u,
-					   pEnc->mbParam.edged_width/2, pEnc->mbParam.width/2,
-					   pEnc->mbParam.height/2);
-
-		stats->sse_v =
-			plane_sse( pEnc->sOriginal.v, pEnc->current->image.v,
-					   pEnc->mbParam.edged_width/2, pEnc->mbParam.width/2,
-					   pEnc->mbParam.height/2);		
-	}
-
-	/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	 * okay, on next enc_encode call we must flush bframes
-	 * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
-
-done_flush:
-
-#if 0
-	{
-		char tmp[100];
-		wsprintf(tmp,"\\frame%03i.pgm", pEnc->m_framenum);
-		image_dump_yuvpgm(&pEnc->current->image, pEnc->mbParam.edged_width,
-			pEnc->mbParam.width, pEnc->mbParam.height, tmp);
-	}
-#endif
-
-	/* packed_mode: repeat */
-	pEnc->flush_bframes = 1;
-	if ((pEnc->mbParam.global_flags & XVID_PACKED) && pEnc->bframenum_tail > 0) {
-		goto repeat;
-	}
-
-	if ((pEnc->mbParam.global_flags & XVID_PACKED) || pEnc->mbParam.max_bframes == 0)
-	{
-		/* packed(and low_delay) encoding gives us graceful reorded-stats output */
-		set_stats(stats, &pEnc->rate_control, &pEnc->mbParam, pEnc->current);
-        emms();
-        call_plugins(pEnc, pEnc->current, XVID_PLG_AFTER, 0, 0);
-        emms();
-	}
-	else	
-	{
-		/* outherwise, output the previous frame */
-		/* XXX: for this to work, refernce must be valid for IVOPs too */
+    /* for unpacked bframes, output the stats for the last encoded frame */
+    if (!(pEnc->mbParam.global_flags & XVID_PACKED) && pEnc->bframenum_tail > 0)
+    {
         if (pEnc->current->stamp > 0) {
-			set_stats(stats, &pEnc->rate_control, &pEnc->mbParam, pEnc->reference);
             emms();
-            call_plugins(pEnc, pEnc->current, XVID_PLG_AFTER, 0, 0);
+			set_stats(stats, &pEnc->mbParam, pEnc->reference);
+            call_plugins(pEnc, pEnc->reference, &pEnc->sOriginal, XVID_PLG_AFTER, 0, 0);
             emms();
         }
 		else
 			stats->type = XVID_TYPE_NOTHING;
+    }
+
+	/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	 * closed-gop
+     * if the frame prior to an iframe is scheduled as a bframe, we must change it to a pframe
+     * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
+
+    if (type == I_VOP && (pEnc->mbParam.global_flags & XVID_CLOSED_GOP) && pEnc->bframenum_tail > 0) {
+
+		// place this frame back on the encoding-queue (head)
+		// we will deal with it next time
+		pEnc->queue_head = (pEnc->queue_head + (pEnc->mbParam.max_bframes+1) - 1) % (pEnc->mbParam.max_bframes+1);
+        pEnc->queue_size++;
+		image_swap(&pEnc->current->image, &pEnc->queue[pEnc->queue_head].image);
+
+        dec_frame_num(pEnc);
+        pEnc->iFrameNum--;
+
+		// grab the last frame from the bframe-queue
+
+		pEnc->bframenum_tail--;
+		SWAP(FRAMEINFO*, pEnc->current, pEnc->bframes[pEnc->bframenum_tail]);
+
+		if ((pEnc->current->vop_flags & XVID_DEBUG)) {
+			image_printf(&pEnc->current->image, pEnc->mbParam.edged_width, pEnc->mbParam.height, 5, 100, "DX50 BVOP->PVOP");
+		}
+
+		/* convert B-VOP quant to P-VOP */
+		pEnc->current->quant = ((pEnc->current->quant*100) - pEnc->mbParam.bquant_offset) / pEnc->mbParam.bquant_ratio;
+        type = P_VOP;
+    }
+
+
+	/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	 * encode this frame as an i-vop
+     * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
+
+	if (type == I_VOP) {
+
+		DPRINTF(DPRINTF_DEBUG,"*** IFRAME bf: head=%i tail=%i   queue: head=%i tail=%i size=%i",
+				pEnc->bframenum_head, pEnc->bframenum_tail,
+				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
+		
+		if ((pEnc->current->vop_flags & XVID_DEBUG)) {
+			image_printf(&pEnc->current->image, pEnc->mbParam.edged_width, pEnc->mbParam.height, 5, 200, "IVOP");
+		}
+
+
+		/* ---- update vol flags at IVOP ----------- */
+		pEnc->current->vol_flags = pEnc->mbParam.vol_flags = frame->vol_flags;
+
+        if ((pEnc->mbParam.vol_flags & XVID_MPEGQUANT)) {
+			if (frame->quant_intra_matrix != NULL)
+				set_intra_matrix(frame->quant_intra_matrix);	
+			if (frame->quant_inter_matrix != NULL)
+				set_inter_matrix(frame->quant_inter_matrix);
+		}
+
+        /* prevent vol/vop misuse */
+
+        if (!(pEnc->current->vol_flags & XVID_REDUCED_ENABLE))
+            pEnc->current->vop_flags &= ~XVID_REDUCED;
+
+        if (!(pEnc->current->vol_flags & XVID_INTERLACING))
+            pEnc->current->vop_flags &= ~(XVID_TOPFIELDFIRST|XVID_ALTERNATESCAN);
+
+		/* ^^^------------------------ */
+
+        if ((pEnc->mbParam.plugin_flags & XVID_REQORIGINAL)) {
+		    image_copy(&pEnc->sOriginal, &pEnc->current->image,
+		           pEnc->mbParam.edged_width, pEnc->mbParam.height);
+        }
+
+
+		FrameCodeI(pEnc, &bs);
+		xFrame->out_flags |= XVID_KEYFRAME;
+
+	/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	 * encode this frame as an p-vop
+     * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
+
+    } else { // (type == P_VOP || type == S_VOP)
+
+		DPRINTF(DPRINTF_DEBUG,"*** PFRAME bf: head=%i tail=%i   queue: head=%i tail=%i size=%i",
+				pEnc->bframenum_head, pEnc->bframenum_tail,
+				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
+		
+		if ((pEnc->current->vop_flags & XVID_DEBUG)) {
+			image_printf(&pEnc->current->image, pEnc->mbParam.edged_width, pEnc->mbParam.height, 5, 200, "PVOP");
+		}
+
+        if ((pEnc->mbParam.plugin_flags & XVID_REQORIGINAL)) {
+		    image_copy(&pEnc->sOriginal, &pEnc->current->image,
+		           pEnc->mbParam.edged_width, pEnc->mbParam.height);
+        }
+
+		FrameCodeP(pEnc, &bs, 1, 0);
+    }
+
+	
+    /* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	 * on next enc_encode call we must flush bframes
+	 * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
+
+done_flush:
+
+    pEnc->flush_bframes = 1;
+
+	/* packed & queued_bframes: dont bother outputting stats, we do so after the flush */
+	if ((pEnc->mbParam.global_flags & XVID_PACKED) && pEnc->bframenum_tail > 0) {
+		goto repeat;
+	}
+
+    /* packed or no-bframes: output stats */
+    if ((pEnc->mbParam.global_flags & XVID_PACKED) || pEnc->mbParam.max_bframes == 0)
+	{
+        emms();
+		set_stats(stats, &pEnc->mbParam, pEnc->current);
+        call_plugins(pEnc, pEnc->current, &pEnc->sOriginal, XVID_PLG_AFTER, 0, 0);
+        emms();
 	}
 
 	/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1290,10 +1289,8 @@ FrameCodeI(Encoder * pEnc,
 		stop_edges_timer();
 	}
 
-	//pEnc->iFrameNum = 0;
 	pEnc->mbParam.m_rounding_type = 1;
 	pEnc->current->rounding_type = pEnc->mbParam.m_rounding_type;
-  	//pEnc->current->quarterpel =  pEnc->mbParam.m_quarterpel;
 	pEnc->current->coding_type = I_VOP;
 
 	BitstreamWriteVolHeader(bs, &pEnc->mbParam);
