@@ -14,6 +14,7 @@ SRC = \
 	$(SRCDIR)/bitstream/mbcoding.c \
 	$(SRCDIR)/dct/fdct.c \
 	$(SRCDIR)/dct/idct.c \
+	$(SRCDIR)/dct/simple_idct.c \
 	$(SRCDIR)/image/colorspace.c \
 	$(SRCDIR)/image/image.c \
 	$(SRCDIR)/image/interpolate8x8.c \
@@ -51,7 +52,9 @@ SRC_INTEL = \
 	\
 	$(SRCDIR)/bitstream/x86_asm/cbp_mmx.asm \
 	$(SRCDIR)/dct/x86_asm/fdct_mmx.asm \
+	$(SRCDIR)/dct/x86_asm/fdct_xmm.asm \
 	$(SRCDIR)/dct/x86_asm/idct_mmx.asm \
+	$(SRCDIR)/dct/x86_asm/simple_idct_mmx.asm \
 	$(SRCDIR)/image/x86_asm/interpolate8x8_mmx.asm \
 	$(SRCDIR)/image/x86_asm/reduced_mmx.asm \
 	$(SRCDIR)/image/x86_asm/colorspace_rgb_mmx.asm \

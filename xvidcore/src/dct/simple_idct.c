@@ -251,6 +251,6 @@ void simple_idct_mmx2(int16_t * const block)
     int i;
 
     for(i=0;i<64;i++) tmp[simple_mmx_permutation[i]] = block[i];
-    simple_idctp_mmx(tmp);
+    simple_idct_mmx(tmp);
     for(i=0;i<64;i++) block[i] = tmp[i];
 }
