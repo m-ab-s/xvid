@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.15 2003-04-08 14:00:20 suxen_drol Exp $
+ * $Id: xvid.h,v 1.27.2.16 2003-04-27 14:21:35 chl Exp $
  *
  ****************************************************************************/
 
@@ -486,6 +486,8 @@ typedef enum {
     XVID_VOP_HALFPEL            = 0x00000004, /* use halfpel interpolation */
     XVID_VOP_INTER4V            = 0x00000008,
     
+    XVID_VOP_TRELLISQUANT       = 0x00000010, /* use trellis based R-D "optimal" quantization */
+
     XVID_VOP_CHROMAOPT          = 0x00000020, /* enable chroma optimization pre-filter */
     XVID_VOP_GREYSCALE          = 0x00000040, /* enable greyscale only mode (even for
                                               color input material chroma is ignored) */
