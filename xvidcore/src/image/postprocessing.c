@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: postprocessing.c,v 1.1.4.2 2003-12-10 15:07:42 edgomez Exp $
+ * $Id: postprocessing.c,v 1.1.4.3 2003-12-17 17:07:38 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -30,6 +30,7 @@
 #include "../portab.h"
 #include "../global.h"
 #include "image.h"
+#include "../utils/emms.h"
 #include "postprocessing.h"
 
 /* Filtering thresholds */
@@ -46,25 +47,16 @@
 #define FAST_ABS(x) ((((int)(x)) >> 31) ^ ((int)(x))) - (((int)(x)) >> 31)
 #define ABS(X)    (((X)>0)?(X):-(X)) 
 
-static int8_t xvid_thresh_tbl[510];
-static int8_t xvid_abs_tbl[510];
-
 void init_postproc(void)
 {
-	int i;
-
-	for(i = -255; i < 256; i++) {
-		xvid_thresh_tbl[i + 255] = 0;
-		if(ABS(i) < THR1)
-			xvid_thresh_tbl[i + 255] = 1;
-		xvid_abs_tbl[i + 255] = ABS(i);
-	}
+	init_deblock();
+	init_noise();
 }
 
 void
-image_deblock(IMAGE * img, int edged_width,
+image_postproc(IMAGE * img, int edged_width,
 				const MACROBLOCK * mbs, int mb_width, int mb_height, int mb_stride,
-				int flags)
+				int flags, int frame_num)
 {
 	const int edged_width2 = edged_width /2;
 	int i,j;
@@ -107,6 +99,28 @@ image_deblock(IMAGE * img, int edged_width,
 			deblock8x8_v(img->u + j*8*edged_width2 + i*8, edged_width2, quant);
 			deblock8x8_v(img->v + j*8*edged_width2 + i*8, edged_width2, quant);
 		}
+	}
+
+	if ((flags & XVID_FILMEFFECT))
+	{
+		add_noise(img->y, img->y, edged_width, mb_width*16, mb_height*16, frame_num % 3);
+	}
+}
+
+/******************************************************************************/
+
+static int8_t xvid_thresh_tbl[510];
+static int8_t xvid_abs_tbl[510];
+
+void init_deblock(void)
+{
+	int i;
+
+	for(i = -255; i < 256; i++) {
+		xvid_thresh_tbl[i + 255] = 0;
+		if(ABS(i) < THR1)
+			xvid_thresh_tbl[i + 255] = 1;
+		xvid_abs_tbl[i + 255] = ABS(i);
 	}
 }
 
@@ -154,9 +168,8 @@ image_deblock(IMAGE * img, int edged_width,
 			int a30, a31, a32;					\
 			int diff, limit;					\
 												\
-			a30 = ((s[3]<<1) - s[4] * 5 + s[5] * 5 - (s[6]<<1));	\
-																	\
-			if(xvid_abs_tbl[a30 + 255] < 8*quant) {								\
+			if(xvid_abs_tbl[(s[4] - s[5]) + 255] < quant) {			\
+				a30 = ((s[3]<<1) - s[4] * 5 + s[5] * 5 - (s[6]<<1));	\
 				a31 = ((s[1]<<1) - s[2] * 5 + s[3] * 5 - (s[4]<<1));	\
 				a32 = ((s[5]<<1) - s[6] * 5 + s[7] * 5 - (s[8]<<1));	\
 																		\
@@ -258,4 +271,96 @@ void deblock8x8_v(uint8_t *img, int stride, int quant)
 
 	LOAD_DATA_VER(7)
 	APPLY_FILTER_CORE
+}
+
+/******************************************************************************
+ *                                                                            *
+ *  Noise code below taken from MPlayer: http://www.mplayerhq.hu/             *
+ *  Copyright (C) 2002 Michael Niedermayer <michaelni@gmx.at>                 *
+ *																			  *
+ ******************************************************************************/
+
+#define MAX_NOISE 4096
+#define MAX_SHIFT 1024
+#define MAX_RES (MAX_NOISE - MAX_SHIFT)
+
+#define RAND_N(range) ((int) ((double)range * rand() / (RAND_MAX + 1.0)))
+
+#define STRENGTH 13
+
+static int8_t xvid_noise[MAX_NOISE * sizeof(int8_t)];
+static int8_t *xvid_prev_shift[MAX_RES][3];
+
+void init_noise(void)
+{
+	int i, j;
+	int patt[4] = { -1,0,1,0 };
+
+	emms();
+
+	srand(123457);
+
+	for(i = 0, j = 0; i < MAX_NOISE; i++, j++)
+	{
+		double x1, x2, w, y1;
+		
+		do {
+			x1 = 2.0 * rand() / (float) RAND_MAX - 1.0;
+			x2 = 2.0 * rand() / (float) RAND_MAX - 1.0;
+			w = x1 * x1 + x2 * x2;
+		} while (w >= 1.0);
+		
+		w = sqrt((-2.0 * log(w)) / w);
+		y1 = x1 * w;
+		y1 *= STRENGTH / sqrt(3.0);
+
+	    y1 /= 2;
+	    y1 += patt[j%4] * STRENGTH * 0.35;
+
+		if (y1 < -128) {
+			y1=-128;
+		}
+		else if (y1 > 127) {
+			y1= 127;
+		}
+
+		y1 /= 3.0;
+		xvid_noise[i] = (int) y1;
+	
+		if (RAND_N(6) == 0) {
+			j--;
+		}
+	}
+	
+	for (i = 0; i < MAX_RES; i++)
+		for (j = 0; j < 3; j++) {
+			xvid_prev_shift[i][j] = xvid_noise + (rand() & (MAX_SHIFT - 1));
+		}
+}
+
+void add_noise(uint8_t *dst, uint8_t *src, int stride, int width, int height, int shiftptr)
+{
+	int x, y;
+	int shift = 0;
+
+	for(y = 0; y < height; y++)
+	{
+        int8_t *src2 = (int8_t *) src;
+
+		shift = rand() & (MAX_SHIFT - 1);
+
+		shift &= ~7;
+		for(x = 0; x < width; x++)
+		{
+			const int n = xvid_prev_shift[y][0][x] + xvid_prev_shift[y][1][x] + 
+				          xvid_prev_shift[y][2][x];
+
+			dst[x] = src2[x] + ((n * src2[x]) >> 7);
+		}
+
+		xvid_prev_shift[y][shiftptr] = xvid_noise + shift;
+
+		dst += stride;
+		src += stride;
+	}
 }

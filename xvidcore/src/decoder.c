@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.25 2003-12-13 13:52:25 syskin Exp $
+ * $Id: decoder.c,v 1.49.2.26 2003-12-17 17:07:38 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -205,6 +205,7 @@ decoder_create(xvid_dec_create_t * create)
 	dec->last_mbs = NULL;
 
 	init_timer();
+	init_postproc();
 	init_mpeg_matrix(dec->mpeg_quant_matrices);
 
 	/* For B-frame support (used to save reference frame's time */
@@ -1321,9 +1322,9 @@ void decoder_output(DECODER * dec, IMAGE * img, MACROBLOCK * mbs,
 	{
 		/* note: image is stored to tmp */
 		image_copy(&dec->tmp, img, dec->edged_width, dec->height);
-		image_deblock(&dec->tmp, dec->edged_width, 
-					  mbs, dec->mb_width, dec->mb_height, dec->mb_width,
-					  frame->general);
+		image_postproc(&dec->tmp, dec->edged_width, 
+					   mbs, dec->mb_width, dec->mb_height, dec->mb_width,
+					   frame->general, dec->frames);
 		img = &dec->tmp;
 	}
 

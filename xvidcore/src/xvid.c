@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.24 2003-12-13 00:04:09 edgomez Exp $
+ * $Id: xvid.c,v 1.45.2.25 2003-12-17 17:07:38 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -171,7 +171,6 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	/* Initialize the function pointers */
 	idct_int32_init();
 	init_vlc_tables();
-	init_postproc();
 
 	/* Fixed Point Forward/Inverse DCT transformations */
 	fdct = fdct_int32;

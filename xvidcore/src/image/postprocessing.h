@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: postprocessing.h,v 1.1.4.2 2003-12-10 15:07:42 edgomez Exp $
+ * $Id: postprocessing.h,v 1.1.4.3 2003-12-17 17:07:38 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -31,13 +31,17 @@
 #include "../portab.h"
 
 void
-image_deblock(IMAGE * img, int edged_width,
+image_postproc(IMAGE * img, int edged_width,
 				const MACROBLOCK * mbs, int mb_width, int mb_height, int mb_stride,
-				int flags);
+				int flags, int frame_num);
 
 void deblock8x8_h(uint8_t *img, int stride, int quant);
 void deblock8x8_v(uint8_t *img, int stride, int quant);
 
 void init_postproc(void);
+void init_noise(void);
+void init_deblock(void);
+
+void add_noise(uint8_t *dst, uint8_t *src, int stride, int width, int height, int shiftptr);
 
 #endif
