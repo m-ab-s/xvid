@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_bench.c,v 1.9.2.6 2003-11-02 23:02:52 edgomez Exp $
+ * $Id: xvid_bench.c,v 1.9.2.7 2003-11-03 19:58:16 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -183,7 +183,9 @@ void test_dct()
 	int tst;
 	CPU *cpu;
 	int i;
-	short iDst0[8*8], iDst[8*8], fDst[8*8];
+	DECLARE_ALIGNED_MATRIX(iDst0, 8, 8, short, 16);
+	DECLARE_ALIGNED_MATRIX(iDst,  8, 8, short, 16);
+	DECLARE_ALIGNED_MATRIX(fDst,  8, 8, short, 16);
 	double overhead;
 
 	printf( "\n ===== test fdct/idct =====\n" );
@@ -877,10 +879,11 @@ void test_IEEE1180_compliance(int Min, int Max, int Sign)
 	static const double ILimits[5] = { 1., 0.06, 0.02, 0.015, 0.0015 };
 	int Loops = 10000;
 	int i, m, n;
-	short Blk0[64];     /* reference */
-	short Blk[64], iBlk[64];
-	short Ref_FDCT[64];
-	short Ref_IDCT[64];
+	DECLARE_ALIGNED_MATRIX(Blk0, 8, 8, short, 16); /* reference */
+	DECLARE_ALIGNED_MATRIX(Blk,  8, 8, short, 16);
+	DECLARE_ALIGNED_MATRIX(iBlk, 8, 8, short, 16);
+	DECLARE_ALIGNED_MATRIX(Ref_FDCT, 8, 8, short, 16);
+	DECLARE_ALIGNED_MATRIX(Ref_IDCT, 8, 8, short, 16);
 
 	STATS_8x8 FStats; /* forward dct stats */
 	STATS_8x8 IStats; /* inverse dct stats */

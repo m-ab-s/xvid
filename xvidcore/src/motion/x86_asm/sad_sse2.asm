@@ -20,7 +20,7 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: sad_sse2.asm,v 1.8.2.2 2003-11-03 15:51:50 edgomez Exp $
+; * $Id: sad_sse2.asm,v 1.8.2.3 2003-11-03 19:58:16 edgomez Exp $
 ; *
 ; ***************************************************************************/
 
@@ -78,7 +78,7 @@ cglobal  dev16_sse2
   paddusw xmm6,xmm1
 %endmacro
 
-align 16
+ALIGN 16
 sad16_sse2:
   mov eax, [esp+ 4] ; cur (assumed aligned)
   mov edx, [esp+ 8] ; ref
@@ -116,7 +116,7 @@ sad16_sse2:
 %endmacro
 
 
-align 16
+ALIGN 16
 dev16_sse2:
   mov eax, [esp+ 4]   ; src
   mov ecx, [esp+ 8]   ; stride
@@ -136,12 +136,13 @@ dev16_sse2:
 
   mov eax, [esp+ 4]       ; src again
 
-  pshufd   xmm7, xmm6, 0010b
+  pshufd   xmm7, xmm6, 10b
   paddusw  xmm7, xmm6
   pxor     xmm6, xmm6     ; zero accum
   psrlw    xmm7, 8        ; => Mean
   pshuflw  xmm7, xmm7, 0  ; replicate Mean
-  packuswb xmm7,xmm7
+  packuswb xmm7, xmm7
+  pshufd   xmm7, xmm7, 00000000b
 
   MEAN_16x16_SSE2
   MEAN_16x16_SSE2
@@ -153,8 +154,7 @@ dev16_sse2:
   MEAN_16x16_SSE2
   MEAN_16x16_SSE2
 
-  pshufd  xmm5, xmm6, 0010b
-  paddusw xmm6, xmm5
-  pextrw  eax, xmm6, 0
-
+  pshufd   xmm7, xmm6, 10b
+  paddusw  xmm7, xmm6
+  pextrw eax, xmm7, 0
   ret
