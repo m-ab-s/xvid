@@ -37,7 +37,7 @@
  *  - 22.12.2001  API change: added xvid_init() - Isibaar
  *  - 16.12.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: xvid.c,v 1.33.2.18 2002-12-19 00:37:56 Isibaar Exp $
+ *  $Id: xvid.c,v 1.33.2.19 2002-12-30 10:49:17 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -580,6 +580,224 @@ xvid_init_convert(XVID_INIT_CONVERTINFO* convert)
 }
 
 
+
+void fill8(uint8_t * block, int size, int value)
+{
+	int i;
+	for (i = 0; i < size; i++)
+		block[i] = value;
+}
+
+void fill16(int16_t * block, int size, int value)
+{
+	int i;
+	for (i = 0; i < size; i++)
+		block[i] = value;
+}
+
+#define RANDOM(min,max) min + (rand() % (max-min))
+
+void random8(uint8_t * block, int size, int min, int max)
+{
+	int i;
+	for (i = 0; i < size; i++)
+		block[i] = RANDOM(min,max);
+}
+
+void random16(int16_t * block, int size, int min, int max)
+{
+	int i;
+	for (i = 0; i < size; i++)
+		block[i] = RANDOM(min,max);
+}
+
+int compare16(const int16_t * blockA, const int16_t * blockB, int size)
+{
+	int i;
+	for (i = 0; i < size; i++)
+		if (blockA[i] != blockB[i])
+			return 1;
+
+	return 0;
+}
+
+
+
+int test_h263_intra(quanth263_intraFunc * funcA, quanth263_intraFunc * funcB,
+						const char * nameA, const char * nameB,
+						int min, int max)
+{
+	int q,i;
+	int64_t timeSTART;
+	int64_t timeA = 0;
+	int64_t timeB = 0;
+	DECLARE_ALIGNED_MATRIX(arrayX, 1, 64, int16_t, CACHE_LINE);
+	DECLARE_ALIGNED_MATRIX(arrayA, 1, 64, int16_t, CACHE_LINE);
+	DECLARE_ALIGNED_MATRIX(arrayB, 1, 64, int16_t, CACHE_LINE);
+	
+	for (q = 1; q <= 31; q++)	/* quantizer */
+	{
+		for (i = min; i < max; i++)	/* input coeff */
+		{
+			fill16(arrayX, 64, i);
+
+			timeSTART = read_counter();
+			funcA(arrayA, arrayX, q, q);
+			timeA += read_counter() - timeSTART;
+
+			timeSTART = read_counter();
+			funcB(arrayB, arrayX, q, q);
+			timeB += read_counter() - timeSTART;
+
+			if (compare16(arrayA, arrayB, 64))
+			{
+				printf("%s/%s error: q=%i, i=%i\n", nameA?nameA:"?", nameB?nameB:"?", q, i);
+				return 0;
+			}
+		}
+	}
+
+	if (nameA) printf("%s:\t%I64i\n", nameA, timeA);
+	if (nameB) printf("%s:\t%I64i\n", nameB, timeB);
+
+	return 0;
+}
+
+int test_h263_inter(quanth263_interFunc * funcA, quanth263_interFunc * funcB,
+						const char * nameA, const char * nameB,
+						int min, int max)
+{
+	int q,i;
+	int64_t timeSTART;
+	int64_t timeA = 0;
+	int64_t timeB = 0;
+	DECLARE_ALIGNED_MATRIX(arrayX, 1, 64, int16_t, CACHE_LINE);
+	DECLARE_ALIGNED_MATRIX(arrayA, 1, 64, int16_t, CACHE_LINE);
+	DECLARE_ALIGNED_MATRIX(arrayB, 1, 64, int16_t, CACHE_LINE);
+	
+	for (q = 1; q <= 31; q++)	/* quantizer */
+	{
+		for (i = min; i < max; i++)	/* input coeff */
+		{
+			fill16(arrayX, 64, i);
+
+			timeSTART = read_counter();
+			funcA(arrayA, arrayX, q);
+			timeA += read_counter() - timeSTART;
+
+			timeSTART = read_counter();
+			funcB(arrayB, arrayX, q);
+			timeB += read_counter() - timeSTART;
+
+			if (compare16(arrayA, arrayB, 64))
+			{
+				printf("%s/%s error: q=%i, i=%i\n", nameA?nameA:"?", nameB?nameB:"?", q, i);
+				return 0;
+			}
+		}
+	}
+
+	if (nameA) printf("%s:\t%I64i\n", nameA, timeA);
+	if (nameB) printf("%s:\t%I64i\n", nameB, timeB);
+
+	return 0;
+}
+
+
+
+int xvid_init_test()
+{
+	int cpu_flags;
+
+	printf("xvid_init_test\n");
+
+#if defined(ARCH_X86)		
+	cpu_flags = check_cpu_features();
+
+	emms_mmx();
+
+	printf("--- quant intra ---\n");
+	if (cpu_flags & XVID_CPU_MMX)
+		test_h263_intra(quant_intra_c, quant_intra_mmx, "c", "mmx", -2048, 2047);
+	if (cpu_flags & XVID_CPU_3DNOWEXT)
+		test_h263_intra(quant_intra_c, quant_intra_3dne, NULL, "3dne", -2048, 2047);
+	if (cpu_flags & XVID_CPU_SSE2)
+		test_h263_intra(quant_intra_c, quant_intra_sse2, NULL, "sse2", -2048, 2047);
+
+	printf("\n--- quant inter ---\n");
+	if (cpu_flags & XVID_CPU_MMX)
+		test_h263_inter(quant_inter_c, quant_inter_mmx, "c", "mmx", -2048, 2047);
+	if (cpu_flags & XVID_CPU_3DNOWEXT)
+		test_h263_inter(quant_inter_c, quant_inter_3dne, NULL, "3dne", -2048, 2047);
+	if (cpu_flags & XVID_CPU_SSE2)
+		test_h263_inter(quant_inter_c, quant_inter_sse2, NULL, "sse2", -2048, 2047);
+
+	printf("\n--- dequan intra ---\n");
+	if (cpu_flags & XVID_CPU_MMX)
+		test_h263_intra(dequant_intra_c, dequant_intra_mmx, "c", "mmx", -256, 255);
+	if (cpu_flags & XVID_CPU_MMXEXT)
+		test_h263_intra(dequant_intra_c, dequant_intra_xmm, NULL, "xmm", -256, 255);
+	if (cpu_flags & XVID_CPU_3DNOWEXT)
+		test_h263_intra(dequant_intra_c, dequant_intra_3dne, NULL, "3dne", -256, 255);
+	if (cpu_flags & XVID_CPU_SSE2)
+		test_h263_intra(dequant_intra_c, dequant_intra_sse2, NULL, "sse2", -256, 255);
+
+	printf("\n--- dequant inter ---\n");
+	if (cpu_flags & XVID_CPU_MMX)
+		test_h263_inter((quanth263_interFunc*)dequant_inter_c, 
+						(quanth263_interFunc*)dequant_inter_mmx, "c", "mmx", -256, 255);
+
+	if (cpu_flags & XVID_CPU_MMXEXT)
+		test_h263_inter((quanth263_interFunc*)dequant_inter_c, 
+						(quanth263_interFunc*)dequant_inter_xmm, NULL, "xmm", -256, 255);
+	if (cpu_flags & XVID_CPU_3DNOWEXT)
+		test_h263_inter((quanth263_interFunc*)dequant_inter_c, 
+						(quanth263_interFunc*)dequant_inter_3dne, NULL, "3dne", -256, 255);
+	if (cpu_flags & XVID_CPU_SSE2)
+		test_h263_inter((quanth263_interFunc*)dequant_inter_c, 
+						(quanth263_interFunc*)dequant_inter_sse2, NULL, "sse2", -256, 255);
+
+	printf("\n--- quant4_intra ---\n");
+	if (cpu_flags & XVID_CPU_MMX)
+		test_h263_intra((quanth263_intraFunc*)quant4_intra_c, 
+						(quanth263_intraFunc*)quant4_intra_mmx, "c", "mmx", -2048, 2047);
+	if (cpu_flags & XVID_CPU_MMXEXT)
+		test_h263_intra((quanth263_intraFunc*)quant4_intra_c, 
+						(quanth263_intraFunc*)quant4_intra_xmm, NULL, "xmm", -2048, 2047);
+
+	printf("\n--- quant4_inter ---\n");
+	if (cpu_flags & XVID_CPU_MMX)
+		test_h263_inter((quanth263_interFunc*)quant4_inter_c, 
+						(quanth263_interFunc*)quant4_inter_mmx, "c", "mmx", -2048, 2047);
+	if (cpu_flags & XVID_CPU_MMXEXT)
+		test_h263_inter((quanth263_interFunc*)quant4_inter_c, 
+						(quanth263_interFunc*)quant4_inter_xmm, NULL, "xmm", -2048, 2047);
+
+
+	printf("\n--- dequant4_intra ---\n");
+	if (cpu_flags & XVID_CPU_MMX)
+		test_h263_intra((quanth263_intraFunc*)dequant4_intra_c, 
+						(quanth263_intraFunc*)dequant4_intra_mmx, "c", "mmx", -256, 255);
+	if (cpu_flags & XVID_CPU_3DNOWEXT)
+		test_h263_intra((quanth263_intraFunc*)dequant4_intra_c, 
+						(quanth263_intraFunc*)dequant4_intra_3dne, NULL, "sse2", -256, 255);
+
+	printf("\n--- dequant4_inter ---\n");
+	if (cpu_flags & XVID_CPU_MMX)
+		test_h263_inter((quanth263_interFunc*)dequant4_inter_c, 
+						(quanth263_interFunc*)dequant4_inter_mmx, "c", "mmx", -256, 255);
+	if (cpu_flags & XVID_CPU_3DNOWEXT)
+		test_h263_inter((quanth263_interFunc*)dequant4_inter_c, 
+						(quanth263_interFunc*)dequant4_inter_3dne, NULL, "sse2", -256, 255);
+
+	emms_mmx();
+
+#endif
+
+	return XVID_ERR_OK;
+}
+
+
 int
 xvid_init(void *handle,
 		  int opt,
@@ -593,6 +811,9 @@ xvid_init(void *handle,
 
 		case XVID_INIT_CONVERT :
 			return xvid_init_convert((XVID_INIT_CONVERTINFO*)param1);
+
+		case XVID_INIT_TEST :
+			return xvid_init_test();
 
 		default :
 			return XVID_ERR_FAIL;

@@ -28,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.17 2002-12-29 06:48:25 suxen_drol Exp $
+*  $Id: xvid.h,v 1.17.2.18 2002-12-30 10:49:17 suxen_drol Exp $
 *
 *****************************************************************************/
 
@@ -123,6 +123,7 @@ extern "C" {
 
 #define XVID_INIT_INIT		0
 #define XVID_INIT_CONVERT	1
+#define XVID_INIT_TEST		2
 
 /*****************************************************************************
  *  Initialization structures
