@@ -23,6 +23,7 @@
 #define IDD_ZONE                        121
 #define IDD_LEVEL                       122
 #define IDD_CALC                        124
+#define IDD_DEC                         124
 #define IDD_STATUS                      125
 #define IDD_AR                          126
 #define WIZ_CYDLG                       140
@@ -366,6 +367,7 @@
 #define IDC_STATUS_PL_AVG               1335
 #define IDC_STATUS_BL_AVG               1336
 #define IDC_CHECK1                      1336
+#define IDC_DEC_DY                      1336
 #define IDC_STATUS_L_AVG                1337
 #define IDC_ZONE_FORCEIVOP              1338
 #define IDC_STATUS_I_NUM                1339
@@ -386,6 +388,9 @@
 #define IDC_AR_16_9                     1366
 #define IDC_AR_235_100                  1368
 #define IDC_TURBO                       1369
+#define IDC_DEC_DUV                     1370
+#define IDC_DEC_DR                      1371
+#define IDC_DEC_FE                      1373
 
 // Next default values for new objects
 // 
@@ -393,7 +398,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        127
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1370
+#define _APS_NEXT_CONTROL_VALUE         1371
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -849,11 +849,13 @@ LRESULT decompress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO 
 	return ICERR_OK;
 }
 
+#define REG_GET_N(X, Y, Z) { int size=sizeof(int);if(RegQueryValueEx(hKey, X, 0, 0, (LPBYTE)&Y, &size) != ERROR_SUCCESS) {Y=Z;} }
 
 LRESULT decompress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiOutput)
 {
 	xvid_gbl_init_t init;
 	xvid_dec_create_t create;
+	HKEY hKey;
 
 	if (init_dll() != 0) return ICERR_ERROR;
 
@@ -883,6 +885,15 @@ LRESULT decompress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpb
 	}
 
 	codec->dhandle = create.handle;
+
+	RegOpenKeyEx(XVID_REG_KEY, XVID_REG_PARENT "\\" XVID_REG_CHILD, 0, KEY_READ, &hKey);
+
+	REG_GET_N("Deblock_Y",  pp_dy, 0)
+	REG_GET_N("Deblock_UV", pp_duv, 0)
+	REG_GET_N("Dering",  pp_dr, 0)
+	REG_GET_N("FilmEffect", pp_fe, 0)
+
+	RegCloseKey(hKey);
 
 	return ICERR_OK;
 }
@@ -973,6 +984,11 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 	{
 		frame.output.csp = XVID_CSP_NULL;
 	}
+
+	if (pp_dy)frame.general |= XVID_DEBLOCKY;
+	if (pp_duv) frame.general |= XVID_DEBLOCKUV;
+/*	if (pp_dr) frame.general |= XVID_DERING; */
+	if (pp_fe) frame.general |= XVID_FILMEFFECT;
 
 	switch (xvid_decore_func(codec->dhandle, XVID_DEC_DECODE, &frame, NULL)) 
 	{

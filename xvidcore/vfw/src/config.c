@@ -76,6 +76,8 @@
 HINSTANCE g_hInst;
 HWND g_hTooltip;
 
+int pp_dy, pp_duv, pp_dr, pp_fe; /* decoder options */
+
 /* enumerates child windows, assigns tooltips */
 BOOL CALLBACK enum_tooltips(HWND hWnd, LPARAM lParam)
 {
@@ -220,6 +222,13 @@ static const REG_INT reg_ints[] = {
 	{"debug",					&reg.debug,						0x0},
 	{"vop_debug",				&reg.vop_debug,					0},
 	{"display_status",		  &reg.display_status,			1},
+	
+	/* decoder, shared with dshow */
+	{"Deblock_Y",				&pp_dy,							0},
+	{"Deblock_UV",				&pp_duv,						0},
+	{"Dering",					&pp_dr,							0},
+	{"FilmEffect",				&pp_fe,							0},
+	
 };
 
 static const REG_STR reg_strs[] = {
@@ -922,6 +931,13 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
 		CheckDlg(hDlg, IDC_VOPDEBUG, config->vop_debug);
 		CheckDlg(hDlg, IDC_DISPLAY_STATUS, config->display_status);
 		break;
+
+	case IDD_DEC :
+		CheckDlg(hDlg, IDC_DEC_DY,	pp_dy);
+		CheckDlg(hDlg, IDC_DEC_DUV,	pp_duv);
+		CheckDlg(hDlg, IDC_DEC_DR,	pp_dr);
+		CheckDlg(hDlg, IDC_DEC_FE,	pp_fe);
+		break;
 	}
 }
 
@@ -1066,6 +1082,13 @@ void adv_download(HWND hDlg, int idd, CONFIG * config)
 		config->debug = get_dlgitem_hex(hDlg, IDC_DEBUG, config->debug);
 		config->vop_debug = IsDlgChecked(hDlg, IDC_VOPDEBUG);
 		config->display_status = IsDlgChecked(hDlg, IDC_DISPLAY_STATUS);
+		break;
+
+	case IDD_DEC :
+		pp_dy = IsDlgChecked(hDlg, IDC_DEC_DY);
+		pp_duv = IsDlgChecked(hDlg, IDC_DEC_DUV);
+		pp_dr = IsDlgChecked(hDlg, IDC_DEC_DR);
+		pp_fe = IsDlgChecked(hDlg, IDC_DEC_FE);
 		break;
 	}
 }
@@ -1411,7 +1434,7 @@ static const int single_dlgs[] = { IDD_RC_CBR };
 static const int pass1_dlgs[] = { IDD_RC_2PASS1 };
 static const int pass2_dlgs[] = { IDD_RC_2PASS2 };
 static const int zone_dlgs[] = { IDD_ZONE };
-static const int bitrate_dlgs[] = { IDD_CALC };
+static const int decoder_dlgs[] = { IDD_DEC };
 static const int adv_dlgs[] = { IDD_MOTION, IDD_QUANT, IDD_DEBUG};
 
 
@@ -1544,10 +1567,9 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				main_upload(hDlg, config);
 				break;
 
-			case IDC_BITRATE_CALC :
+			case IDC_DECODER :
 				main_download(hDlg, config);
-				adv_dialog(hDlg, config, bitrate_dlgs, sizeof(bitrate_dlgs)/sizeof(int));
-				//SetDlgItemInt(hDlg, IDC_BITRATE, config->bitrate, FALSE);
+				adv_dialog(hDlg, config, decoder_dlgs, sizeof(decoder_dlgs)/sizeof(int));
 				main_mode(hDlg, config);
 				break;
 
