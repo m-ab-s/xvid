@@ -1571,7 +1571,7 @@ SearchDirect(const IMAGE * const f_Ref,
 
 	*best_sad = *Data->iMinSAD;
 
-	if (b_mb->mode == MODE_INTER4V) pMB->mode = MODE_DIRECT;
+	if (b_mb->mode == MODE_INTER4V || Data->qpel) pMB->mode = MODE_DIRECT;
 	else pMB->mode = MODE_DIRECT_NO4V; //for faster compensation
 
 	pMB->pmvs[3] = *Data->currentMV;
