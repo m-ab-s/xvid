@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.28 2003-06-09 19:20:56 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.29 2003-06-11 12:37:41 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -205,8 +205,9 @@ enc_create(xvid_enc_create_t * create)
     if ((pEnc->mbParam.plugin_flags & XVID_REQDQUANTS)) {
 	    pEnc->temp_dquants = (int *) xvid_malloc(pEnc->mbParam.mb_width *
 					    pEnc->mbParam.mb_height * sizeof(int), CACHE_LINE);
+        if (pEnc->temp_dquants==NULL)
+            goto xvid_err_memory1a;
     }
-    /* XXX: error checking */
 
 	/* bframes */
 	pEnc->mbParam.max_bframes = MAX(create->max_bframes, 0);
@@ -224,19 +225,7 @@ enc_create(xvid_enc_create_t * create)
 
     /* max keyframe interval */
     pEnc->mbParam.iMaxKeyInterval = create->max_key_interval <= 0 ?
-		10 * pEnc->mbParam.fbase / pEnc->mbParam.fincr : create->max_key_interval;
-
-	/* Bitrate allocator defaults 
-
-	if ((create->min_quantizer <= 0) || (create->min_quantizer > 31))
-		create->min_quantizer = 1;
-
-	if ((create->max_quantizer <= 0) || (create->max_quantizer > 31))
-		create->max_quantizer = 31;
-
-	if (create->max_quantizer < create->min_quantizer)
-		create->max_quantizer = create->min_quantizer; */
-	
+		(10 * pEnc->mbParam.fbase) / pEnc->mbParam.fincr : create->max_key_interval;
 
     /* allocate working frame-image memory */
 
@@ -509,6 +498,7 @@ enc_create(xvid_enc_create_t * create)
 	xvid_free(pEnc->current);
 	xvid_free(pEnc->reference);
 
+  xvid_err_memory1a:
     if ((pEnc->mbParam.plugin_flags & XVID_REQDQUANTS)) {
 	    xvid_free(pEnc->temp_dquants);
     }
@@ -705,8 +695,10 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
             data.dquant_stride = pEnc->mbParam.mb_width;
 			memset(data.dquant, 0, data.mb_width*data.mb_height);
         }
-       
-        /* todo: [vol,vop,motion]_flags*/
+
+        data.vol_flags = frame->vol_flags;
+        data.vop_flags = frame->vop_flags;
+        data.motion_flags = frame->motion_flags;
     
     } else { /* XVID_PLG_AFTER */
         if ((pEnc->mbParam.plugin_flags & XVID_REQORIGINAL)) {
@@ -803,7 +795,10 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
                 frame->mbs[j*pEnc->mbParam.mb_width + i].dquant = 0;
             }
         }
-        /* todo: [vol,vop,motion]_flags*/
+
+        frame->vol_flags = data.vol_flags;
+        frame->vop_flags = data.vop_flags;
+        frame->motion_flags = data.motion_flags;
     }
 }
 
@@ -1412,11 +1407,6 @@ FrameCodeI(Encoder * pEnc,
 	pEnc->fMvPrevSigma = -1;
 	pEnc->mbParam.m_fcode = 2;
 
-    /* XXX: hinted me 
-	if (pEnc->current->global_flags & XVID_HINTEDME_GET) {
-		HintedMEGet(pEnc, 1);
-	}*/
-
 	return 1;					/* intra */
 }
 
@@ -1463,7 +1453,6 @@ FrameCodeP(Encoder * pEnc,
 
 	pEnc->mbParam.m_rounding_type = 1 - pEnc->mbParam.m_rounding_type;
 	pEnc->current->rounding_type = pEnc->mbParam.m_rounding_type;
-  	/* pEnc->current->quarterpel =  pEnc->mbParam.m_quarterpel; */
 	pEnc->current->fcode = pEnc->mbParam.m_fcode;
 
 	if (!force_inter)
@@ -1487,11 +1476,7 @@ FrameCodeP(Encoder * pEnc,
     SetMacroblockQuants(&pEnc->mbParam, pEnc->current);
 	
 	start_timer();
-	/*if (pEnc->current->global_flags & XVID_HINTEDME_SET)
-		HintedMESet(pEnc, &bIntra);
-	else*/
-		bIntra =
-			MotionEstimation(&pEnc->mbParam, pEnc->current, pEnc->reference,
+	bIntra = MotionEstimation(&pEnc->mbParam, pEnc->current, pEnc->reference,
                          &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV,
                          iLimit);
 
@@ -1736,11 +1721,6 @@ FrameCodeP(Encoder * pEnc,
 
 	emms();
 
-    /* XXX: hinted me 
-	if (pEnc->current->global_flags & XVID_HINTEDME_GET) {
-		HintedMEGet(pEnc, 0);
-	}*/
-
 	if (pEnc->current->sStat.iMvCount == 0)
 		pEnc->current->sStat.iMvCount = 1;
 
@@ -1783,7 +1763,6 @@ FrameCodeP(Encoder * pEnc,
 		pEnc->current->quant = pEnc->reference->quant;
 		pEnc->current->motion_flags = pEnc->reference->motion_flags;
 		pEnc->current->rounding_type = pEnc->reference->rounding_type;
-	  	/* pEnc->current->quarterpel =  pEnc->reference->quarterpel; */
 		pEnc->current->fcode = pEnc->reference->fcode;
 		pEnc->current->bcode = pEnc->reference->bcode;
 		image_copy(&pEnc->current->image, &pEnc->reference->image, pEnc->mbParam.edged_width, pEnc->mbParam.height);
@@ -1849,8 +1828,6 @@ FrameCodeB(Encoder * pEnc,
 	}
 #endif
 
-  	/* frame->quarterpel =  pEnc->mbParam.m_quarterpel; */
-	
 	/* forward  */
 	image_setedges(f_ref, pEnc->mbParam.edged_width,
 				   pEnc->mbParam.edged_height, pEnc->mbParam.width,
@@ -1872,7 +1849,6 @@ FrameCodeB(Encoder * pEnc,
 	stop_inter_timer();
 
 	start_timer();
-
 	MotionEstimationBVOP(&pEnc->mbParam, frame, 
 						 ((int32_t)(pEnc->current->stamp - frame->stamp)),				/* time_bp */
 						 ((int32_t)(pEnc->current->stamp - pEnc->reference->stamp)), 	/* time_pp */
@@ -1880,15 +1856,7 @@ FrameCodeB(Encoder * pEnc,
 						 &pEnc->f_refh, &pEnc->f_refv, &pEnc->f_refhv,
 						 pEnc->current, b_ref, &pEnc->vInterH,
 						 &pEnc->vInterV, &pEnc->vInterHV);
-
-
 	stop_motion_timer();
-
-	/*
-	if (test_quant_type(&pEnc->mbParam, pEnc->current)) {
-		BitstreamWriteVolHeader(bs, pEnc->mbParam.width, pEnc->mbParam.height, pEnc->mbParam.quant_type);
-	}
-	*/
 
 	frame->coding_type = B_VOP;
 
