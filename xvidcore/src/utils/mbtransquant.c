@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbtransquant.c,v 1.21.2.14 2003-06-09 13:55:36 edgomez Exp $
+ * $Id: mbtransquant.c,v 1.21.2.15 2003-07-24 13:09:14 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -201,7 +201,7 @@ MBQuantInter(const MBParam * pParam,
 			sum = quant_inter(&qcoeff[i*64], &data[i*64], pMB->quant);
 			if ( (sum) && (frame->vop_flags & XVID_VOP_TRELLISQUANT) ) {
 				sum = dct_quantize_trellis_h263_c(&qcoeff[i*64], &data[i*64], pMB->quant, &scan_tables[0][0], 63)+1;
-				limit = 1;
+/*				limit = 1; // Isibaar: why? deactivated so far - so please complain! ;-) */
 			}
 		} else {
 			sum = quant4_inter(&qcoeff[i * 64], &data[i * 64], pMB->quant);
@@ -441,6 +441,9 @@ MBTransQuantInter(const MBParam * const pParam,
 	/* Set the limit threshold */
 	limit = PVOP_TOOSMALL_LIMIT + ((pMB->quant == 1)? 1 : 0);
 
+	if (frame->vop_flags & XVID_VOP_CARTOON)
+		limit *= 3;
+
 	/* Quantize the block */
 	cbp = MBQuantInter(pParam, frame, pMB, data, qcoeff, 0, limit);
 
@@ -478,6 +481,9 @@ MBTransQuantInterBVOP(const MBParam * pParam,
 
 	/* Set the limit threshold */
 	limit = BVOP_TOOSMALL_LIMIT;
+
+	if (frame->vop_flags & XVID_VOP_CARTOON)
+		limit *= 2;
 
 	/* Quantize the block */
 	cbp = MBQuantInter(pParam, frame, pMB, data, qcoeff, 1, limit);

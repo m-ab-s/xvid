@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.c,v 1.58.2.22 2003-07-13 09:58:44 syskin Exp $
+ * $Id: motion_est.c,v 1.58.2.23 2003-07-24 13:09:01 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -979,6 +979,15 @@ SkipMacroblockP(MACROBLOCK *pMB, const int32_t sad)
 }
 
 static __inline void
+ZeroMacroblockP(MACROBLOCK *pMB, const int32_t sad)
+{
+	pMB->mode = MODE_INTER;
+	pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = zeroMV;
+	pMB->qmvs[0] = pMB->qmvs[1] = pMB->qmvs[2] = pMB->qmvs[3] = zeroMV;
+	pMB->sad16 = pMB->sad8[0] = pMB->sad8[1] = pMB->sad8[2] = pMB->sad8[3] = sad;
+}
+
+static __inline void
 ModeDecision(SearchData * const Data,
 			MACROBLOCK * const pMB,
 			const MACROBLOCK * const pMBs,
@@ -1248,6 +1257,12 @@ MotionEstimation(MBParam * const pParam,
 						SkipMacroblockP(pMB, sad00);
 						continue;
 					}
+			}
+
+			if ((current->vop_flags & XVID_VOP_CARTOON) && 
+				(sad00 < pMB->quant * 4 * skip_thresh)) { /* favorize (0,0) vector for cartoons */
+				ZeroMacroblockP(pMB, sad00);
+				continue;
 			}
 
 			SearchP(pRef, pRefH->y, pRefV->y, pRefHV->y, pCurrent, x,

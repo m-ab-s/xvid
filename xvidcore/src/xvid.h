@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.27 2003-06-28 15:50:43 chl Exp $
+ * $Id: xvid.h,v 1.27.2.28 2003-07-24 13:09:27 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -523,6 +523,9 @@ typedef enum {
 
     /* only valid for vol_flags|=XVID_VOL_REDUCED_ENABLED */
     XVID_VOP_REDUCED            = 0x00001000, /* reduced resolution vop */
+
+    XVID_VOP_CARTOON			= 0x00002000, /* use 'cartoon mode' */
+
 } xvid_vop_t;
 
 
