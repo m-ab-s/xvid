@@ -23,6 +23,7 @@
  *
  *	History:
  *
+ *	25.04.2002	ICDECOMPRESS_PREROLL
  *	17.04.2002	re-enabled lumi masking for 1st pass
  *	15.04.2002	updated cbr support
  *	04.04.2002	separated 2-pass code to 2pass.c
@@ -667,7 +668,7 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 	frame.image = icd->lpOutput;
 	frame.stride = icd->lpbiOutput->biWidth;
 
-	if (~((icd->dwFlags & ICDECOMPRESS_HURRYUP) | (icd->dwFlags & ICDECOMPRESS_UPDATE)))
+	if (~((icd->dwFlags & ICDECOMPRESS_HURRYUP) | (icd->dwFlags & ICDECOMPRESS_UPDATE) | (icd->dwFlags & ICDECOMPRESS_PREROLL)))
 	{
 		if ((frame.colorspace = get_colorspace(icd->lpbiOutput)) == XVID_CSP_NULL) 
 		{
