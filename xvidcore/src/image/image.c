@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: image.c,v 1.26.2.11 2003-11-05 16:15:47 edgomez Exp $
+ * $Id: image.c,v 1.26.2.12 2003-12-12 08:19:13 chl Exp $
  *
  ****************************************************************************/
 
@@ -623,22 +623,21 @@ image_input(IMAGE * image,
 			interlacing?uyvyi_to_yv12_c:uyvy_to_yv12_c, 2);
 		break;
 
-	case XVID_CSP_I420:
+	case XVID_CSP_I420: /* YCrCb == internal colorspace for MPEG */
 		yv12_to_yv12(image->y, image->u, image->v, edged_width, edged_width2,
 			src[0], src[0] + src_stride[0]*height, src[0] + src_stride[0]*height + (src_stride[0]/2)*height2,
 			src_stride[0], src_stride[0]/2, width, height, (csp & XVID_CSP_VFLIP));
-		break
-			;
-	case XVID_CSP_YV12:		/* u/v swapped */
+		break;
+    
+	case XVID_CSP_YV12:	/* YCbCr == U and V plane swapped */
 		yv12_to_yv12(image->y, image->v, image->u, edged_width, edged_width2,
 			src[0], src[0] + src_stride[0]*height, src[0] + src_stride[0]*height + (src_stride[0]/2)*height2,
 			src_stride[0], src_stride[0]/2, width, height, (csp & XVID_CSP_VFLIP));
 		break;
 
-	case XVID_CSP_USER:
-        /*XXX: support for different u & v strides */
+	case XVID_CSP_USER :  /* YCrCb with arbitrary pointers and different strides for Y and UV */
 		yv12_to_yv12(image->y, image->u, image->v, edged_width, edged_width2,
-			src[0], src[1], src[2], src_stride[0], src_stride[1],
+			src[0], src[1], src[2], src_stride[0], src_stride[1],  /* v: dst_stride[2] not yet supported */
 			width, height, (csp & XVID_CSP_VFLIP));
 		break;
 
@@ -792,24 +791,24 @@ image_output(IMAGE * image,
 			interlacing?yv12_to_uyvyi_c:yv12_to_uyvy_c, 2);
 		return 0;
 
-	case XVID_CSP_I420:
+	case XVID_CSP_I420: /* YCrCb == internal colorspace for MPEG */
 		yv12_to_yv12(dst[0], dst[0] + dst_stride[0]*height, dst[0] + dst_stride[0]*height + (dst_stride[0]/2)*height2,
 			dst_stride[0], dst_stride[0]/2,
 			image->y, image->u, image->v, edged_width, edged_width2,
 			width, height, (csp & XVID_CSP_VFLIP));
 		return 0;
 
-	case XVID_CSP_YV12:		/* u,v swapped */
+	case XVID_CSP_YV12:	/* YCbCr == U and V plane swapped */
 		yv12_to_yv12(dst[0], dst[0] + dst_stride[0]*height, dst[0] + dst_stride[0]*height + (dst_stride[0]/2)*height2,
 			dst_stride[0], dst_stride[0]/2,
 			image->y, image->v, image->u, edged_width, edged_width2,
 			width, height, (csp & XVID_CSP_VFLIP));
 		return 0;
 
-	case XVID_CSP_USER :		/* u,v swapped */
+	case XVID_CSP_USER :  /* YCrCb with arbitrary pointers and different strides for Y and UV */
 		yv12_to_yv12(dst[0], dst[1], dst[2],
-			dst_stride[0], dst_stride[1],	/* v: dst_stride[2] */
-			image->y, image->v, image->u, edged_width, edged_width2,
+			dst_stride[0], dst_stride[1],	/* v: dst_stride[2] not yet supported */
+			image->y, image->u, image->v, edged_width, edged_width2,
 			width, height, (csp & XVID_CSP_VFLIP));
 		return 0;
 
