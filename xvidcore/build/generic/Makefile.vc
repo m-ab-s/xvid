@@ -1,0 +1,74 @@
+#/**************************************************************************
+# *
+# * Microsoft Visual C command-line makefile
+# *
+# * run vcvars32.bat before attempting compile
+# * use nmake -f Makefile.vc
+# * treat "deltree /y" with care
+# *
+# *
+# * $Id: Makefile.vc,v 1.1.2.1 2003-01-25 06:51:36 suxen_drol Exp $
+# *
+# *************************************************************************/
+
+
+include Makefile.inc
+
+
+CC = cl
+CFLAGS = -DARCH_X86
+CFLAGS = $(CFLAGS) /nologo
+
+
+# enable all warnings
+#CFLAGS = $(CFLAGS) /W9
+
+    # favor code size
+#CFLAGS = $(CFLAGS) /Os
+    # favor code speed
+#CFLAGS = $(CFLAGS) /Ot
+
+    # optimize for i386
+#CFLAGS = $(CFLAGS) /G3
+    # optimize for i486
+#CFLAGS = $(CFLAGS) /G4
+    # optimize for pentium
+#CFLAGS = $(CFLAGS) /G5
+    # optimize for pentium pro
+#CFLAGS = $(CFLAGS) /G6
+    # blend optimizations for all cpus
+#CFLAGS = $(CFLAGS) /GB
+
+AS = nasm
+AFLAGS = -f win32 -DPREFIX -DFORMAT_COFF
+
+.asm.o:
+	$(AS) $(AFLAGS) -I$(*D) $*.asm -o $@
+
+.c.o:
+	$(CC) $(CFLAGS) /c $*.c /Fo$@
+
+RM = deltree /y
+
+all: $(LIB)
+
+$(LIB): $(SRC:.c=.o) $(SRC_INTEL:.asm=.o)
+	lib /out:$@ $**
+
+clean:
+	$(RM) $(SRCDIR)/*.o
+	$(RM) $(SRCDIR)/bitstream/*.o
+	$(RM) $(SRCDIR)/dct/*.o
+	$(RM) $(SRCDIR)/image/*.o
+	$(RM) $(SRCDIR)/motion/*.o
+	$(RM) $(SRCDIR)/prediction/*.o
+	$(RM) $(SRCDIR)/quant/*.o
+	$(RM) $(SRCDIR)/utils/*.o
+	$(RM) $(SRCDIR)/bitstream/x86_asm/*.o
+	$(RM) $(SRCDIR)/dct/x86_asm/*.o
+	$(RM) $(SRCDIR)/image/x86_asm/*.o
+	$(RM) $(SRCDIR)/motion/x86_asm/*.o
+	$(RM) $(SRCDIR)/quant/x86_asm/*.o
+	$(RM) $(SRCDIR)/utils/x86_asm/*.o
+	$(RM) $(LIB)
+
