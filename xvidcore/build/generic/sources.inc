@@ -14,6 +14,7 @@ SRC_GENERIC = \
 	image/image.c \
 	image/interpolate8x8.c \
 	image/font.c \
+	image/postprocessing.c \
 	image/qpel.c \
 	image/reduced.c \
 	motion/estimation_bvop.c \

@@ -3,7 +3,7 @@
  *  XVID MPEG-4 VIDEO CODEC
  *  - Postprocessing header  -
  *
- *  Copyright(C) 2003 Michael Militzer <skal@planet-d.net>
+ *  Copyright(C) 2003 Michael Militzer <isibaar@xvid.org>
  *
  *  This program is free software ; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,6 +18,8 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+ *
+ * $Id: postprocessing.h,v 1.1.4.2 2003-12-10 15:07:42 edgomez Exp $
  *
  ****************************************************************************/
 

@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.23 2003-12-10 12:09:34 syskin Exp $
+ * $Id: decoder.c,v 1.49.2.24 2003-12-10 15:07:42 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -58,6 +58,7 @@
 
 #include "image/image.h"
 #include "image/colorspace.h"
+#include "image/postprocessing.h"
 #include "utils/mem_align.h"
 
 static int

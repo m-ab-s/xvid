@@ -820,6 +820,14 @@ SOURCE=..\..\src\image\interpolate8x8.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\image\postprocessing.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\image\qpel.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\image\reduced.h
 # End Source File
 # End Group
@@ -838,6 +846,10 @@ SOURCE=..\..\src\image\image.c
 # Begin Source File
 
 SOURCE=..\..\src\image\interpolate8x8.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\image\postprocessing.c
 # End Source File
 # Begin Source File
 
