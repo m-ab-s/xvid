@@ -3,10 +3,13 @@
  * XviD Bit Rate Controller Library
  * - VBR 2 pass bitrate controler implementation -
  *
- * Copyright (C) 2002 Edouard Gomez <ed.gomez@wanadoo.fr>
+ * Copyright (C)      2002 Foxer <email?>
+ *                    2002 Dirk Knop <dknop@gwdg.de>
+ *               2002-2003 Edouard Gomez <ed.gomez@free.fr>
+ *                    2003 Pete Ross <pross@xvid.org>
  *
- * The curve treatment algorithm is the one implemented by Foxer <email?> and
- * Dirk Knop <dknop@gwdg.de> for the XviD vfw dynamic library.
+ * This curve treatment algorithm is the one originally implemented by Foxer
+ * and tuned by Dirk Knop for the XviD vfw frontend.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +25,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.6 2003-05-20 17:28:25 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.7 2003-05-22 10:57:33 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -177,9 +180,10 @@ static int load_stats(rc_2pass2_t *rc, char * filename)
 
         i++;
     }
+
     rc->num_frames = i;
-   
-    fclose(f);
+
+	fclose(f);
 
     return 1;
 }
@@ -231,6 +235,13 @@ void pre_process0(rc_2pass2_t * rc)
             j++;
         }
     }
+
+	/*
+	 * The "per sequence" overflow system considers a natural sequence to be
+	 * formed by all frames between two iframes, so if we want to make sure
+	 * the system does not go nuts during last sequence, we force the last
+	 * frame to appear in the keyframe locations array.
+	 */
     rc->keyframe_locations[j] = i;
 }
 
@@ -639,7 +650,12 @@ static int rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t ** handle)
         return XVID_ERR_MEMORY;
     }
 
-    /* XXX: do we need an addition location */
+    /*
+	 * We need an extra location because we do as if the last frame were an
+	 * IFrame. This is needed because our code consider that frames between
+	 * 2 IFrames form a natural sequence. So we store last frame as a
+	 * keyframe location.
+	 */
     if ((rc->keyframe_locations = malloc((rc->num_keyframes + 1) * sizeof(int))) == NULL) {
         free(rc->stats);
         free(rc);
@@ -664,7 +680,9 @@ static int rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t ** handle)
 
     DPRINTF(XVID_DEBUG_RC, "rc->target : %i\n", rc->target);
 
+#if 0
 	rc->target -= rc->num_frames*24;	/* avi file header */
+#endif
     
 
 	pre_process0(rc);
@@ -715,262 +733,337 @@ static int rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
     double curve_temp;
     int capped_to_max_framesize = 0;
 
-    if (data->quant <= 0) {
+	/*
+	 * This function is quite long but easy to understand. In order to simplify
+	 * the code path (a bit), we treat 3 cases that can return immediatly.
+	 */
 
-        if (s->zone_mode == XVID_ZONE_QUANT) {
+	/* First case: Another plugin has already set a quantizer */
+    if (data->quant > 0)
+		return(0);
 
-            rc->fq_error += s->weight;
-            data->quant = (int)rc->fq_error;
-            rc->fq_error -= data->quant;
+	/* Second case: We are in a Quant zone */
+	if (s->zone_mode == XVID_ZONE_QUANT) {
 
-            s->desired_length = s->length;
+		rc->fq_error += s->weight;
+		data->quant = (int)rc->fq_error;
+		rc->fq_error -= data->quant;
+		
+		s->desired_length = s->length;
 
-        }else { /* XVID_ZONE_WEIGHT */
+		return(0);
 
-            if (data->frame_num >= rc->num_frames) {
-                /* insufficent stats data */
-                return 0;
-            }
+	}
 
-            overflow = rc->overflow / 8;        /* XXX: why by 8 */
+	/* Third case: insufficent stats data */
+	if (data->frame_num >= rc->num_frames)
+		return 0;
 
-            if (s->type == XVID_TYPE_IVOP) {        /* XXX: why */
-                overflow = 0;
-            }
+	/*
+	 * The last case is the one every normal minded developer should fear to
+	 * maintain in a project :-)
+	 */
 
-            desired = s->scaled_length;
+	/* XXX: why by 8 */
+	overflow = rc->overflow / 8;
 
-            dbytes = desired;
-            if (s->type == XVID_TYPE_IVOP) {
-                dbytes += desired * rc->param.keyframe_boost / 100;
-            }
-            dbytes /= rc->movie_curve;
+	/*
+	 * The rc->overflow field represents the overflow in current scene (between two
+	 * IFrames) so we must not forget to reset it if we are enetring a new scene
+	 */
+	if (s->type == XVID_TYPE_IVOP) {
+		overflow = 0;
+	}
 
-            if (s->type == XVID_TYPE_BVOP) {
-                dbytes *= rc->avg_length[XVID_TYPE_PVOP-1] / rc->avg_length[XVID_TYPE_BVOP-1];
-            }
+	desired = s->scaled_length;
 
-            if (rc->param.payback_method == XVID_PAYBACK_BIAS) {
-                desired =(int)(rc->curve_comp_error / rc->param.bitrate_payback_delay);
-            }else{
-		        //printf("desired=%i, dbytes=%i\n", desired,dbytes);
-		        desired = (int)(rc->curve_comp_error * dbytes /
-			        rc->avg_length[XVID_TYPE_PVOP-1] / rc->param.bitrate_payback_delay);
-		        //printf("desired=%i\n", desired);
+	dbytes = desired;
+	if (s->type == XVID_TYPE_IVOP) {
+		dbytes += desired * rc->param.keyframe_boost / 100;
+	}
+	dbytes /= rc->movie_curve;
 
-		        if (labs(desired) > fabs(rc->curve_comp_error)) {
-			        desired = (int)rc->curve_comp_error;
-		        }
-            }
+	/*
+	 * We are now entering in the hard part of the algo, it was first designed
+	 * to work with i/pframes only streams, so the way it computes things is
+	 * adapted to pframes only. However we can use it if we just take care to
+	 * scale the bframes sizes to pframes sizes using the ratio avg_p/avg_p and
+	 * then before really using values depending on frame sizes, scaling the
+	 * value again with the inverse ratio
+	 */
+	if (s->type == XVID_TYPE_BVOP) {
+		dbytes *= rc->avg_length[XVID_TYPE_PVOP-1] / rc->avg_length[XVID_TYPE_BVOP-1];
+	}
 
-            rc->curve_comp_error -= desired;
+	/*
+	 * Apply user's choosen Payback method. Payback helps bitrate to follow the
+	 * scaled curve "paying back" past errors in curve previsions.
+	 */
+	if (rc->param.payback_method == XVID_PAYBACK_BIAS) {
+		desired =(int)(rc->curve_comp_error / rc->param.bitrate_payback_delay);
+	}else{
+		desired = (int)(rc->curve_comp_error * dbytes /
+						rc->avg_length[XVID_TYPE_PVOP-1] / rc->param.bitrate_payback_delay);
 
-            /* alt curve */
+		if (labs(desired) > fabs(rc->curve_comp_error)) {
+			desired = (int)rc->curve_comp_error;
+		}
+	}
 
-            curve_temp = 0; /* XXX: warning */
+	rc->curve_comp_error -= desired;
 
-            if (rc->param.use_alt_curve) {
-                if (s->type != XVID_TYPE_IVOP)  {
-                    if (dbytes > rc->avg_length[XVID_TYPE_PVOP-1]) {
-                        if (dbytes >= rc->alt_curve_high) {
-					        curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev);
-                        }else{
-                            switch(rc->param.alt_curve_type) {
-					        case XVID_CURVE_SINE :
-					            curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * sin(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_high_diff)));
-						        break;
-					        case XVID_CURVE_LINEAR :
-					            curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * (dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) / rc->alt_curve_high_diff);
-						        break;
-					        case XVID_CURVE_COSINE :
-					            curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * (1.0 - cos(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_high_diff))));
-					        }
-				        }
-			        }else{
-                        if (dbytes <= rc->alt_curve_low){
-					        curve_temp = dbytes;
-                        }else{
-					        switch(rc->param.alt_curve_type) {
-					        case XVID_CURVE_SINE :
-					            curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * sin(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_low_diff)));
-						        break;
-					        case XVID_CURVE_LINEAR :
-					            curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * (dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) / rc->alt_curve_low_diff);
-						        break;
-					        case XVID_CURVE_COSINE :
-					            curve_temp = dbytes * (rc->alt_curve_mid_qual + rc->alt_curve_qual_dev * (1.0 - cos(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_low_diff))));
-                            }
-				        }
-			        }
-			        if (s->type == XVID_TYPE_BVOP)
-				        curve_temp *= rc->avg_length[XVID_TYPE_BVOP-1] / rc->avg_length[XVID_TYPE_PVOP-1];
+	/*
+	 * Alt curve treatment is not that hard to understand though the formulas
+	 * seem to be huge. Alt treatment is basically a way to soft/harden the
+	 * curve flux applying sine/linear/cosine ratios
+	 */
 
-			        curve_temp = curve_temp * rc->curve_comp_scale + rc->alt_curve_curve_bias_bonus;
+	/* XXX: warning */
+	curve_temp = 0;
 
-			        desired += ((int)curve_temp);
-			        rc->curve_comp_error += curve_temp - (int)curve_temp;
-		        }else{
-			        if (s->type == XVID_TYPE_BVOP)
-				        dbytes *= rc->avg_length[XVID_TYPE_BVOP-1] / rc->avg_length[XVID_TYPE_PVOP-1];
+	if (rc->param.use_alt_curve) {
+		if (s->type != XVID_TYPE_IVOP)  {
+			if (dbytes > rc->avg_length[XVID_TYPE_PVOP-1]) {
+				if (dbytes >= rc->alt_curve_high) {
+					curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev);
+				} else {
+					switch(rc->param.alt_curve_type) {
+					case XVID_CURVE_SINE :
+						curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * sin(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_high_diff)));
+						break;
+					case XVID_CURVE_LINEAR :
+						curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * (dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) / rc->alt_curve_high_diff);
+						break;
+					case XVID_CURVE_COSINE :
+						curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * (1.0 - cos(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_high_diff))));
+					}
+				}
+			} else {
+				if (dbytes <= rc->alt_curve_low){
+					curve_temp = dbytes;
+				} else {
+					switch(rc->param.alt_curve_type) {
+					case XVID_CURVE_SINE :
+						curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * sin(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_low_diff)));
+						break;
+					case XVID_CURVE_LINEAR :
+						curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * (dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) / rc->alt_curve_low_diff);
+						break;
+					case XVID_CURVE_COSINE :
+						curve_temp = dbytes * (rc->alt_curve_mid_qual + rc->alt_curve_qual_dev * (1.0 - cos(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_low_diff))));
+					}
+				}
+			}
 
-			        desired += ((int)dbytes);
-			        rc->curve_comp_error += dbytes - (int)dbytes;
-		        }
+			/*
+			 * End of code path for curve_temp, as told earlier, we are now
+			 * obliged to scale the value to a bframe one using the inverse
+			 * ratio applied earlier
+			 */
+			if (s->type == XVID_TYPE_BVOP)
+				curve_temp *= rc->avg_length[XVID_TYPE_BVOP-1] / rc->avg_length[XVID_TYPE_PVOP-1];
 
-            }else if ((rc->param.curve_compression_high + rc->param.curve_compression_low) &&	s->type != XVID_TYPE_IVOP) {
+			curve_temp = curve_temp * rc->curve_comp_scale + rc->alt_curve_curve_bias_bonus;
 
-                curve_temp = rc->curve_comp_scale;
-                if (dbytes > rc->avg_length[XVID_TYPE_PVOP-1]) {
-                    curve_temp *= ((double)dbytes + (rc->avg_length[XVID_TYPE_PVOP-1] - dbytes) * rc->param.curve_compression_high / 100.0);
-                } else {
-                    curve_temp *= ((double)dbytes + (rc->avg_length[XVID_TYPE_PVOP-1] - dbytes) * rc->param.curve_compression_low / 100.0);
-                }
+			desired += ((int)curve_temp);
+			rc->curve_comp_error += curve_temp - (int)curve_temp;
+		} else {
+			/*
+			 * End of code path for dbytes, as told earlier, we are now
+			 * obliged to scale the value to a bframe one using the inverse
+			 * ratio applied earlier
+			 */
+			if (s->type == XVID_TYPE_BVOP)
+				dbytes *= rc->avg_length[XVID_TYPE_BVOP-1] / rc->avg_length[XVID_TYPE_PVOP-1];
 
-                if (s->type == XVID_TYPE_BVOP){
-                    curve_temp *= rc->avg_length[XVID_TYPE_BVOP-1] / rc->avg_length[XVID_TYPE_PVOP-1];
-                }
+			desired += ((int)dbytes);
+			rc->curve_comp_error += dbytes - (int)dbytes;
+		}
 
-                desired += (int)curve_temp;
-                rc->curve_comp_error += curve_temp - (int)curve_temp;
-            }else{
-                if (s->type == XVID_TYPE_BVOP){
-			        dbytes *= rc->avg_length[XVID_TYPE_BVOP-1] / rc->avg_length[XVID_TYPE_PVOP-1];
-                }
+	} else if ((rc->param.curve_compression_high + rc->param.curve_compression_low) &&	s->type != XVID_TYPE_IVOP) {
 
-		        desired += (int)dbytes;
-		        rc->curve_comp_error += dbytes - (int)dbytes;
-            }
+		curve_temp = rc->curve_comp_scale;
+		if (dbytes > rc->avg_length[XVID_TYPE_PVOP-1]) {
+			curve_temp *= ((double)dbytes + (rc->avg_length[XVID_TYPE_PVOP-1] - dbytes) * rc->param.curve_compression_high / 100.0);
+		} else {
+			curve_temp *= ((double)dbytes + (rc->avg_length[XVID_TYPE_PVOP-1] - dbytes) * rc->param.curve_compression_low / 100.0);
+		}
+
+		/*
+		 * End of code path for curve_temp, as told earlier, we are now
+		 * obliged to scale the value to a bframe one using the inverse
+		 * ratio applied earlier
+		 */
+		if (s->type == XVID_TYPE_BVOP)
+			curve_temp *= rc->avg_length[XVID_TYPE_BVOP-1] / rc->avg_length[XVID_TYPE_PVOP-1];
+
+		desired += (int)curve_temp;
+		rc->curve_comp_error += curve_temp - (int)curve_temp;
+	} else {
+		/*
+		 * End of code path for dbytes, as told earlier, we are now
+		 * obliged to scale the value to a bframe one using the inverse
+		 * ratio applied earlier
+		 */
+		if (s->type == XVID_TYPE_BVOP){
+			dbytes *= rc->avg_length[XVID_TYPE_BVOP-1] / rc->avg_length[XVID_TYPE_PVOP-1];
+		}
+
+		desired += (int)dbytes;
+		rc->curve_comp_error += dbytes - (int)dbytes;
+	}
 
 
-	        if (desired > s->length) {  /* if desired length exceeds the pass1 length.. */
-		        rc->curve_comp_error += desired - s->length;
-		        desired = s->length;
-	        }else{
-                if (desired < rc->min_length[s->type-1]) {
-                    if (s->type == XVID_TYPE_IVOP){
-                        rc->curve_comp_error -= rc->min_length[XVID_TYPE_IVOP-1] - desired;
-                    }
-                    desired = rc->min_length[s->type-1];
-                }
-	        }
+	/*
+	 * We can't do bigger frames than first pass, this would be stupid as first
+	 * pass is quant=2 and that reaching quant=1 is not worth it. We would lose
+	 * many bytes and we would not not gain much quality.
+	 */
+	if (desired > s->length) {
+		rc->curve_comp_error += desired - s->length;
+		desired = s->length;
+	}else{
+		if (desired < rc->min_length[s->type-1]) {
+			if (s->type == XVID_TYPE_IVOP){
+				rc->curve_comp_error -= rc->min_length[XVID_TYPE_IVOP-1] - desired;
+			}
+			desired = rc->min_length[s->type-1];
+		}
+	}
 
-            s->desired_length = desired;
+	s->desired_length = desired;
 
    	        
-            /* if this keyframe is too close to the next, reduce it's byte allotment
-            XXX: why do we do this after setting the desired length  */
+	/* if this keyframe is too close to the next, reduce it's byte allotment
+	   XXX: why do we do this after setting the desired length  */
 
-	        if (s->type == XVID_TYPE_IVOP) {
-		        int KFdistance = rc->keyframe_locations[rc->KF_idx] - rc->keyframe_locations[rc->KF_idx - 1];
+	if (s->type == XVID_TYPE_IVOP) {
+		int KFdistance = rc->keyframe_locations[rc->KF_idx] - rc->keyframe_locations[rc->KF_idx - 1];
 
-                if (KFdistance < rc->param.kftreshold) {
+		if (KFdistance < rc->param.kftreshold) {
 			        
-                    KFdistance = KFdistance - rc->param.min_key_interval;
+			KFdistance = KFdistance - rc->param.min_key_interval;
 
-			        if (KFdistance >= 0) {
-                        int KF_min_size;
+			if (KFdistance >= 0) {
+				int KF_min_size;
 
-				        KF_min_size = desired * (100 - rc->param.kfreduction) / 100;
-				        if (KF_min_size < 1)
-					        KF_min_size = 1;
+				KF_min_size = desired * (100 - rc->param.kfreduction) / 100;
+				if (KF_min_size < 1)
+					KF_min_size = 1;
 
-				        desired = KF_min_size + (desired - KF_min_size) * KFdistance /
-					        (rc->param.kftreshold - rc->param.min_key_interval);
+				desired = KF_min_size + (desired - KF_min_size) * KFdistance /
+					(rc->param.kftreshold - rc->param.min_key_interval);
 
-				        if (desired < 1)
-					        desired = 1;
-			        }
-		        }
-	        }
+				if (desired < 1)
+					desired = 1;
+			}
+		}
+	}
 
-            overflow = (int)((double)overflow * desired / rc->avg_length[XVID_TYPE_PVOP-1]);
+	overflow = (int)((double)overflow * desired / rc->avg_length[XVID_TYPE_PVOP-1]);
 
-	        // Foxer: reign in overflow with huge frames
-	        if (labs(overflow) > labs(rc->overflow)) {
-		        overflow = rc->overflow;
-	        }
+	/* Reign in overflow with huge frames */
+	if (labs(overflow) > labs(rc->overflow)) {
+		overflow = rc->overflow;
+	}
 
-            // Foxer: make sure overflow doesn't run away   
+	/* Make sure overflow doesn't run away */
+	if (overflow > desired * rc->param.max_overflow_improvement / 100) {
+		desired += (overflow <= desired) ? desired * rc->param.max_overflow_improvement / 100 :
+			overflow * rc->param.max_overflow_improvement / 100;
+	} else if (overflow < desired * rc->param.max_overflow_degradation / -100){
+		desired += desired * rc->param.max_overflow_degradation / -100;
+	} else {
+		desired += overflow;
+	}
 
-	        if (overflow > desired * rc->param.max_overflow_improvement / 100) {
-		        desired += (overflow <= desired) ? desired * rc->param.max_overflow_improvement / 100 :
-			        overflow * rc->param.max_overflow_improvement / 100;
-	        }else if (overflow < desired * rc->param.max_overflow_degradation / -100){
-		        desired += desired * rc->param.max_overflow_degradation / -100;
-	        }else{
-		        desired += overflow;
-	        }
+	/* Make sure we are not higher than desired frame size */
+	if (desired > rc->max_length) {
+		capped_to_max_framesize = 1;
+		desired = rc->max_length;
+	}
 
-            if (desired > rc->max_length) {
-		        capped_to_max_framesize = 1;
-		        desired = rc->max_length;
-	        }
+	/* Make sure to not scale below the minimum framesize */
+	if (desired < rc->min_length[s->type-1])
+		desired = rc->min_length[s->type-1];
 
-            // make sure to not scale below the minimum framesize
-            if (desired < rc->min_length[s->type-1]) {
-                desired = rc->min_length[s->type-1];
-            }
+	/*
+	 * Don't laugh at this very 'simple' quant<->filesize relationship, it
+	 * proves to be acurate enough for our algorithm
+	 */
+	data->quant= (s->quant * s->length) / desired;
 
+	/* Let's clip the computed quantizer, if needed */
+	if (data->quant < 1) {
+		data->quant = 1;
+	} else if (data->quant > 31) {
+		data->quant = 31;
+	} else if (s->type != XVID_TYPE_IVOP) {
 
-            // very 'simple' quant<->filesize relationship
-            data->quant= (s->quant * s->length) / desired;
+		/*
+		 * The frame quantizer has not been clipped, this appear to be a good
+		 * computed quantizer, however past frames give us some info about how
+		 * this quantizer performs against the algo prevision. Let's use this
+		 * prevision to increase the quantizer when we observe a too big
+		 * accumulated error
+		 */
+		if (s->type== XVID_TYPE_BVOP) {
+			rc->bquant_error[data->quant] += ((double)(s->quant * s->length) / desired) - data->quant;
 
-	        if (data->quant < 1) {
-		        data->quant = 1;
-            } else if (data->quant > 31) {
-		        data->quant = 31;
-	        }
-	        else if (s->type != XVID_TYPE_IVOP)
-	        {
-		        // Foxer: aid desired quantizer precision by accumulating decision error
-		        if (s->type== XVID_TYPE_BVOP) {
-			        rc->bquant_error[data->quant] += ((double)(s->quant * s->length) / desired) - data->quant;
+			if (rc->bquant_error[data->quant] >= 1.0) {
+				rc->bquant_error[data->quant] -= 1.0;
+				data->quant++;
+			}
+		} else {
+			rc->pquant_error[data->quant] += ((double)(s->quant * s->length) / desired) - data->quant;
 
-			        if (rc->bquant_error[data->quant] >= 1.0) {
-				        rc->bquant_error[data->quant] -= 1.0;
-				        data->quant++;
-			        }
-		        }else{
-			        rc->pquant_error[data->quant] += ((double)(s->quant * s->length) / desired) - data->quant;
+			if (rc->pquant_error[data->quant] >= 1.0) {
+				rc->pquant_error[data->quant] -= 1.0;
+				++data->quant;
+			}
+		}
+	}
 
-                    if (rc->pquant_error[data->quant] >= 1.0) {
-				        rc->pquant_error[data->quant] -= 1.0;
-				        ++data->quant;
-			        }
-		        }
-	        }
+	/*
+	 * Now we have a computed quant that is in the right quante range, with a
+	 * possible +1 correction due to cumulated error. We can now safely clip
+	 * the quantizer again with user's quant ranges. "Safely" means the Rate
+	 * Control could learn more about this quantizer, this knowledge is useful
+	 * for future frames even if it this quantizer won't be really used atm,
+	 * that's why we don't perform this clipping earlier.
+	 */
+	if (data->quant < data->min_quant[s->type-1]) {
+		data->quant = data->min_quant[s->type-1];
+	} else if (data->quant > data->max_quant[s->type-1]) {
+		data->quant = data->max_quant[s->type-1];
+	}
 
-            /* cap to min/max quant */
+	/*
+	 * To avoid big quality jumps from frame to frame, we apply a "security"
+	 * rule that makes |last_quant - new_quant| <= 2. This rule only applies
+	 * to predicted frames (P and B)
+	 */
+	if (s->type != XVID_TYPE_IVOP && rc->last_quant[s->type-1] && capped_to_max_framesize == 0) {
 
-            if (data->quant < data->min_quant[s->type-1]) {
-                data->quant = data->min_quant[s->type-1];
-            }else if (data->quant > data->max_quant[s->type-1]) {
-                data->quant = data->max_quant[s->type-1];
-            }
+		if (data->quant > rc->last_quant[s->type-1] + 2) {
+			data->quant = rc->last_quant[s->type-1] + 2;
+			DPRINTF(XVID_DEBUG_RC, "p/b-frame quantizer prevented from rising too steeply");
+		}
+		if (data->quant < rc->last_quant[s->type-1] - 2) {
+			data->quant = rc->last_quant[s->type-1] - 2;
+			DPRINTF(XVID_DEBUG_RC, "p/b-frame quantizer prevented from falling too steeply");
+		}
+	}
 
-            /* subsequent p/b frame quants can only be +- 2 */
-	        if (s->type != XVID_TYPE_IVOP && rc->last_quant[s->type-1] && capped_to_max_framesize == 0) {
+	/*
+	 * We don't want to pollute the RC history results when our computed quant
+	 * has been computed from a capped frame size
+	 */
+	if (capped_to_max_framesize == 0) {
+		rc->last_quant[s->type-1] = data->quant;
+	}
 
-		        if (data->quant > rc->last_quant[s->type-1] + 2) {
-			        data->quant = rc->last_quant[s->type-1] + 2;
-			        DPRINTF(XVID_DEBUG_RC, "p/b-frame quantizer prevented from rising too steeply");
-		        }
-		        if (data->quant < rc->last_quant[s->type-1] - 2) {
-			        data->quant = rc->last_quant[s->type-1] - 2;
-			        DPRINTF(XVID_DEBUG_RC, "p/b-frame quantizer prevented from falling too steeply");
-		        }
-	        }
-
-	        if (capped_to_max_framesize == 0) {
-                rc->last_quant[s->type-1] = data->quant;
-	        }
-
-        
-        }   /* if */
-
-    }
-
-    return 0;
+	return 0;
 }
 
 
@@ -979,10 +1072,9 @@ static int rc_2pass2_after(rc_2pass2_t * rc, xvid_plg_data_t * data)
 {
     stat_t * s = &rc->stats[data->frame_num];
 
-    if (data->frame_num >= rc->num_frames) {
-        /* insufficent stats data */
+	/* Insufficent stats data */
+    if (data->frame_num >= rc->num_frames)
         return 0;
-    }
 
     rc->quant_count[data->quant]++;
 
