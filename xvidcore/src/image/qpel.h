@@ -1,31 +1,27 @@
 /*****************************************************************************
-*
-*  XVID MPEG-4 VIDEO CODEC
-*  - QPel interpolation -
-*
-*  This program is free software ; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation ; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY ; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with this program ; if not, write to the Free Software
-*  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
-*
-*****************************************************************************/
-
-/**************************************************************************
  *
- *	History:
+ *  XVID MPEG-4 VIDEO CODEC
+ *  - QPel interpolation -
  *
- *  22.10.2002	initial coding  - Skal -
+ *  Copyright(C) 2003 Pascal Massimino <skal@planet-d.net>
  *
- *************************************************************************/
+ *  This program is free software ; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation ; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY ; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program ; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+ *
+ * $Id: qpel.h,v 1.1.4.2 2003-08-23 15:11:23 edgomez Exp $
+ *
+ ****************************************************************************/
 
 #ifndef _XVID_QPEL_H_
 #define _XVID_QPEL_H_
@@ -41,41 +37,42 @@
 
 typedef  XVID_QP_PASS_SIGNATURE(XVID_QP_PASS);
 
-    // We put everything in a single struct so it can easily be passed
-    // to prediction functions as a whole...
+/* We put everything in a single struct so it can easily be passed
+ * to prediction functions as a whole... */
 
-struct XVID_QP_FUNCS {
+typedef struct _XVID_QP_FUNCS {
 
-    // filter for QPel 16x? prediction
+	/* filter for QPel 16x? prediction */
 
-  XVID_QP_PASS *H_Pass;
-  XVID_QP_PASS *H_Pass_Avrg;
-  XVID_QP_PASS *H_Pass_Avrg_Up;
-  XVID_QP_PASS *V_Pass;
-  XVID_QP_PASS *V_Pass_Avrg;
-  XVID_QP_PASS *V_Pass_Avrg_Up;
+	XVID_QP_PASS *H_Pass;
+	XVID_QP_PASS *H_Pass_Avrg;
+	XVID_QP_PASS *H_Pass_Avrg_Up;
+	XVID_QP_PASS *V_Pass;
+	XVID_QP_PASS *V_Pass_Avrg;
+	XVID_QP_PASS *V_Pass_Avrg_Up;
 
     // filter for QPel 8x? prediction
 
-  XVID_QP_PASS *H_Pass_8;
-  XVID_QP_PASS *H_Pass_Avrg_8;
-  XVID_QP_PASS *H_Pass_Avrg_Up_8;
-  XVID_QP_PASS *V_Pass_8;
-  XVID_QP_PASS *V_Pass_Avrg_8;
-  XVID_QP_PASS *V_Pass_Avrg_Up_8;
-};
-typedef struct XVID_QP_FUNCS  XVID_QP_FUNCS;
+	XVID_QP_PASS *H_Pass_8;
+	XVID_QP_PASS *H_Pass_Avrg_8;
+	XVID_QP_PASS *H_Pass_Avrg_Up_8;
+	XVID_QP_PASS *V_Pass_8;
+	XVID_QP_PASS *V_Pass_Avrg_8;
+	XVID_QP_PASS *V_Pass_Avrg_Up_8;
+} XVID_QP_FUNCS;
 
 /*****************************************************************************
  * fwd dcl
  ****************************************************************************/
+extern void xvid_Init_QP();
 
 extern XVID_QP_FUNCS xvid_QP_Funcs_C;       // for P-frames
 extern XVID_QP_FUNCS xvid_QP_Add_Funcs_C;   // for B-frames
 
+#ifdef ARCH_IS_IA32
 extern XVID_QP_FUNCS xvid_QP_Funcs_mmx;
 extern XVID_QP_FUNCS xvid_QP_Add_Funcs_mmx;
-extern void xvid_Init_QP_mmx(); // should be called at mmx initialization
+#endif
 
 extern XVID_QP_FUNCS *xvid_QP_Funcs;      // <- main pointer for enc/dec structure
 extern XVID_QP_FUNCS *xvid_QP_Add_Funcs;  // <- main pointer for enc/dec structure
@@ -100,16 +97,16 @@ extern XVID_QP_FUNCS *xvid_QP_Add_Funcs;  // <- main pointer for enc/dec structu
 
  ****************************************************************************/
 
-static __inline void new_interpolate16x16_quarterpel(
-    uint8_t * const cur,
-    uint8_t * const refn,
-		uint8_t * const refh,
-		uint8_t * const refv,
-		uint8_t * const refhv,
-		const uint32_t x, const uint32_t y,
-		const int32_t dx,  const int dy,
-		const uint32_t stride,
-		const uint32_t rounding)
+static void __inline
+new_interpolate16x16_quarterpel(uint8_t * const cur,
+								uint8_t * const refn,
+								uint8_t * const refh,
+								uint8_t * const refv,
+								uint8_t * const refhv,
+								const uint32_t x, const uint32_t y,
+								const int32_t dx,  const int dy,
+								const uint32_t stride,
+								const uint32_t rounding)
 {
 	const uint8_t *src;
 	uint8_t *dst;
@@ -119,99 +116,99 @@ static __inline void new_interpolate16x16_quarterpel(
 
 	int32_t x_int, y_int;
 
-  const int32_t xRef = x*4 + dx;
-  const int32_t yRef = y*4 + dy;
+	const int32_t xRef = x*4 + dx;
+	const int32_t yRef = y*4 + dy;
  
-     Ops = xvid_QP_Funcs; // TODO: pass as argument
-     quads = (dx&3) | ((dy&3)<<2);
+	Ops = xvid_QP_Funcs; // TODO: pass as argument
+	quads = (dx&3) | ((dy&3)<<2);
  
-  x_int = xRef/4;
-  if (xRef < 0 && xRef % 4)
-   x_int--;
+	x_int = xRef/4;
+	if (xRef < 0 && xRef % 4)
+		x_int--;
  
-  y_int  = yRef/4;
-  if (yRef < 0 && yRef % 4)
-   y_int--;
+	y_int	 = yRef/4;
+	if (yRef < 0 && yRef % 4)
+		y_int--;
  
-    dst = cur + y * stride + x;
+	dst = cur + y * stride + x;
 	src = refn + y_int * stride + x_int;
 
-  tmp = refh; // we need at least a 16 x stride scratch block
+	tmp = refh; // we need at least a 16 x stride scratch block
 
-  switch(quads) {
-    case 0:
-      transfer8x8_copy( dst, src, stride);
-      transfer8x8_copy( dst+8, src+8, stride);
-      transfer8x8_copy( dst+8*stride, src+8*stride, stride);
-      transfer8x8_copy( dst+8*stride+8, src+8*stride+8, stride);
-    break;
-    case 1:
-      Ops->H_Pass_Avrg(dst, src, 16, stride, rounding);
-    break;
-    case 2:
-      Ops->H_Pass(dst, src, 16, stride, rounding);
-    break;
-    case 3:
-      Ops->H_Pass_Avrg_Up(dst, src, 16, stride, rounding);
-    break;
-    case 4:
-      Ops->V_Pass_Avrg(dst, src, 16, stride, rounding);
-    break;
-    case 5:
-      Ops->H_Pass_Avrg(tmp, src, 17, stride, rounding);
-      Ops->V_Pass_Avrg(dst, tmp, 16, stride, rounding);
-    break;
-    case 6:
-      Ops->H_Pass(tmp, src,   17, stride, rounding);
-      Ops->V_Pass_Avrg(dst, tmp, 16, stride, rounding);
-    break;
-    case 7:
-      Ops->H_Pass_Avrg_Up(tmp, src, 17, stride, rounding);
-      Ops->V_Pass_Avrg(dst, tmp, 16, stride, rounding);
-    break;
-    case 8:
-      Ops->V_Pass(dst, src, 16, stride, rounding);
-    break;
-    case 9:
-      Ops->H_Pass_Avrg(tmp, src, 17, stride, rounding);
-      Ops->V_Pass(dst, tmp, 16, stride, rounding);
-    break;
-    case 10:
-      Ops->H_Pass(tmp, src, 17, stride, rounding);
-      Ops->V_Pass(dst, tmp, 16, stride, rounding);
-    break;
-    case 11:
-      Ops->H_Pass_Avrg_Up(tmp, src, 17, stride, rounding);
-      Ops->V_Pass(dst, tmp, 16, stride, rounding);
-    break;
-    case 12:
-      Ops->V_Pass_Avrg_Up(dst, src, 16, stride, rounding);
-    break;
-    case 13:
-      Ops->H_Pass_Avrg(tmp, src, 17, stride, rounding);
-      Ops->V_Pass_Avrg_Up(dst, tmp, 16, stride, rounding);
-    break;
-    case 14:
-      Ops->H_Pass(tmp, src, 17, stride, rounding);
-      Ops->V_Pass_Avrg_Up( dst, tmp, 16, stride, rounding);
-    break;
-    case 15:
-      Ops->H_Pass_Avrg_Up(tmp, src, 17, stride, rounding);
-      Ops->V_Pass_Avrg_Up(dst, tmp, 16, stride, rounding);
-    break;
-  }
+	switch(quads) {
+	case 0:
+		transfer8x8_copy( dst, src, stride);
+		transfer8x8_copy( dst+8, src+8, stride);
+		transfer8x8_copy( dst+8*stride, src+8*stride, stride);
+		transfer8x8_copy( dst+8*stride+8, src+8*stride+8, stride);
+		break;
+	case 1:
+		Ops->H_Pass_Avrg(dst, src, 16, stride, rounding);
+		break;
+	case 2:
+		Ops->H_Pass(dst, src, 16, stride, rounding);
+		break;
+	case 3:
+		Ops->H_Pass_Avrg_Up(dst, src, 16, stride, rounding);
+		break;
+	case 4:
+		Ops->V_Pass_Avrg(dst, src, 16, stride, rounding);
+		break;
+	case 5:
+		Ops->H_Pass_Avrg(tmp, src, 17, stride, rounding);
+		Ops->V_Pass_Avrg(dst, tmp, 16, stride, rounding);
+		break;
+	case 6:
+		Ops->H_Pass(tmp, src,	  17, stride, rounding);
+		Ops->V_Pass_Avrg(dst, tmp, 16, stride, rounding);
+		break;
+	case 7:
+		Ops->H_Pass_Avrg_Up(tmp, src, 17, stride, rounding);
+		Ops->V_Pass_Avrg(dst, tmp, 16, stride, rounding);
+		break;
+	case 8:
+		Ops->V_Pass(dst, src, 16, stride, rounding);
+		break;
+	case 9:
+		Ops->H_Pass_Avrg(tmp, src, 17, stride, rounding);
+		Ops->V_Pass(dst, tmp, 16, stride, rounding);
+		break;
+	case 10:
+		Ops->H_Pass(tmp, src, 17, stride, rounding);
+		Ops->V_Pass(dst, tmp, 16, stride, rounding);
+		break;
+	case 11:
+		Ops->H_Pass_Avrg_Up(tmp, src, 17, stride, rounding);
+		Ops->V_Pass(dst, tmp, 16, stride, rounding);
+		break;
+	case 12:
+		Ops->V_Pass_Avrg_Up(dst, src, 16, stride, rounding);
+		break;
+	case 13:
+		Ops->H_Pass_Avrg(tmp, src, 17, stride, rounding);
+		Ops->V_Pass_Avrg_Up(dst, tmp, 16, stride, rounding);
+		break;
+	case 14:
+		Ops->H_Pass(tmp, src, 17, stride, rounding);
+		Ops->V_Pass_Avrg_Up( dst, tmp, 16, stride, rounding);
+		break;
+	case 15:
+		Ops->H_Pass_Avrg_Up(tmp, src, 17, stride, rounding);
+		Ops->V_Pass_Avrg_Up(dst, tmp, 16, stride, rounding);
+		break;
+	}
 }
 
-static __inline void new_interpolate16x8_quarterpel(
-    uint8_t * const cur,
-    uint8_t * const refn,
-		uint8_t * const refh,
-		uint8_t * const refv,
-		uint8_t * const refhv,
-		const uint32_t x, const uint32_t y,
-		const int32_t dx,  const int dy,
-		const uint32_t stride,
-		const uint32_t rounding)
+static void __inline
+new_interpolate16x8_quarterpel(uint8_t * const cur,
+							   uint8_t * const refn,
+							   uint8_t * const refh,
+							   uint8_t * const refv,
+							   uint8_t * const refhv,
+							   const uint32_t x, const uint32_t y,
+							   const int32_t dx,  const int dy,
+							   const uint32_t stride,
+							   const uint32_t rounding)
 {
 	const uint8_t *src;
 	uint8_t *dst;
@@ -221,97 +218,97 @@ static __inline void new_interpolate16x8_quarterpel(
 
 	int32_t x_int, y_int;
 
-  const int32_t xRef = x*4 + dx;
-  const int32_t yRef = y*4 + dy;
+	const int32_t xRef = x*4 + dx;
+	const int32_t yRef = y*4 + dy;
  
-     Ops = xvid_QP_Funcs; // TODO: pass as argument
-     quads = (dx&3) | ((dy&3)<<2);
+	Ops = xvid_QP_Funcs; // TODO: pass as argument
+	quads = (dx&3) | ((dy&3)<<2);
  
-  x_int = xRef/4;
-  if (xRef < 0 && xRef % 4)
-   x_int--;
+	x_int = xRef/4;
+	if (xRef < 0 && xRef % 4)
+		x_int--;
  
-  y_int  = yRef/4;
-  if (yRef < 0 && yRef % 4)
-   y_int--;
+	y_int	 = yRef/4;
+	if (yRef < 0 && yRef % 4)
+		y_int--;
  
-    dst = cur + y * stride + x;
+	dst = cur + y * stride + x;
 	src = refn + y_int * stride + x_int;
 
-  tmp = refh; // we need at least a 16 x stride scratch block
+	tmp = refh; // we need at least a 16 x stride scratch block
 
-  switch(quads) {
-    case 0:
-      transfer8x8_copy( dst, src, stride);
-      transfer8x8_copy( dst+8, src+8, stride);
-    break;
-    case 1:
-      Ops->H_Pass_Avrg(dst, src, 8, stride, rounding);
-    break;
-    case 2:
-      Ops->H_Pass(dst, src, 8, stride, rounding);
-    break;
-    case 3:
-      Ops->H_Pass_Avrg_Up(dst, src, 8, stride, rounding);
-    break;
-    case 4:
-      Ops->V_Pass_Avrg_8(dst, src, 16, stride, rounding);
-    break;
-    case 5:
-      Ops->H_Pass_Avrg(tmp, src, 9, stride, rounding);
-      Ops->V_Pass_Avrg_8(dst, tmp, 16, stride, rounding);
-    break;
-    case 6:
-      Ops->H_Pass(tmp, src,   9, stride, rounding);
-      Ops->V_Pass_Avrg_8(dst, tmp, 16, stride, rounding);
-    break;
-    case 7:
-      Ops->H_Pass_Avrg_Up(tmp, src, 9, stride, rounding);
-      Ops->V_Pass_Avrg_8(dst, tmp, 16, stride, rounding);
-    break;
-    case 8:
-      Ops->V_Pass_8(dst, src, 16, stride, rounding);
-    break;
-    case 9:
-      Ops->H_Pass_Avrg(tmp, src, 9, stride, rounding);
-      Ops->V_Pass_8(dst, tmp, 16, stride, rounding);
-    break;
-    case 10:
-      Ops->H_Pass(tmp, src, 9, stride, rounding);
-      Ops->V_Pass_8(dst, tmp, 16, stride, rounding);
-    break;
-    case 11:
-      Ops->H_Pass_Avrg_Up(tmp, src, 9, stride, rounding);
-      Ops->V_Pass_8(dst, tmp, 16, stride, rounding);
-    break;
-    case 12:
-      Ops->V_Pass_Avrg_Up_8(dst, src, 16, stride, rounding);
-    break;
-    case 13:
-      Ops->H_Pass_Avrg(tmp, src, 9, stride, rounding);
-      Ops->V_Pass_Avrg_Up_8(dst, tmp, 16, stride, rounding);
-    break;
-    case 14:
-      Ops->H_Pass(tmp, src, 9, stride, rounding);
-      Ops->V_Pass_Avrg_Up_8( dst, tmp, 16, stride, rounding);
-    break;
-    case 15:
-      Ops->H_Pass_Avrg_Up(tmp, src, 9, stride, rounding);
-      Ops->V_Pass_Avrg_Up_8(dst, tmp, 16, stride, rounding);
-    break;
-  }
+	switch(quads) {
+	case 0:
+		transfer8x8_copy( dst, src, stride);
+		transfer8x8_copy( dst+8, src+8, stride);
+		break;
+	case 1:
+		Ops->H_Pass_Avrg(dst, src, 8, stride, rounding);
+		break;
+	case 2:
+		Ops->H_Pass(dst, src, 8, stride, rounding);
+		break;
+	case 3:
+		Ops->H_Pass_Avrg_Up(dst, src, 8, stride, rounding);
+		break;
+	case 4:
+		Ops->V_Pass_Avrg_8(dst, src, 16, stride, rounding);
+		break;
+	case 5:
+		Ops->H_Pass_Avrg(tmp, src, 9, stride, rounding);
+		Ops->V_Pass_Avrg_8(dst, tmp, 16, stride, rounding);
+		break;
+	case 6:
+		Ops->H_Pass(tmp, src,	  9, stride, rounding);
+		Ops->V_Pass_Avrg_8(dst, tmp, 16, stride, rounding);
+		break;
+	case 7:
+		Ops->H_Pass_Avrg_Up(tmp, src, 9, stride, rounding);
+		Ops->V_Pass_Avrg_8(dst, tmp, 16, stride, rounding);
+		break;
+	case 8:
+		Ops->V_Pass_8(dst, src, 16, stride, rounding);
+		break;
+	case 9:
+		Ops->H_Pass_Avrg(tmp, src, 9, stride, rounding);
+		Ops->V_Pass_8(dst, tmp, 16, stride, rounding);
+		break;
+	case 10:
+		Ops->H_Pass(tmp, src, 9, stride, rounding);
+		Ops->V_Pass_8(dst, tmp, 16, stride, rounding);
+		break;
+	case 11:
+		Ops->H_Pass_Avrg_Up(tmp, src, 9, stride, rounding);
+		Ops->V_Pass_8(dst, tmp, 16, stride, rounding);
+		break;
+	case 12:
+		Ops->V_Pass_Avrg_Up_8(dst, src, 16, stride, rounding);
+		break;
+	case 13:
+		Ops->H_Pass_Avrg(tmp, src, 9, stride, rounding);
+		Ops->V_Pass_Avrg_Up_8(dst, tmp, 16, stride, rounding);
+		break;
+	case 14:
+		Ops->H_Pass(tmp, src, 9, stride, rounding);
+		Ops->V_Pass_Avrg_Up_8( dst, tmp, 16, stride, rounding);
+		break;
+	case 15:
+		Ops->H_Pass_Avrg_Up(tmp, src, 9, stride, rounding);
+		Ops->V_Pass_Avrg_Up_8(dst, tmp, 16, stride, rounding);
+		break;
+	}
 }
 
-static __inline void new_interpolate8x8_quarterpel(
-    uint8_t * const cur,
-    uint8_t * const refn,
-		uint8_t * const refh,
-		uint8_t * const refv,
-		uint8_t * const refhv,
-		const uint32_t x, const uint32_t y,
-		const int32_t dx,  const int dy,
-		const uint32_t stride,
-		const uint32_t rounding)
+static void __inline
+new_interpolate8x8_quarterpel(uint8_t * const cur,
+							  uint8_t * const refn,
+							  uint8_t * const refh,
+							  uint8_t * const refv,
+							  uint8_t * const refhv,
+							  const uint32_t x, const uint32_t y,
+							  const int32_t dx,  const int dy,
+							  const uint32_t stride,
+							  const uint32_t rounding)
 {
 	const uint8_t *src;
 	uint8_t *dst;
@@ -321,85 +318,84 @@ static __inline void new_interpolate8x8_quarterpel(
 
 	int32_t x_int, y_int;
 
-  const int32_t xRef = x*4 + dx;
-  const int32_t yRef = y*4 + dy;
+	const int32_t xRef = x*4 + dx;
+	const int32_t yRef = y*4 + dy;
  
-     Ops = xvid_QP_Funcs; // TODO: pass as argument
-     quads = (dx&3) | ((dy&3)<<2);
+	Ops = xvid_QP_Funcs; // TODO: pass as argument
+	quads = (dx&3) | ((dy&3)<<2);
  
-  x_int = xRef/4;
-  if (xRef < 0 && xRef % 4)
-   x_int--;
+	x_int = xRef/4;
+	if (xRef < 0 && xRef % 4)
+		x_int--;
  
-  y_int  = yRef/4;
-  if (yRef < 0 && yRef % 4)
-   y_int--;
+	y_int	 = yRef/4;
+	if (yRef < 0 && yRef % 4)
+		y_int--;
  
-    dst = cur + y * stride + x;
+	dst = cur + y * stride + x;
 	src = refn + y_int * stride + x_int;
 
-  tmp = refh; // we need at least a 16 x stride scratch block
+	tmp = refh; // we need at least a 16 x stride scratch block
 
-  switch(quads) {
-    case 0:
-      transfer8x8_copy( dst, src, stride);
-    break;
-    case 1:
-      Ops->H_Pass_Avrg_8(dst, src, 8, stride, rounding);
-    break;
-    case 2:
-      Ops->H_Pass_8(dst, src, 8, stride, rounding);
-    break;
-    case 3:
-      Ops->H_Pass_Avrg_Up_8(dst, src, 8, stride, rounding);
-    break;
-    case 4:
-      Ops->V_Pass_Avrg_8(dst, src, 8, stride, rounding);
-    break;
-    case 5:
-      Ops->H_Pass_Avrg_8(tmp, src, 9, stride, rounding);
-      Ops->V_Pass_Avrg_8(dst, tmp, 8, stride, rounding);
-    break;
-    case 6:
-      Ops->H_Pass_8(tmp, src, 9, stride, rounding);
-      Ops->V_Pass_Avrg_8(dst, tmp, 8, stride, rounding);
-    break;
-    case 7:
-      Ops->H_Pass_Avrg_Up_8(tmp, src, 9, stride, rounding);
-      Ops->V_Pass_Avrg_8(dst, tmp, 8, stride, rounding);
-    break;
-    case 8:
-      Ops->V_Pass_8(dst, src, 8, stride, rounding);
-    break;
-    case 9:
-      Ops->H_Pass_Avrg_8(tmp, src, 9, stride, rounding);
-      Ops->V_Pass_8(dst, tmp, 8, stride, rounding);
-    break;
-    case 10:
-      Ops->H_Pass_8(tmp, src, 9, stride, rounding);
-      Ops->V_Pass_8(dst, tmp, 8, stride, rounding);
-    break;
-    case 11:
-      Ops->H_Pass_Avrg_Up_8(tmp, src, 9, stride, rounding);
-      Ops->V_Pass_8(dst, tmp, 8, stride, rounding);
-    break;
-    case 12:
-      Ops->V_Pass_Avrg_Up_8(dst, src, 8, stride, rounding);
-    break;
-    case 13:
-      Ops->H_Pass_Avrg_8(tmp, src, 9, stride, rounding);
-      Ops->V_Pass_Avrg_Up_8(dst, tmp, 8, stride, rounding);
-    break;
-    case 14:
-      Ops->H_Pass_8(tmp, src, 9, stride, rounding);
-      Ops->V_Pass_Avrg_Up_8( dst, tmp, 8, stride, rounding);
-    break;
-    case 15:
-      Ops->H_Pass_Avrg_Up_8(tmp, src, 9, stride, rounding);
-      Ops->V_Pass_Avrg_Up_8(dst, tmp, 8, stride, rounding);
-    break;
-  }
+	switch(quads) {
+	case 0:
+		transfer8x8_copy( dst, src, stride);
+		break;
+	case 1:
+		Ops->H_Pass_Avrg_8(dst, src, 8, stride, rounding);
+		break;
+	case 2:
+		Ops->H_Pass_8(dst, src, 8, stride, rounding);
+		break;
+	case 3:
+		Ops->H_Pass_Avrg_Up_8(dst, src, 8, stride, rounding);
+		break;
+	case 4:
+		Ops->V_Pass_Avrg_8(dst, src, 8, stride, rounding);
+		break;
+	case 5:
+		Ops->H_Pass_Avrg_8(tmp, src, 9, stride, rounding);
+		Ops->V_Pass_Avrg_8(dst, tmp, 8, stride, rounding);
+		break;
+	case 6:
+		Ops->H_Pass_8(tmp, src, 9, stride, rounding);
+		Ops->V_Pass_Avrg_8(dst, tmp, 8, stride, rounding);
+		break;
+	case 7:
+		Ops->H_Pass_Avrg_Up_8(tmp, src, 9, stride, rounding);
+		Ops->V_Pass_Avrg_8(dst, tmp, 8, stride, rounding);
+		break;
+	case 8:
+		Ops->V_Pass_8(dst, src, 8, stride, rounding);
+		break;
+	case 9:
+		Ops->H_Pass_Avrg_8(tmp, src, 9, stride, rounding);
+		Ops->V_Pass_8(dst, tmp, 8, stride, rounding);
+		break;
+	case 10:
+		Ops->H_Pass_8(tmp, src, 9, stride, rounding);
+		Ops->V_Pass_8(dst, tmp, 8, stride, rounding);
+		break;
+	case 11:
+		Ops->H_Pass_Avrg_Up_8(tmp, src, 9, stride, rounding);
+		Ops->V_Pass_8(dst, tmp, 8, stride, rounding);
+		break;
+	case 12:
+		Ops->V_Pass_Avrg_Up_8(dst, src, 8, stride, rounding);
+		break;
+	case 13:
+		Ops->H_Pass_Avrg_8(tmp, src, 9, stride, rounding);
+		Ops->V_Pass_Avrg_Up_8(dst, tmp, 8, stride, rounding);
+		break;
+	case 14:
+		Ops->H_Pass_8(tmp, src, 9, stride, rounding);
+		Ops->V_Pass_Avrg_Up_8( dst, tmp, 8, stride, rounding);
+		break;
+	case 15:
+		Ops->H_Pass_Avrg_Up_8(tmp, src, 9, stride, rounding);
+		Ops->V_Pass_Avrg_Up_8(dst, tmp, 8, stride, rounding);
+		break;
+	}
 }
-/*****************************************************************************/
 
 #endif  /* _XVID_QPEL_H_ */

@@ -15,6 +15,7 @@ SRC_GENERIC = \
 	$(SRCDIR)/image/interpolate8x8.c \
 	$(SRCDIR)/image/reduced.c \
 	$(SRCDIR)/image/font.c \
+	$(SRCDIR)/image/qpel.c \
 	$(SRCDIR)/motion/motion_comp.c \
 	$(SRCDIR)/motion/motion_est.c \
 	$(SRCDIR)/motion/smp_motion_est.c \
@@ -52,6 +53,7 @@ SRC_IA32 = \
 	$(SRCDIR)/image/x86_asm/colorspace_rgb_mmx.asm \
 	$(SRCDIR)/image/x86_asm/colorspace_yuyv_mmx.asm \
 	$(SRCDIR)/image/x86_asm/colorspace_yuv_mmx.asm \
+	$(SRCDIR)/image/x86_asm/qpel_mmx.asm \
 	$(SRCDIR)/motion/x86_asm/sad_mmx.asm \
 	$(SRCDIR)/quant/x86_asm/quantize4_mmx.asm \
 	$(SRCDIR)/quant/x86_asm/quantize_mmx.asm \
