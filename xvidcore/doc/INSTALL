@@ -112,11 +112,18 @@ e.g: building Win32 libxvidcore.dll from a gnu/linux systems
  # cd ${xvidcore}/build/generic
  # ./configure --host=i386-mingw32 --build=i386-pc-linux-gnu
 
-And then build as usual. You can build the vfw frontend as well,
-specifying the CC compiler and the WINDRES tool to use on the make
-command line.
+And then build as usual.
+
+As the example uses the Win32 target, we can even build the vfw frontend.
+Additional requirements are:
+ - Resource compiler (the Makefile uses the syntax of windres from the
+   GNU CC suite, but you can easily modify the cmd line)
+
+So to cross compile the VFW frontend, you just need to override the
+Makefile variables pointing to the compiler and the resource compiler.
+These variables are CC and WINDRES.
  # cd ${xvidcore}/vfw/bin
- # make -f Makefile.cygwin CC=i386-mingw32-gcc WINDRES=i386-mingw32-windres
+ # make CC=i386-mingw32-gcc WINDRES=i386-mingw32-windres
 
 
   1.e/ What is the meaning of xvidcore Makefile output.
@@ -138,6 +145,8 @@ want to understanding their meaning. Here is a brief explaination.
     Installing 'file' in 'a/dir'
   - L: file
     Linking 'file'
+  - W: file
+    Compiling the Win32 resource 'file'
 
 
   1.f/ Building a Debian package.
@@ -192,3 +201,10 @@ uncompress it on your disk. Let's call this directory ${xvidcore}.
 You have first to retrieve the sources from the xvid CVS repository
 using a tool like WinCVS. Then follow the normal steps explained in
 the previous section.
+
+NB: your CVS program may not convert text files to the cr/lf windows
+    text. In that case opening project files in MSVC will result in
+    some weird error messages from MSVC. To fix that, you have to
+    convert all .dsp files to the cr/lf format. You can do that
+    opening the .dsp file in WordPad and saving it. It should now be
+    in cr/lf format.
