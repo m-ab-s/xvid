@@ -21,7 +21,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.27 2003-06-09 13:49:25 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.28 2003-06-25 23:23:21 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -50,6 +50,7 @@
 
 #include "xvid.h"
 
+#undef READ_PNM
 
 /*****************************************************************************
  *                            Quality presets
@@ -149,7 +150,11 @@ static int ARG_PACKED = 0;
 static int ARG_DEBUG = 0;
 static int ARG_VOPDEBUG = 0;
 
+#ifndef READ_PNM
 #define IMAGE_SIZE(x,y) ((x)*(y)*3/2)
+#else
+#define IMAGE_SIZE(x,y) ((x)*(y)*3)
+#endif
 
 #define MAX(A,B) ( ((A)>(B)) ? (A) : (B) )
 #define SMALL_EPS (1e-10)
@@ -180,9 +185,15 @@ static void usage();
 static double msecond();
 
 /* PGM related functions */
+#ifndef READ_PNM
 static int read_pgmheader(FILE * handle);
 static int read_pgmdata(FILE * handle,
 						unsigned char *image);
+#else
+static int read_pnmheader(FILE * handle);
+static int read_pnmdata(FILE * handle,
+						unsigned char *image);
+#endif
 static int read_yuvdata(FILE * handle,
 						unsigned char *image);
 
@@ -373,7 +384,11 @@ main(int argc,
 	}
 
 	if (ARG_INPUTTYPE) {
+#ifndef READ_PNM
 		if (read_pgmheader(in_file)) {
+#else
+		if (read_pnmheader(in_file)) {
+#endif
 			fprintf(stderr,
 					"Wrong input format, I want YUV encapsulated in PGM\n");
 			return (-1);
@@ -439,7 +454,11 @@ main(int argc,
 		if (!result) {
 			if (ARG_INPUTTYPE) {
 				/* read PGM data (YUV-format) */
+#ifndef READ_PNM
 				result = read_pgmdata(in_file, in_buffer);
+#else
+				result = read_pnmdata(in_file, in_buffer);
+#endif
 			} else {
 				/* read raw data (YUV-format) */
 				result = read_yuvdata(in_file, in_buffer);
@@ -535,8 +554,11 @@ main(int argc,
 
 		/* Read the header if it's pgm stream */
 		if (!result && ARG_INPUTTYPE)
-			result = read_pgmheader(in_file);
-
+#ifndef READ_PNM
+ 			result = read_pgmheader(in_file);
+#else
+ 			result = read_pnmheader(in_file);
+#endif
 	} while (1);
 
 
@@ -678,6 +700,7 @@ usage()
  *
  *****************************************************************************/
 
+#ifndef READ_PNM
 static int
 read_pgmheader(FILE * handle)
 {
@@ -733,6 +756,46 @@ read_pgmdata(FILE * handle,
 
 	return (0);
 }
+#else
+static int
+read_pnmheader(FILE * handle)
+{
+	int bytes, xsize, ysize, depth;
+	char dummy[2];
+
+	bytes = fread(dummy, 1, 2, handle);
+
+	if ((bytes < 2) || (dummy[0] != 'P') || (dummy[1] != '6'))
+		return (1);
+
+	fscanf(handle, "%d %d %d", &xsize, &ysize, &depth);
+	if ((xsize > 1440) || (ysize > 2880) || (depth != 255)) {
+		fprintf(stderr, "%d %d %d\n", xsize, ysize, depth);
+		return (2);
+	}
+
+	XDIM = xsize;
+	YDIM = ysize;
+
+	return (0);
+}
+
+static int
+read_pnmdata(FILE * handle,
+			 unsigned char *image)
+{
+	int i;
+	char dummy;
+
+	/* read Y component of picture */
+	fread(image, 1, XDIM * YDIM * 3, handle);
+
+	/*  I don't know why, but this seems needed */
+	fread(&dummy, 1, 1, handle);
+
+	return (0);
+}
+#endif
 
 static int
 read_yuvdata(FILE * handle,
@@ -989,8 +1052,13 @@ enc_main(unsigned char *image,
 	/* Initialize input image fields */
 	if (image) {
 		xvid_enc_frame.input.plane[0] = image;
+#ifndef READ_PNM
 		xvid_enc_frame.input.csp = XVID_CSP_I420;
 		xvid_enc_frame.input.stride[0] = XDIM;
+#else
+		xvid_enc_frame.input.csp = XVID_CSP_BGR;
+		xvid_enc_frame.input.stride[0] = XDIM*3;
+#endif
 	} else {
 		xvid_enc_frame.input.csp = XVID_CSP_NULL;
 	}
