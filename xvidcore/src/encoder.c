@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.102.2.6 2004-07-17 11:41:41 edgomez Exp $
+ * $Id: encoder.c,v 1.102.2.7 2004-07-18 12:03:19 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -103,7 +103,8 @@ simplify_time(int *inc, int *base)
 	if (*base > 65535 || *inc > 65535) {
 		int *biggest;
 		int *other;
-		
+		float div;
+
 		if (*base > *inc) {
 			biggest = base;
 			other = inc;
@@ -112,7 +113,7 @@ simplify_time(int *inc, int *base)
 			other = base;
 		}
 		
-		float div = ((float)*biggest)/((float)65535);
+		div = ((float)*biggest)/((float)65535);
 		*biggest = (int)(((float)*biggest)/div);
 		*other = (int)(((float)*other)/div);
 	}
