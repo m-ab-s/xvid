@@ -43,7 +43,7 @@
  *				motion search precision = 0 now effective in 2-pass
  *				modulated quantization
  *				added DX50 fourcc
- *	01.12.2001	inital version; (c)2001 peter ross <suxen_drol@hotmail.com>
+ *	01.12.2001	inital version; (c)2001 peter ross <pross@xvid.org>
  *
  *************************************************************************/
 
