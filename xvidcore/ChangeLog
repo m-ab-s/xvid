@@ -8,6 +8,46 @@
 # 1.0.2 (Bitstream Version 36)
 #########################################################################
 
+2004-08-29 11:24:26 GMT	                                	patch-55
+
+    Summary:
+      Merged one important forgotten bugfix from head
+    Revision:
+      xvidcore--stable--1.0--patch-55
+
+    Merged one important forgotten bugfix from head
+    
+    Patches applied:
+    
+     * ed.gomez@free.fr--2004-1/xvidcore--head--0.0--patch-70
+       Out of bounds MVs clipping
+    
+     * ed.gomez@free.fr--2004-1/xvidcore--head--0.0--patch-71
+       Decoder optimization (fixing regression)
+    
+
+    modified files:
+     src/decoder.c
+
+    new patches:
+     ed.gomez@free.fr--2004-1/xvidcore--head--0.0--patch-70
+     ed.gomez@free.fr--2004-1/xvidcore--head--0.0--patch-71
+
+
+2004-08-29 10:51:58 GMT	                                	patch-54
+
+    Summary:
+      Marking 1.0.2
+    Revision:
+      xvidcore--stable--1.0--patch-54
+
+    From ed.gomez:
+     * Marking 1.0.2
+
+    modified files:
+     ChangeLog build/generic/configure.in src/xvid.c src/xvid.h
+
+
 2004-08-22 13:08:44 GMT	                                	patch-53
 
     Summary:
@@ -2299,7 +2339,7 @@
        the bvop lag frame (black with error message).
     
     Fixing previous patch a bit:
-     * added $Id: ChangeLog,v 1.2.2.6 2004-08-29 10:56:56 edgomez Exp $ fields
+     * added $Id: ChangeLog,v 1.2.2.7 2004-08-29 11:38:54 edgomez Exp $ fields
      * Fixed copyright
 
     modified files:
