@@ -261,7 +261,8 @@ image_setedges(IMAGE * image,
 	}
 }
 
-// bframe encoding requires image-based u,v interpolation
+
+// image-based y,u,v interpolation
 void
 image_interpolate(const IMAGE * refn,
 				  IMAGE * refh,
@@ -274,12 +275,12 @@ image_interpolate(const IMAGE * refn,
 	const uint32_t offset = EDGE_SIZE * (edged_width + 1);
 	const uint32_t stride_add = 7 * edged_width;
 
-#ifdef BFRAMES
+	/* --- u,v-image-based interpolation ---
 	const uint32_t edged_width2 = edged_width / 2;
 	const uint32_t edged_height2 = edged_height / 2;
 	const uint32_t offset2 = EDGE_SIZE2 * (edged_width2 + 1);
 	const uint32_t stride_add2 = 7 * edged_width2;
-#endif
+	*/
 
 	uint8_t *n_ptr, *h_ptr, *v_ptr, *hv_ptr;
 	uint32_t x, y;
@@ -312,7 +313,7 @@ image_interpolate(const IMAGE * refn,
 		n_ptr += stride_add;
 	}
 
-#ifdef BFRAMES
+/* --- u,v-image-based interpolation ---
 	n_ptr = refn->u;
 	h_ptr = refh->u;
 	v_ptr = refv->u;
@@ -366,68 +367,7 @@ image_interpolate(const IMAGE * refn,
 		hv_ptr += stride_add2;
 		n_ptr += stride_add2;
 	}
-#endif
-
-	/*
-	   interpolate_halfpel_h(
-	   refh->y - offset,
-	   refn->y - offset, 
-	   edged_width, edged_height,
-	   rounding);
-
-	   interpolate_halfpel_v(
-	   refv->y - offset,
-	   refn->y - offset, 
-	   edged_width, edged_height,
-	   rounding);
-
-	   interpolate_halfpel_hv(
-	   refhv->y - offset,
-	   refn->y - offset,
-	   edged_width, edged_height,
-	   rounding);
-	 */
-
-	/* uv-image-based compensation
-	   offset = EDGE_SIZE2 * (edged_width / 2 + 1);
-
-	   interpolate_halfpel_h(
-	   refh->u - offset,
-	   refn->u - offset, 
-	   edged_width / 2, edged_height / 2,
-	   rounding);
-
-	   interpolate_halfpel_v(
-	   refv->u - offset,
-	   refn->u - offset, 
-	   edged_width / 2, edged_height / 2,
-	   rounding);
-
-	   interpolate_halfpel_hv(
-	   refhv->u - offset,
-	   refn->u - offset, 
-	   edged_width / 2, edged_height / 2,
-	   rounding);
-
-
-	   interpolate_halfpel_h(
-	   refh->v - offset,
-	   refn->v - offset, 
-	   edged_width / 2, edged_height / 2,
-	   rounding);
-
-	   interpolate_halfpel_v(
-	   refv->v - offset,
-	   refn->v - offset, 
-	   edged_width / 2, edged_height / 2,
-	   rounding);
-
-	   interpolate_halfpel_hv(
-	   refhv->v - offset,
-	   refn->v - offset, 
-	   edged_width / 2, edged_height / 2,
-	   rounding);
-	 */
+*/
 }
 
 
