@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_pvop.c,v 1.1.2.6 2003-10-29 12:41:41 edgomez Exp $
+ * $Id: estimation_pvop.c,v 1.1.2.7 2003-11-18 21:41:21 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -828,6 +828,7 @@ SearchP(const IMAGE * const pRef,
 				pParam->width, pParam->height, Data->iFcode, 2, 0);
 		Data->qpel_precision = 1;
 		if (MotionFlags & XVID_ME_QUARTERPELREFINE16) {
+			*Data->iMinSAD2 = 256 * 4096;
 			if(MotionFlags & XVID_ME_FASTREFINE16)
 				SubpelRefine_Fast(Data, CheckCandidate16_qpel);
 			else
