@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: interpolate8x8.h,v 1.10.2.4 2003-08-13 11:43:57 edgomez Exp $
+ * $Id: interpolate8x8.h,v 1.10.2.5 2003-08-18 19:02:50 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -156,8 +156,8 @@ interpolate8x8_switch(uint8_t * const cur,
 					  const uint32_t rounding)
 {
 
-	const uint8_t * const src = refn + (y + (dy>>1)) * stride + x + (dx>>1);
-	uint8_t * const dst = cur + y * stride + x;
+	const uint8_t * const src = refn + (int)((y + (dy>>1)) * stride + x + (dx>>1));
+	uint8_t * const dst = cur + (int)(y * stride + x);
 
 	switch (((dx & 1) << 1) + (dy & 1))	{ /* ((dx%2)?2:0)+((dy%2)?1:0) */
 	case 0:
@@ -221,7 +221,7 @@ interpolate8x8_switch2(uint8_t * const buffer,
 					  const uint32_t rounding)
 {
 
-	const uint8_t * const src = refn + (y + (dy>>1)) * stride + x + (dx>>1);
+	const uint8_t * const src = refn + (int)((y + (dy>>1)) * stride + x + (dx>>1));
 
 	switch (((dx & 1) << 1) + (dy & 1))	{ /* ((dx%2)?2:0)+((dy%2)?1:0) */
 	case 0:
