@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.15 2003-04-08 14:01:35 suxen_drol Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.16 2003-04-14 20:19:00 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -768,8 +768,8 @@ enc_init(int use_assembler)
 	xvid_enc_create.num_plugins = 0;
 
 	if (ARG_BITRATE) {
-		cbr.version = XVID_VERSION;
 		memset(&cbr, 0, sizeof(xvid_plugin_cbr_t));
+		cbr.version = XVID_VERSION;
 		cbr.bitrate = ARG_BITRATE;
 
 		plugins[xvid_enc_create.num_plugins].func = xvid_plugin_cbr;
@@ -778,6 +778,7 @@ enc_init(int use_assembler)
 	}
 
 	if (ARG_QUANTI) {
+		memset(&rcfixed, 0, sizeof(xvid_plugin_fixed_t));
 		rcfixed.version = XVID_VERSION;
 		/* We will use a 1/10 precision, just to make sure it works */
 		rcfixed.quant_base = 10;
@@ -789,8 +790,8 @@ enc_init(int use_assembler)
 	}
 
 	if (ARG_PASS2) {
-		rc2pass2.version = XVID_VERSION;
 		memset(&rc2pass2, 0, sizeof(xvid_plugin_2pass2_t));
+		rc2pass2.version = XVID_VERSION;
 		rc2pass2.filename = ARG_PASS2;
 		rc2pass2.bitrate = ARG_PASS2_BITRATE;
 
@@ -800,8 +801,8 @@ enc_init(int use_assembler)
 	}
 
 	if (ARG_PASS1) {
-		rc2pass1.version = XVID_VERSION;
 		memset(&rc2pass1, 0, sizeof(xvid_plugin_2pass1_t));
+		rc2pass1.version = XVID_VERSION;
 		rc2pass1.filename = ARG_PASS1;
 
 		plugins[xvid_enc_create.num_plugins].func = xvid_plugin_2pass1;
