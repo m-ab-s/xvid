@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.1.2.6 2003-12-17 17:08:29 Isibaar Exp $
+ * $Id: CXvidDecoder.cpp,v 1.1.2.7 2003-12-27 14:33:13 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -228,10 +228,10 @@ CXvidDecoder::CXvidDecoder(LPUNKNOWN punk, HRESULT *phr) :
 
 	// Set the default post-processing settings
 	REG_GET_N("Brightness", PPSettings.nBrightness, 25)
-	REG_GET_N("Deblock_Y",  PPSettings.bDeblock_Y, 0)
-	REG_GET_N("Deblock_UV", PPSettings.bDeblock_UV, 0)
-	REG_GET_N("Dering",  PPSettings.bDering, 0)
-	REG_GET_N("FilmEffect", PPSettings.bFilmEffect, 0)
+	REG_GET_N("Deblock_Y",  PPSettings.bDeblock_Y, 1)
+	REG_GET_N("Deblock_UV", PPSettings.bDeblock_UV, 1)
+	REG_GET_N("Dering",  PPSettings.bDering, 1)
+	REG_GET_N("FilmEffect", PPSettings.bFilmEffect, 1)
 	REG_GET_N("ForceColorspace", PPSettings.nForceColorspace, 0)
 
 	RegCloseKey(hKey);
@@ -697,9 +697,17 @@ repeat :
 		}
 	}
 	else
-	{
+	{	/* Preroll frame - won't be displayed */
 		int tmp = m_frame.output.csp;
+		int tmp_gen = m_frame.general;
+
 		m_frame.output.csp = XVID_CSP_NULL;
+
+		/* Disable postprocessing to speed-up seeking */
+		m_frame.general &= ~XVID_DEBLOCKY;
+		m_frame.general &= ~XVID_DEBLOCKUV;
+/*		m_frame.general &= ~XVID_DERING; */
+		m_frame.general &= ~XVID_FILMEFFECT;
 
 		length = xvid_decore(m_create.handle, XVID_DEC_DECODE, &m_frame, &stats);
 		if (length < 0)
@@ -709,6 +717,7 @@ repeat :
 		}
 
 		m_frame.output.csp = tmp;
+		m_frame.general = tmp_gen;
 	}
 
 	if (stats.type == XVID_TYPE_NOTHING) {
@@ -726,11 +735,18 @@ repeat :
 			return S_FALSE;
 		}
 		
+		pOut->SetDiscontinuity(TRUE);
+		pOut->SetSyncPoint(TRUE);
+
 		m_frame.bitstream = (BYTE*)m_frame.bitstream + length;
 		m_frame.length -= length;
 		goto repeat;
 	}
 
+	if (pIn->IsPreroll() == S_OK) {
+		return S_FALSE;
+	}
+	
 	return S_OK;
 }
 
