@@ -335,6 +335,7 @@
 #define IDC_ZONE_BVOPTHRESHOLD_S        1305
 #define IDC_TRELLISQUANT                1306
 #define IDC_BITRATE_S                   1307
+#define IDC_VOPDEBUG                    1308
 
 // Next default values for new objects
 // 

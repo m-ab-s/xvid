@@ -150,6 +150,7 @@ typedef struct
     /* debug */
 	int num_threads;
     int fourcc_used;
+    int vop_debug;
     int debug;
 
 	DWORD cpu;

@@ -24,7 +24,7 @@
  *
  *  - Mon Jun 17 13:04:15 2002 Added legal header
  *
- *  $Id: ratecontrol.c,v 1.19 2003-02-15 15:22:19 edgomez Exp $
+ *  $Id: ratecontrol.c,v 1.19.2.1 2003-05-17 13:37:11 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -131,7 +131,7 @@ RateControlUpdate(RateControl * rate_control,
 					 (double) rate_control->framerate) *
 					(double) rate_control->frames));
 
-	DPRINTF(DPRINTF_RC, "CBR: frame: %i, quant: %i, deviation: %i\n",
+	DPRINTF(XVID_DEBUG_RC, "CBR: frame: %i, quant: %i, deviation: %i\n",
 					(int32_t)(rate_control->frames - 1), 
 					rate_control->rtn_quant,
 					(int32_t) deviation);

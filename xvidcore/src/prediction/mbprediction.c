@@ -246,7 +246,7 @@ add_acdc(MACROBLOCK * pMB,
 	int16_t *pCurrent = pMB->pred_values[block];
 	uint32_t i;
 
-	DPRINTF(DPRINTF_COEFF,"predictor[0] %i", predictors[0]);
+	DPRINTF(XVID_DEBUG_COEFF,"predictor[0] %i", predictors[0]);
 
 	dct_codes[0] += predictors[0];	// dc prediction
 	pCurrent[0] = dct_codes[0] * iDcScaler;
@@ -255,7 +255,7 @@ add_acdc(MACROBLOCK * pMB,
 		for (i = 1; i < 8; i++) {
 			int level = dct_codes[i] + predictors[i];
 
-			DPRINTF(DPRINTF_COEFF,"predictor[%i] %i",i, predictors[i]);
+			DPRINTF(XVID_DEBUG_COEFF,"predictor[%i] %i",i, predictors[i]);
 
 			dct_codes[i] = level;
 			pCurrent[i] = level;
@@ -264,7 +264,7 @@ add_acdc(MACROBLOCK * pMB,
 	} else if (acpred_direction == 2) {
 		for (i = 1; i < 8; i++) {
 			int level = dct_codes[i * 8] + predictors[i];
-			DPRINTF(DPRINTF_COEFF,"predictor[%i] %i",i*8, predictors[i]);
+			DPRINTF(XVID_DEBUG_COEFF,"predictor[%i] %i",i*8, predictors[i]);
 
 			dct_codes[i * 8] = level;
 			pCurrent[i + 7] = level;

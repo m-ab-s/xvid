@@ -170,7 +170,8 @@ static const REG_INT reg_ints[] = {
 	{"bquant_offset",			&reg.bquant_offset,				100},   /* 100-base float */
 	{"packed",					&reg.packed,					0},
 	{"closed_gov",				&reg.closed_gov,				1},
-	{"debug",					&reg.debug,						0},
+	{"vop_debug",				&reg.vop_debug,					0},
+    {"debug",					&reg.debug,						0x0},
 	{"reduced_resolution",		&reg.reduced_resolution,		0},
 	{"frame_drop_ratio",		&reg.frame_drop_ratio,			0},
 
@@ -433,6 +434,29 @@ void set_dlgitem_float(HWND hDlg, UINT item, int value)
     SetDlgItemText(hDlg, item, buf);
 }
 
+
+#define HEX_BUF_SZ  16
+unsigned int get_dlgitem_hex(HWND hDlg, UINT item, unsigned int def)
+{
+	char buf[HEX_BUF_SZ];
+    unsigned int value;
+
+    if (GetDlgItemText(hDlg, item, buf, HEX_BUF_SZ) == 0)
+        return def;
+
+    if (sscanf(buf,"0x%x", &value)==1 || sscanf(buf,"%x", &value)==1) {
+        return value;
+    }
+
+    return def;
+}
+
+void set_dlgitem_hex(HWND hDlg, UINT item, int value)
+{
+	char buf[HEX_BUF_SZ];
+    wsprintf(buf, "0x%x", value);
+    SetDlgItemText(hDlg, item, buf);
+}
 
 /* ===================================================================================== */
 /* QUANT MATRIX DIALOG ================================================================= */
@@ -858,7 +882,8 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
 
 		SetDlgItemInt(hDlg, IDC_NUMTHREADS, config->num_threads, FALSE);
 
-		CheckDlg(hDlg, IDC_DEBUG, config->debug);
+		CheckDlg(hDlg, IDC_VOPDEBUG, config->vop_debug);
+        set_dlgitem_hex(hDlg, IDC_DEBUG, config->debug);
 		SendDlgItemMessage(hDlg, IDC_FOURCC, CB_SETCURSEL, config->fourcc_used, 0);
 		break;
 	}
@@ -1004,7 +1029,8 @@ void adv_download(HWND hDlg, int idd, CONFIG * config)
 		config->num_threads = config_get_uint(hDlg, IDC_NUMTHREADS, config->num_threads);
 
         config->fourcc_used = SendDlgItemMessage(hDlg, IDC_FOURCC, CB_GETCURSEL, 0, 0);
-		config->debug = IsDlgChecked(hDlg, IDC_DEBUG);
+		config->vop_debug = IsDlgChecked(hDlg, IDC_VOPDEBUG);
+        config->debug = get_dlgitem_hex(hDlg, IDC_DEBUG, config->debug);
 		break;
 	}
 }

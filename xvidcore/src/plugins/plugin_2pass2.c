@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.4 2003-05-16 17:19:51 suxen_drol Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.5 2003-05-17 13:36:38 suxen_drol Exp $
  *
  *****************************************************************************/
 
@@ -171,8 +171,8 @@ static int load_stats(rc_2pass2_t *rc, char * filename)
         }else if (type == 'b') {
             s->type = XVID_TYPE_BVOP;
         }else{  /* unknown type */
-            printf("unk\n");
-            continue;
+            DPRINTF(XVID_DEBUG_RC, "unknown stats frame type; assuming pvop");
+            s->type = XVID_TYPE_PVOP;
         }
 
         i++;
@@ -191,7 +191,7 @@ static void print_stats(rc_2pass2_t * rc)
     int i;
     for (i = 0; i < rc->num_frames; i++) {
         stat_t * s = &rc->stats[i];
-        printf("%i %i %i %i\n", s->type, s->quant, s->length, s->scaled_length);
+        DPRINTF(XVID_DEBUG_RC, "%i %i %i %i\n", s->type, s->quant, s->length, s->scaled_length);
 
     }
 }
@@ -287,11 +287,7 @@ static void zone_process(rc_2pass2_t *rc, const xvid_plg_create_t * create)
     }
     rc->avg_weight = n>0 ? rc->avg_weight/n : 1.0;
 
-    /*for (i=0; i < rc->num_frames; i++) {
-        printf("[%i] mode=%i weight=%f\n", i, rc->stats[i].zone_mode, rc->stats[i].weight);
-    }*/
-
-    printf("center_weight: %f (for %i frames);   fixed_bytes: %i\n", rc->avg_weight, n, rc->tot_quant);
+    DPRINTF(XVID_DEBUG_RC, "center_weight: %f (for %i frames);   fixed_bytes: %i\n", rc->avg_weight, n, rc->tot_quant);
 }
 
 
@@ -306,10 +302,6 @@ static void internal_scale(rc_2pass2_t *rc)
 	int i;
 
 
-	if (target <= 0 || target >= pass1_length) {
-		printf("undersize warning\n");
-	}
-
 	/* perform an initial scale pass.
 	   if a frame size is scaled underneath our hardcoded minimums, then we force the
 	   frame size to the minimum, and deduct the original & scaled frmae length from the
@@ -319,9 +311,14 @@ static void internal_scale(rc_2pass2_t *rc)
 	min_size[1] = (rc->stats[0].blks[0] + 88) / 8;
 	min_size[2] = 8;
 
-
 	scaler = (double)target / (double)pass1_length;
-	//printf("target=%i, tot_length=%i, scaler=%f\n", (int)target, (int)pass1_length, scaler);
+
+	if (target <= 0 || pass1_length <= 0 || target >= pass1_length) {
+		DPRINTF(XVID_DEBUG_RC, "undersize warning\n");
+        scaler = 1.0;
+	}
+
+    DPRINTF(XVID_DEBUG_RC, "target=%i, tot_length=%i, scaler=%f\n", (int)target, (int)pass1_length, scaler);
 
 	for (i=0; i<rc->num_frames; i++) {
 		stat_t * s = &rc->stats[i];
@@ -341,13 +338,13 @@ static void internal_scale(rc_2pass2_t *rc)
         }
 	}
 
-	if (target <= 0 || target >= pass1_length) {
-		printf("undersize warning\n");
-		return;
+    scaler = (double)target / (double)pass1_length;
+    if (target <= 0 || pass1_length <= 0 || target >= pass1_length) {
+		DPRINTF(XVID_DEBUG_RC,"undersize warning\n");
+		scaler = 1.0;
 	}
 
-	scaler = (double)target / (double)pass1_length;
-	//printf("target=%i, tot_length=%i, scaler=%f\n", (int)target, (int)tot_length, scaler);
+	DPRINTF(XVID_DEBUG_RC, "target=%i, tot_length=%i, scaler=%f\n", (int)target, (int)pass1_length, scaler);
 
 	for (i=0; i<rc->num_frames; i++) {
 		stat_t * s = &rc->stats[i];
@@ -356,7 +353,6 @@ static void internal_scale(rc_2pass2_t *rc)
 			s->scaled_length = (int)((double)s->length * scaler * s->weight / rc->avg_weight);
 		}
 	}
-
 }
 
 
@@ -515,7 +511,7 @@ void pre_process1(rc_2pass2_t * rc)
     rc->curve_comp_scale = total1 / total2;
 
     if (!rc->param.use_alt_curve) {
-        printf("middle frame size for asymmetric curve compression: %i\n",
+        DPRINTF(XVID_DEBUG_RC, "middle frame size for asymmetric curve compression: %i\n",
             (int)(rc->avg_length[XVID_TYPE_PVOP-1] * rc->curve_comp_scale));
     }
 
@@ -532,8 +528,8 @@ void pre_process1(rc_2pass2_t * rc)
 
         /* special info for alt curve:  bias bonus and quantizer thresholds */
 
-		printf("avg scaled framesize:%i", (int)rc->avg_length[XVID_TYPE_PVOP-1]);
-		printf("bias bonus:%i bytes", (int)rc->alt_curve_curve_bias_bonus);
+		DPRINTF(XVID_DEBUG_RC, "avg scaled framesize:%i", (int)rc->avg_length[XVID_TYPE_PVOP-1]);
+		DPRINTF(XVID_DEBUG_RC, "bias bonus:%i bytes", (int)rc->alt_curve_curve_bias_bonus);
 
 		for (i=1; i <= (int)(rc->alt_curve_high*2)+1; i++) {
             double curve_temp, dbytes;
@@ -582,7 +578,7 @@ void pre_process1(rc_2pass2_t * rc)
 				if (newquant != oldquant) {
                     int percent = (int)((i - rc->avg_length[XVID_TYPE_PVOP-1]) * 100.0 / rc->avg_length[XVID_TYPE_PVOP-1]);
 					oldquant = newquant;
-					printf("quant:%i threshold at %i : %i percent", newquant, i, percent);
+					DPRINTF(XVID_DEBUG_RC, "quant:%i threshold at %i : %i percent", newquant, i, percent);
 				}
 			}
 		}
@@ -633,7 +629,7 @@ static int rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t ** handle)
     if (rc->param.min_key_interval <= 0) rc->param.min_key_interval = 300;
 
     if (!det_stats_length(rc, param->filename)){
-        DPRINTF(DPRINTF_RC,"fopen %s failed\n", param->filename);
+        DPRINTF(XVID_DEBUG_RC,"fopen %s failed\n", param->filename);
         free(rc);
         return XVID_ERR_FAIL;
     }
@@ -651,7 +647,7 @@ static int rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t ** handle)
     }
 
     if (!load_stats(rc, param->filename)) {
-        DPRINTF(DPRINTF_RC,"fopen %s failed\n", param->filename);
+        DPRINTF(XVID_DEBUG_RC,"fopen %s failed\n", param->filename);
         free(rc->keyframe_locations);
         free(rc->stats);
         free(rc);
@@ -665,6 +661,8 @@ static int rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t ** handle)
 	}else{
 		rc->target = (rc->param.bitrate * rc->num_frames * create->fincr) / (create->fbase * 8);
 	}
+
+    DPRINTF(XVID_DEBUG_RC, "rc->target : %i\n", rc->target);
 
 	rc->target -= rc->num_frames*24;	/* avi file header */
     
@@ -723,6 +721,8 @@ static int rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
             rc->fq_error += s->weight;
             data->quant = (int)rc->fq_error;
             rc->fq_error -= data->quant;
+
+            s->desired_length = s->length;
 
         }else { /* XVID_ZONE_WEIGHT */
 
@@ -840,7 +840,8 @@ static int rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 		        rc->curve_comp_error += dbytes - (int)dbytes;
             }
 
-	        if (desired > s->length){
+
+	        if (desired > s->length) {  /* if desired length exceeds the pass1 length.. */
 		        rc->curve_comp_error += desired - s->length;
 		        desired = s->length;
 	        }else{
@@ -951,11 +952,11 @@ static int rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 
 		        if (data->quant > rc->last_quant[s->type-1] + 2) {
 			        data->quant = rc->last_quant[s->type-1] + 2;
-			        DPRINTF(DPRINTF_RC, "p/b-frame quantizer prevented from rising too steeply");
+			        DPRINTF(XVID_DEBUG_RC, "p/b-frame quantizer prevented from rising too steeply");
 		        }
 		        if (data->quant < rc->last_quant[s->type-1] - 2) {
 			        data->quant = rc->last_quant[s->type-1] - 2;
-			        DPRINTF(DPRINTF_RC, "p/b-frame quantizer prevented from falling too steeply");
+			        DPRINTF(XVID_DEBUG_RC, "p/b-frame quantizer prevented from falling too steeply");
 		        }
 	        }
 
@@ -1004,7 +1005,7 @@ static int rc_2pass2_after(rc_2pass2_t * rc, xvid_plg_data_t * data)
         rc->KFoverflow -= rc->KFoverflow_partial;
     }
 
-    printf("[%i] quant:%i stats1:%i scaled:%i actual:%i overflow:%i\n",
+    DPRINTF(XVID_DEBUG_RC, "[%i] quant:%i stats1:%i scaled:%i actual:%i overflow:%i\n",
         data->frame_num,
         data->quant,
         s->length,

@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass1.c,v 1.1.2.3 2003-05-12 12:33:16 suxen_drol Exp $
+ * $Id: plugin_2pass1.c,v 1.1.2.4 2003-05-17 13:36:38 suxen_drol Exp $
  *
  *****************************************************************************/
 
@@ -61,15 +61,6 @@ static int rc_2pass1_create(xvid_plg_create_t * create, rc_2pass1_t ** handle)
 	/* Open the 1st pass file */
 	if((rc->stat_file = fopen(param->filename, "w+")) == NULL)
 		return(XVID_ERR_FAIL);
-
-    {
-        int i;
-        printf("---\n");
-        for (i=0;i<create->num_zones;i++) {
-            printf("[%i] %i\n", create->zones[i].frame, create->zones[i].increment);
-        }
-        printf("---\n");
-    }
 
 	/*
 	 * The File Header

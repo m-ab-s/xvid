@@ -20,7 +20,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_single.c,v 1.1.2.1 2003-05-12 12:33:16 suxen_drol Exp $
+ * $Id: plugin_single.c,v 1.1.2.2 2003-05-17 13:36:38 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -126,9 +126,9 @@ rc_single_create(xvid_plg_create_t * create,
 	*handle = rc;
 
 	/* A bit of debug info */
-	DPRINTF(DPRINTF_RC, "bytes_per_sec: %i\n", rc->bytes_per_sec);
-	DPRINTF(DPRINTF_RC, "frame rate   : %f\n", (double) create->fbase / create->fincr);
-	DPRINTF(DPRINTF_RC, "target_framesize: %f\n", rc->target_framesize);
+	DPRINTF(XVID_DEBUG_RC, "bytes_per_sec: %i\n", rc->bytes_per_sec);
+	DPRINTF(XVID_DEBUG_RC, "frame rate   : %f\n", (double) create->fbase / create->fincr);
+	DPRINTF(XVID_DEBUG_RC, "target_framesize: %f\n", rc->target_framesize);
 
 	return (0);
 }

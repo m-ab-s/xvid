@@ -310,6 +310,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
     memset(&init, 0, sizeof(init));
 	init.version = XVID_VERSION;
 	init.cpu_flags = codec->config.cpu;
+    init.debug = codec->config.debug;
 	xvid_global(0, XVID_GBL_INIT, &init, NULL);
 
 	memset(&create, 0, sizeof(create));
@@ -320,7 +321,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
     create.num_zones = codec->config.num_zones;
     for (i=0; i < create.num_zones; i++) {
         create.zones[i].frame = codec->config.zones[i].frame;
-        if (create.zones[i].mode = RC_ZONE_QUANT) {
+        if (codec->config.zones[i].mode == RC_ZONE_QUANT) {
             create.zones[i].mode = XVID_ZONE_QUANT;
             create.zones[i].increment = codec->config.zones[i].quant;
         }else{
@@ -337,13 +338,14 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	case RC_MODE_1PASS :
     	memset(&single, 0, sizeof(single));
 	    single.version = XVID_VERSION;
-        single.bitrate = codec->config.bitrate;
+        single.bitrate = codec->config.bitrate * CONFIG_KBPS;
         single.reaction_delay_factor = codec->config.rc_reaction_delay_factor;
 		single.averaging_period = codec->config.rc_averaging_period;
 		single.buffer = codec->config.rc_buffer;
         plugins[create.num_plugins].func = xvid_plugin_single;
         plugins[create.num_plugins].param = &single;
         create.num_plugins++;
+        break;
 
 	case RC_MODE_2PASS1 :
     	memset(&pass1, 0, sizeof(pass1));
@@ -358,7 +360,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	case RC_MODE_2PASS2 :
     	memset(&pass2, 0, sizeof(pass2));
 	    pass2.version = XVID_VERSION;
-        pass2.bitrate = codec->config.bitrate;
+        pass2.bitrate = codec->config.bitrate * CONFIG_KBPS;
 		pass2.filename = codec->config.stats;
 
         plugins[create.num_plugins].func = xvid_plugin_2pass2;
@@ -523,7 +525,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	frame.vop_flags |= XVID_VOP_HALFPEL;
 	frame.vop_flags |= XVID_VOP_HQACPRED;
 
-	if (codec->config.debug) 
+	if (codec->config.vop_debug) 
 		frame.vop_flags |= XVID_VOP_DEBUG;
 
     if (codec->config.trellis_quant) {

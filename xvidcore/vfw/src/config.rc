@@ -186,11 +186,13 @@ BEGIN
     GROUPBOX        "Performance optimizations",IDC_STATIC,8,4,196,120
     EDITTEXT        IDC_NUMTHREADS,128,132,75,12,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "Number of threads:",IDC_NUMTHREADS_STATIC,8,134,61,8
-    CONTROL         "Print debug info on each frame",IDC_DEBUG,"Button",
+    CONTROL         "Print debug info on each frame",IDC_VOPDEBUG,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,8,172,113,10
     COMBOBOX        IDC_FOURCC,128,150,76,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
     LTEXT           "FourCC used:",IDC_STATIC,8,152,80,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_DEBUG,128,188,76,12,ES_AUTOHSCROLL
+    LTEXT           "OutputDebugString debug level:",IDC_STATIC,8,190,104,12
 END
 
 IDD_QUANTMATRIX DIALOG DISCARDABLE  0, 0, 288, 149
