@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.42 2003-01-26 05:09:00 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.76.2.43 2003-02-12 14:10:50 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1318,7 +1318,7 @@ encoder_encode(Encoder * pEnc,
 	}
 
 	if (pFrame->intra < 0) {
-		if ((pEnc->iFrameNum == 0)
+		if ((pEnc->iFrameNum == -1)
 			|| ((pEnc->mbParam.iMaxKeyInterval > 0)
 				&& (pEnc->iFrameNum >= pEnc->mbParam.iMaxKeyInterval))) {
 			pFrame->intra = FrameCodeI(pEnc, &bs, &bits);
