@@ -21,7 +21,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.37 2003-11-30 17:11:01 chl Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.38 2003-12-10 22:58:32 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -141,6 +141,7 @@ static int ARG_MAXKEYINTERVAL = 0;
 static char *ARG_INPUTFILE = NULL;
 static int ARG_INPUTTYPE = 0;
 static int ARG_SAVEMPEGSTREAM = 0;
+static int ARG_SAVEINDIVIDUAL = 0;
 static char *ARG_OUTPUTFILE = NULL;
 static int XDIM = 0;
 static int YDIM = 0;
@@ -327,15 +328,17 @@ main(int argc,
 		} else if (strcmp("-type", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_INPUTTYPE = atoi(argv[i]);
-		} else if (strcmp("-nframes", argv[i]) == 0 && i < argc - 1) {
+		} else if (strcmp("-frames", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_MAXFRAMENR = atoi(argv[i]);
 		} else if (strcmp("-save", argv[i]) == 0) {
 			ARG_SAVEMPEGSTREAM = 1;
+			ARG_SAVEINDIVIDUAL = 1;
 		} else if (strcmp("-debug", argv[i]) == 0) {
 			i++;
             if (sscanf(argv[i],"0x%x", &ARG_DEBUG) || sscanf(argv[i],"%d", &ARG_DEBUG)) ;
 		} else if (strcmp("-o", argv[i]) == 0 && i < argc - 1) {
+			ARG_SAVEMPEGSTREAM = 1;
 			i++;
 			ARG_OUTPUTFILE = argv[i];
 		} else if (strcmp("-vop_debug", argv[i]) == 0) {
@@ -544,20 +547,20 @@ main(int argc,
  ****************************************************************************/
 
 		if (m4v_size > 0 && ARG_SAVEMPEGSTREAM) {
+
 			/* Save single files */
-			if (out_file == NULL) {
+			if (ARG_SAVEINDIVIDUAL) {
+				FILE *out;
 				sprintf(filename, "%sframe%05d.m4v", filepath, output_num);
-				out_file = fopen(filename, "wb");
-				fwrite(mp4_buffer, m4v_size, 1, out_file);
-				fclose(out_file);
-				out_file = NULL;
+				out = fopen(filename, "w+b");
+				fwrite(mp4_buffer, m4v_size, 1, out);
+				fclose(out);
 				output_num++;
-			} else {
-
-				/* Write mp4 data */
-				fwrite(mp4_buffer, 1, m4v_size, out_file);
-
 			}
+
+			/* Save ES stream */
+			if (ARG_OUTPUTFILE && out_file)
+				fwrite(mp4_buffer, 1, m4v_size, out_file);
 		}
 
 		input_num++;
@@ -662,16 +665,16 @@ usage()
 {
 	fprintf(stderr, "Usage : xvid_stat [OPTIONS]\n\n");
 	fprintf(stderr, "Input options:\n");
-	fprintf(stderr, " -i       string : input filename (default=stdin)\n");
-	fprintf(stderr, " -type    integer: input data type (yuv=0, pgm=1)\n");
-	fprintf(stderr, " -w       integer: frame width ([1.2048])\n");
-	fprintf(stderr, " -h       integer: frame height ([1.2048])\n");
-	fprintf(stderr, " -nframes integer: number of frames to encode\n");
+	fprintf(stderr, " -i      string : input filename (default=stdin)\n");
+	fprintf(stderr, " -type   integer: input data type (yuv=0, pgm=1)\n");
+	fprintf(stderr, " -w      integer: frame width ([1.2048])\n");
+	fprintf(stderr, " -h      integer: frame height ([1.2048])\n");
+	fprintf(stderr, " -frames integer: number of frames to encode\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Output options:\n");
 	fprintf(stderr, " -dump    : save decoder output\n");
-	fprintf(stderr, " -save    : save mpeg4 raw stream\n");
-	fprintf(stderr, " -o string: output filename\n");
+	fprintf(stderr, " -save    : save an Elementary Stream file per frame\n");
+	fprintf(stderr, " -o string: save an Elementary Stream for the complete sequence\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "BFrames options:\n");
 	fprintf(stderr, " -max_bframes   integer: max bframes (default=0)\n");
