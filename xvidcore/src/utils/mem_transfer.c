@@ -28,7 +28,7 @@
  *	- 22.12.2001 transfer_8to8add16 limit fix
  *	- 07.11.2001 initial version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: mem_transfer.c,v 1.4 2002-06-15 22:15:57 edgomez Exp $
+ *  $Id: mem_transfer.c,v 1.4.2.1 2003-02-12 11:44:57 syskin Exp $
  *
  ****************************************************************************/
 
@@ -41,6 +41,7 @@ TRANSFER_8TO16COPY_PTR transfer_8to16copy;
 TRANSFER_16TO8COPY_PTR transfer_16to8copy;
 
 TRANSFER_8TO16SUB_PTR  transfer_8to16sub;
+TRANSFER_8TO16SUBRO_PTR  transfer_8to16subro;
 TRANSFER_8TO16SUB2_PTR transfer_8to16sub2;
 TRANSFER_16TO8ADD_PTR  transfer_16to8add;
 
@@ -143,6 +144,25 @@ transfer_8to16sub_c(int16_t * const dct,
 		}
 	}
 }
+
+
+void
+transfer_8to16subro_c(int16_t * const dct,
+					const uint8_t * const cur,
+					const uint8_t * ref,
+					const uint32_t stride)
+{
+	uint32_t i, j;
+
+	for (j = 0; j < 8; j++) {
+		for (i = 0; i < 8; i++) {
+			uint8_t c = cur[j * stride + i];
+			uint8_t r = ref[j * stride + i];
+			dct[j * 8 + i] = (int16_t) c - (int16_t) r;
+		}
+	}
+}
+
 
 
 /*

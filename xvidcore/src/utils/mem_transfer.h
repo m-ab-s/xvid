@@ -33,7 +33,7 @@
  *
  *  - Sun Jun 16 00:12:49 2002 Added legal header
  *                             Cosmetic
- *  $Id: mem_transfer.h,v 1.8.2.2 2002-12-19 00:41:02 Isibaar Exp $
+ *  $Id: mem_transfer.h,v 1.8.2.3 2003-02-12 11:44:57 syskin Exp $
  *
  ****************************************************************************/
 
@@ -79,7 +79,7 @@ TRANSFER_16TO8COPY transfer_16to8copy_3dne;
 TRANSFER_16TO8COPY transfer_16to8copy_ia64;
 
 /*****************************************************************************
- * transfer8to16 + substraction op API
+ * transfer8to16 + substraction *writeback* op API
  ****************************************************************************/
 
 typedef void (TRANSFER_8TO16SUB) (int16_t * const dct,
@@ -97,6 +97,25 @@ TRANSFER_8TO16SUB transfer_8to16sub_c;
 TRANSFER_8TO16SUB transfer_8to16sub_mmx;
 TRANSFER_8TO16SUB transfer_8to16sub_3dne;
 TRANSFER_8TO16SUB transfer_8to16sub_ia64;
+
+/*****************************************************************************
+ * transfer8to16 + substraction *readonly* op API
+ ****************************************************************************/
+
+typedef void (TRANSFER_8TO16SUBRO) (int16_t * const dct,
+								  const uint8_t * const cur,
+								  const uint8_t * ref,
+								  const uint32_t stride);
+
+typedef TRANSFER_8TO16SUBRO *TRANSFER_8TO16SUBRO_PTR;
+
+/* Our global function pointer - Initialized in xvid.c */
+extern TRANSFER_8TO16SUBRO_PTR transfer_8to16subro;
+
+/* Implemented functions */
+TRANSFER_8TO16SUBRO transfer_8to16subro_c;
+TRANSFER_8TO16SUBRO transfer_8to16subro_mmx;
+TRANSFER_8TO16SUBRO transfer_8to16subro_3dne;
 
 /*****************************************************************************
  * transfer8to16 + substraction op API - Bidirectionnal Version

@@ -66,6 +66,7 @@ section .text
 cglobal transfer_8to16copy_3dne
 cglobal transfer_16to8copy_3dne
 cglobal transfer_8to16sub_3dne
+cglobal transfer_8to16subro_3dne
 cglobal transfer_8to16sub2_3dne
 cglobal transfer_16to8add_3dne
 cglobal transfer8x8_copy_3dne
@@ -204,12 +205,15 @@ transfer_16to8copy_3dne:
 ; *
 ; *************************************************************************/
 
-%macro COPY_8_TO_16_SUB 1
+; when second argument == 1, reference (ebx) block is to current (eax)
+%macro COPY_8_TO_16_SUB 2
   movq mm1, [eax]      ; cur
   movq mm0, mm1
   movq mm4, [ecx]      ; ref
   movq mm6, mm4
+%if %2 == 1
   movq [eax], mm4
+%endif
   punpckhbw mm1, mm7
   punpckhbw mm6, mm7
   punpcklbw mm4, mm7
@@ -220,7 +224,9 @@ align 8
   punpcklbw mm2, mm7
   movq mm5, [byte ecx+edx]  ; ref
   punpckhbw mm3, mm7
+%if %2 == 1
   movq [byte eax+edx], mm5
+%endif
   psubsw mm1, mm6
 
   movq mm6, mm5
@@ -252,10 +258,27 @@ transfer_8to16sub_3dne:
   pxor mm7, mm7
   nop
 align 4
-  COPY_8_TO_16_SUB 0
-  COPY_8_TO_16_SUB 1
-  COPY_8_TO_16_SUB 2
-  COPY_8_TO_16_SUB 3
+  COPY_8_TO_16_SUB 0, 1
+  COPY_8_TO_16_SUB 1, 1
+  COPY_8_TO_16_SUB 2, 1
+  COPY_8_TO_16_SUB 3, 1
+  mov edi,ecx
+  ret
+
+align 16
+transfer_8to16subro_3dne:
+  mov eax, [esp + 8] ; Cur
+  mov ecx, [esp +12] ; Ref
+  push edi
+  mov edx, [dword esp+4+16] ; Stride
+  mov edi, [esp+4+ 4] ; Dst
+  pxor mm7, mm7
+  nop
+align 4
+  COPY_8_TO_16_SUB 0, 0
+  COPY_8_TO_16_SUB 1, 0
+  COPY_8_TO_16_SUB 2, 0
+  COPY_8_TO_16_SUB 3, 0
   mov edi,ecx
   ret
 

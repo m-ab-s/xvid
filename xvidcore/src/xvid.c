@@ -37,7 +37,7 @@
  *  - 22.12.2001  API change: added xvid_init() - Isibaar
  *  - 16.12.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: xvid.c,v 1.33.2.22 2003-01-04 06:14:32 suxen_drol Exp $
+ *  $Id: xvid.c,v 1.33.2.23 2003-02-12 11:46:18 syskin Exp $
  *
  ****************************************************************************/
 
@@ -229,6 +229,7 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 	transfer_8to16copy = transfer_8to16copy_c;
 	transfer_16to8copy = transfer_16to8copy_c;
 	transfer_8to16sub  = transfer_8to16sub_c;
+	transfer_8to16subro  = transfer_8to16subro_c;
 	transfer_8to16sub2 = transfer_8to16sub2_c;
 	transfer_16to8add  = transfer_16to8add_c;
 	transfer8x8_copy   = transfer8x8_copy_c;
@@ -354,6 +355,7 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 		transfer_8to16copy = transfer_8to16copy_mmx;
 		transfer_16to8copy = transfer_16to8copy_mmx;
 		transfer_8to16sub  = transfer_8to16sub_mmx;
+		transfer_8to16subro  = transfer_8to16subro_mmx;
 		transfer_8to16sub2 = transfer_8to16sub2_mmx;
 		transfer_16to8add  = transfer_16to8add_mmx;
 		transfer8x8_copy   = transfer8x8_copy_mmx;
@@ -474,6 +476,7 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 		transfer_8to16copy =  transfer_8to16copy_3dne;
 		transfer_16to8copy = transfer_16to8copy_3dne;
 		transfer_8to16sub =  transfer_8to16sub_3dne;
+		transfer_8to16subro =  transfer_8to16subro_3dne;
 		transfer_8to16sub2 =  transfer_8to16sub2_3dne;
 		transfer_16to8add = transfer_16to8add_3dne;
 		transfer8x8_copy = transfer8x8_copy_3dne;

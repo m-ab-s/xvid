@@ -57,6 +57,7 @@ section .text
 cglobal transfer_8to16copy_mmx
 cglobal transfer_16to8copy_mmx
 cglobal transfer_8to16sub_mmx
+cglobal transfer_8to16subro_mmx
 cglobal transfer_8to16sub2_mmx
 cglobal transfer_8to16sub2_xmm
 cglobal transfer_16to8add_mmx
@@ -155,7 +156,8 @@ transfer_16to8copy_mmx:
 ; *
 ; *************************************************************************/
 
-%macro COPY_8_TO_16_SUB 1
+; when second argument == 1, reference (ebx) block is to current (eax)
+%macro COPY_8_TO_16_SUB 2
   movq mm0, [eax]      ; cur
   movq mm2, [eax+edx]
   movq mm1, mm0
@@ -164,13 +166,15 @@ transfer_16to8copy_mmx:
   punpcklbw mm0, mm7
   punpcklbw mm2, mm7
   movq mm4, [ebx]      ; ref
-	punpckhbw mm1, mm7
-	punpckhbw mm3, mm7
+  punpckhbw mm1, mm7
+  punpckhbw mm3, mm7
   movq mm5, [ebx+edx]  ; ref
 
   movq mm6, mm4
+%if %2 == 1
   movq [eax], mm4
   movq [eax+edx], mm5
+%endif
   punpcklbw mm4, mm7
   punpckhbw mm6, mm7
   psubsw mm0, mm4
@@ -184,9 +188,9 @@ transfer_16to8copy_mmx:
   lea ebx,[ebx+2*edx]
 
   movq [ecx+%1*32+ 0], mm0 ; dst
-	movq [ecx+%1*32+ 8], mm1
-	movq [ecx+%1*32+16], mm2
-	movq [ecx+%1*32+24], mm3
+  movq [ecx+%1*32+ 8], mm1
+  movq [ecx+%1*32+16], mm2
+  movq [ecx+%1*32+24], mm3
 %endmacro
 
 align 16
@@ -198,13 +202,32 @@ transfer_8to16sub_mmx:
   mov edx, [esp+4+16] ; Stride
   pxor mm7, mm7
 
-  COPY_8_TO_16_SUB 0
-  COPY_8_TO_16_SUB 1
-  COPY_8_TO_16_SUB 2
-  COPY_8_TO_16_SUB 3
+  COPY_8_TO_16_SUB 0, 1
+  COPY_8_TO_16_SUB 1, 1
+  COPY_8_TO_16_SUB 2, 1
+  COPY_8_TO_16_SUB 3, 1
 
   pop ebx
   ret
+
+
+align 16
+transfer_8to16subro_mmx:
+  mov ecx, [esp  + 4] ; Dst
+  mov eax, [esp  + 8] ; Cur
+  push ebx
+  mov ebx, [esp+4+12] ; Ref
+  mov edx, [esp+4+16] ; Stride
+  pxor mm7, mm7
+
+  COPY_8_TO_16_SUB 0, 0
+  COPY_8_TO_16_SUB 1, 0
+  COPY_8_TO_16_SUB 2, 0
+  COPY_8_TO_16_SUB 3, 0
+
+  pop ebx
+  ret
+
 
 ;===========================================================================
 ;
