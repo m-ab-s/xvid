@@ -1,0 +1,75 @@
+##############################################################################
+#
+# Makefile for XviD VFW driver
+#
+# Author : ??? <cutka at szm.sk>
+# Modified by : Edouard Gomez <ed.gomez at free.fr>
+#               Peter Ross <pross@xvid.org>
+#
+# $Id: Makefile.cygwin,v 1.1.2.1 2003-10-03 19:59:16 edgomez Exp $
+##############################################################################
+
+include Makefile.inc
+
+XVIDCOREINC=/usr/local/include
+XVIDCORELIB=/usr/local/lib
+
+RM = rm -rf
+
+# CC = gcc-2
+# CC = gcc-3.1
+
+# Constants which should not be modified
+# The `mingw-runtime` package is required when building with -mno-cygwin
+CFLAGS += -I$(SRCDIR)/w32api -I$(XVIDCOREINC)
+CFLAGS += -D_WIN32_IE=0x0500
+CFLAGS += -mno-cygwin
+
+##############################################################################
+# Optional Compiler options
+##############################################################################
+
+  # Warning level options
+      # Shows all warnings
+  CFLAGS += -Wall
+      # To detect non ANSI C code (xvid is not ANSI C (yet?))
+  # CFLAGS += -pedantic
+
+
+  # General Optimization options
+      # Optimize code for size (implies -O2)
+  CFLAGS += -Os
+      # Unroll loops code, this might speed up loops
+  CFLAGS += -funroll-loops
+      # Generates FPU math code
+  CFLAGS += -ffast-math
+      # ??? (man gcc)
+  CFLAGS += -fstrict-aliasing
+      # Omit the x86 push ebp; mov ebp, esp function
+      # header and its corresponding function tailer
+  CFLAGS += -fomit-frame-pointer
+
+
+##############################################################################
+# Rules
+##############################################################################
+
+all: $(LIBSO)
+
+%.res.o: %.rc 
+	windres --include-dir=$(SRCDIR) -o $@ $<
+
+$(LIBSO): $(SRC:.c=.o) $(SRC_RES:.rc=.res.o)
+	$(CC) $(CFLAGS) -shared -Wl,-dll,--out-implib,$@.a,--enable-stdcall-fixup \
+		 -o $@ $^ ../src/driverproc.def -L$(XVIDCORELIB) \
+		 -lxvidcore -lgdi32 -lwinmm -lcomdlg32 -lcomctl32
+
+clean:
+	$(RM) $(SRC:.c=.o) $(SRC_RES:.rc=.res.o)
+	$(RM) $(LIBSO)
+
+install:
+	rundll32.exe setupapi,InstallHinfSection DefaultInstall 132 ./xvid.inf
+
+remove:
+	rundll32.exe setupapi,InstallHinfSection Remove_XviD 132 ./xvid.inf
