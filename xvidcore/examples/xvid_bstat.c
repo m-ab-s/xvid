@@ -323,6 +323,7 @@ int enc_init(int use_assembler)
 	xparam.global = XVID_GLOBAL_DX50BVOP;//XVID_GLOBAL_DEBUG; //XVID_GLOBAL_PACKED|XVID_GLOBAL_DX50BVOP;//|XVID_GLOBAL_DEBUG;
 	xparam.max_bframes = ARG_MAX_BFRAMES;
 	xparam.bquant_ratio = ARG_BQUANT_RATIO;
+	xparam.bquant_offset= 0;
 
 	xparam.frame_drop_ratio = 0;
 
@@ -349,6 +350,7 @@ int  enc_main(unsigned char* image, unsigned char* bitstream, int *streamlength,
 	xframe.length = -1; 	// this is written by the routine
 
 	xframe.image = image;
+	xframe.stride = XDIM;
         xframe.colorspace = XVID_CSP_YV12;	// defined in <xvid.h>
 
 	xframe.intra = -1; // let the codec decide between I-frame (1) and P-frame (0)
