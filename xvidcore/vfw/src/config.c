@@ -213,11 +213,11 @@ static const REG_INT reg_ints[] = {
 	{"frame_drop_ratio",		&reg.frame_drop_ratio,			0},
 
 	/* quant */
-	{"min_iquant",				&reg.min_iquant,				2},
+	{"min_iquant",				&reg.min_iquant,				1},
 	{"max_iquant",				&reg.max_iquant,				31},
-	{"min_pquant",				&reg.min_pquant,				2},
+	{"min_pquant",				&reg.min_pquant,				1},
 	{"max_pquant",				&reg.max_pquant,				31},
-	{"min_bquant",				&reg.min_bquant,				2},
+	{"min_bquant",				&reg.min_bquant,				1},
 	{"max_bquant",				&reg.max_bquant,				31},
 	{"trellis_quant",			&reg.trellis_quant,				0},
 
@@ -1717,7 +1717,7 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	case WM_HSCROLL :
 		if((HWND)lParam == GetDlgItem(hDlg, IDC_SLIDER)) {
-			if (config->mode == RC_MODE_2PASS2)
+			if (g_use_bitrate)
 				SetDlgItemInt(hDlg, IDC_BITRATE, SendMessage((HWND)lParam, TBM_GETPOS, 0, 0), FALSE);
 			else
 				set_dlgitem_float(hDlg, IDC_BITRATE, SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
