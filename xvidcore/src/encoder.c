@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.49 2003-11-09 20:49:21 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.50 2003-11-13 22:35:30 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1500,24 +1500,24 @@ FrameCodeP(Encoder * pEnc,
 
 		if (current->motion_flags & XVID_ME_GME_REFINE) {
 			gmcval = GlobalMotionEstRefine(&current->warp,
-								current->mbs, pParam,
-								current, reference,
-								&current->image,
-								&reference->image,
-								&pEnc->vInterH,
-								&pEnc->vInterV,
-								&pEnc->vInterHV);
-			gmcval += /*current->quant */ 2 * (int)(pParam->mb_width*pParam->mb_height);
+										   current->mbs, pParam,
+										   current, reference,
+										   &current->image,
+										   &reference->image,
+										   &pEnc->vInterH,
+										   &pEnc->vInterV,
+										   &pEnc->vInterHV);
+		} else {
+			gmcval = globalSAD(&current->warp, pParam, current->mbs,
+							   current,
+							   &reference->image,
+							   &current->image,
+							   pEnc->vGMC.y);
 		}
 
-		gmcval = globalSAD(&current->warp, pParam, current->mbs,
-							current,
-							&reference->image,
-							&current->image,
-							pEnc->vGMC.y);
 		gmcval += /*current->quant*/ 2 * (int)(pParam->mb_width*pParam->mb_height);
 
-/* 1st '3': 3 warpoints, 2nd '3': 16th pel res (2<<3) */
+		/* 1st '3': 3 warpoints, 2nd '3': 16th pel res (2<<3) */
 		generate_GMCparameters(	3, 3, &current->warp,
 				pParam->width, pParam->height,
 				&current->new_gmc_data);

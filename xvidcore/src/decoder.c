@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.18 2003-10-22 09:47:52 edgomez Exp $
+ * $Id: decoder.c,v 1.49.2.19 2003-11-13 22:35:30 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1164,15 +1164,6 @@ decoder_bframe(DECODER * dec,
 	const int64_t TRB = dec->time_pp - dec->time_bp, TRD = dec->time_pp;
 	int i;
 
-#ifdef BFRAMES_DEC_DEBUG
-	FILE *fp;
-	static char first=0;
-#define BFRAME_DEBUG
-	if (!first && fp) { \
-		fprintf(fp,"Y=%3d   X=%3d   MB=%2d   CBP=%02X\n",y,x,mb->mode,mb->cbp); \
-	}
-#endif
-
 	start_timer();
 	image_setedges(&dec->refn[0], dec->edged_width, dec->edged_height,
 					dec->width, dec->height);
@@ -1180,18 +1171,23 @@ decoder_bframe(DECODER * dec,
 					dec->width, dec->height);
 	stop_edges_timer();
 
-#ifdef BFRAMES_DEC_DEBUG
-	if (!first){
-		fp=fopen("C:\\XVIDDBG.TXT","w");
-	}
-#endif
-
 	for (y = 0; y < dec->mb_height; y++) {
 		/* Initialize Pred Motion Vector */
 		dec->p_fmv = dec->p_bmv = zeromv;
 		for (x = 0; x < dec->mb_width; x++) {
 			MACROBLOCK *mb = &dec->mbs[y * dec->mb_width + x];
 			MACROBLOCK *last_mb = &dec->last_mbs[y * dec->mb_width + x];
+			const int fcode_max = (fcode_forward>fcode_backward) ? fcode_forward : fcode_backward;
+			uint32_t intra_dc_threshold; /* fake variable */
+
+			if (check_resync_marker(bs, fcode_max  - 1)) {
+				int bound = read_video_packet_header(bs, dec, fcode_max - 1, &quant,
+													 &fcode_forward, &fcode_backward, &intra_dc_threshold);
+				x = bound % dec->mb_width;
+				y = bound / dec->mb_width;
+				/* reset predicted macroblocks */
+				dec->p_fmv = dec->p_bmv = zeromv;
+			}
 
 			mv =
 			mb->b_mvs[0] = mb->b_mvs[1] = mb->b_mvs[2] = mb->b_mvs[3] =
@@ -1304,14 +1300,6 @@ decoder_bframe(DECODER * dec,
 			}
 		} /* End of for */
 	}
-
-#ifdef BFRAMES_DEC_DEBUG
-	if (!first){
-		first=1;
-		if (fp)
-			fclose(fp);
-	}
-#endif
 }
 
 /* perform post processing if necessary, and output the image */

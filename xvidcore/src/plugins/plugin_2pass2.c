@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.24 2003-11-09 20:49:21 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.25 2003-11-13 22:35:30 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -823,26 +823,24 @@ statsfile_count_frames(rc_2pass2_t * rc, char * filename)
 
 		char *ptr;
 		char type;
-		int fields, nouse;
+		int fields;
 
 		lines++;
 
 		/* We skip spaces */
 		ptr = skipspaces(line);
 
-		/* Skip coment lines */
-		if(iscomment(ptr)) {
+		/* Skip coment lines or empty lines */
+		if(iscomment(ptr) || *ptr == '\0') {
 			free(line);
 			continue;
 		}
 
 		/* Read the stat line from buffer */
-		fields = sscanf(ptr,
-						"%c %d %d %d %d %d",
-						&type, &nouse, &nouse, &nouse, &nouse, &nouse);
+		fields = sscanf(ptr, "%c", &type);
 
 		/* Valid stats files have at least 6 fields */
-		if (fields == 6) {
+		if (fields == 1) {
 			switch(type) {
 			case 'i':
 			case 'I':
@@ -901,8 +899,8 @@ statsfile_load(rc_2pass2_t *rc, char * filename)
 		/* We skip spaces */
 		ptr = skipspaces(line);
 
-		/* Skip comment lines */
-		if(iscomment(ptr)) {
+		/* Skip comment lines or empty lines */
+		if(iscomment(ptr) || *ptr == '\0') {
 			free(line);
 			continue;
 		}
@@ -1278,7 +1276,7 @@ scaled_curve_apply_advanced_parameters(rc_2pass2_t * rc)
 		} else {
 			rc->avg_length[i] = rc->tot_scaled_length[i];
 
-			if (i == XVID_TYPE_IVOP) {
+			if (i == (XVID_TYPE_IVOP-1)) {
 				/* I Frames total has to be added the boost total */
 				rc->avg_length[i] += ivop_boost_total;
 			} else {

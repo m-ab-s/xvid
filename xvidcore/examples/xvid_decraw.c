@@ -20,7 +20,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_decraw.c,v 1.7.2.5 2003-08-09 17:19:15 edgomez Exp $
+ * $Id: xvid_decraw.c,v 1.7.2.6 2003-11-13 22:35:30 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
 						filename);
 			}
 			else {
-				fwrite(mp4_buffer, 1, used_bytes, filehandle);
+				fwrite(mp4_ptr-used_bytes, 1, used_bytes, filehandle);
 				fclose(filehandle);
 			}
 		}
