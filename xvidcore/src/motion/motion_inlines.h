@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_inlines.h,v 1.1.2.5 2003-10-25 16:51:38 syskin Exp $
+ * $Id: motion_inlines.h,v 1.1.2.6 2003-11-16 15:32:38 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -132,6 +132,7 @@ ZeroMacroblockP(MACROBLOCK *pMB, const int32_t sad)
 	pMB->qmvs[0] = pMB->qmvs[1] = pMB->qmvs[2] = pMB->qmvs[3] = zeroMV;
 	pMB->sad16 = pMB->sad8[0] = pMB->sad8[1] = pMB->sad8[2] = pMB->sad8[3] = sad;
 	pMB->mcsel = 0;
+	pMB->cbp = 0;
 }
 
 /* check if given vector is equal to any vector checked before */

@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.51 2003-11-15 14:43:38 syskin Exp $
+ * $Id: encoder.c,v 1.95.2.52 2003-11-16 15:32:37 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -190,7 +190,7 @@ enc_create(xvid_enc_create_t * create)
         pcreate.height = pEnc->mbParam.height;
         pcreate.mb_width = pEnc->mbParam.mb_width;
         pcreate.mb_height = pEnc->mbParam.mb_height;
-	pcreate.fincr = pEnc->mbParam.fincr;
+		pcreate.fincr = pEnc->mbParam.fincr;
         pcreate.fbase = pEnc->mbParam.fbase;
         pcreate.param = create->plugins[n].param;
 
@@ -1075,7 +1075,8 @@ repeat:
 		}else{
 			type = MEanalysis(&pEnc->reference->image, pEnc->current,
 					&pEnc->mbParam, pEnc->mbParam.iMaxKeyInterval,
-					pEnc->iFrameNum, pEnc->bframenum_tail, xFrame->bframe_threshold);
+					pEnc->iFrameNum, pEnc->bframenum_tail, xFrame->bframe_threshold,
+					pEnc->bframes[pEnc->bframenum_head]->mbs);
 		}
 	}
 

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: vop_type_decision.c,v 1.1.2.3 2003-11-15 14:48:41 syskin Exp $
+ * $Id: vop_type_decision.c,v 1.1.2.4 2003-11-16 15:32:38 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -140,7 +140,8 @@ MEanalysis(	const IMAGE * const pRef,
 			const int maxIntra, /* maximum number if non-I frames */
 			const int intraCount, /* number of non-I frames after last I frame; 0 if we force P/B frame */
 			const int bCount, /* number of B frames in a row */
-			const int b_thresh)
+			const int b_thresh,
+			const MACROBLOCK * const prev_mbs)
 {
 	uint32_t x, y, intra = 0;
 	int sSAD = 0;
@@ -184,9 +185,9 @@ MEanalysis(	const IMAGE * const pRef,
 			if (bCount == 0) pMBs[x + y * pParam->mb_width].mvs[0] = zeroMV;
 			else { /* extrapolation of the vector found for last frame */
 				pMBs[x + y * pParam->mb_width].mvs[0].x =
-					(pMBs[x + y * pParam->mb_width].mvs[0].x * (bCount+1) ) / bCount;
+					(prev_mbs[x + y * pParam->mb_width].mvs[0].x * (bCount+1) ) / bCount;
 				pMBs[x + y * pParam->mb_width].mvs[0].y =
-					(pMBs[x + y * pParam->mb_width].mvs[0].y * (bCount+1) ) / bCount;
+					(prev_mbs[x + y * pParam->mb_width].mvs[0].y * (bCount+1) ) / bCount;
 			}
 
 			MEanalyzeMB(pRef->y, pCurrent->y, x, y, pParam, pMBs, &Data);

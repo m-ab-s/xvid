@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_bvop.c,v 1.1.2.3 2003-11-09 20:47:14 edgomez Exp $
+ * $Id: estimation_bvop.c,v 1.1.2.4 2003-11-16 15:32:37 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -291,7 +291,7 @@ static __inline VECTOR
 ChoosePred(const MACROBLOCK * const pMB, const uint32_t mode)
 {
 /* the stupidiest function ever */
-	return (mode == MODE_FORWARD ? pMB->mvs[0] : pMB->b_mvs[0]);
+	return (mode == MODE_FORWARD) ? pMB->mvs[0] : pMB->b_mvs[0];
 }
 
 static void __inline
@@ -800,6 +800,8 @@ MotionEstimationBVOP(MBParam * const pParam,
 			if (b_reference->coding_type != S_VOP)
 				if (b_mb->mode == MODE_NOT_CODED) {
 					pMB->mode = MODE_NOT_CODED;
+					pMB->mvs[0] = zeroMV;
+					pMB->b_mvs[0] = zeroMV;
 					continue;
 				}
 

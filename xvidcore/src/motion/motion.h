@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion.h,v 1.20.2.6 2003-10-01 23:23:01 edgomez Exp $
+ *  $Id: motion.h,v 1.20.2.7 2003-11-16 15:32:37 edgomez Exp $
  *
  ***************************************************************************/
 
@@ -124,7 +124,8 @@ MEanalysis(	const IMAGE * const pRef,
 			const int maxIntra,
 			const int intraCount,
 			const int bCount,
-			const int b_thresh);
+			const int b_thresh,
+			const MACROBLOCK * const prev_mbs);
 
 /** MotionCompensation **/
 
