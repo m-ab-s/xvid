@@ -120,7 +120,7 @@ platform.inc: platform.inc.in
 # .PHONY targets
 #-----------------------------------------------------------------------------
 
-.PHONY: distclean clean info list-objects list-targets list-install-path list-cflags
+.PHONY: mrproper distclean clean info list-objects list-targets list-install-path list-cflags
 
 clean:
 	@echo -n "Cleaning objects... "
@@ -133,7 +133,6 @@ clean:
 	@$(RM) $(SHARED_LIB)
 	@echo "Done"
 
-
 distclean: clean
 	@echo -n "Cleaning generated files... "
 	@$(RM) libxvidcore.def
@@ -141,6 +140,16 @@ distclean: clean
 	@$(RM) config.log
 	@$(RM) config.status
 	@$(RM) autom4te.cache
+	@echo "Done"
+
+mrproper: distclean
+	@echo -n "Cleaning bootstrapped files... "
+	@$(RM) configure
+	@$(RM) install-sh
+	@$(RM) missing
+	@$(RM) config.guess
+	@$(RM) mkinstalldirs
+	@$(RM) config.sub
 	@echo "Done"
 
 list-objects:
