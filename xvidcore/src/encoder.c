@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.12 2003-03-23 04:01:48 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.95.2.13 2003-03-25 10:32:48 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -795,7 +795,7 @@ static __inline void
 set_timecodes(FRAMEINFO* pCur,FRAMEINFO *pRef, int32_t time_base)
 {
 
-		pCur->ticks = (int32_t)pCur->stamp % time_base;
+    pCur->ticks = (int32_t)pCur->stamp % time_base;
 		pCur->seconds =  ((int32_t)pCur->stamp / time_base)	- ((int32_t)pRef->stamp / time_base) ;
 		
 		/* HEAVY DEBUG OUTPUT remove when timecodes prove to be stable */
@@ -1006,9 +1006,8 @@ repeat:
 	 * init pEnc->current fields
 	 * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
 
-	inc_frame_num(pEnc);
-
     pEnc->current->fincr = pEnc->mbParam.fincr>0 ? pEnc->mbParam.fincr : frame->fincr; 
+    inc_frame_num(pEnc);
     pEnc->current->vol_flags = pEnc->mbParam.vol_flags;
     pEnc->current->vop_flags = frame->vop_flags;
 	pEnc->current->motion_flags = frame->motion;
