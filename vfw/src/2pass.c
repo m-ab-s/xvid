@@ -660,8 +660,19 @@ int codec_2pass_init(CODEC* codec)
 				break;
 			}
 
-			twopass->average_bframe = (double)bframe_total / bframes / twopass->movie_curve;
-			twopass->average_pframe = (double)pframe_total / pframes / twopass->movie_curve;
+			if (bframes)
+				twopass->average_bframe = (double)bframe_total / bframes / twopass->movie_curve;
+
+			if (pframes)
+				twopass->average_pframe = (double)pframe_total / pframes / twopass->movie_curve;
+			else
+				if (bframes)
+					twopass->average_pframe = twopass->average_bframe;  // b-frame packed bitstream fix
+				else
+				{
+					DEBUGERR("ERROR:  No p-frames or b-frames were present in the 1st pass.  Rate control cannot function properly!");
+					return ICERR_ERROR;
+				}
 
 
 
