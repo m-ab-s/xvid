@@ -19,15 +19,15 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.3 2003-03-11 01:08:10 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.4 2003-03-11 23:39:47 edgomez Exp $
  *
  ****************************************************************************/
 
 /*****************************************************************************
  *  Application notes :
  *		                    
- *  A sequence of YUV pics in PGM file format is encoded and decoded
- *  The speed is measured and PSNR of decoded picture is calculated. 
+ *  A sequence of raw YUV I420 pics or YUV I420 PGM file format is encoded
+ *  The speed is measured and frames' PSNR are taken from core. 
  *		                   
  *  The program is plain C and needs no libraries except for libxvidcore, 
  *  and maths-lib.
@@ -435,12 +435,12 @@ int main(int argc, char *argv[])
 			}
 		}
 
+		filenr++;
+
 	next_frame:
 		/* Read the header if it's pgm stream */ 
 		if (ARG_INPUTTYPE)
 			status = read_pgmheader(in_file);
-
-		filenr++;
 
 	} while ( (!status) && (filenr<ARG_MAXFRAMENR) );
 
