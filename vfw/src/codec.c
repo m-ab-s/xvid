@@ -388,6 +388,8 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 
 	frame.general |= XVID_HQACPRED;
 
+	frame.bframe_threshold = 255;
+
 	if (codec->config.motion_search > 4)
 		frame.general |= XVID_INTER4V;
 
