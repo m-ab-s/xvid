@@ -93,6 +93,7 @@
 //#define VIDOBJLAY_TYPE_CORE_SCALABLE		11
 #define VIDOBJLAY_TYPE_ACE				12
 //#define VIDOBJLAY_TYPE_SIMPLE_FBA			13
+#define VIDOBJLAY_TYPE_ASP              17
 
 
 //#define VIDOBJLAY_AR_SQUARE           1

@@ -521,7 +521,8 @@ BitstreamReadHeaders(Bitstream * bs,
 				BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_CORE && 
 				BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_MAIN && 
 				BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_ACE && 
-				BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_ART_SIMPLE &&
+                BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_ART_SIMPLE &&
+                BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_ASP &&
 				BitstreamShowBits(bs, 8) != 0)	// BUGGY DIVX
 			{
 				DPRINTF(DPRINTF_ERROR,"video_object_type_indication %i not supported ",
