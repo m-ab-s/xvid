@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.16 2003-04-14 20:19:00 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.17 2003-04-18 20:06:58 chl Exp $
  *
  ****************************************************************************/
 
@@ -394,7 +394,7 @@ main(int argc,
 
 		/* Write the Frame statistics */
 
-		printf("%5d: key=%i, time=%6.0f, length=%7d", !result ? input_num : -1,
+		printf("%5d: key=%i, time= %6.0f, length= %7d", !result ? input_num : -1,
 			   key, (float) enctime, (int) m4v_size);
 
 		if (stats_type > 0) {	/* !XVID_TYPE_NOTHING */
@@ -417,7 +417,7 @@ main(int argc,
 				break;
 			}
 
-			printf(" | type=%s, quant=%2d, length=%7d", type, stats_quant,
+			printf(" | type=%s, quant= %2d, length= %7d", type, stats_quant,
 				   stats_length);
 
 #define SSE2PSNR(sse, width, height) ((!(sse))?0.0f : 48.131f - 10*(float)log10((float)(sse)/((float)((width)*(height)))))
