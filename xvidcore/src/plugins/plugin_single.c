@@ -3,8 +3,8 @@
  *  XviD Standard Plugins
  *  - single-pass bitrate controller implementation -
  *
- *  Copyright(C) 2002      Benjamin Lambert <foxer@hotmail.com>
- *               2002-2003 Edouard Gomez <ed.gomez@free.fr>
+ *  Copyright(C) 2002	  Benjamin Lambert <foxer@hotmail.com>
+ *			   2002-2003 Edouard Gomez <ed.gomez@free.fr>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_single.c,v 1.1.2.7 2003-11-28 14:20:13 syskin Exp $
+ * $Id: plugin_single.c,v 1.1.2.8 2003-12-05 14:23:02 syskin Exp $
  *
  ****************************************************************************/
 
@@ -54,7 +54,7 @@ typedef struct
 	double avg_framesize;
 	double quant_error[31];
 
-    double fq_error;
+	double fq_error;
 }
 rc_single_t;
 
@@ -64,7 +64,7 @@ get_initial_quant(unsigned int bitrate)
 {
 
 #if defined(DEFAULT_INITIAL_QUANTIZER)
-    return (DEFAULT_INITIAL_QUANTIZER);
+	return (DEFAULT_INITIAL_QUANTIZER);
 #else
 	int i;
 
@@ -120,7 +120,7 @@ rc_single_create(xvid_plg_create_t * create,
 	rc->sequence_quality = 2.0 / (double) rc->rtn_quant;
 	rc->avg_framesize = rc->target_framesize;
 
-    rc->fq_error = 0;
+	rc->fq_error = 0;
 
 	/* Bind the RC */
 	*handle = rc;
@@ -147,15 +147,24 @@ static int
 rc_single_before(rc_single_t * rc,
 			  xvid_plg_data_t * data)
 {
-     if (data->quant <= 0) {
-        if (data->zone && data->zone->mode == XVID_ZONE_QUANT) {
-            rc->fq_error += (double)data->zone->increment / (double)data->zone->base;
-            data->quant = (int)rc->fq_error;
-            rc->fq_error -= data->quant;
-        }else {
-        	data->quant = rc->rtn_quant;
-        }
-    }
+	 if (data->quant <= 0) {
+		if (data->zone && data->zone->mode == XVID_ZONE_QUANT) {
+			rc->fq_error += (double)data->zone->increment / (double)data->zone->base;
+			data->quant = (int)rc->fq_error;
+			rc->fq_error -= data->quant;
+		} else {
+			int q = rc->rtn_quant;
+			/* limit to min/max range 
+			   we don't know frame type of the next frame, so we just use 
+			   P-VOP's range... */
+			if (q > data->max_quant[XVID_TYPE_PVOP-1])
+				q = data->max_quant[XVID_TYPE_PVOP-1];
+			else if (q < data->min_quant[XVID_TYPE_PVOP-1])
+				q = data->min_quant[XVID_TYPE_PVOP-1];
+
+		   	data->quant = q;
+		}
+	}
 	return 0;
 }
 
@@ -239,19 +248,11 @@ rc_single_after(rc_single_t * rc,
 		}
 	}
 
-    /* prevent rapid quantization change */
+	/* prevent rapid quantization change */
 	if (rtn_quant > data->quant + 1)
 		rtn_quant = data->quant + 1;
 	else if (rtn_quant < data->quant - 1)
 		rtn_quant = data->quant - 1;
-
-    /* limit to min/max range 
-	   we don't know frame type of the next frame, so we just use 
-	   P-VOP's range... */
-	if (rtn_quant > data->max_quant[XVID_TYPE_PVOP-1])
-		rtn_quant = data->max_quant[XVID_TYPE_PVOP-1];
-	else if (rtn_quant < data->min_quant[XVID_TYPE_PVOP-1])
-		rtn_quant = data->min_quant[XVID_TYPE_PVOP-1];
 
 	rc->rtn_quant = rtn_quant;
 
