@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.52 2003-11-16 15:32:37 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.53 2003-11-16 17:41:03 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1074,9 +1074,9 @@ repeat:
 			type = I_VOP;
 		}else{
 			type = MEanalysis(&pEnc->reference->image, pEnc->current,
-					&pEnc->mbParam, pEnc->mbParam.iMaxKeyInterval,
-					pEnc->iFrameNum, pEnc->bframenum_tail, xFrame->bframe_threshold,
-					pEnc->bframes[pEnc->bframenum_head]->mbs);
+							  &pEnc->mbParam, pEnc->mbParam.iMaxKeyInterval,
+							  pEnc->iFrameNum, pEnc->bframenum_tail, xFrame->bframe_threshold,
+							  (pEnc->bframes) ? pEnc->bframes[pEnc->bframenum_head]->mbs: NULL);
 		}
 	}
 
