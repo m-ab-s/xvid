@@ -57,8 +57,10 @@ static __inline uint32_t
 d_mv_bits(int x, int y, const VECTOR pred, const uint32_t iFcode, const int qpel, const int rrv)
 {
 	int xb, yb;
-	x += x * qpel; y += y * qpel;
+	x = qpel ? x<<1 : x;
+	y = qpel ? y<<1 : y;
 	if (rrv) { x = RRV_MV_SCALEDOWN(x); y = RRV_MV_SCALEDOWN(y); }
+
 	x -= pred.x;
 	y -= pred.y;
 
@@ -202,9 +204,9 @@ GetReference(const int x, const int y, const SearchData * const data)
 {
 	switch ( ((x&1)<<1) | (y&1) ) {
 		case 0 : return data->Ref + x/2 + (y/2)*(data->iEdgedWidth);
+		case 3 : return data->RefHV + (x-1)/2 + ((y-1)/2)*(data->iEdgedWidth);
 		case 1 : return data->RefV + x/2 + ((y-1)/2)*(data->iEdgedWidth);
-		case 2 : return data->RefH + (x-1)/2 + (y/2)*(data->iEdgedWidth);
-		default : return data->RefHV + (x-1)/2 + ((y-1)/2)*(data->iEdgedWidth);
+		default : return data->RefH + (x-1)/2 + (y/2)*(data->iEdgedWidth);	//case 2
 	}
 }
 
@@ -265,8 +267,17 @@ Interpolate16x16qpel(const int x, const int y, const uint32_t dir, const SearchD
 
 	ref1 = GetReferenceB(halfpel_x, halfpel_y, dir, data);
 	switch( ((x&1)<<1) + (y&1) ) {
-	case 0: // pure halfpel position
-		return (uint8_t *) ref1;
+	case 3: // x and y in qpel resolution - the "corners" (top left/right and
+			 // bottom left/right) during qpel refinement
+		ref2 = GetReferenceB(halfpel_x, y - halfpel_y, dir, data);
+		ref3 = GetReferenceB(x - halfpel_x, halfpel_y, dir, data);
+		ref4 = GetReferenceB(x - halfpel_x, y - halfpel_y, dir, data);
+		interpolate8x8_avg4(Reference, ref1, ref2, ref3, ref4, iEdgedWidth, rounding);
+		interpolate8x8_avg4(Reference+8, ref1+8, ref2+8, ref3+8, ref4+8, iEdgedWidth, rounding);
+		interpolate8x8_avg4(Reference+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, ref3+8*iEdgedWidth, ref4+8*iEdgedWidth, iEdgedWidth, rounding);
+		interpolate8x8_avg4(Reference+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, ref3+8*iEdgedWidth+8, ref4+8*iEdgedWidth+8, iEdgedWidth, rounding);
+		break;
+
 	case 1: // x halfpel, y qpel - top or bottom during qpel refinement
 		ref2 = GetReferenceB(halfpel_x, y - halfpel_y, dir, data);
 		interpolate8x8_avg2(Reference, ref1, ref2, iEdgedWidth, rounding, 8);
@@ -283,16 +294,8 @@ Interpolate16x16qpel(const int x, const int y, const uint32_t dir, const SearchD
 		interpolate8x8_avg2(Reference+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, iEdgedWidth, rounding, 8);
 		break;
 
-	default: // x and y in qpel resolution - the "corners" (top left/right and
-			 // bottom left/right) during qpel refinement
-		ref2 = GetReferenceB(halfpel_x, y - halfpel_y, dir, data);
-		ref3 = GetReferenceB(x - halfpel_x, halfpel_y, dir, data);
-		ref4 = GetReferenceB(x - halfpel_x, y - halfpel_y, dir, data);
-		interpolate8x8_avg4(Reference, ref1, ref2, ref3, ref4, iEdgedWidth, rounding);
-		interpolate8x8_avg4(Reference+8, ref1+8, ref2+8, ref3+8, ref4+8, iEdgedWidth, rounding);
-		interpolate8x8_avg4(Reference+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, ref3+8*iEdgedWidth, ref4+8*iEdgedWidth, iEdgedWidth, rounding);
-		interpolate8x8_avg4(Reference+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, ref3+8*iEdgedWidth+8, ref4+8*iEdgedWidth+8, iEdgedWidth, rounding);
-		break;
+	case 0: // pure halfpel position
+		return (uint8_t *) ref1;
 	}
 	return Reference;
 }
@@ -302,39 +305,41 @@ Interpolate16x16qpel(const int x, const int y, const uint32_t dir, const SearchD
 static void
 CheckCandidate16(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
 {
-	int t, xc, yc;
+	int xc, yc;
 	const uint8_t * Reference;
 	VECTOR * current;
+	int32_t sad; uint32_t t;
 
-	if ( (x > data->max_dx) | (x < data->min_dx)
-		| (y > data->max_dy) | (y < data->min_dy) ) return;
+	if ( (x > data->max_dx) || (x < data->min_dx)
+		|| (y > data->max_dy) || (y < data->min_dy) ) return;
 
-	if (data->qpel_precision) { // x and y are in 1/4 precision
-		Reference = Interpolate16x16qpel(x, y, 0, data);
-		xc = x/2; yc = y/2; //for chroma sad
-		current = data->currentQMV;
-	} else {
+	if (!data->qpel_precision) {
 		Reference = GetReference(x, y, data);
 		current = data->currentMV;
 		xc = x; yc = y;
+	} else { // x and y are in 1/4 precision
+		Reference = Interpolate16x16qpel(x, y, 0, data);
+		xc = x/2; yc = y/2; //for chroma sad
+		current = data->currentQMV;
 	}
+
+	sad = sad16v(data->Cur, Reference, data->iEdgedWidth, data->temp + 1);
 	t = d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
 
-	data->temp[0] = sad16v(data->Cur, Reference, data->iEdgedWidth, data->temp + 1);
-
-	data->temp[0] += (data->lambda16 * t * data->temp[0])>>10;
+	sad += (data->lambda16 * t * sad)>>10;
 	data->temp[1] += (data->lambda8 * t * (data->temp[1] + NEIGH_8X8_BIAS))>>10;
 
-	if (data->chroma) data->temp[0] += ChromaSAD((xc >> 1) + roundtab_79[xc & 0x3],
+	if (data->chroma) sad += ChromaSAD((xc >> 1) + roundtab_79[xc & 0x3],
 													(yc >> 1) + roundtab_79[yc & 0x3], data);
 
-	if (data->temp[0] < data->iMinSAD[0]) {
-		data->iMinSAD[0] = data->temp[0];
+	if (sad < data->iMinSAD[0]) {
+		data->iMinSAD[0] = sad;
 		current[0].x = x; current[0].y = y;
-		*dir = Direction; }
+		*dir = Direction; 
+	}
 
 	if (data->temp[1] < data->iMinSAD[1]) {
-		data->iMinSAD[1] = data->temp[1]; current[1].x = x; current[1].y= y; }
+		data->iMinSAD[1] = data->temp[1]; current[1].x = x; current[1].y = y; }
 	if (data->temp[2] < data->iMinSAD[2]) {
 		data->iMinSAD[2] = data->temp[2]; current[2].x = x; current[2].y = y; }
 	if (data->temp[3] < data->iMinSAD[3]) {
@@ -345,14 +350,39 @@ CheckCandidate16(const int x, const int y, const int Direction, int * const dir,
 }
 
 static void
+CheckCandidate8(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
+{
+	int32_t sad; uint32_t t;
+	const uint8_t * Reference;
+
+	if ( (x > data->max_dx) || (x < data->min_dx)
+		|| (y > data->max_dy) || (y < data->min_dy) ) return;
+
+	if (!data->qpel_precision) Reference = GetReference(x, y, data);
+	else Reference = Interpolate16x16qpel(x, y, 0, data);
+
+	sad = sad8(data->Cur, Reference, data->iEdgedWidth);
+	t = d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
+
+	sad += (data->lambda8 * t * (sad+NEIGH_8X8_BIAS))>>10;
+
+	if (sad < *(data->iMinSAD)) {
+		*(data->iMinSAD) = sad;
+		data->currentMV->x = x; data->currentMV->y = y;
+		*dir = Direction; 
+	}
+}
+
+
+static void
 CheckCandidate32(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
 {
 	uint32_t t;
 	const uint8_t * Reference;
 
-	if ( (!(x&1) && x !=0) | (!(y&1) && y !=0) || //non-zero integer value
-		(x > data->max_dx) | (x < data->min_dx)
-		| (y > data->max_dy) | (y < data->min_dy) ) return;
+	if ( (!(x&1) && x !=0) || (!(y&1) && y !=0) || //non-zero integer value
+		(x > data->max_dx) || (x < data->min_dx)
+		|| (y > data->max_dy) || (y < data->min_dy) ) return;
 
 	Reference = GetReference(x, y, data);
 	t = d_mv_bits(x, y, data->predMV, data->iFcode, 0, 1);
@@ -420,17 +450,19 @@ static void
 CheckCandidate32I(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
 {
 // maximum speed - for P/B/I decision
+	int32_t sad;
 
-	if ( (x > data->max_dx) | (x < data->min_dx)
-		| (y > data->max_dy) | (y < data->min_dy) ) return;
+	if ( (x > data->max_dx) || (x < data->min_dx)
+		|| (y > data->max_dy) || (y < data->min_dy) ) return;
 
-	data->temp[0] = sad32v_c(data->Cur, data->Ref + x/2 + (y/2)*(data->iEdgedWidth),
+	sad = sad32v_c(data->Cur, data->Ref + x/2 + (y/2)*(data->iEdgedWidth),
 							data->iEdgedWidth, data->temp+1);
 
-	if (data->temp[0] < *(data->iMinSAD)) {
-		*(data->iMinSAD) = data->temp[0];
+	if (sad < *(data->iMinSAD)) {
+		*(data->iMinSAD) = sad;
 		data->currentMV[0].x = x; data->currentMV[0].y = y;
-		*dir = Direction; }
+		*dir = Direction;
+	}
 	if (data->temp[1] < data->iMinSAD[1]) {
 		data->iMinSAD[1] = data->temp[1]; data->currentMV[1].x = x; data->currentMV[1].y = y; }
 	if (data->temp[2] < data->iMinSAD[2]) {
@@ -596,29 +628,6 @@ CheckCandidateDirectno4v(const int x, const int y, const int Direction, int * co
 		data->currentMV->x = x; data->currentMV->y = y;
 		*dir = Direction;
 	}
-}
-
-static void
-CheckCandidate8(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
-{
-	int32_t sad; uint32_t t;
-	const uint8_t * Reference;
-
-	if ( (x > data->max_dx) | (x < data->min_dx)
-		| (y > data->max_dy) | (y < data->min_dy) ) return;
-
-	if (data->qpel) Reference = Interpolate16x16qpel(x, y, 0, data);
-	else Reference = GetReference(x, y, data);
-
-	sad = sad8(data->Cur, Reference, data->iEdgedWidth);
-	t = d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
-
-	sad += (data->lambda8 * t * (sad+NEIGH_8X8_BIAS))>>10;
-
-	if (sad < *(data->iMinSAD)) {
-		*(data->iMinSAD) = sad;
-		data->currentMV->x = x; data->currentMV->y = y;
-		*dir = Direction; }
 }
 
 /* CHECK_CANDIATE FUNCTIONS END */
