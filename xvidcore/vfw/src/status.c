@@ -19,12 +19,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: status.c,v 1.1.2.4 2004-01-23 11:03:48 syskin Exp $
+ * $Id: status.c,v 1.1.2.5 2004-01-23 13:27:59 edgomez Exp $
  *
  *****************************************************************************/
 
 
 #include <windows.h>
+#include <stdio.h>
+
 #include "resource.h"
 #include "codec.h"
 #include "status.h"
