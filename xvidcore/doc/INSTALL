@@ -118,6 +118,7 @@ As the example uses the Win32 target, we can even build the vfw frontend.
 Additional requirements are:
  - Resource compiler (the Makefile uses the syntax of windres from the
    GNU CC suite, but you can easily modify the cmd line)
+ - GNU make (other make programs may have problem with shell expansion)
 
 So to cross compile the VFW frontend, you just need to override the
 Makefile variables pointing to the compiler and the resource compiler.

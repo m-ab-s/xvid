@@ -6,14 +6,17 @@
 # Modified by : Edouard Gomez <ed.gomez at free.fr>
 #               Peter Ross <pross@xvid.org>
 #
-# $Id: Makefile,v 1.1.2.1 2003-10-22 09:52:58 edgomez Exp $
+# Requires GNU Make because of shell expansion performed at a bad time with
+# other make programs (even using := variable assignments)
+#
+# $Id: Makefile,v 1.1.2.2 2003-11-02 19:56:42 edgomez Exp $
 ##############################################################################
 
 include sources.inc
 
-PWD=$(shell pwd)
-LOCAL_XVID_SRCTREE=$(PWD)/../../src
-LOCAL_XVID_BUILDTREE=$(PWD)/../../build/generic/=build
+MAKEFILE_PWD:=$(shell pwd)
+LOCAL_XVID_SRCTREE:=$(MAKEFILE_PWD)/../../src
+LOCAL_XVID_BUILDTREE:=$(MAKEFILE_PWD)/../../build/generic/=build
 
 RM = rm -rf
 WINDRES=windres
@@ -57,7 +60,11 @@ $(BUILD_DIR):
 .rc.obj:
 	@echo "  W: $(@D)/$(<F)"
 	@mkdir -p $(BUILD_DIR)/$(@D)
-	@$(WINDRES) --include-dir=$(SRC_DIR) -J rc -O coff -o $(BUILD_DIR)/$@ $<
+	@$(WINDRES) \
+		--include-dir=$(SRC_DIR) \
+		--input-format=rc \
+		--output-format=coff \
+		-o $(BUILD_DIR)/$@ $<
 
 .c.obj:
 	@echo "  C: $(@D)/$(<F)"
