@@ -646,7 +646,7 @@ CheckCandidateBits16(const int x, const int y, const int Direction, int * const 
 {
 
 	int16_t *in = data->dctSpace, *coeff = data->dctSpace + 64;
-	int32_t bits = 0, sum;
+	int32_t bits = 0;
 	VECTOR * current;
 	const uint8_t * ptr;
 	int i, cbp = 0, t, xc, yc;
@@ -667,47 +667,30 @@ CheckCandidateBits16(const int x, const int y, const int Direction, int * const 
 	for(i = 0; i < 4; i++) {
 		int s = 8*((i&1) + (i>>1)*data->iEdgedWidth);
 		transfer_8to16subro(in, data->Cur + s, ptr + s, data->iEdgedWidth);
-		fdct(in);
-		if (data->lambda8 == 0) sum = quant_inter(coeff, in, data->lambda16);
-		else sum = quant4_inter(coeff, in, data->lambda16);
-		if (sum > 0) {
-			cbp |= 1 << (5 - i);
-			bits += data->temp[i] = CodeCoeffInter_CalcBits(coeff, scan_tables[0]);
-		} else data->temp[i] = 0;
+		bits += data->temp[i] = Block_CalcBits(coeff, in, data->iQuant, data->quant_type, &cbp, i, 0);
 	}
 
 	bits += t = d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
 
-	if (bits < data->iMinSAD[0]) { // there is still a chance, adding chroma
-		xc = (xc >> 1) + roundtab_79[xc & 0x3];
-		yc = (yc >> 1) + roundtab_79[yc & 0x3];
-
-		//chroma U
-		ptr = interpolate8x8_switch2(data->RefQ + 64, data->RefP[4], 0, 0, xc, yc,  data->iEdgedWidth/2, data->rounding);
-		transfer_8to16subro(in, ptr, data->CurU, data->iEdgedWidth/2);
-		fdct(in);
-		if (data->lambda8 == 0) sum = quant_inter(coeff, in, data->lambda16);
-		else sum = quant4_inter(coeff, in, data->lambda16);
-		if (sum > 0) {
-			cbp |= 1 << (5 - 4);
-			bits += CodeCoeffInter_CalcBits(coeff, scan_tables[0]);
-		}
-
-		if (bits < data->iMinSAD[0]) {
-			//chroma V
-			ptr = interpolate8x8_switch2(data->RefQ + 64, data->RefP[5], 0, 0, xc, yc,  data->iEdgedWidth/2, data->rounding);
-			transfer_8to16subro(in, ptr, data->CurV, data->iEdgedWidth/2);
-			fdct(in);
-			if (data->lambda8 == 0) sum = quant_inter(coeff, in, data->lambda16);
-			else sum = quant4_inter(coeff, in, data->lambda16);
-			if (sum > 0) {
-				cbp |= 1 << (5 - 5);
-				bits += CodeCoeffInter_CalcBits(coeff, scan_tables[0]);
-			}
-		}
-	}
-
 	bits += xvid_cbpy_tab[15-(cbp>>2)].len;
+
+	if (bits >= data->iMinSAD[0]) return;
+
+	//chroma
+	xc = (xc >> 1) + roundtab_79[xc & 0x3];
+	yc = (yc >> 1) + roundtab_79[yc & 0x3];
+
+	//chroma U
+	ptr = interpolate8x8_switch2(data->RefQ + 64, data->RefP[4], 0, 0, xc, yc,  data->iEdgedWidth/2, data->rounding);
+	transfer_8to16subro(in, ptr, data->CurU, data->iEdgedWidth/2);
+	bits += Block_CalcBits(coeff, in, data->iQuant, data->quant_type, &cbp, 4, 0);
+	if (bits >= data->iMinSAD[0]) return;
+
+	//chroma V
+	ptr = interpolate8x8_switch2(data->RefQ + 64, data->RefP[5], 0, 0, xc, yc,  data->iEdgedWidth/2, data->rounding);
+	transfer_8to16subro(in, ptr, data->CurV, data->iEdgedWidth/2);
+	bits += Block_CalcBits(coeff, in, data->iQuant, data->quant_type, &cbp, 5, 0);
+
 	bits += mcbpc_inter_tab[(MODE_INTER & 7) | ((cbp & 3) << 3)].len;
 
 	if (bits < data->iMinSAD[0]) {
@@ -731,10 +714,10 @@ CheckCandidateBits8(const int x, const int y, const int Direction, int * const d
 {
 
 	int16_t *in = data->dctSpace, *coeff = data->dctSpace + 64;
-	int32_t sum, bits;
+	int32_t bits;
 	VECTOR * current;
 	const uint8_t * ptr;
-	int cbp;
+	int cbp = 0;
 
 	if ( (x > data->max_dx) || (x < data->min_dx)
 		|| (y > data->max_dy) || (y < data->min_dy) ) return;
@@ -748,15 +731,8 @@ CheckCandidateBits8(const int x, const int y, const int Direction, int * const d
 	}
 
 	transfer_8to16subro(in, data->Cur, ptr, data->iEdgedWidth);
-	fdct(in);
-	if (data->lambda8 == 0) sum = quant_inter(coeff, in, data->lambda16);
-	else sum = quant4_inter(coeff, in, data->lambda16);
-	if (sum > 0) {
-		bits = CodeCoeffInter_CalcBits(coeff, scan_tables[0]);
-		cbp = 1;
-	} else cbp = bits = 0;
-
-	bits += sum = d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
+	bits = Block_CalcBits(coeff, in, data->iQuant, data->quant_type, &cbp, 5, 0);
+	bits += d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
 
 	if (bits < data->iMinSAD[0]) {
 		data->temp[0] = cbp;
@@ -966,6 +942,122 @@ SkipMacroblockP(MACROBLOCK *pMB, const int32_t sad)
 	pMB->sad16 = pMB->sad8[0] = pMB->sad8[1] = pMB->sad8[2] = pMB->sad8[3] = sad;
 }
 
+static __inline void
+ModeDecision(SearchData * const Data,
+			MACROBLOCK * const pMB,
+			const MACROBLOCK * const pMBs,
+			const int x, const int y,
+			const MBParam * const pParam,
+			const uint32_t MotionFlags,
+			const uint32_t VopFlags,
+			const uint32_t VolFlags,
+			const IMAGE * const pCurrent,
+			const IMAGE * const pRef)
+{
+	int mode = MODE_INTER;
+	int inter4v = (VopFlags & XVID_VOP_INTER4V) && (pMB->dquant == 0);
+	const uint32_t iQuant = pMB->quant;
+
+	const int skip_possible = (!(VolFlags & XVID_VOL_GMC)) && (pMB->dquant == 0);
+
+	if (!(VopFlags & XVID_VOP_MODEDECISION_BITS)) { //normal, fast, SAD-based mode decision
+		int sad;
+		int InterBias = MV16_INTER_BIAS;
+		if (inter4v == 0 || Data->iMinSAD[0] < Data->iMinSAD[1] + Data->iMinSAD[2] +
+			Data->iMinSAD[3] + Data->iMinSAD[4] + IMV16X16 * (int32_t)iQuant) {
+			mode = MODE_INTER;
+			sad = Data->iMinSAD[0];
+		} else {
+			mode = MODE_INTER4V;
+			sad = Data->iMinSAD[1] + Data->iMinSAD[2] +
+						Data->iMinSAD[3] + Data->iMinSAD[4] + IMV16X16 * (int32_t)iQuant;
+			Data->iMinSAD[0] = sad;
+		}
+
+		/* final skip decision, a.k.a. "the vector you found, really that good?" */
+		if (skip_possible && (pMB->sad16 < (int)iQuant * MAX_SAD00_FOR_SKIP))
+			if ( (100*sad)/(pMB->sad16+1) > FINAL_SKIP_THRESH)
+				if (Data->chroma || SkipDecisionP(pCurrent, pRef, x, y, Data->iEdgedWidth/2, iQuant, Data->rrv)) {
+					mode = MODE_NOT_CODED;
+					sad = 0;
+				}
+
+		/* intra decision */
+
+		if (iQuant > 8) InterBias += 100 * (iQuant - 8); // to make high quants work
+		if (y != 0)
+			if ((pMB - pParam->mb_width)->mode == MODE_INTRA ) InterBias -= 80;
+		if (x != 0)
+			if ((pMB - 1)->mode == MODE_INTRA ) InterBias -= 80;
+
+		if (Data->chroma) InterBias += 50; // dev8(chroma) ???
+		if (Data->rrv) InterBias *= 4;
+
+		if (InterBias < pMB->sad16) {
+			int32_t deviation;
+			if (!Data->rrv) deviation = dev16(Data->Cur, Data->iEdgedWidth);
+			else deviation = dev16(Data->Cur, Data->iEdgedWidth) +
+				dev16(Data->Cur+16, Data->iEdgedWidth) +
+				dev16(Data->Cur + 16*Data->iEdgedWidth, Data->iEdgedWidth) +
+				dev16(Data->Cur+16+16*Data->iEdgedWidth, Data->iEdgedWidth);
+
+			if (deviation < (sad - InterBias)) mode = MODE_INTRA;
+		}
+
+	} else { // BITS
+
+		int bits, intra, i;
+		VECTOR backup[5], *v;
+		Data->iQuant = iQuant;
+
+		v = Data->qpel ? Data->currentQMV : Data->currentMV;
+		for (i = 0; i < 5; i++) {
+			Data->iMinSAD[i] = 256*4096;
+			backup[i] = v[i];
+		}
+
+		bits = CountMBBitsInter(Data, pMBs, x, y, pParam, MotionFlags);
+		if (bits == 0)
+			mode = MODE_INTER; // quick stop
+		else {
+			if (inter4v) {
+				int bits_inter4v = CountMBBitsInter4v(Data, pMB, pMBs, x, y, pParam, MotionFlags, backup);
+				if (bits_inter4v < bits) { Data->iMinSAD[0] = bits = bits_inter4v; mode = MODE_INTER4V; }
+			}
+
+			intra = CountMBBitsIntra(Data);
+
+			if (intra < bits) { *Data->iMinSAD = bits = intra; mode = MODE_INTRA; }
+		}
+	}
+
+	if (Data->rrv) {
+			Data->currentMV[0].x = RRV_MV_SCALEDOWN(Data->currentMV[0].x);
+			Data->currentMV[0].y = RRV_MV_SCALEDOWN(Data->currentMV[0].y);
+	}
+
+	if (mode == MODE_INTER) {
+		pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = Data->currentMV[0];
+		pMB->sad16 = pMB->sad8[0] = pMB->sad8[1] = pMB->sad8[2] = pMB->sad8[3] = Data->iMinSAD[0];
+
+		if(Data->qpel) {
+			pMB->qmvs[0] = pMB->qmvs[1]
+				= pMB->qmvs[2] = pMB->qmvs[3] = Data->currentQMV[0];
+			pMB->pmvs[0].x = Data->currentQMV[0].x - Data->predMV.x;
+			pMB->pmvs[0].y = Data->currentQMV[0].y - Data->predMV.y;
+		} else {
+			pMB->pmvs[0].x = Data->currentMV[0].x - Data->predMV.x;
+			pMB->pmvs[0].y = Data->currentMV[0].y - Data->predMV.y;
+		}
+
+	} else if (mode == MODE_INTER4V)
+		pMB->sad16 = Data->iMinSAD[0];
+	else // INTRA, NOT_CODED
+		SkipMacroblockP(pMB, 0);
+
+	pMB->mode = mode;
+}
+
 bool
 MotionEstimation(MBParam * const pParam,
 				 FRAMEINFO * const current,
@@ -1011,6 +1103,7 @@ MotionEstimation(MBParam * const pParam,
 	Data.chroma = MotionFlags & XVID_ME_CHROMA16;
 	Data.rrv = (current->vop_flags & XVID_VOP_REDUCED ? 1:0);
 	Data.dctSpace = dct_space;
+	Data.quant_type = !(pParam->vol_flags & XVID_VOL_MPEGQUANT);
 
 	if ((current->vop_flags & XVID_VOP_REDUCED)) {
 		mb_width = (pParam->width + 31) / 32;
@@ -1050,7 +1143,7 @@ MotionEstimation(MBParam * const pParam,
 				if (quant > 31) quant = 31;
 				else if (quant < 1) quant = 1;
 			}
-			pMB->quant = current->quant;
+			pMB->quant = quant;
 
 //initial skip decision
 /* no early skip for GMC (global vector = skip vector is unknown!)  */
@@ -1063,18 +1156,13 @@ MotionEstimation(MBParam * const pParam,
 			}
 
 			SearchP(pRef, pRefH->y, pRefV->y, pRefHV->y, pCurrent, x,
-						y, MotionFlags, current->vol_flags, pMB->quant,
-						&Data, pParam, pMBs, reference->mbs,
-						current->vop_flags & XVID_VOP_INTER4V, pMB);
+					y, MotionFlags, current->vop_flags, current->vol_flags,
+					&Data, pParam, pMBs, reference->mbs, pMB);
 
-/* final skip decision, a.k.a. "the vector you found, really that good?" */
-			if (!(current->vol_flags & XVID_VOL_GMC || current->vop_flags & XVID_VOP_MODEDECISION_BITS)) {
-				if ( pMB->dquant == 0 && sad00 < pMB->quant * MAX_SAD00_FOR_SKIP) {
-					if ( (100*pMB->sad16)/(sad00+1) > FINAL_SKIP_THRESH * (Data.rrv ? 4:1) )
-						if (Data.chroma || SkipDecisionP(pCurrent, pRef, x, y, iEdgedWidth/2, pMB->quant, Data.rrv))
-							SkipMacroblockP(pMB, sad00);
-				}
-			}
+			ModeDecision(&Data, pMB, pMBs, x, y, pParam,
+						 MotionFlags, current->vop_flags, current->vol_flags,
+						 pCurrent, pRef);
+
 			if (pMB->mode == MODE_INTRA)
 				if (++iIntra > iLimit) return 1;
 		}
@@ -1147,85 +1235,6 @@ PreparePredictionsP(VECTOR * const pmv, int x, int y, int iWcount,
 	}
 }
 
-static int
-ModeDecision(const uint32_t iQuant, SearchData * const Data,
-		int inter4v,
-		MACROBLOCK * const pMB,
-		const MACROBLOCK * const pMBs,
-		const int x, const int y,
-		const MBParam * const pParam,
-		const uint32_t MotionFlags,
-		const uint32_t VopFlags)
-{
-
-	int mode = MODE_INTER;
-
-	if (!(VopFlags & XVID_VOP_MODEDECISION_BITS)) { //normal, fast, SAD-based mode decision
-		int sad;
-		int InterBias = MV16_INTER_BIAS;
-		if (inter4v == 0 || Data->iMinSAD[0] < Data->iMinSAD[1] + Data->iMinSAD[2] +
-			Data->iMinSAD[3] + Data->iMinSAD[4] + IMV16X16 * (int32_t)iQuant) {
-			mode = MODE_INTER;
-			sad = Data->iMinSAD[0];
-		} else {
-			mode = MODE_INTER4V;
-			sad = Data->iMinSAD[1] + Data->iMinSAD[2] +
-						Data->iMinSAD[3] + Data->iMinSAD[4] + IMV16X16 * (int32_t)iQuant;
-			Data->iMinSAD[0] = sad;
-		}
-
-		/* intra decision */
-
-		if (iQuant > 8) InterBias += 100 * (iQuant - 8); // to make high quants work
-		if (y != 0)
-			if ((pMB - pParam->mb_width)->mode == MODE_INTRA ) InterBias -= 80;
-		if (x != 0)
-			if ((pMB - 1)->mode == MODE_INTRA ) InterBias -= 80;
-
-		if (Data->chroma) InterBias += 50; // to compensate bigger SAD
-		if (Data->rrv) InterBias *= 4;
-
-		if (InterBias < pMB->sad16) {
-			int32_t deviation;
-			if (!Data->rrv) deviation = dev16(Data->Cur, Data->iEdgedWidth);
-			else deviation = dev16(Data->Cur, Data->iEdgedWidth) +
-				dev16(Data->Cur+8, Data->iEdgedWidth) +
-				dev16(Data->Cur + 8*Data->iEdgedWidth, Data->iEdgedWidth) +
-				dev16(Data->Cur+8+8*Data->iEdgedWidth, Data->iEdgedWidth);
-
-			if (deviation < (sad - InterBias)) return MODE_INTRA;
-		}
-		return mode;
-
-	} else {
-
-		int bits, intra, i;
-		VECTOR backup[5], *v;
-		Data->lambda16 = iQuant;
-        Data->lambda8 = (pParam->vol_flags & XVID_VOL_MPEGQUANT)?1:0;
-
-		v = Data->qpel ? Data->currentQMV : Data->currentMV;
-		for (i = 0; i < 5; i++) {
-			Data->iMinSAD[i] = 256*4096;
-			backup[i] = v[i];
-		}
-
-		bits = CountMBBitsInter(Data, pMBs, x, y, pParam, MotionFlags);
-		if (bits == 0) return MODE_INTER; // quick stop
-
-		if (inter4v) {
-			int bits_inter4v = CountMBBitsInter4v(Data, pMB, pMBs, x, y, pParam, MotionFlags, backup);
-			if (bits_inter4v < bits) { Data->iMinSAD[0] = bits = bits_inter4v; mode = MODE_INTER4V; }
-		}
-
-		intra = CountMBBitsIntra(Data);
-
-		if (intra < bits) { *Data->iMinSAD = bits = intra; return MODE_INTRA; }
-
-		return mode;
-	}
-}
-
 static void
 SearchP(const IMAGE * const pRef,
 		const uint8_t * const pRefH,
@@ -1236,17 +1245,17 @@ SearchP(const IMAGE * const pRef,
 		const int y,
 		const uint32_t MotionFlags,
 		const uint32_t VopFlags,
-		const uint32_t iQuant,
+		const uint32_t VolFlags,
 		SearchData * const Data,
 		const MBParam * const pParam,
 		const MACROBLOCK * const pMBs,
 		const MACROBLOCK * const prevMBs,
-		int inter4v,
 		MACROBLOCK * const pMB)
 {
 
 	int i, iDirection = 255, mask, threshA;
 	VECTOR pmv[7];
+	int inter4v = (VopFlags & XVID_VOP_INTER4V) && (pMB->dquant == 0);
 
 	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
 						pParam->width, pParam->height, Data->iFcode - Data->qpel, 0, Data->rrv);
@@ -1266,11 +1275,9 @@ SearchP(const IMAGE * const pRef,
 	Data->RefP[4] = pRef->u + (x + y * (Data->iEdgedWidth/2)) * 8*i;
 	Data->RefP[5] = pRef->v + (x + y * (Data->iEdgedWidth/2)) * 8*i;
 
-	Data->lambda16 = lambda_vec16[iQuant];
-	Data->lambda8 = lambda_vec8[iQuant];
+	Data->lambda16 = lambda_vec16[pMB->quant];
+	Data->lambda8 = lambda_vec8[pMB->quant];
 	Data->qpel_precision = 0;
-
-	if (pMB->dquant != 0) inter4v = 0;
 
 	memset(Data->currentMV, 0, 5*sizeof(VECTOR));
 
@@ -1309,8 +1316,8 @@ SearchP(const IMAGE * const pRef,
 
 	if ((Data->iMinSAD[0] <= threshA) ||
 			(MVequal(Data->currentMV[0], (prevMBs+x+y*pParam->mb_width)->mvs[0]) &&
-			(Data->iMinSAD[0] < (prevMBs+x+y*pParam->mb_width)->sad16))) {
-		if (!(VopFlags & XVID_VOP_MODEDECISION_BITS)) inter4v = 0;	}
+			(Data->iMinSAD[0] < (prevMBs+x+y*pParam->mb_width)->sad16)))
+		inter4v = 0;
 	else {
 
 		MainSearchFunc * MainSearchPtr;
@@ -1371,7 +1378,8 @@ SearchP(const IMAGE * const pRef,
 		SubpelRefine(Data);
 	}
 
-	if ((!(VopFlags & XVID_VOP_MODEDECISION_BITS)) && (Data->iMinSAD[0] < (int32_t)iQuant * 30)) inter4v = 0;
+	if ((!(VopFlags & XVID_VOP_MODEDECISION_BITS)) && (Data->iMinSAD[0] < (int32_t)pMB->quant * 30))
+		inter4v = 0;
 
 	if (inter4v) {
 		SearchData Data8;
@@ -1385,49 +1393,22 @@ SearchP(const IMAGE * const pRef,
 		if ((Data->chroma) && (!(VopFlags & XVID_VOP_MODEDECISION_BITS))) {
 			// chroma is only used for comparsion to INTER. if the comparsion will be done in BITS domain, there is no reason to compute it
 			int sumx = 0, sumy = 0;
-			const int div = Data->qpel ? 2 : 1;
-			const VECTOR * const mv = Data->qpel ? pMB->qmvs : pMB->mvs;
 
-			for (i = 0; i < 4; i++) {
-				sumx += mv[i].x / div;
-				sumy += mv[i].y / div;
-			}
+			if (Data->qpel)
+				for (i = 1; i < 5; i++) {
+					sumx += Data->currentQMV[i].x/2;
+					sumy += Data->currentQMV[i].y/2;
+				}
+			else
+				for (i = 1; i < 5; i++) {
+					sumx += Data->currentMV[i].x;
+					sumy += Data->currentMV[i].y;
+				}
 
 			Data->iMinSAD[1] += ChromaSAD(	(sumx >> 3) + roundtab_76[sumx & 0xf],
 											(sumy >> 3) + roundtab_76[sumy & 0xf], Data);
 		}
-	}
-
-	inter4v = ModeDecision(iQuant, Data, inter4v, pMB, pMBs, x, y, pParam, MotionFlags, VopFlags);
-
-	if (Data->rrv) {
-			Data->currentMV[0].x = RRV_MV_SCALEDOWN(Data->currentMV[0].x);
-			Data->currentMV[0].y = RRV_MV_SCALEDOWN(Data->currentMV[0].y);
-	}
-
-	if (inter4v == MODE_INTER) {
-		pMB->mode = MODE_INTER;
-		pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = Data->currentMV[0];
-		pMB->sad16 = pMB->sad8[0] = pMB->sad8[1] = pMB->sad8[2] = pMB->sad8[3] = Data->iMinSAD[0];
-
-		if(Data->qpel) {
-			pMB->qmvs[0] = pMB->qmvs[1]
-				= pMB->qmvs[2] = pMB->qmvs[3] = Data->currentQMV[0];
-			pMB->pmvs[0].x = Data->currentQMV[0].x - Data->predMV.x;
-			pMB->pmvs[0].y = Data->currentQMV[0].y - Data->predMV.y;
-		} else {
-			pMB->pmvs[0].x = Data->currentMV[0].x - Data->predMV.x;
-			pMB->pmvs[0].y = Data->currentMV[0].y - Data->predMV.y;
-		}
-
-	} else if (inter4v == MODE_INTER4V) {
-		pMB->mode = MODE_INTER4V;
-		pMB->sad16 = Data->iMinSAD[0];
-	} else { // INTRA mode
-		SkipMacroblockP(pMB, 0); // not skip, but similar enough
-		pMB->mode = MODE_INTRA;
-	}
-
+	} else Data->iMinSAD[1] = 4096*256;
 }
 
 static void
@@ -2527,11 +2508,13 @@ CountMBBitsInter4v(const SearchData * const Data,
 	SearchData Data2, *Data8 = &Data2;
 	int sumx = 0, sumy = 0;
 	int16_t *in = Data->dctSpace, *coeff = Data->dctSpace + 64;
+	uint8_t * ptr;
 
 	memcpy(Data8, Data, sizeof(SearchData));
 	CheckCandidate = CheckCandidateBits8;
 
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < 4; i++) { //for all luma blocks
+
 		Data8->iMinSAD = Data->iMinSAD + i + 1;
 		Data8->currentMV = Data->currentMV + i + 1;
 		Data8->currentQMV = Data->currentQMV + i + 1;
@@ -2560,7 +2543,7 @@ CountMBBitsInter4v(const SearchData * const Data,
 		// checking the vector which has been found by SAD-based 8x8 search (if it's different than the one found so far)
 		{
 			VECTOR *v = Data8->qpel ? Data8->currentQMV : Data8->currentMV;
-			if (!( (v->x == backup[i+1].x) && (v->y == backup[i+1].y) ))
+			if (!MVequal (*v, backup[i+1]) )
 				CheckCandidateBits8(backup[i+1].x, backup[i+1].y, 255, &iDirection, Data8);
 		}
 
@@ -2579,7 +2562,8 @@ CountMBBitsInter4v(const SearchData * const Data,
 				if (MotionFlags & XVID_ME_EXTSEARCH8 && MotionFlags & XVID_ME_EXTSEARCH_BITS)
 					SquareSearch(Data8->currentMV->x, Data8->currentMV->x, Data8, 255);
 
-				if (MotionFlags & XVID_ME_HALFPELREFINE8_BITS) SubpelRefine(Data8);
+				if (MotionFlags & XVID_ME_HALFPELREFINE8_BITS)
+					SubpelRefine(Data8);
 
 				if(s > *Data8->iMinSAD) { //we have found a better match
 					Data8->currentQMV->x = 2*Data8->currentMV->x;
@@ -2593,18 +2577,24 @@ CountMBBitsInter4v(const SearchData * const Data,
 			}
 			if (MotionFlags & XVID_ME_QUARTERPELREFINE8_BITS) SubpelRefine(Data8);
 
-		} else // not qpel
-			if (MotionFlags & XVID_ME_HALFPELREFINE8_BITS) SubpelRefine(Data8); //halfpel mode, halfpel refinement
+		} else { // not qpel
+
+			if (MotionFlags & XVID_ME_EXTSEARCH8 && MotionFlags & XVID_ME_EXTSEARCH_BITS) //extsearch
+				SquareSearch(Data8->currentMV->x, Data8->currentMV->x, Data8, 255);
+
+			if (MotionFlags & XVID_ME_HALFPELREFINE8_BITS)
+				SubpelRefine(Data8); //halfpel refinement
+		}
 
 		//checking vector equal to predicion
 		if (i != 0 && MotionFlags & XVID_ME_CHECKPREDICTION_BITS) {
 			const VECTOR * v = Data->qpel ? Data8->currentQMV : Data8->currentMV;
-			if (!(Data8->predMV.x == v->x && Data8->predMV.y == v->y))
+			if (!MVequal(*v, Data8->predMV))
 				CheckCandidateBits8(Data8->predMV.x, Data8->predMV.y, 255, &iDirection, Data8);
 		}
 
 		bits += *Data8->iMinSAD;
-		if (bits >= Data->iMinSAD[0]) break; // no chances for INTER4V
+		if (bits >= Data->iMinSAD[0]) return bits; // no chances for INTER4V
 
 		// MB structures for INTER4V mode; we have to set them here, we don't have predictor anywhere else
 		if(Data->qpel) {
@@ -2622,39 +2612,28 @@ CountMBBitsInter4v(const SearchData * const Data,
 		pMB->mvs[i] = *Data8->currentMV;
 		pMB->sad8[i] = 4 * *Data8->iMinSAD;
 		if (Data8->temp[0]) cbp |= 1 << (5 - i);
-	}
 
-	if (bits < *Data->iMinSAD) { // there is still a chance for inter4v mode. let's check chroma
-		const uint8_t * ptr;
-		sumx = (sumx >> 3) + roundtab_76[sumx & 0xf];
-		sumy = (sumy >> 3) + roundtab_76[sumy & 0xf];
+	} // /for all luma blocks
 
-		//chroma U
-		ptr = interpolate8x8_switch2(Data->RefQ + 64, Data->RefP[4], 0, 0, sumx, sumy, Data->iEdgedWidth/2, Data->rounding);
-		transfer_8to16subro(in, Data->CurU, ptr, Data->iEdgedWidth/2);
-		fdct(in);
-		if (Data->lambda8 == 0) i = quant_inter(coeff, in, Data->lambda16);
-		else i = quant4_inter(coeff, in, Data->lambda16);
-		if (i > 0) {
-			bits += CodeCoeffInter_CalcBits(coeff, scan_tables[0]);
-			cbp |= 1 << (5 - 4);
-		}
+	bits += xvid_cbpy_tab[15-(cbp>>2)].len;
 
-		if (bits < *Data->iMinSAD) { // still possible
-			//chroma V
-			ptr = interpolate8x8_switch2(Data->RefQ + 64, Data->RefP[5], 0, 0, sumx, sumy, Data->iEdgedWidth/2, Data->rounding);
-			transfer_8to16subro(in, Data->CurV, ptr, Data->iEdgedWidth/2);
-			fdct(in);
-			if (Data->lambda8 == 0) i = quant_inter(coeff, in, Data->lambda16);
-			else i = quant4_inter(coeff, in, Data->lambda16);
-			if (i > 0) {
-				bits += CodeCoeffInter_CalcBits(coeff, scan_tables[0]);
-				cbp |= 1 << (5 - 5);
-			}
-			bits += xvid_cbpy_tab[15-(cbp>>2)].len;
-			bits += mcbpc_inter_tab[(MODE_INTER4V & 7) | ((cbp & 3) << 3)].len;
-		}
-	}
+	// let's check chroma
+	sumx = (sumx >> 3) + roundtab_76[sumx & 0xf];
+	sumy = (sumy >> 3) + roundtab_76[sumy & 0xf];
+
+	//chroma U
+	ptr = interpolate8x8_switch2(Data->RefQ + 64, Data->RefP[4], 0, 0, sumx, sumy, Data->iEdgedWidth/2, Data->rounding);
+	transfer_8to16subro(in, Data->CurU, ptr, Data->iEdgedWidth/2);
+	bits += Block_CalcBits(coeff, in, Data->iQuant, Data->quant_type, &cbp, 4, 0);
+
+	if (bits >= *Data->iMinSAD) return bits;
+
+	//chroma V
+	ptr = interpolate8x8_switch2(Data->RefQ + 64, Data->RefP[5], 0, 0, sumx, sumy, Data->iEdgedWidth/2, Data->rounding);
+	transfer_8to16subro(in, Data->CurV, ptr, Data->iEdgedWidth/2);
+	bits += Block_CalcBits(coeff, in, Data->iQuant, Data->quant_type, &cbp, 5, 0);
+
+	bits += mcbpc_inter_tab[(MODE_INTER4V & 7) | ((cbp & 3) << 3)].len;
 
 	return bits;
 }
@@ -2665,9 +2644,8 @@ CountMBBitsIntra(const SearchData * const Data)
 {
 	int bits = 1; //this one is ac/dc prediction flag. always 1.
 	int cbp = 0, i, t, dc = 1024, b_dc;
-	const uint32_t iQuant = Data->lambda16;
 	int16_t *in = Data->dctSpace, * coeff = Data->dctSpace + 64;
-	uint32_t iDcScaler = get_dc_scaler(iQuant, 1);;
+	uint32_t iDcScaler = get_dc_scaler(Data->iQuant, 1);
 
 	for(i = 0; i < 4; i++) {
 		int s = 8*((i&1) + (i>>1)*Data->iEdgedWidth);
@@ -2676,41 +2654,42 @@ CountMBBitsIntra(const SearchData * const Data)
 		b_dc = in[0];
 		in[0] -= dc;
 		dc = b_dc;
-		if (Data->lambda8 == 0) quant_intra(coeff, in, iQuant, iDcScaler);
-		else quant4_intra(coeff, in, iQuant, iDcScaler);
+		if (Data->quant_type == 0) quant_intra(coeff, in, Data->iQuant, iDcScaler);
+		else quant4_intra(coeff, in, Data->iQuant, iDcScaler);
 
-		bits += t = CodeCoeffIntra_CalcBits(coeff, scan_tables[0]) + dcy_tab[coeff[0] + 255].len;;
+		bits += t = CodeCoeffIntra_CalcBits(coeff, scan_tables[0]) + dcy_tab[coeff[0] + 255].len;
 		Data->temp[i] = t;
 		if (t != 0)  cbp |= 1 << (5 - i);
-		if (bits >= Data->iMinSAD[0]) break;
+		if (bits >= Data->iMinSAD[0]) return bits;
 	}
 
-	if (bits < Data->iMinSAD[0]) { // INTRA still looks good, let's add chroma
-		iDcScaler = get_dc_scaler(iQuant, 0);
-		//chroma U
-		transfer_8to16copy(in, Data->CurU, Data->iEdgedWidth/2);
-		fdct(in);
-		in[0] -= 1024;
-		if (Data->lambda8 == 0) quant_intra(coeff, in, iQuant, iDcScaler);
-		else quant4_intra(coeff, in, iQuant, iDcScaler);
+	bits += xvid_cbpy_tab[cbp>>2].len;
 
-		bits += t = CodeCoeffIntra_CalcBits(coeff, scan_tables[0]) + dcc_tab[coeff[0] + 255].len;
-		if (t != 0) cbp |= 1 << (5 - 4);
+	iDcScaler = get_dc_scaler(Data->iQuant, 0);
 
-		if (bits < Data->iMinSAD[0]) {
-			//chroma V
-			transfer_8to16copy(in, Data->CurV, Data->iEdgedWidth/2);
-			fdct(in);
-			in[0] -= 1024;
-			if (Data->lambda8 == 0) quant_intra(coeff, in, iQuant, iDcScaler);
-			else quant4_intra(coeff, in, iQuant, iDcScaler);
+	//chroma U
+	transfer_8to16copy(in, Data->CurU, Data->iEdgedWidth/2);
+	fdct(in);
+	in[0] -= 1024;
+	if (Data->quant_type == 0) quant_intra(coeff, in, Data->iQuant, iDcScaler);
+	else quant4_intra(coeff, in, Data->iQuant, iDcScaler);
 
-			bits += t = CodeCoeffIntra_CalcBits(coeff, scan_tables[0]) + dcc_tab[coeff[0] + 255].len;
-			if (t != 0) cbp |= 1 << (5 - 5);
+	bits += t = CodeCoeffIntra_CalcBits(coeff, scan_tables[0]) + dcc_tab[coeff[0] + 255].len;
+	if (t != 0) cbp |= 1 << (5 - 4);
 
-			bits += xvid_cbpy_tab[cbp>>2].len;
-			bits += mcbpc_inter_tab[(MODE_INTRA & 7) | ((cbp & 3) << 3)].len;
-		}
-	}
+	if (bits >= Data->iMinSAD[0]) return bits;
+
+	//chroma V
+	transfer_8to16copy(in, Data->CurV, Data->iEdgedWidth/2);
+	fdct(in);
+	in[0] -= 1024;
+	if (Data->quant_type == 0) quant_intra(coeff, in, Data->iQuant, iDcScaler);
+	else quant4_intra(coeff, in, Data->iQuant, iDcScaler);
+
+	bits += t = CodeCoeffIntra_CalcBits(coeff, scan_tables[0]) + dcc_tab[coeff[0] + 255].len;
+	if (t != 0) cbp |= 1 << (5 - 5);
+
+	bits += mcbpc_inter_tab[(MODE_INTRA & 7) | ((cbp & 3) << 3)].len;
+
 	return bits;
 }
