@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.20 2003-11-30 16:13:15 edgomez Exp $
+ * $Id: decoder.c,v 1.49.2.21 2003-12-09 14:31:40 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1491,16 +1491,18 @@ repeat:
 			/* attemping to decode a bvop without atleast 2 reference frames */
 			image_printf(&dec->cur, dec->edged_width, dec->height, 16, 16,
 						"broken b-frame, mising ref frames");
+			stats->type = XVID_TYPE_NOTHING;
 		} else if (dec->time_pp <= dec->time_bp) {
 			/* this occurs when dx50_bvop_compatibility==0 sequences are
 			decoded in vfw. */
 			image_printf(&dec->cur, dec->edged_width, dec->height, 16, 16,
 						"broken b-frame, tpp=%i tbp=%i", dec->time_pp, dec->time_bp);
+			stats->type = XVID_TYPE_NOTHING;
 		} else {
 			decoder_bframe(dec, &bs, quant, fcode_forward, fcode_backward);
+			decoder_output(dec, &dec->cur, dec->mbs, frame, stats, coding_type);
 		}
 
-		decoder_output(dec, &dec->cur, dec->mbs, frame, stats, coding_type);
 		output = 1;
 		dec->frames++;
 	}
