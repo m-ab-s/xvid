@@ -13,6 +13,7 @@ idctFunc idct_int32;
 
 idctFunc idct_mmx;
 idctFunc idct_xmm;
+idctFunc idct_3dne;
 idctFunc idct_sse2;
 
 idctFunc idct_altivec;

@@ -16,9 +16,11 @@ extern quant_intraFuncPtr dequant4_intra;
 
 quant_intraFunc quant4_intra_c;
 quant_intraFunc quant4_intra_mmx;
+quant_intraFunc quant4_intra_xmm;
 
 quant_intraFunc dequant4_intra_c;
 quant_intraFunc dequant4_intra_mmx;
+quant_intraFunc dequant4_intra_3dne;
 
 // inter_quant
 typedef uint32_t(quant_interFunc) (int16_t * coeff,
@@ -31,6 +33,7 @@ extern quant_interFuncPtr quant4_inter;
 
 quant_interFunc quant4_inter_c;
 quant_interFunc quant4_inter_mmx;
+quant_interFunc quant4_inter_xmm;
 
 //inter_dequant
 typedef void (dequant_interFunc) (int16_t * coeff,
@@ -43,5 +46,6 @@ extern dequant_interFuncPtr dequant4_inter;
 
 dequant_interFunc dequant4_inter_c;
 dequant_interFunc dequant4_inter_mmx;
+dequant_interFunc dequant4_inter_3dne;
 
 #endif							/* _QUANT_MPEG4_H_ */

@@ -37,7 +37,7 @@
  *  - 22.12.2001  API change: added xvid_init() - Isibaar
  *  - 16.12.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: xvid.c,v 1.33.2.17 2002-12-09 10:47:05 suxen_drol Exp $
+ *  $Id: xvid.c,v 1.33.2.18 2002-12-19 00:37:56 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -413,6 +413,9 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 		add_upsampled_8x8_16to8 = xvid_Add_Upsampled_8x8_16To8_xmm;
 
 		/* Quantization */
+		quant4_intra = quant4_intra_xmm;
+		quant4_inter = quant4_inter_xmm;
+
 		dequant_intra = dequant_intra_xmm;
 		dequant_inter = dequant_inter_xmm;
 
@@ -440,6 +443,42 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 		interpolate8x8_halfpel_v = interpolate8x8_halfpel_v_3dn;
 		interpolate8x8_halfpel_hv = interpolate8x8_halfpel_hv_3dn;
 	}
+
+	if ((cpu_flags & XVID_CPU_3DNOWEXT) > 0) {
+
+		/* Inverse DCT */
+		idct =  idct_3dne;
+
+		/* Buffer transfer */
+		transfer_8to16copy =  transfer_8to16copy_3dne;
+		transfer_16to8copy = transfer_16to8copy_3dne;
+		transfer_8to16sub =  transfer_8to16sub_3dne;
+		transfer_8to16sub2 =  transfer_8to16sub2_3dne;
+		transfer_16to8add = transfer_16to8add_3dne;
+		transfer8x8_copy = transfer8x8_copy_3dne;
+
+		/* Quantization */
+		dequant4_intra = dequant4_intra_3dne;
+		dequant4_inter = dequant4_inter_3dne;
+		quant_intra = quant_intra_3dne;
+		quant_inter = quant_inter_3dne;
+		dequant_intra = dequant_intra_3dne;
+		dequant_inter = dequant_inter_3dne;
+
+		/* ME functions */
+		calc_cbp = calc_cbp_3dne;
+		sad16 = sad16_3dne;
+		sad8 = sad8_3dne;
+		sad16bi = sad16bi_3dne;
+		sad8bi = sad8bi_3dne;
+		dev16 = dev16_3dne;
+
+		/* Interpolation */
+		interpolate8x8_halfpel_h = interpolate8x8_halfpel_h_3dne;
+		interpolate8x8_halfpel_v = interpolate8x8_halfpel_v_3dne;
+		interpolate8x8_halfpel_hv = interpolate8x8_halfpel_hv_3dne;
+	}
+
 
 	if ((cpu_flags & XVID_CPU_SSE2) > 0) {
 #ifdef EXPERIMENTAL_SSE2_CODE

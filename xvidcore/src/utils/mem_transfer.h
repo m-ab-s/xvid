@@ -33,7 +33,7 @@
  *
  *  - Sun Jun 16 00:12:49 2002 Added legal header
  *                             Cosmetic
- *  $Id: mem_transfer.h,v 1.8.2.1 2002-12-08 05:30:26 suxen_drol Exp $
+ *  $Id: mem_transfer.h,v 1.8.2.2 2002-12-19 00:41:02 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -57,6 +57,7 @@ extern TRANSFER_8TO16COPY_PTR transfer_8to16copy;
 /* Implemented functions */
 TRANSFER_8TO16COPY transfer_8to16copy_c;
 TRANSFER_8TO16COPY transfer_8to16copy_mmx;
+TRANSFER_8TO16COPY transfer_8to16copy_3dne;
 TRANSFER_8TO16COPY transfer_8to16copy_ia64;
 
 /*****************************************************************************
@@ -74,6 +75,7 @@ extern TRANSFER_16TO8COPY_PTR transfer_16to8copy;
 /* Implemented functions */
 TRANSFER_16TO8COPY transfer_16to8copy_c;
 TRANSFER_16TO8COPY transfer_16to8copy_mmx;
+TRANSFER_16TO8COPY transfer_16to8copy_3dne;
 TRANSFER_16TO8COPY transfer_16to8copy_ia64;
 
 /*****************************************************************************
@@ -93,6 +95,7 @@ extern TRANSFER_8TO16SUB_PTR transfer_8to16sub;
 /* Implemented functions */
 TRANSFER_8TO16SUB transfer_8to16sub_c;
 TRANSFER_8TO16SUB transfer_8to16sub_mmx;
+TRANSFER_8TO16SUB transfer_8to16sub_3dne;
 TRANSFER_8TO16SUB transfer_8to16sub_ia64;
 
 /*****************************************************************************
@@ -114,6 +117,7 @@ extern TRANSFER_8TO16SUB2_PTR transfer_8to16sub2;
 TRANSFER_8TO16SUB2 transfer_8to16sub2_c;
 TRANSFER_8TO16SUB2 transfer_8to16sub2_mmx;
 TRANSFER_8TO16SUB2 transfer_8to16sub2_xmm;
+TRANSFER_8TO16SUB2 transfer_8to16sub2_3dne;
 TRANSFER_8TO16SUB2 transfer_8to16sub2_ia64;
 
 
@@ -133,6 +137,7 @@ extern TRANSFER_16TO8ADD_PTR transfer_16to8add;
 /* Implemented functions */
 TRANSFER_16TO8ADD transfer_16to8add_c;
 TRANSFER_16TO8ADD transfer_16to8add_mmx;
+TRANSFER_16TO8ADD transfer_16to8add_3dne;
 TRANSFER_16TO8ADD transfer_16to8add_ia64;
 
 /*****************************************************************************
@@ -151,6 +156,7 @@ extern TRANSFER8X8_COPY_PTR transfer8x8_copy;
 /* Implemented functions */
 TRANSFER8X8_COPY transfer8x8_copy_c;
 TRANSFER8X8_COPY transfer8x8_copy_mmx;
+TRANSFER8X8_COPY transfer8x8_copy_3dne;
 TRANSFER8X8_COPY transfer8x8_copy_ia64;
 
 

@@ -20,6 +20,7 @@ extern sad16FuncPtr sad16;
 sad16Func sad16_c;
 sad16Func sad16_mmx;
 sad16Func sad16_xmm;
+sad16Func sad16_3dne;
 sad16Func sad16_sse2;
 sad16Func sad16_altivec;
 sad16Func sad16_ia64;
@@ -34,6 +35,7 @@ extern sad8FuncPtr sad8;
 sad8Func sad8_c;
 sad8Func sad8_mmx;
 sad8Func sad8_xmm;
+sad8Func sad8_3dne;
 sad8Func sad8_altivec;
 sad8Func sad8_ia64;
 
@@ -48,6 +50,7 @@ sad16biFunc sad16bi_c;
 sad16biFunc sad16bi_ia64;
 sad16biFunc sad16bi_mmx;
 sad16biFunc sad16bi_xmm;
+sad16biFunc sad16bi_3dne;
 sad16biFunc sad16bi_3dn;
 
 
@@ -60,6 +63,7 @@ extern sad8biFuncPtr sad8bi;
 sad8biFunc sad8bi_c;
 sad8biFunc sad8bi_mmx;
 sad8biFunc sad8bi_xmm;
+sad8biFunc sad8bi_3dne;
 sad8biFunc sad8bi_3dn;
 
 
@@ -70,6 +74,7 @@ extern dev16FuncPtr dev16;
 dev16Func dev16_c;
 dev16Func dev16_mmx;
 dev16Func dev16_xmm;
+dev16Func dev16_3dne;
 dev16Func dev16_sse2;
 dev16Func dev16_altivec;
 dev16Func dev16_ia64;

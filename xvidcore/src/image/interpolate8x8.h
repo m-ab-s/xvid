@@ -83,6 +83,10 @@ INTERPOLATE8X8 interpolate8x8_halfpel_h_3dn;
 INTERPOLATE8X8 interpolate8x8_halfpel_v_3dn;
 INTERPOLATE8X8 interpolate8x8_halfpel_hv_3dn;
 
+INTERPOLATE8X8 interpolate8x8_halfpel_h_3dne;
+INTERPOLATE8X8 interpolate8x8_halfpel_v_3dne;
+INTERPOLATE8X8 interpolate8x8_halfpel_hv_3dne;
+
 INTERPOLATE8X8 interpolate8x8_halfpel_h_ia64;
 INTERPOLATE8X8 interpolate8x8_halfpel_v_ia64;
 INTERPOLATE8X8 interpolate8x8_halfpel_hv_ia64;
