@@ -1,54 +1,28 @@
- /******************************************************************************
-  *                                                                            *
-  *  This file is part of XviD, a free MPEG-4 video encoder/decoder            *
-  *                                                                            *
-  *  XviD is an implementation of a part of one or more MPEG-4 Video tools     *
-  *  as specified in ISO/IEC 14496-2 standard.  Those intending to use this    *
-  *  software module in hardware or software products are advised that its     *
-  *  use may infringe existing patents or copyrights, and any such use         *
-  *  would be at such party's own risk.  The original developer of this        *
-  *  software module and his/her company, and subsequent editors and their     *
-  *  companies, will have no liability for use of this software or             *
-  *  modifications or derivatives thereof.                                     *
-  *                                                                            *
-  *  XviD is free software; you can redistribute it and/or modify it           *
-  *  under the terms of the GNU General Public License as published by         *
-  *  the Free Software Foundation; either version 2 of the License, or         *
-  *  (at your option) any later version.                                       *
-  *                                                                            *
-  *  XviD is distributed in the hope that it will be useful, but               *
-  *  WITHOUT ANY WARRANTY; without even the implied warranty of                *
-  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             *
-  *  GNU General Public License for more details.                              *
-  *                                                                            *
-  *  You should have received a copy of the GNU General Public License         *
-  *  along with this program; if not, write to the Free Software               *
-  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA  *
-  *                                                                            *
-  ******************************************************************************/
-
- /******************************************************************************
-  *                                                                            *
-  *  mbprediction.c                                                            *
-  *                                                                            *
-  *  Copyright (C) 2001 - Michael Militzer <isibaar@xvid.org>                  *
-  *  Copyright (C) 2001 - Peter Ross <pross@cs.rmit.edu.au>                    *
-  *                                                                            *
-  *  For more information visit the XviD homepage: http://www.xvid.org         *
-  *                                                                            *
-  ******************************************************************************/
-
- /******************************************************************************
-  *                                                                            *
-  *  Revision history:                                                         *
-  *                                                                            *
-  *  29.06.2002 predict_acdc() bounding                                        *
-  *  12.12.2001 improved calc_acdc_prediction; removed need for memcpy         *
-  *  15.12.2001 moved pmv displacement to motion estimation                    *
-  *  30.11.2001	mmx cbp support                                                *
-  *  17.11.2001 initial version                                                *
-  *                                                                            *
-  ******************************************************************************/
+/*****************************************************************************
+ *
+ *  XVID MPEG-4 VIDEO CODEC
+ *  - Prediction module -
+ *
+ *  Copyright (C) 2001-2003 Michael Militzer <isibaar@xvid.org>
+ *                2001-2003 Peter Ross <pross@xvid.org>
+ *
+ *  This program is free software ; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation ; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY ; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program ; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+ *
+ * $Id: mbprediction.c,v 1.13.2.8 2003-09-10 22:19:00 edgomez Exp $
+ *
+ ****************************************************************************/
 
 #include <stdlib.h>
 
@@ -473,5 +447,156 @@ MBPrediction(FRAMEINFO * frame,
 		
 		pMB->cbp = calc_cbp(qcoeff);
 	}
+}
 
+static const VECTOR zeroMV = { 0, 0 };
+
+VECTOR
+get_pmv2(const MACROBLOCK * const mbs,
+		const int mb_width,
+		const int bound,
+		const int x,
+		const int y,
+		const int block)
+{
+	int lx, ly, lz;		/* left */
+	int tx, ty, tz;		/* top */
+	int rx, ry, rz;		/* top-right */
+	int lpos, tpos, rpos;
+	int num_cand = 0, last_cand = 1;
+
+	VECTOR pmv[4];	/* left neighbour, top neighbour, top-right neighbour */
+
+	switch (block) {
+	case 0:
+		lx = x - 1;	ly = y;		lz = 1;
+		tx = x;		ty = y - 1;	tz = 2;
+		rx = x + 1;	ry = y - 1;	rz = 2;
+		break;
+	case 1:
+		lx = x;		ly = y;		lz = 0;
+		tx = x;		ty = y - 1;	tz = 3;
+		rx = x + 1;	ry = y - 1;	rz = 2;
+		break;
+	case 2:
+		lx = x - 1;	ly = y;		lz = 3;
+		tx = x;		ty = y;		tz = 0;
+		rx = x;		ry = y;		rz = 1;
+		break;
+	default:
+		lx = x;		ly = y;		lz = 2;
+		tx = x;		ty = y;		tz = 0;
+		rx = x;		ry = y;		rz = 1;
+	}
+
+	lpos = lx + ly * mb_width;
+	rpos = rx + ry * mb_width;
+	tpos = tx + ty * mb_width;
+
+	if (lpos >= bound && lx >= 0) {
+		num_cand++;
+		pmv[1] = mbs[lpos].mvs[lz];
+	} else pmv[1] = zeroMV;
+
+	if (tpos >= bound) {
+		num_cand++;
+		last_cand = 2;
+		pmv[2] = mbs[tpos].mvs[tz];
+	} else pmv[2] = zeroMV;
+
+	if (rpos >= bound && rx < mb_width) {
+		num_cand++;
+		last_cand = 3;
+		pmv[3] = mbs[rpos].mvs[rz];
+	} else pmv[3] = zeroMV;
+
+	/* If there're more than one candidate, we return the median vector */
+
+	if (num_cand > 1) {
+		/* set median */
+		pmv[0].x =
+			MIN(MAX(pmv[1].x, pmv[2].x),
+				MIN(MAX(pmv[2].x, pmv[3].x), MAX(pmv[1].x, pmv[3].x)));
+		pmv[0].y =
+			MIN(MAX(pmv[1].y, pmv[2].y),
+				MIN(MAX(pmv[2].y, pmv[3].y), MAX(pmv[1].y, pmv[3].y)));
+		return pmv[0];
+	}
+
+	return pmv[last_cand];	/* no point calculating median mv */
+}
+
+VECTOR
+get_qpmv2(const MACROBLOCK * const mbs,
+		const int mb_width,
+		const int bound,
+		const int x,
+		const int y,
+		const int block)
+{
+	int lx, ly, lz;		/* left */
+	int tx, ty, tz;		/* top */
+	int rx, ry, rz;		/* top-right */
+	int lpos, tpos, rpos;
+	int num_cand = 0, last_cand = 1;
+
+	VECTOR pmv[4];	/* left neighbour, top neighbour, top-right neighbour */
+
+	switch (block) {
+	case 0:
+		lx = x - 1;	ly = y;		lz = 1;
+		tx = x;		ty = y - 1;	tz = 2;
+		rx = x + 1;	ry = y - 1;	rz = 2;
+		break;
+	case 1:
+		lx = x;		ly = y;		lz = 0;
+		tx = x;		ty = y - 1;	tz = 3;
+		rx = x + 1;	ry = y - 1;	rz = 2;
+		break;
+	case 2:
+		lx = x - 1;	ly = y;		lz = 3;
+		tx = x;		ty = y;		tz = 0;
+		rx = x;		ry = y;		rz = 1;
+		break;
+	default:
+		lx = x;		ly = y;		lz = 2;
+		tx = x;		ty = y;		tz = 0;
+		rx = x;		ry = y;		rz = 1;
+	}
+
+	lpos = lx + ly * mb_width;
+	rpos = rx + ry * mb_width;
+	tpos = tx + ty * mb_width;
+
+	if (lpos >= bound && lx >= 0) {
+		num_cand++;
+		pmv[1] = mbs[lpos].qmvs[lz];
+	} else pmv[1] = zeroMV;
+
+	if (tpos >= bound) {
+		num_cand++;
+		last_cand = 2;
+		pmv[2] = mbs[tpos].qmvs[tz];
+	} else pmv[2] = zeroMV;
+
+	if (rpos >= bound && rx < mb_width) {
+		num_cand++;
+		last_cand = 3;
+		pmv[3] = mbs[rpos].qmvs[rz];
+	} else pmv[3] = zeroMV;
+
+	/* If there're more than one candidate, we return the median vector */
+
+	if (num_cand > 1) {
+		/* set median */
+		pmv[0].x =
+			MIN(MAX(pmv[1].x, pmv[2].x),
+				MIN(MAX(pmv[2].x, pmv[3].x), MAX(pmv[1].x, pmv[3].x)));
+		pmv[0].y =
+			MIN(MAX(pmv[1].y, pmv[2].y),
+				MIN(MAX(pmv[2].y, pmv[3].y), MAX(pmv[1].y, pmv[3].y)));
+		return pmv[0];
+	}
+
+	return pmv[last_cand];	/* no point calculating median mv */
 }

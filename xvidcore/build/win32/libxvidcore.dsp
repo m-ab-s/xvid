@@ -1,31 +1,31 @@
 # Microsoft Developer Studio Project File - Name="libxvidcore" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
-# ** NICHT BEARBEITEN **
+# ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Static Library" 0x0104
 
 CFG=libxvidcore - Win32 Debug
-!MESSAGE Dies ist kein gültiges Makefile. Zum Erstellen dieses Projekts mit NMAKE
-!MESSAGE verwenden Sie den Befehl "Makefile exportieren" und führen Sie den Befehl
+!MESSAGE This is not a valid makefile. To build this project using NMAKE,
+!MESSAGE use the Export Makefile command and run
 !MESSAGE 
 !MESSAGE NMAKE /f "libxvidcore.mak".
 !MESSAGE 
-!MESSAGE Sie können beim Ausführen von NMAKE eine Konfiguration angeben
-!MESSAGE durch Definieren des Makros CFG in der Befehlszeile. Zum Beispiel:
+!MESSAGE You can specify a configuration when running NMAKE
+!MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
 !MESSAGE NMAKE /f "libxvidcore.mak" CFG="libxvidcore - Win32 Debug"
 !MESSAGE 
-!MESSAGE Für die Konfiguration stehen zur Auswahl:
+!MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "libxvidcore - Win32 Release" (basierend auf  "Win32 (x86) Static Library")
-!MESSAGE "libxvidcore - Win32 Debug" (basierend auf  "Win32 (x86) Static Library")
+!MESSAGE "libxvidcore - Win32 Release" (based on "Win32 (x86) Static Library")
+!MESSAGE "libxvidcore - Win32 Debug" (based on "Win32 (x86) Static Library")
 !MESSAGE 
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
 # PROP Scc_ProjName ""
 # PROP Scc_LocalPath ""
-CPP=cl.exe
+CPP=xicl6.exe
 RSC=rc.exe
 
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
@@ -41,7 +41,8 @@ RSC=rc.exe
 # PROP Intermediate_Dir "Release"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /Ob2 /D "NDEBUG" /D "ARCH_IS_IA32" /D "ARCH_IS_32BIT" /D "ARCH_IS_LITTLE_ENDIAN" /D "WIN32" /D "_MBCS" /D "_LIB" /YX /FD /c
+# ADD CPP /nologo /G6 /W3 /GX /Op /Ob2 /D "NDEBUG" /D "ARCH_IS_IA32" /D "ARCH_IS_32BIT" /D "ARCH_IS_LITTLE_ENDIAN" /D "WIN32" /D "_MBCS" /D "_LIB" /FAcs /YX /FD /O3 -QxK /Qunroll /c
+# SUBTRACT CPP /Z<none> /Fr
 # ADD BASE RSC /l 0xc09 /d "NDEBUG"
 # ADD RSC /l 0xc09 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -64,7 +65,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "Debug"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "ARCH_IS_IA32" /D "ARCH_IS_32BIT" /D "ARCH_IS_LITTLE_ENDIAN" /D "WIN32" /D "_MBCS" /D "_LIB" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W4 /Gm /GX /ZI /Od /D "_DEBUG" /D "ARCH_IS_IA32" /D "ARCH_IS_32BIT" /D "ARCH_IS_LITTLE_ENDIAN" /D "WIN32" /D "_MBCS" /D "_LIB" /FR /YX /FD /GZ /c
 # ADD BASE RSC /l 0xc09 /d "_DEBUG"
 # ADD RSC /l 0xc09 /d "_DEBUG"
 BSC32=bscmake.exe
@@ -469,7 +470,7 @@ SOURCE=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\xvid\xvidcore_dev_api_4\src\image\x86_asm
+InputDir=\^^^dev-api-4\!!\xvidcore\src\image\x86_asm
 IntDir=.\Release
 InputPath=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
 InputName=colorspace_rgb_mmx
@@ -482,7 +483,7 @@ InputName=colorspace_rgb_mmx
 !ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\xvid\xvidcore_dev_api_4\src\image\x86_asm
+InputDir=\^^^dev-api-4\!!\xvidcore\src\image\x86_asm
 IntDir=.\Debug
 InputPath=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
 InputName=colorspace_rgb_mmx
@@ -502,7 +503,7 @@ SOURCE=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\xvid\xvidcore_dev_api_4\src\image\x86_asm
+InputDir=\^^^dev-api-4\!!\xvidcore\src\image\x86_asm
 IntDir=.\Release
 InputPath=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
 InputName=colorspace_yuv_mmx
@@ -515,7 +516,7 @@ InputName=colorspace_yuv_mmx
 !ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\xvid\xvidcore_dev_api_4\src\image\x86_asm
+InputDir=\^^^dev-api-4\!!\xvidcore\src\image\x86_asm
 IntDir=.\Debug
 InputPath=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
 InputName=colorspace_yuv_mmx
@@ -535,7 +536,7 @@ SOURCE=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\xvid\xvidcore_dev_api_4\src\image\x86_asm
+InputDir=\^^^dev-api-4\!!\xvidcore\src\image\x86_asm
 IntDir=.\Release
 InputPath=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
 InputName=colorspace_yuyv_mmx
@@ -548,7 +549,7 @@ InputName=colorspace_yuyv_mmx
 !ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\xvid\xvidcore_dev_api_4\src\image\x86_asm
+InputDir=\^^^dev-api-4\!!\xvidcore\src\image\x86_asm
 IntDir=.\Debug
 InputPath=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
 InputName=colorspace_yuyv_mmx
@@ -691,7 +692,7 @@ SOURCE=..\..\src\image\x86_asm\qpel_mmx.asm
 
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
-# Begin Custom Build - Assembling $(InputPath)
+# Begin Custom Build
 IntDir=.\Release
 InputPath=..\..\src\image\x86_asm\qpel_mmx.asm
 InputName=qpel_mmx
@@ -702,16 +703,6 @@ InputName=qpel_mmx
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Debug
-InputPath=..\..\src\image\x86_asm\qpel_mmx.asm
-InputName=qpel_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
 
 !ENDIF 
 
@@ -766,10 +757,6 @@ SOURCE=..\..\src\image\image.h
 # Begin Source File
 
 SOURCE=..\..\src\image\interpolate8x8.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\src\image\qpel.h
 # End Source File
 # Begin Source File
 
@@ -969,6 +956,10 @@ InputName=sad_xmm
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\src\motion\estimation.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\motion\gmc.h
 # End Source File
 # Begin Source File
@@ -977,17 +968,33 @@ SOURCE=..\..\src\motion\motion.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\src\motion\motion_est.h
+SOURCE=..\..\src\motion\motion_inlines.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\src\motion\sad.h
 # End Source File
+# End Group
 # Begin Source File
 
-SOURCE=..\..\src\motion\smp_motion_est.h
+SOURCE=..\..\src\motion\estimation_bvop.c
 # End Source File
-# End Group
+# Begin Source File
+
+SOURCE=..\..\src\motion\estimation_common.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\motion\estimation_gmc.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\motion\estimation_pvop.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\motion\estimation_rd_based.c
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\src\motion\gmc.c
@@ -998,15 +1005,11 @@ SOURCE=..\..\src\motion\motion_comp.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\src\motion\motion_est.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\src\motion\sad.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\src\motion\smp_motion_est.c
+SOURCE=..\..\src\motion\vop_type_decision.c
 # End Source File
 # End Group
 # Begin Group "prediction"

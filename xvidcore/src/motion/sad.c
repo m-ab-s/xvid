@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: sad.c,v 1.13.2.5 2003-08-22 15:20:41 edgomez Exp $
+ * $Id: sad.c,v 1.13.2.6 2003-09-10 22:19:00 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -276,5 +276,4 @@ mrsad16_c(const uint8_t * const cur,
 	}
 
 	return MRSAD16_CORRFACTOR * sad;
-
 }

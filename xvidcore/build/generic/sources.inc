@@ -13,13 +13,18 @@ SRC_GENERIC = \
 	$(SRCDIR)/image/colorspace.c \
 	$(SRCDIR)/image/image.c \
 	$(SRCDIR)/image/interpolate8x8.c \
-	$(SRCDIR)/image/reduced.c \
 	$(SRCDIR)/image/font.c \
 	$(SRCDIR)/image/qpel.c \
-	$(SRCDIR)/motion/motion_comp.c \
-	$(SRCDIR)/motion/motion_est.c \
-	$(SRCDIR)/motion/sad.c \
+	$(SRCDIR)/image/reduced.c \
+	$(SRCDIR)/motion/estimation_bvop.c \
+	$(SRCDIR)/motion/estimation_common.c \
+	$(SRCDIR)/motion/estimation_gmc.c \
+	$(SRCDIR)/motion/estimation_pvop.c \
+	$(SRCDIR)/motion/estimation_rd_based.c \
 	$(SRCDIR)/motion/gmc.c \
+	$(SRCDIR)/motion/motion_comp.c \
+	$(SRCDIR)/motion/vop_type_decision.c \
+	$(SRCDIR)/motion/sad.c \
 	$(SRCDIR)/prediction/mbprediction.c \
 	$(SRCDIR)/plugins/plugin_single.c \
 	$(SRCDIR)/plugins/plugin_2pass1.c \

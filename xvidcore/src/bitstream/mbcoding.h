@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbcoding.h,v 1.11.2.4 2003-06-09 13:52:20 edgomez Exp $
+ * $Id: mbcoding.h,v 1.11.2.5 2003-09-10 22:18:59 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -80,6 +80,7 @@ extern VLC *intra_table;
 int CodeCoeff_CalcBits(const int16_t qcoeff[64], VLC * table, const uint16_t * zigzag, uint16_t intra);
 #else
 int CodeCoeffIntra_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag);
+int CodeCoeffInter_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag);
 #endif
 
 #endif							/* _MB_CODING_H_ */

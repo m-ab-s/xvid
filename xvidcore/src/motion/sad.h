@@ -19,13 +19,12 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: sad.h,v 1.18.2.2 2003-08-13 11:43:59 edgomez Exp $
+ * $Id: sad.h,v 1.18.2.3 2003-09-10 22:19:00 edgomez Exp $
  *
  ****************************************************************************/
 
 #ifndef _ENCODER_SAD_H_
 #define _ENCODER_SAD_H_
-
 
 #include "../portab.h"
 
@@ -34,7 +33,6 @@ typedef sadInitFunc *sadInitFuncPtr;
 
 extern sadInitFuncPtr sadInit;
 sadInitFunc sadInit_altivec;
-
 
 typedef uint32_t(sad16Func) (const uint8_t * const cur,
 							 const uint8_t * const ref,
@@ -123,21 +121,6 @@ typedef dev16Func *dev16FuncPtr;
 extern dev16FuncPtr dev16;
 dev16Func dev16_c;
 
-#ifdef ARCH_IS_IA32
-dev16Func dev16_mmx;
-dev16Func dev16_xmm;
-dev16Func dev16_3dne;
-dev16Func dev16_sse2;
-#endif
-
-#ifdef ARCH_IS_ALTIVEC
-dev16Func dev16_altivec;
-#endif
-
-#ifdef ARCH_IS_IA64
-dev16Func dev16_ia64;
-#endif
-
 typedef uint32_t (sad16vFunc)(	const uint8_t * const cur,
 								const uint8_t * const ref,
 								const uint32_t stride, int32_t *sad8);
@@ -146,19 +129,22 @@ extern sad16vFuncPtr sad16v;
 
 sad16vFunc sad16v_c;
 sad16vFunc sad32v_c;
-sad16vFunc mrsad16v;
-sad16vFunc mrsad16v_c;
 
 #ifdef ARCH_IS_IA32
+dev16Func dev16_mmx;
+dev16Func dev16_xmm;
+dev16Func dev16_3dne;
+dev16Func dev16_sse2;
 sad16vFunc sad16v_xmm;
 sad16vFunc sad16v_mmx;
+#endif
 
-int32_t sad8x8mean_mmx(	const uint8_t * const current,
-						const uint8_t * const reference,
-						const uint32_t stride,
-						const int mean);
+#ifdef ARCH_IS_ALTIVEC
+dev16Func dev16_altivec;
+#endif
 
-void sad16x8total_mmx(const uint8_t *, const uint32_t, int32_t[]);
+#ifdef ARCH_IS_IA64
+dev16Func dev16_ia64;
 #endif
 
 #endif							/* _ENCODER_SAD_H_ */

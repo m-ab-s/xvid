@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_comp.c,v 1.18.2.8 2003-08-22 15:52:35 Isibaar Exp $
+ * $Id: motion_comp.c,v 1.18.2.9 2003-09-10 22:19:00 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -66,6 +66,35 @@ log2bin(uint32_t value)
 #endif
 }
 
+/*
+ * getref: calculate reference image pointer
+ * the decision to use interpolation h/v/hv or the normal image is
+ * based on dx & dy.
+ */
+
+static __inline const uint8_t *
+get_ref(const uint8_t * const refn,
+		const uint8_t * const refh,
+		const uint8_t * const refv,
+		const uint8_t * const refhv,
+		const uint32_t x,
+		const uint32_t y,
+		const uint32_t block,
+		const int32_t dx,
+		const int32_t dy,
+		const int32_t stride)
+{
+	switch (((dx & 1) << 1) + (dy & 1)) {
+	case 0:
+		return refn + (int) ((x * block + dx / 2) + (y * block + dy / 2) * stride);
+	case 1:
+		return refv + (int) ((x * block + dx / 2) + (y * block + (dy - 1) / 2) * stride);
+	case 2:
+		return refh + (int) ((x * block + (dx - 1) / 2) + (y * block + dy / 2) * stride);
+	default:
+		return refhv + (int) ((x * block + (dx - 1) / 2) + (y * block + (dy - 1) / 2) * stride);
+	}
+}
 
 static __inline void
 compensate16x16_interpolate(int16_t * const dct_codes,
