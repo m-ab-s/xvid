@@ -20,7 +20,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_decraw.c,v 1.7.2.3 2003-06-09 13:49:13 edgomez Exp $
+ * $Id: xvid_decraw.c,v 1.7.2.4 2003-08-09 09:52:02 chl Exp $
  *
  ****************************************************************************/
 
@@ -143,11 +143,11 @@ int main(int argc, char *argv[])
 		else if (strcmp("-m", argv[i]) == 0) {
 			ARG_SAVEMPEGSTREAM = 1;
 		}
-		else if (strcmp("-help", argv[i])) {
+		else if (strcmp("-help", argv[i]) == 0) {
 			usage();
 			return(0);
 		}
-		else {
+		else {		
 			usage();
 			exit(-1);
 		}
@@ -389,7 +389,7 @@ int main(int argc, char *argv[])
 static void usage()
 {
 
-	fprintf(stderr, "Usage : xvid_decraw <-w width> <-h height> [OPTIONS]\n");
+	fprintf(stderr, "Usage : xvid_decraw [OPTIONS]\n");
 	fprintf(stderr, "Options :\n");
 	fprintf(stderr, " -asm           : use assembly optimizations (default=disabled)\n");
 	fprintf(stderr, " -i string      : input filename (default=stdin)\n");
