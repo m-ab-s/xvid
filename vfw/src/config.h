@@ -104,6 +104,10 @@ typedef struct
 	BYTE qmatrix_inter[64];
 
 	int keyframe_boost;
+//added by koepi for new 2pass curve treatment
+	int kftreshold;
+	int kfreduction;
+// end of koepi's additions
 	int discard1pass;
 	int dummy2pass;
 	int curve_compression_high;
