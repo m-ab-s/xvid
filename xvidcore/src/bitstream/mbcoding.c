@@ -109,7 +109,7 @@ int bs_get_spritetrajectory(Bitstream * bs)
 void
 init_vlc_tables(void)
 {
-	uint32_t i, j, k, intra, last, run,  run_esc, level, level_esc, escape, escape_len, offset, limit;
+	ptr_t i, j, k, intra, last, run,  run_esc, level, level_esc, escape, escape_len, offset;
 	int32_t l;
 
 #ifdef BIGLUT
