@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.29 2002-12-12 12:42:31 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.76.2.30 2002-12-13 11:54:17 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1690,20 +1690,15 @@ FrameCodeP(Encoder * pEnc,
 		pEnc->current->coding_type = P_VOP;
 	
 	start_timer();
-	if (pEnc->current->global_flags & XVID_HINTEDME_SET) {
+	if (pEnc->current->global_flags & XVID_HINTEDME_SET)
 		HintedMESet(pEnc, &bIntra);
-	if (bIntra == 0) {
-			MotionEstimationHinted(&pEnc->mbParam, pEnc->current, pEnc->reference,
-											&pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV);
-		}
-
-	} else {
+	else
 
 		bIntra =
 			MotionEstimation(&pEnc->mbParam, pEnc->current, pEnc->reference,
                          &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV,
                          iLimit);
-	}
+
 	stop_motion_timer();
 
 	if (bIntra == 1) return FrameCodeI(pEnc, bs, pBits);
