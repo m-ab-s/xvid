@@ -28,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.2 2002-10-06 07:05:50 suxen_drol Exp $
+*  $Id: xvid.h,v 1.17.2.3 2002-10-17 19:10:31 Isibaar Exp $
 *
 *****************************************************************************/
 
@@ -46,6 +46,19 @@ extern "C" {
 
 /* API Version : 2.1 */
 #define API_VERSION ((2 << 16) | (1))
+
+/* Bitstream Version 
+ * this will be writen into the bitstream to allow easy detection of xvid 
+ * encoder bugs in the decoder, without this it might not possible to 
+ * automatically distinquish between a file which has been encoded with an 
+ * old & buggy XVID from a file which has been encoded with a bugfree version
+ * see the infamous interlacing bug ...
+ *
+ * this MUST be increased if an encoder bug is fixed, increasing it too often
+ * doesnt hurt but not increasing it could cause difficulty for decoders in the
+ * future
+ */
+#define XVID_BS_VERSION "0001"
 
 
 /* Error codes */

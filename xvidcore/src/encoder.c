@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.12 2002-10-05 21:36:35 Isibaar Exp $
+ *  $Id: encoder.c,v 1.76.2.13 2002-10-17 19:10:57 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -1517,7 +1517,10 @@ FrameCodeI(Encoder * pEnc,
 	if ((pEnc->global & XVID_GLOBAL_PACKED)) {
 		BitstreamWriteUserData(bs, DIVX501B481P, strlen(DIVX501B481P));
 	}
-		
+
+#define XVID_ID "XviD" XVID_BS_VERSION
+	BitstreamWriteUserData(bs, XVID_ID, strlen(XVID_ID));
+
 	set_timecodes(pEnc->current,pEnc->reference,pEnc->mbParam.fbase);
 	BitstreamWriteVopHeader(bs, &pEnc->mbParam, pEnc->current, 1);
 
