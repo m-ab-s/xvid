@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.18 2002-09-03 17:24:26 chl Exp $
+ *  $Id: encoder.h,v 1.18.2.1 2002-09-28 13:01:15 chl Exp $
  *
  ****************************************************************************/
 
@@ -112,9 +112,7 @@ typedef struct
 
 	HINTINFO *hint;
 
-	uint32_t m_seconds;
-	uint32_t m_ticks;
-
+	int64_t m_stamp;
 }
 MBParam;
 
@@ -132,6 +130,7 @@ typedef struct
 
 	uint32_t seconds;
 	uint32_t ticks;
+	uint64_t stamp;
 
 	IMAGE image;
 
@@ -199,9 +198,6 @@ typedef struct
 	IMAGE f_refhv;
 	int bframenum_dx50bvop;
 
-	int last_pframe; 	
-	int last_sync; 	
-	int time_pp;
 	int m_framenum; /* debug frame num counter; unlike iFrameNum, does not reset at ivop */
 #endif
 

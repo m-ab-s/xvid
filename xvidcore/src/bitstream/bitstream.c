@@ -810,7 +810,6 @@ BitstreamWriteVopHeader(Bitstream * const bs,
 
 	BitstreamPutBits(bs, frame->coding_type, 2);
 
-	// time_base = 0  write n x PutBit(1), PutBit(0)
 #ifdef BFRAMES
 	for (i = 0; i < frame->seconds; i++) {
 		BitstreamPutBit(bs, 1);

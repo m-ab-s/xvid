@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.3 2002-09-27 17:25:17 h Exp $
+ *  $Id: encoder.c,v 1.76.2.4 2002-09-28 13:01:02 chl Exp $
  *
  ****************************************************************************/
 
@@ -410,12 +410,8 @@ encoder_create(XVID_ENC_PARAM * pParam)
 	pEnc->queue_tail = 0;
 	pEnc->queue_size = 0;
 
-
-	pEnc->mbParam.m_seconds = 0;
-	pEnc->mbParam.m_ticks = 0;
+	pEnc->mbParam.m_stamp = 0;
 	pEnc->m_framenum = 0;
-	pEnc->last_pframe = 0;
-	pEnc->last_sync = 0;
 
 	pParam->handle = (void *) pEnc;
 
@@ -604,15 +600,8 @@ encoder_destroy(Encoder * pEnc)
 
 static __inline void inc_frame_num(Encoder * pEnc)
 {
-	pEnc->mbParam.m_ticks += pEnc->mbParam.fincr;
-
-	pEnc->mbParam.m_ticks = pEnc->mbParam.m_ticks % pEnc->mbParam.fbase;
-	if (pEnc->mbParam.m_ticks < pEnc->last_sync) 
-		pEnc->mbParam.m_seconds = 1;		
-				// more than 1 second since last I or P is not supported. 
-	else
-		pEnc->mbParam.m_seconds = 0;
-
+	pEnc->mbParam.m_stamp += pEnc->mbParam.fincr;
+	pEnc->current->stamp = pEnc->mbParam.m_stamp;
 }
 
 
@@ -640,6 +629,27 @@ queue_image(Encoder * pEnc, XVID_ENC_FRAME * pFrame)
 	pEnc->queue_size++;
 	pEnc->queue_tail =  (pEnc->queue_tail + 1) % pEnc->mbParam.max_bframes;
 }
+
+static __inline void 
+set_timecodes(FRAMEINFO* pCur,FRAMEINFO *pRef, int32_t time_base)
+{
+
+		pCur->ticks = (int32_t)pCur->stamp % time_base;
+		pCur->seconds =  ((int32_t)pCur->stamp / time_base)	- ((int32_t)pRef->stamp / time_base) ;
+		
+/*		HEAVY DEBUG OUTPUT	remove when timecodes prove to be stable 
+
+		fprintf(stderr,"WriteVop:   %d - %d \n",
+			((int32_t)pCur->stamp / time_base), ((int32_t)pRef->stamp / time_base));
+		fprintf(stderr,"set_timecodes: VOP %1d   stamp=%lld ref_stamp=%lld  base=%d\n",
+			pCur->coding_type, pCur->stamp, pRef->stamp, time_base);
+		fprintf(stderr,"set_timecodes: VOP %1d   seconds=%d   ticks=%d   (ref-sec=%d  ref-tick=%d)\n",
+			pCur->coding_type, pCur->seconds, pCur->ticks, pRef->seconds, pRef->ticks);
+
+*/
+}
+
+
 
 
 
@@ -737,6 +747,7 @@ ipvop_loop:
 				pEnc->bframenum_head, pEnc->bframenum_tail,
 				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
 
+			set_timecodes(pEnc->current,pEnc->reference,pEnc->mbParam.fbase);
 			BitstreamWriteVopHeader(&bs, &pEnc->mbParam, pEnc->current, 0);
 			BitstreamPad(&bs);
 			BitstreamPutBits(&bs, 0x7f, 8);
@@ -809,6 +820,7 @@ bvop_loop:
 
 		pFrame->intra = 0;
 
+		set_timecodes(pEnc->current,pEnc->reference,pEnc->mbParam.fbase);
 		BitstreamWriteVopHeader(&bs, &pEnc->mbParam, pEnc->current, 0); // write N_VOP
 		BitstreamPad(&bs);
 		pFrame->length = BitstreamLength(&bs);
@@ -845,9 +857,6 @@ bvop_loop:
 		/* ToDo : dynamic fcode (in both directions) */
 		pEnc->current->fcode = pEnc->mbParam.m_fcode;
 		pEnc->current->bcode = pEnc->mbParam.m_fcode;
-
-		pEnc->current->seconds = pEnc->mbParam.m_seconds;
-		pEnc->current->ticks = pEnc->mbParam.m_ticks;
 
 		inc_frame_num(pEnc);
 
@@ -1055,7 +1064,6 @@ bvop_loop:
 						  pFrame->length, pFrame->intra);
 	}
 
-
 	stop_global_timer();
 	write_timer();
 
@@ -1099,8 +1107,6 @@ encoder_encode(Encoder * pEnc,
 
 	pEnc->current->global_flags = pFrame->general;
 	pEnc->current->motion_flags = pFrame->motion;
-	pEnc->current->seconds = pEnc->mbParam.m_seconds;
-	pEnc->current->ticks = pEnc->mbParam.m_ticks;
 	pEnc->mbParam.hint = &pFrame->hint;
 
 	/* disable alternate scan flag if interlacing is not enabled */
@@ -1494,6 +1500,8 @@ FrameCodeI(Encoder * pEnc,
 	if ((pEnc->global & XVID_GLOBAL_PACKED)) {
 		BitstreamWriteUserData(bs, DIVX501B481P, strlen(DIVX501B481P));
 	}
+		
+	set_timecodes(pEnc->current,pEnc->reference,pEnc->mbParam.fbase);
 	BitstreamWriteVopHeader(bs, &pEnc->mbParam, pEnc->current, 1);
 
 	*pBits = BitstreamPos(bs);
@@ -1534,12 +1542,12 @@ FrameCodeI(Encoder * pEnc,
 	pEnc->sStat.iMvCount = 0;
 	pEnc->mbParam.m_fcode = 2;
 
-	pEnc->last_pframe = pEnc->current->ticks;
-	pEnc->last_sync = pEnc->current->ticks;
+//	pEnc->time_pp = ((int32_t)(pEnc->current->stamp - pEnc->reference->stamp));
 
 	if (pEnc->current->global_flags & XVID_HINTEDME_GET) {
 		HintedMEGet(pEnc, 1);
 	}
+//	pEnc->last_pframe = (int32_t)pEnc->mbParam.m_stamp;
 
 	return 1;					// intra
 }
@@ -1615,7 +1623,9 @@ FrameCodeP(Encoder * pEnc,
 
 	if (vol_header)
 		BitstreamWriteVolHeader(bs, &pEnc->mbParam, pEnc->current);
+		
 
+	set_timecodes(pEnc->current,pEnc->reference,pEnc->mbParam.fbase);
 	BitstreamWriteVopHeader(bs, &pEnc->mbParam, pEnc->current, 1);
 
 	*pBits = BitstreamPos(bs);
@@ -1756,7 +1766,7 @@ FrameCodeP(Encoder * pEnc,
 
 	pEnc->sStat.fMvPrevSigma = fSigma;
 
-#ifdef BFRAMES
+#ifdef FRAMEDROP
 	/* frame drop code */
 	// DPRINTF(DPRINTF_DEBUG, "kmu %i %i %i", pEnc->sStat.kblks, pEnc->sStat.mblks, pEnc->sStat.ublks);
 	if (pEnc->sStat.kblks + pEnc->sStat.mblks <
@@ -1766,6 +1776,8 @@ FrameCodeP(Encoder * pEnc,
 		pEnc->sStat.ublks = pEnc->mbParam.mb_width * pEnc->mbParam.mb_height;
 
 		BitstreamReset(bs);
+
+		set_timecodes(pEnc->current,pEnc->reference,pEnc->mbParam.fbase);
 		BitstreamWriteVopHeader(bs, &pEnc->mbParam, pEnc->current, 0);
 
 		// copy reference frame details into the current frame
@@ -1782,9 +1794,8 @@ FrameCodeP(Encoder * pEnc,
 
 	*pBits = BitstreamPos(bs) - *pBits;
 
-	pEnc->time_pp = ((int32_t)pEnc->mbParam.fbase - (int32_t)pEnc->last_pframe + (int32_t)pEnc->current->ticks) %
-			(int32_t)pEnc->mbParam.fbase;
-	pEnc->last_pframe = pEnc->current->ticks;
+//	pEnc->time_pp = ((int32_t)(pEnc->current->stamp - pEnc->reference->stamp));
+//	pEnc->last_pframe = (int32_t)pEnc->mbParam.m_stamp;
 
 	return 0;					// inter
 }
@@ -1836,10 +1847,11 @@ FrameCodeB(Encoder * pEnc,
 	stop_inter_timer();
 
 	start_timer();
+
 	MotionEstimationBVOP(&pEnc->mbParam, frame, 
-		((int32_t)pEnc->mbParam.fbase + pEnc->last_pframe - frame->ticks) % pEnc->mbParam.fbase,
-						pEnc->time_pp, 
-						pEnc->reference->mbs, f_ref,
+		((int32_t)(frame->stamp - pEnc->reference->stamp)),				// time_bp 
+		((int32_t)(pEnc->current->stamp - pEnc->reference->stamp)), 	// time_pp
+			pEnc->reference->mbs, f_ref,
 						 &pEnc->f_refh, &pEnc->f_refv, &pEnc->f_refhv,
 						 pEnc->current->mbs, b_ref, &pEnc->vInterH,
 						 &pEnc->vInterV, &pEnc->vInterHV);
@@ -1853,6 +1865,8 @@ FrameCodeB(Encoder * pEnc,
 	   } */
 
 	frame->coding_type = B_VOP;
+
+	set_timecodes(frame, pEnc->reference,pEnc->mbParam.fbase);
 	BitstreamWriteVopHeader(bs, &pEnc->mbParam, frame, 1);
 
 	*pBits = BitstreamPos(bs);
