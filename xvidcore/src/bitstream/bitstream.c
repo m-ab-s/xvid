@@ -1110,7 +1110,8 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 {
 	int vol_ver_id=1;
 
-	if ( (pParam->m_quarterpel) || (frame->global_flags & XVID_GMC) )
+	if ( pParam->m_quarterpel ||  (frame->global_flags & XVID_GMC) || 
+		 (pParam->global & XVID_GLOBAL_REDUCED))
 		vol_ver_id = 2;
 	
 	// video object_start_code & vo_id
@@ -1222,7 +1223,9 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	if (vol_ver_id != 1) 
 	{
 		BitstreamPutBit(bs, 0);		// newpred_enable
-		BitstreamPutBit(bs, 0);		// reduced_resolution_vop_enabled
+		
+		BitstreamPutBit(bs, (pParam->global & XVID_GLOBAL_REDUCED)?1:0);	
+									/* reduced_resolution_vop_enabled */
 	}
 	
 	BitstreamPutBit(bs, 0);		// scalability
@@ -1234,7 +1237,8 @@ BitstreamWriteVolHeader(Bitstream * const bs,
   write vop header
 */
 void
-BitstreamWriteVopHeader(Bitstream * const bs,
+BitstreamWriteVopHeader(
+						Bitstream * const bs,
 						const MBParam * pParam,
 						const FRAMEINFO * const frame,
 						int vop_coded)
@@ -1272,6 +1276,9 @@ BitstreamWriteVopHeader(Bitstream * const bs,
 
 	if ( (frame->coding_type == P_VOP) || (frame->coding_type == S_VOP) )
 		BitstreamPutBits(bs, frame->rounding_type, 1);
+
+	if ((pParam->global & XVID_GLOBAL_REDUCED))
+		BitstreamPutBit(bs, (frame->global_flags & XVID_REDUCED)?1:0);
 
 	BitstreamPutBits(bs, 0, 3);	// intra_dc_vlc_threshold
 

@@ -50,7 +50,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: reduced.c,v 1.1.2.1 2002-12-08 05:34:16 suxen_drol Exp $
+ * $Id: reduced.c,v 1.1.2.2 2002-12-09 10:47:05 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -62,6 +62,8 @@ COPY_UPSAMPLED_8X8_16TO8 * copy_upsampled_8x8_16to8;
 ADD_UPSAMPLED_8X8_16TO8 * add_upsampled_8x8_16to8;
 VFILTER_31 * vfilter_31;
 HFILTER_31 * hfilter_31;
+FILTER_18X18_TO_8X8 * filter_18x18_to_8x8;
+FILTER_DIFF_18X18_TO_8X8 * filter_diff_18x18_to_8x8;
 
 //////////////////////////////////////////////////////////
 // Upsampling (1/3/3/1) filter

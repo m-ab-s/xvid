@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.18.2.6 2002-12-04 12:31:18 suxen_drol Exp $
+ *  $Id: encoder.h,v 1.18.2.7 2002-12-09 10:47:05 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -93,10 +93,17 @@ typedef struct
 	uint32_t fincr;
 	uint32_t fbase;
 
+	/* constants */
+	int global;
+	int bquant_ratio;
+	int bquant_offset;
+	int frame_drop_ratio;
+
 #ifdef _SMP
 	int num_threads;
 #endif
-
+	
+	int iMaxKeyInterval;
 	int max_bframes;
 
 	/* rounding type; alternate 0-1 after each interframe */
@@ -109,6 +116,7 @@ typedef struct
 	uint32_t m_rounding_type;
 	uint32_t m_fcode;
 	uint32_t m_quarterpel;
+	int m_reduced_resolution;	/* reduced_resolution_enable */
 
 	HINTINFO *hint;
 
@@ -161,7 +169,6 @@ typedef struct
 	MBParam mbParam;
 
 	int iFrameNum;
-	int iMaxKeyInterval;
 	int bitrate;
 
 	// images
@@ -177,12 +184,6 @@ typedef struct
 	IMAGE vInterVf;
 	IMAGE vInterHV;
 	IMAGE vInterHVf;
-
-	/* constants */
-	int global;
-	int bquant_ratio;
-	int bquant_offset;
-	int frame_drop_ratio;
 
 	/* image queue */
 	int queue_head;

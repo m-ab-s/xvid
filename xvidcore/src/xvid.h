@@ -28,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.12 2002-11-19 13:21:25 suxen_drol Exp $
+*  $Id: xvid.h,v 1.17.2.13 2002-12-09 10:47:05 suxen_drol Exp $
 *
 *****************************************************************************/
 
@@ -244,6 +244,7 @@ extern "C" {
 #define XVID_GLOBAL_PACKED		0x00000001	/* packed bitstream */
 #define XVID_GLOBAL_DX50BVOP	0x00000002	/* dx50 bvop compatibility */
 #define XVID_GLOBAL_DEBUG		0x00000004	/* print debug info on each frame */
+#define XVID_GLOBAL_REDUCED		0x04000000	/* reduced resolution vop enable */
 
 /* Flags for XVID_ENC_FRAME.general */
 #define XVID_VALID_FLAGS		0x80000000
@@ -277,6 +278,8 @@ extern "C" {
 
 #define XVID_GMC				0x20000000
 #define XVID_ME_COLOUR			0x40000000
+
+#define XVID_REDUCED			0x04000000	/* reduced resolution vop */
 
 /* Flags for XVID_ENC_FRAME.motion */
 #define PMV_ADVANCEDDIAMOND8	0x00004000

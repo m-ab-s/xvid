@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.16 2002-12-08 06:43:33 suxen_drol Exp $
+ *  $Id: decoder.c,v 1.37.2.17 2002-12-09 10:47:05 suxen_drol Exp $
  *
  *************************************************************************/
 
@@ -443,23 +443,10 @@ decoder_mbinter(DECODER * dec,
 		pY_Cur = dec->cur.y + (y_pos << 5) * stride + (x_pos << 5);
 		pU_Cur = dec->cur.u + (y_pos << 4) * stride2 + (x_pos << 4);
 		pV_Cur = dec->cur.v + (y_pos << 4) * stride2 + (x_pos << 4);
-		DPRINTF(DPRINTF_MB,"[%i,%i] %i,%i  %i,%i  %i,%i  %i,%i",
-			x_pos, y_pos,
-			mv[0].x, mv[0].y,
-			mv[1].x, mv[1].y,
-			mv[2].x, mv[2].y,
-			mv[3].x, mv[3].y);
-
 		rrv_mv_scaleup(&mv[0]);
 		rrv_mv_scaleup(&mv[1]);
 		rrv_mv_scaleup(&mv[2]);
 		rrv_mv_scaleup(&mv[3]);
-
-		DPRINTF(DPRINTF_MB,"        %i,%i  %i,%i  %i,%i  %i,%i",
-			mv[0].x, mv[0].y,
-			mv[1].x, mv[1].y,
-			mv[2].x, mv[2].y,
-			mv[3].x, mv[3].y);
 	}else{
 		pY_Cur = dec->cur.y + (y_pos << 4) * stride + (x_pos << 4);
 		pU_Cur = dec->cur.u + (y_pos << 3) * stride2 + (x_pos << 3);
@@ -658,8 +645,8 @@ decoder_iframe(DECODER * dec,
 	
 	if (reduced_resolution)
 	{
-		mb_width /= 2;
-		mb_height /= 2;
+		mb_width = (dec->width + 31) / 32;
+		mb_height = (dec->height + 31) / 32;
 	}
 
 	bound = 0;
@@ -807,8 +794,8 @@ decoder_pframe(DECODER * dec,
 	
 	if (reduced_resolution)
 	{
-		mb_width /= 2;
-		mb_height /= 2;
+		mb_width = (dec->width + 31) / 32;
+		mb_height = (dec->height + 31) / 32;
 	}
 
 	start_timer();
@@ -1768,8 +1755,8 @@ xxx:
 
 	if (reduced_resolution)
 	{
-		const int rmb_height = dec->mb_height / 2;
-		const int rmb_width = dec->mb_width / 2;
+		const int rmb_width = (dec->width + 31) / 32;
+		const int rmb_height = (dec->height + 31) / 32;
 		const int edged_width2 = dec->edged_width /2;
 		int i,j;
 

@@ -65,6 +65,8 @@
 #include "../quant/quant_h263.h"
 #include "../encoder.h"
 
+#include "../image/reduced.h"
+
 MBFIELDTEST_PTR MBFieldTest;
 
 #define MIN(X, Y) ((X)<(Y)?(X):(Y))
@@ -84,25 +86,40 @@ MBTransQuantIntra(const MBParam * pParam,
 
 	uint32_t stride = pParam->edged_width;
 	uint32_t stride2 = stride / 2;
-	uint32_t next_block = stride * 8;
+	uint32_t next_block = stride * ((frame->global_flags & XVID_REDUCED)?16:8);
 	uint32_t i;
 	uint32_t iQuant = frame->quant;
 	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
 	IMAGE *pCurrent = &frame->image;
 
-	pY_Cur = pCurrent->y + (y_pos << 4) * stride + (x_pos << 4);
-	pU_Cur = pCurrent->u + (y_pos << 3) * stride2 + (x_pos << 3);
-	pV_Cur = pCurrent->v + (y_pos << 3) * stride2 + (x_pos << 3);
-
 	start_timer();
-	transfer_8to16copy(&data[0 * 64], pY_Cur, stride);
-	transfer_8to16copy(&data[1 * 64], pY_Cur + 8, stride);
-	transfer_8to16copy(&data[2 * 64], pY_Cur + next_block, stride);
-	transfer_8to16copy(&data[3 * 64], pY_Cur + next_block + 8, stride);
-	transfer_8to16copy(&data[4 * 64], pU_Cur, stride2);
-	transfer_8to16copy(&data[5 * 64], pV_Cur, stride2);
+	if ((frame->global_flags & XVID_REDUCED))
+	{
+		pY_Cur = pCurrent->y + (y_pos << 5) * stride + (x_pos << 5);
+		pU_Cur = pCurrent->u + (y_pos << 4) * stride2 + (x_pos << 4);
+		pV_Cur = pCurrent->v + (y_pos << 4) * stride2 + (x_pos << 4);
+
+		filter_18x18_to_8x8(&data[0 * 64], pY_Cur, stride);
+		filter_18x18_to_8x8(&data[1 * 64], pY_Cur + 16, stride);
+		filter_18x18_to_8x8(&data[2 * 64], pY_Cur + next_block, stride);
+		filter_18x18_to_8x8(&data[3 * 64], pY_Cur + next_block + 16, stride);
+		filter_18x18_to_8x8(&data[4 * 64], pU_Cur, stride2);
+		filter_18x18_to_8x8(&data[5 * 64], pV_Cur, stride2);
+	}else{
+		pY_Cur = pCurrent->y + (y_pos << 4) * stride + (x_pos << 4);
+		pU_Cur = pCurrent->u + (y_pos << 3) * stride2 + (x_pos << 3);
+		pV_Cur = pCurrent->v + (y_pos << 3) * stride2 + (x_pos << 3);
+
+		transfer_8to16copy(&data[0 * 64], pY_Cur, stride);
+		transfer_8to16copy(&data[1 * 64], pY_Cur + 8, stride);
+		transfer_8to16copy(&data[2 * 64], pY_Cur + next_block, stride);
+		transfer_8to16copy(&data[3 * 64], pY_Cur + next_block + 8, stride);
+		transfer_8to16copy(&data[4 * 64], pU_Cur, stride2);
+		transfer_8to16copy(&data[5 * 64], pV_Cur, stride2);
+	}
 	stop_transfer_timer();
 
+	/* XXX: rrv+interlacing is buggy */
 	start_timer();
 	pMB->field_dct = 0;
 	if ((frame->global_flags & XVID_INTERLACING) &&
@@ -123,38 +140,60 @@ MBTransQuantIntra(const MBParam * pParam,
 			start_timer();
 			quant_intra(&qcoeff[i * 64], &data[i * 64], iQuant, iDcScaler);
 			stop_quant_timer();
-
-			start_timer();
-			dequant_intra(&data[i * 64], &qcoeff[i * 64], iQuant, iDcScaler);
-			stop_iquant_timer();
 		} else {
 			start_timer();
 			quant4_intra(&qcoeff[i * 64], &data[i * 64], iQuant, iDcScaler);
 			stop_quant_timer();
+		}
+
+		/* speedup: dont decode when encoding only ivops */
+		if (pParam->iMaxKeyInterval != 1 || pParam->max_bframes > 0)
+		{
+			if (pParam->m_quant_type == H263_QUANT) {
+				start_timer();
+				dequant_intra(&data[i * 64], &qcoeff[i * 64], iQuant, iDcScaler);
+				stop_iquant_timer();
+			} else {
+				start_timer();
+				dequant4_intra(&data[i * 64], &qcoeff[i * 64], iQuant, iDcScaler);
+				stop_iquant_timer();
+			}
 
 			start_timer();
-			dequant4_intra(&data[i * 64], &qcoeff[i * 64], iQuant, iDcScaler);
-			stop_iquant_timer();
+			idct(&data[i * 64]);
+			stop_idct_timer();
+		}
+	}
+
+	/* speedup: dont decode when encoding only ivops */
+	if (pParam->iMaxKeyInterval != 1 || pParam->max_bframes > 0)
+	{
+
+		if (pMB->field_dct) {
+			next_block = stride;
+			stride *= 2;
 		}
 
 		start_timer();
-		idct(&data[i * 64]);
-		stop_idct_timer();
-	}
+		if ((frame->global_flags & XVID_REDUCED))
+		{
+			copy_upsampled_8x8_16to8(pY_Cur, &data[0 * 64], stride);
+			copy_upsampled_8x8_16to8(pY_Cur + 16, &data[1 * 64], stride);
+			copy_upsampled_8x8_16to8(pY_Cur + next_block, &data[2 * 64], stride);
+			copy_upsampled_8x8_16to8(pY_Cur + next_block + 16, &data[3 * 64], stride);
+			copy_upsampled_8x8_16to8(pU_Cur, &data[4 * 64], stride2);
+			copy_upsampled_8x8_16to8(pV_Cur, &data[5 * 64], stride2);
 
-	if (pMB->field_dct) {
-		next_block = stride;
-		stride *= 2;
+		}else{
+			transfer_16to8copy(pY_Cur, &data[0 * 64], stride);
+			transfer_16to8copy(pY_Cur + 8, &data[1 * 64], stride);
+			transfer_16to8copy(pY_Cur + next_block, &data[2 * 64], stride);
+			transfer_16to8copy(pY_Cur + next_block + 8, &data[3 * 64], stride);
+			transfer_16to8copy(pU_Cur, &data[4 * 64], stride2);
+			transfer_16to8copy(pV_Cur, &data[5 * 64], stride2);
+		}
+		stop_transfer_timer();
 	}
-
-	start_timer();
-	transfer_16to8copy(pY_Cur, &data[0 * 64], stride);
-	transfer_16to8copy(pY_Cur + 8, &data[1 * 64], stride);
-	transfer_16to8copy(pY_Cur + next_block, &data[2 * 64], stride);
-	transfer_16to8copy(pY_Cur + next_block + 8, &data[3 * 64], stride);
-	transfer_16to8copy(pU_Cur, &data[4 * 64], stride2);
-	transfer_16to8copy(pV_Cur, &data[5 * 64], stride2);
-	stop_transfer_timer();
 
 }
 
@@ -171,7 +210,7 @@ MBTransQuantInter(const MBParam * pParam,
 
 	uint32_t stride = pParam->edged_width;
 	uint32_t stride2 = stride / 2;
-	uint32_t next_block = stride * 8;
+	uint32_t next_block = stride * ((frame->global_flags & XVID_REDUCED)?16:8);
 	uint32_t i;
 	uint32_t iQuant = frame->quant;
 	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
@@ -179,9 +218,16 @@ MBTransQuantInter(const MBParam * pParam,
 	uint32_t sum;
 	IMAGE *pCurrent = &frame->image;
 
-	pY_Cur = pCurrent->y + (y_pos << 4) * stride + (x_pos << 4);
-	pU_Cur = pCurrent->u + (y_pos << 3) * stride2 + (x_pos << 3);
-	pV_Cur = pCurrent->v + (y_pos << 3) * stride2 + (x_pos << 3);
+	if ((frame->global_flags & XVID_REDUCED))
+	{
+		pY_Cur = pCurrent->y + (y_pos << 5) * stride + (x_pos << 5);
+		pU_Cur = pCurrent->u + (y_pos << 4) * stride2 + (x_pos << 4);
+		pV_Cur = pCurrent->v + (y_pos << 4) * stride2 + (x_pos << 4);
+	}else{
+		pY_Cur = pCurrent->y + (y_pos << 4) * stride + (x_pos << 4);
+		pU_Cur = pCurrent->u + (y_pos << 3) * stride2 + (x_pos << 3);
+		pV_Cur = pCurrent->v + (y_pos << 3) * stride2 + (x_pos << 3);
+	}
 
 	start_timer();
 	pMB->field_dct = 0;
@@ -240,18 +286,34 @@ MBTransQuantInter(const MBParam * pParam,
 	}
 
 	start_timer();
-	if (cbp & 32)
-		transfer_16to8add(pY_Cur, &data[0 * 64], stride);
-	if (cbp & 16)
-		transfer_16to8add(pY_Cur + 8, &data[1 * 64], stride);
-	if (cbp & 8)
-		transfer_16to8add(pY_Cur + next_block, &data[2 * 64], stride);
-	if (cbp & 4)
-		transfer_16to8add(pY_Cur + next_block + 8, &data[3 * 64], stride);
-	if (cbp & 2)
-		transfer_16to8add(pU_Cur, &data[4 * 64], stride2);
-	if (cbp & 1)
-		transfer_16to8add(pV_Cur, &data[5 * 64], stride2);
+	if ((frame->global_flags & XVID_REDUCED))
+	{
+		if (cbp & 32)
+			add_upsampled_8x8_16to8(pY_Cur, &data[0 * 64], stride);
+		if (cbp & 16)
+			add_upsampled_8x8_16to8(pY_Cur + 16, &data[1 * 64], stride);
+		if (cbp & 8)
+			add_upsampled_8x8_16to8(pY_Cur + next_block, &data[2 * 64], stride);
+		if (cbp & 4)
+			add_upsampled_8x8_16to8(pY_Cur + 16 + next_block, &data[3 * 64], stride);
+		if (cbp & 2)
+			add_upsampled_8x8_16to8(pU_Cur, &data[4 * 64], stride2);
+		if (cbp & 1)
+			add_upsampled_8x8_16to8(pV_Cur, &data[5 * 64], stride2);
+	}else{
+		if (cbp & 32)
+			transfer_16to8add(pY_Cur, &data[0 * 64], stride);
+		if (cbp & 16)
+			transfer_16to8add(pY_Cur + 8, &data[1 * 64], stride);
+		if (cbp & 8)
+			transfer_16to8add(pY_Cur + next_block, &data[2 * 64], stride);
+		if (cbp & 4)
+			transfer_16to8add(pY_Cur + next_block + 8, &data[3 * 64], stride);
+		if (cbp & 2)
+			transfer_16to8add(pU_Cur, &data[4 * 64], stride2);
+		if (cbp & 1)
+			transfer_16to8add(pV_Cur, &data[5 * 64], stride2);
+	}
 	stop_transfer_timer();
 
 	return cbp;

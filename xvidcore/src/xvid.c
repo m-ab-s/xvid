@@ -37,7 +37,7 @@
  *  - 22.12.2001  API change: added xvid_init() - Isibaar
  *  - 16.12.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: xvid.c,v 1.33.2.16 2002-12-08 06:43:34 suxen_drol Exp $
+ *  $Id: xvid.c,v 1.33.2.17 2002-12-09 10:47:05 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -237,15 +237,17 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 
 	/* reduced resoltuion */
 
+	copy_upsampled_8x8_16to8 = xvid_Copy_Upsampled_8x8_16To8_C;
+	add_upsampled_8x8_16to8 = xvid_Add_Upsampled_8x8_16To8_C;
 #ifdef ARCH_X86
 	vfilter_31 = xvid_VFilter_31_x86;
 	hfilter_31 = xvid_HFilter_31_x86;
 #else
-	copy_upsampled_8x8_16to8 = xvid_Copy_Upsampled_8x8_16To8_C;
-	add_upsampled_8x8_16to8 = xvid_Add_Upsampled_8x8_16To8_C;
 	vfilter_31 = xvid_VFilter_31_C;
 	hfilter_31 = xvid_HFilter_31_C;
 #endif
+	filter_18x18_to_8x8 = xvid_Filter_18x18_To_8x8_C;
+	filter_diff_18x18_to_8x8 = xvid_Filter_Diff_18x18_To_8x8_C;
 
 	/* Initialize internal colorspace transformation tables */
 	colorspace_init();
@@ -354,6 +356,8 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 		copy_upsampled_8x8_16to8 = xvid_Copy_Upsampled_8x8_16To8_mmx;
 		add_upsampled_8x8_16to8 = xvid_Add_Upsampled_8x8_16To8_mmx;
 		hfilter_31 = xvid_HFilter_31_mmx;
+		filter_18x18_to_8x8 = xvid_Filter_18x18_To_8x8_mmx;
+		filter_diff_18x18_to_8x8 = xvid_Filter_Diff_18x18_To_8x8_mmx;
 
 		/* image input xxx_to_yv12 related functions */
 		yv12_to_yv12  = yv12_to_yv12_mmx;
