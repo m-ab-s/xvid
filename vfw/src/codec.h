@@ -8,8 +8,7 @@
 
 #define DEBUG(X)
 // OutputDebugString(X)
-#define DEBUG1(X,A)
-// { char tmp[120]; wsprintf(tmp, "%s %i", (X), (A)); OutputDebugString(tmp); }
+#define DEBUG1(X,A) { char tmp[120]; wsprintf(tmp, "%s %i", (X), (A)); OutputDebugString(tmp); }
 #define DEBUG2(X,A,B)
 // { char tmp[120]; wsprintf(tmp, "%s %i %i", (X), (A), (B)); OutputDebugString(tmp); }
 #define DEBUG3(X,A,B,C)
@@ -99,9 +98,9 @@ typedef struct
 	int bytes2;
 	int desired_bytes2;
 
-	float movie_curve;
-	float credits_start_curve;
-	float credits_end_curve;
+	double movie_curve;
+	double credits_start_curve;
+	double credits_end_curve;
 
 	double average_frame;
 	double curve_comp_scale;
