@@ -22,11 +22,13 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass1.c,v 1.1.2.11 2003-12-18 17:43:32 edgomez Exp $
+ * $Id: plugin_2pass1.c,v 1.1.2.12 2003-12-20 15:30:03 edgomez Exp $
  *
  *****************************************************************************/
 
 #include <stdio.h>
+#include <errno.h> /* errno var (or function with recent libc) */
+#include <string.h> /* strerror() */
 
 #include "../xvid.h"
 #include "../image/image.h"
@@ -63,6 +65,33 @@ static int rc_2pass1_create(xvid_plg_create_t * create, rc_2pass1_t ** handle)
 	if((rc->stat_file = fopen(param->filename, "w+b")) == NULL)
 		return(XVID_ERR_FAIL);
 
+	/* I swear xvidcore isn't buggy, but when using mencoder+xvid4 i observe
+	 * this weird bug.
+	 *
+	 * Symptoms: The stats file grows until it's fclosed, but at this moment
+	 *           a large part of the file is filled by 0x00 bytes w/o any
+	 *           reasonable cause. The stats file is then completly unusable
+	 *
+	 * So far, i think i found "the why":
+	 *  - take a MPEG stream containing 2 sequences (concatenate 2 MPEG files
+	 *    together)
+	 *  - Encode this MPEG file
+	 *
+	 * It should trigger the bug
+	 *
+	 * I think this is caused by some kind of race condition on mencoder module
+	 * start/stop.
+	 *  - mencoder encodes the first sequence
+	 *    + xvid4 module opens xvid-twopass.stats and writes stats in it.
+	 *  - mencoder detects the second sequence and initialize a second
+	 *    module and stops the old encoder
+	 *    + new xvid4 module opens a new xvid-twopass.stats, old xvid4
+	 *      module closes it
+	 *
+	 * This is IT, got a racing condition.
+	 * Unbuffered IO, may help ... */
+	setbuf(rc->stat_file, NULL);
+
 	/*
 	 * The File Header
 	 */
@@ -81,8 +110,13 @@ static int rc_2pass1_create(xvid_plg_create_t * create, rc_2pass1_t ** handle)
 
 static int rc_2pass1_destroy(rc_2pass1_t * rc, xvid_plg_destroy_t * destroy)
 {
-	fclose(rc->stat_file);
-	free(rc);
+	if (rc->stat_file) {
+		if (fclose(rc->stat_file) == EOF) {
+			DPRINTF(XVID_DEBUG_RC, "Error closing stats file (%s)", strerror(errno));
+		}
+	}
+	rc->stat_file = NULL; /* Just a paranoid reset */
+	free(rc); /* as the container structure is freed anyway */
 	return(0);
 }
 

@@ -569,7 +569,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		/* custom pixel aspect ratio -> calculated from DAR */
 		frame.par = XVID_PAR_EXT;
 		frame.par_width = (100 * inhdr->biHeight) / codec->config.ar_y;
-		frame.par_height= (100 * inhdr->biWidth) / codec->config.ar_x;;
+		frame.par_height= (100 * inhdr->biWidth) / codec->config.ar_x;
 	}
 
     /* vop stuff */

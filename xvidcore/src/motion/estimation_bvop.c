@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_bvop.c,v 1.1.2.12 2003-12-18 21:36:46 Isibaar Exp $
+ * $Id: estimation_bvop.c,v 1.1.2.13 2003-12-20 15:30:03 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1167,5 +1167,3 @@ MotionEstimationBVOP(MBParam * const pParam,
 		}
 	}
 }
-
-

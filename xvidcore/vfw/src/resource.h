@@ -24,7 +24,7 @@
 #define IDD_LEVEL                       122
 #define IDD_CALC                        124
 #define IDD_STATUS                      125
-#define IDD_AR                          127
+#define IDD_AR                          126
 #define WIZ_CYDLG                       140
 #define PROP_MIN_CYDLG                  144
 #define PROP_SM_CYDLG                   188
@@ -390,9 +390,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        128
+#define _APS_NEXT_RESOURCE_VALUE        127
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1368
+#define _APS_NEXT_CONTROL_VALUE         1369
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

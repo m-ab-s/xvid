@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_pvop.c,v 1.1.2.13 2003-12-18 21:31:32 Isibaar Exp $
+ * $Id: estimation_pvop.c,v 1.1.2.14 2003-12-20 15:30:03 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -606,7 +606,7 @@ Search8(SearchData * const OldData,
 			}
 		}
 
-		if ((Data->qpel && MotionFlags & XVID_ME_QUARTERPELREFINE8)) {
+		if (Data->qpel && (MotionFlags & XVID_ME_QUARTERPELREFINE8)) {
 				Data->qpel_precision = 1;
 				get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 3,
 					pParam->width, pParam->height, Data->iFcode, 2, 0);
