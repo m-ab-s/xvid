@@ -21,12 +21,13 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbtransquant.c,v 1.21.2.10 2003-05-09 22:03:13 chl Exp $
+ * $Id: mbtransquant.c,v 1.21.2.11 2003-05-11 13:26:14 chl Exp $
  *
  ****************************************************************************/
 
-#include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "../portab.h"
 #include "mbfunctions.h"
@@ -612,8 +613,9 @@ MBFrameToField(int16_t data[6 * 64])
  ************************************************************************/
 
 
-static int
-dct_quantize_trellis_inter_mpeg_c (int16_t *qcoeff, const int16_t *data, int quant)
+static int 
+dct_quantize_trellis_mpeg_c(int16_t *const Out, const int16_t *const In, int Q, 
+		const uint16_t * const Zigzag, int Non_Zero)
 { return 63; }
 
 
@@ -753,46 +755,271 @@ static inline int Find_Last(const int16_t *C, const uint16_t *Zigzag, int i)
 }
 
 //////////////////////////////////////////////////////////
+// this routine has been strippen of all debug code 
+//////////////////////////////////////////////////////////
+
+static int 
+dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, const uint16_t * const Zigzag, int Non_Zero)
+{
+
+    // Note: We should search last non-zero coeffs on *real* DCT input coeffs (In[]), 
+    // not quantized one (Out[]). However, it only improves the result *very* 
+    // slightly (~0.01dB), whereas speed drops to crawling level :)
+    // Well, actually, taking 1 more coeff past Non_Zero into account sometimes helps,
+  
+  typedef struct { int16_t Run, Level; } NODE;
+  
+  NODE Nodes[65], Last;
+  uint32_t Run_Costs0[64+1];
+  uint32_t * const Run_Costs = Run_Costs0 + 1;
+  const int Mult = 2*Q;
+  const int Bias = (Q-1) | 1;
+  const int Lev0 = Mult + Bias;
+  const int Lambda = Trellis_Lambda_Tabs[Q-1];    // it's 1/lambda, actually
+
+  int Run_Start = -1;
+  Run_Costs[-1] = 2<<16;                          // source (w/ CBP penalty)
+  uint32_t Min_Cost = 2<<16;
+
+  int Last_Node = -1;
+  uint32_t Last_Cost = 0;
+
+  int i, j;
+
+  Non_Zero = Find_Last(Out, Zigzag, Non_Zero);
+  if (Non_Zero<0)
+      return -1;  
+
+  for(i=0; i<=Non_Zero; i++)
+  {
+    const int AC = In[Zigzag[i]];
+    const int Level1 = Out[Zigzag[i]];
+    const int Dist0 = Lambda* AC*AC;
+    uint32_t Best_Cost = 0xf0000000;
+    Last_Cost += Dist0;
+
+    if ((uint32_t)(Level1+1)<3)                 // very specialized loop for -1,0,+1
+    {
+    	int dQ;
+	  	int Run;
+      uint32_t Cost0;
+
+      if (AC<0) {
+        Nodes[i].Level = -1;
+        dQ = Lev0 + AC;
+      } else {
+        Nodes[i].Level = 1;
+        dQ = Lev0 - AC;
+      }
+		Cost0 = Lambda*dQ*dQ;
+		
+      Nodes[i].Run = 1;
+      Best_Cost = (Code_Len20[0]<<16) + Run_Costs[i-1]+Cost0;
+      for(Run=i-Run_Start; Run>0; --Run)
+      {
+        const uint32_t Cost_Base = Cost0 + Run_Costs[i-Run];
+        const uint32_t Cost = Cost_Base + (Code_Len20[Run-1]<<16);
+        const uint32_t lCost = Cost_Base + (Code_Len24[Run-1]<<16);
+
+          // TODO: what about tie-breaks? Should we favor short runs or
+          // long runs? Although the error is the same, it would not be
+          // spread the same way along high and low frequencies...
+
+			// (I'd say: favour short runs => hifreq errors (HVS) -- gruel )
+
+        if (Cost<Best_Cost) {
+          Best_Cost    = Cost;
+          Nodes[i].Run = Run;
+        }
+
+        if (lCost<Last_Cost) {
+          Last_Cost  = lCost;
+          Last.Run   = Run;
+          Last_Node  = i;
+        }
+      }
+      if (Last_Node==i) 
+			Last.Level = Nodes[i].Level;
+    }
+    else                      // "big" levels
+    {
+      const uint8_t *Tbl_L1, *Tbl_L2, *Tbl_L1_Last, *Tbl_L2_Last;
+      int Level2;
+      int dQ1, dQ2;
+      int Run;
+		uint32_t Dist1,Dist2;
+		int dDist21;
+		
+	  if (Level1>1) {
+        dQ1 = Level1*Mult-AC + Bias;
+        dQ2 = dQ1 - Mult;
+        Level2 = Level1-1;
+        Tbl_L1      = (Level1<=24) ? B16_17_Code_Len[Level1-1]     : Code_Len0;
+        Tbl_L2      = (Level2<=24) ? B16_17_Code_Len[Level2-1]     : Code_Len0;
+        Tbl_L1_Last = (Level1<=6) ? B16_17_Code_Len_Last[Level1-1] : Code_Len0;
+        Tbl_L2_Last = (Level2<=6) ? B16_17_Code_Len_Last[Level2-1] : Code_Len0;
+      } else { // Level1<-1
+        dQ1 = Level1*Mult-AC - Bias;
+        dQ2 = dQ1 + Mult;
+        Level2 = Level1 + 1;
+        Tbl_L1      = (Level1>=-24) ? B16_17_Code_Len[Level1^-1]      : Code_Len0;
+        Tbl_L2      = (Level2>=-24) ? B16_17_Code_Len[Level2^-1]      : Code_Len0;
+        Tbl_L1_Last = (Level1>=- 6) ? B16_17_Code_Len_Last[Level1^-1] : Code_Len0;
+        Tbl_L2_Last = (Level2>=- 6) ? B16_17_Code_Len_Last[Level2^-1] : Code_Len0;
+      }
+      Dist1 = Lambda*dQ1*dQ1;
+      Dist2 = Lambda*dQ2*dQ2;
+      dDist21 = Dist2-Dist1;
+
+      for(Run=i-Run_Start; Run>0; --Run)
+      {
+        const uint32_t Cost_Base = Dist1 + Run_Costs[i-Run];
+        uint32_t Cost1, Cost2;
+        int bLevel;
+
+// for sub-optimal (but slightly worth it, speed-wise) search, uncomment the following:
+//        if (Cost_Base>=Best_Cost) continue;
+// (? doesn't seem to have any effect -- gruel )
+
+        Cost1 = Cost_Base + (Tbl_L1[Run-1]<<16);
+        Cost2 = Cost_Base + (Tbl_L2[Run-1]<<16) + dDist21;
+
+        if (Cost2<Cost1) { 
+			 Cost1 = Cost2; 
+			 bLevel = Level2; 
+		  } else 
+		  	 bLevel = Level1;
+
+        if (Cost1<Best_Cost) {
+          Best_Cost = Cost1;
+          Nodes[i].Run   = Run;
+          Nodes[i].Level = bLevel;
+        }
+
+        Cost1 = Cost_Base + (Tbl_L1_Last[Run-1]<<16);
+        Cost2 = Cost_Base + (Tbl_L2_Last[Run-1]<<16) + dDist21;
+
+        if (Cost2<Cost1) { 
+		  	 Cost1 = Cost2; 
+			 bLevel = Level2; 
+		  } else 
+		  	 bLevel = Level1;
+			 
+        if (Cost1<Last_Cost) {
+          Last_Cost  = Cost1;
+          Last.Run   = Run;
+          Last.Level = bLevel;
+          Last_Node  = i;
+        }
+      } //end of "for Run"
+
+    }
+
+    Run_Costs[i] = Best_Cost;
+
+    if (Best_Cost < Min_Cost + Dist0) {
+      Min_Cost = Best_Cost;
+      Run_Start = i;
+    }
+    else
+    {
+        // as noticed by Michael Niedermayer (michaelni at gmx.at), there's
+        // a code shorter by 1 bit for a larger run (!), same level. We give
+        // it a chance by not moving the left barrier too much.
+
+      while( Run_Costs[Run_Start]>Min_Cost+(1<<16) )
+        Run_Start++;
+
+        // spread on preceding coeffs the cost incurred by skipping this one
+      for(j=Run_Start; j<i; ++j) Run_Costs[j] += Dist0;
+      Min_Cost += Dist0;
+    }
+  }
+
+  if (Last_Node<0)
+    return -1;
+
+       // reconstruct optimal sequence backward with surviving paths
+  memset(Out, 0x00, 64*sizeof(*Out));
+  Out[Zigzag[Last_Node]] = Last.Level;
+  i = Last_Node - Last.Run;
+  while(i>=0) {
+    Out[Zigzag[i]] = Nodes[i].Level;
+    i -= Nodes[i].Run;
+  }
+  return Last_Node;
+}
+
+
+
+
+
+
+
+
+
+
+
+//////////////////////////////////////////////////////////
+// original version including heavy debugging info
+////////////////////////////////////////////////////////// 
+
+
+#ifdef DBGTRELL
 
 #define DBG 0
 
-static uint32_t Evaluate_Cost(const int16_t *C, int Mult, int Bias,
+static inline uint32_t Evaluate_Cost(const int16_t *C, int Mult, int Bias,
                                 const uint16_t * Zigzag, int Max, int Lambda)
 {
 #if (DBG>0)
   const int16_t * const Ref = C + 6*64;
   int Last = Max;
-  while(Last>=0 && C[Zigzag[Last]]==0) Last--;
   int Bits = 0;
+  int Dist = 0;
+  int i; 
+  uint32_t Cost;
+  
+  while(Last>=0 && C[Zigzag[Last]]==0) 
+  	Last--;
+	
   if (Last>=0) {
-    Bits = 2;   // CBP
     int j=0, j0=0;
     int Run, Level;
+
+    Bits = 2;   // CBP
     while(j<Last) {
-      while(!C[Zigzag[j]]) j++;
-      if (j==Last) break;
+      while(!C[Zigzag[j]]) 
+			j++;
+      if (j==Last) 
+			break;
       Level=C[Zigzag[j]];
       Run = j - j0;
       j0 = ++j;
-      if (Level>=-24 && Level<=24) Bits += B16_17_Code_Len[(Level<0) ? -Level-1 : Level-1][Run];
-      else Bits += 30;
+      if (Level>=-24 && Level<=24) 
+			Bits += B16_17_Code_Len[(Level<0) ? -Level-1 : Level-1][Run];
+      else 
+			Bits += 30;
     }
     Level = C[Zigzag[Last]];
     Run = j - j0;
-    if (Level>=-6 && Level<=6) Bits += B16_17_Code_Len_Last[(Level<0) ? -Level-1 : Level-1][Run];
-    else Bits += 30;
+    if (Level>=-6 && Level<=6) 
+	 	Bits += B16_17_Code_Len_Last[(Level<0) ? -Level-1 : Level-1][Run];
+    else 
+	 	Bits += 30;
   }
 
-  int Dist = 0;
-  int i;
   for(i=0; i<=Last; ++i) {
     int V = C[Zigzag[i]]*Mult;
-    if      (V>0) V += Bias;
-    else if (V<0) V -= Bias;
+    if (V>0) 
+	 	V += Bias;
+    else 
+	 	if (V<0) 
+			V -= Bias;
     V -= Ref[Zigzag[i]];
     Dist += V*V;
   }
-  uint32_t Cost = Lambda*Dist + (Bits<<16);
+  Cost = Lambda*Dist + (Bits<<16);
   if (DBG==1)
     printf( " Last:%2d/%2d Cost = [(Bits=%5.0d) + Lambda*(Dist=%6.0d) = %d ] >>12= %d ", Last,Max, Bits, Dist, Cost, Cost>>12 );
   return Cost;
@@ -815,8 +1042,8 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
   typedef struct { int16_t Run, Level; } NODE;
   
   NODE Nodes[65], Last;
-  uint32_t Run_Costs0[64+1], * const Run_Costs = Run_Costs0 + 1;
-
+  uint32_t Run_Costs0[64+1];
+  uint32_t * const Run_Costs = Run_Costs0 + 1;
   const int Mult = 2*Q;
   const int Bias = (Q-1) | 1;
   const int Lev0 = Mult + Bias;
@@ -829,11 +1056,11 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
   int Last_Node = -1;
   uint32_t Last_Cost = 0;
 
+  int i, j;
+
 #if (DBG>0)
   Last.Level = 0; Last.Run = -1; // just initialize to smthg
 #endif
-
-  int i, j;
 
   Non_Zero = Find_Last(Out, Zigzag, Non_Zero);
   if (Non_Zero<0)
@@ -849,8 +1076,9 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
 
     if ((uint32_t)(Level1+1)<3)                 // very specialized loop for -1,0,+1
     {
-      int dQ;
-	  int Run;
+    	int dQ;
+	  	int Run;
+      uint32_t Cost0;
 
       if (AC<0) {
         Nodes[i].Level = -1;
@@ -859,32 +1087,32 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
         Nodes[i].Level = 1;
         dQ = Lev0 - AC;
       }
-      const uint32_t Cost0 = Lambda*dQ*dQ;
-
+		Cost0 = Lambda*dQ*dQ;
+		
       Nodes[i].Run = 1;
       Best_Cost = (Code_Len20[0]<<16) + Run_Costs[i-1]+Cost0;
       for(Run=i-Run_Start; Run>0; --Run)
       {
         const uint32_t Cost_Base = Cost0 + Run_Costs[i-Run];
         const uint32_t Cost = Cost_Base + (Code_Len20[Run-1]<<16);
+        const uint32_t lCost = Cost_Base + (Code_Len24[Run-1]<<16);
+
           // TODO: what about tie-breaks? Should we favor short runs or
           // long runs? Although the error is the same, it would not be
           // spread the same way along high and low frequencies...
-        if (Cost<Best_Cost)
-        {
+        if (Cost<Best_Cost) {
           Best_Cost    = Cost;
           Nodes[i].Run = Run;
         }
-        const uint32_t lCost = Cost_Base + (Code_Len24[Run-1]<<16);
-        if (lCost<Last_Cost)
-        {
+
+        if (lCost<Last_Cost) {
           Last_Cost  = lCost;
           Last.Run   = Run;
           Last_Node  = i;
         }
       }
-      if (Last_Node==i) Last.Level = Nodes[i].Level;
-
+      if (Last_Node==i) 
+			Last.Level = Nodes[i].Level;
 
       if (DBG==1) {
         Run_Costs[i] = Best_Cost;
@@ -907,7 +1135,9 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
       int Level2;
       int dQ1, dQ2;
       int Run;
-	  
+		uint32_t Dist1,Dist2;
+		int dDist21;
+		
 	  if (Level1>1) {
         dQ1 = Level1*Mult-AC + Bias;
         dQ2 = dQ1 - Mult;
@@ -916,8 +1146,7 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
         Tbl_L2      = (Level2<=24) ? B16_17_Code_Len[Level2-1]     : Code_Len0;
         Tbl_L1_Last = (Level1<=6) ? B16_17_Code_Len_Last[Level1-1] : Code_Len0;
         Tbl_L2_Last = (Level2<=6) ? B16_17_Code_Len_Last[Level2-1] : Code_Len0;
-      }
-      else { // Level1<-1
+      } else { // Level1<-1
         dQ1 = Level1*Mult-AC - Bias;
         dQ2 = dQ1 + Mult;
         Level2 = Level1 + 1;
@@ -926,28 +1155,29 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
         Tbl_L1_Last = (Level1>=- 6) ? B16_17_Code_Len_Last[Level1^-1] : Code_Len0;
         Tbl_L2_Last = (Level2>=- 6) ? B16_17_Code_Len_Last[Level2^-1] : Code_Len0;
       }
-      const uint32_t Dist1 = Lambda*dQ1*dQ1;
-      const uint32_t Dist2 = Lambda*dQ2*dQ2;
-      const int dDist21 = Dist2-Dist1;
+      Dist1 = Lambda*dQ1*dQ1;
+      Dist2 = Lambda*dQ2*dQ2;
+      dDist21 = Dist2-Dist1;
 
       for(Run=i-Run_Start; Run>0; --Run)
       {
         const uint32_t Cost_Base = Dist1 + Run_Costs[i-Run];
+        uint32_t Cost1, Cost2;
+        int bLevel;
 
 // for sub-optimal (but slightly worth it, speed-wise) search, uncomment the following:
 //        if (Cost_Base>=Best_Cost) continue;
 
-        uint32_t Cost1, Cost2;
-        int bLevel;
-
         Cost1 = Cost_Base + (Tbl_L1[Run-1]<<16);
         Cost2 = Cost_Base + (Tbl_L2[Run-1]<<16) + dDist21;
 
-        if (Cost2<Cost1) { Cost1 = Cost2; bLevel = Level2; }
-        else bLevel = Level1;
+        if (Cost2<Cost1) { 
+			 Cost1 = Cost2; 
+			 bLevel = Level2; 
+		  } else 
+		  	 bLevel = Level1;
 
-        if (Cost1<Best_Cost)
-        {
+        if (Cost1<Best_Cost) {
           Best_Cost = Cost1;
           Nodes[i].Run   = Run;
           Nodes[i].Level = bLevel;
@@ -956,16 +1186,19 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
         Cost1 = Cost_Base + (Tbl_L1_Last[Run-1]<<16);
         Cost2 = Cost_Base + (Tbl_L2_Last[Run-1]<<16) + dDist21;
 
-        if (Cost2<Cost1) { Cost1 = Cost2; bLevel = Level2; }
-        else bLevel = Level1;
-        if (Cost1<Last_Cost)
-        {
+        if (Cost2<Cost1) { 
+		  	 Cost1 = Cost2; 
+			 bLevel = Level2; 
+		  } else 
+		  	 bLevel = Level1;
+			 
+        if (Cost1<Last_Cost) {
           Last_Cost  = Cost1;
           Last.Run   = Run;
           Last.Level = bLevel;
           Last_Node  = i;
         }
-      }
+      } //end of "for Run"
 
       if (DBG==1) {
         Run_Costs[i] = Best_Cost;
@@ -994,6 +1227,7 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
         // as noticed by Michael Niedermayer (michaelni at gmx.at), there's
         // a code shorter by 1 bit for a larger run (!), same level. We give
         // it a chance by not moving the left barrier too much.
+
       while( Run_Costs[Run_Start]>Min_Cost+(1<<16) )
         Run_Start++;
 
@@ -1016,7 +1250,7 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
     return -1;
 
        // reconstruct optimal sequence backward with surviving paths
-  bzero(Out, 64*sizeof(*Out));
+  memset(Out, 0x00, 64*sizeof(*Out));
   Out[Zigzag[Last_Node]] = Last.Level;
   i = Last_Node - Last.Run;
   while(i>=0) {
@@ -1037,3 +1271,5 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
 }
 
 #undef DBG
+
+#endif
