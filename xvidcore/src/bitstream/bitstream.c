@@ -216,7 +216,7 @@ read_video_packet_header(Bitstream *bs,
 				dec->shape == VIDOBJLAY_SHAPE_RECTANGULAR &&
 				(coding_type == P_VOP || coding_type == I_VOP))
 			{
-				BitstreamSkip(bs, 1); /* vop_reduced_resolution */
+				BitstreamSkip(bs, 1); /* XXX: vop_reduced_resolution */
 			}
 
 			if (coding_type != I_VOP && fcode_forward)
@@ -251,6 +251,165 @@ read_video_packet_header(Bitstream *bs,
 
 	return mbnum;
 }
+
+
+
+
+/* vol estimation header */
+static void
+read_vol_complexity_estimation_header(Bitstream * bs, DECODER * dec)
+{
+	ESTIMATION * e = &dec->estimation;
+
+	e->method = BitstreamGetBits(bs, 2);	/* estimation_method */
+	DPRINTF(DPRINTF_HEADER,"+ complexity_estimation_header; method=%i", e->method);
+
+	if (e->method == 0 || e->method == 1)		
+	{
+		if (!BitstreamGetBit(bs))		/* shape_complexity_estimation_disable */
+		{
+			e->opaque = BitstreamGetBit(bs);		/* opaque */
+			e->transparent = BitstreamGetBit(bs);		/* transparent */
+			e->intra_cae = BitstreamGetBit(bs);		/* intra_cae */
+			e->inter_cae = BitstreamGetBit(bs);		/* inter_cae */
+			e->no_update = BitstreamGetBit(bs);		/* no_update */
+			e->upsampling = BitstreamGetBit(bs);		/* upsampling */
+		}
+
+		if (!BitstreamGetBit(bs))	/* texture_complexity_estimation_set_1_disable */
+		{
+			e->intra_blocks = BitstreamGetBit(bs);		/* intra_blocks */
+			e->inter_blocks = BitstreamGetBit(bs);		/* inter_blocks */
+			e->inter4v_blocks = BitstreamGetBit(bs);		/* inter4v_blocks */
+			e->not_coded_blocks = BitstreamGetBit(bs);		/* not_coded_blocks */
+		}
+	}
+
+	READ_MARKER();
+
+	if (!BitstreamGetBit(bs))		/* texture_complexity_estimation_set_2_disable */
+	{
+		e->dct_coefs = BitstreamGetBit(bs);		/* dct_coefs */
+		e->dct_lines = BitstreamGetBit(bs);		/* dct_lines */
+		e->vlc_symbols = BitstreamGetBit(bs);		/* vlc_symbols */
+		e->vlc_bits = BitstreamGetBit(bs);		/* vlc_bits */
+	}
+
+	if (!BitstreamGetBit(bs))		/* motion_compensation_complexity_disable */
+	{
+		e->apm = BitstreamGetBit(bs);		/* apm */
+		e->npm = BitstreamGetBit(bs);		/* npm */
+		e->interpolate_mc_q = BitstreamGetBit(bs);		/* interpolate_mc_q */
+		e->forw_back_mc_q = BitstreamGetBit(bs);		/* forw_back_mc_q */
+		e->halfpel2 = BitstreamGetBit(bs);		/* halfpel2 */
+		e->halfpel4 = BitstreamGetBit(bs);		/* halfpel4 */
+	}
+
+	READ_MARKER();
+
+	if (e->method == 1)
+	{
+		if (!BitstreamGetBit(bs))	/* version2_complexity_estimation_disable */
+		{
+			e->sadct = BitstreamGetBit(bs);		/* sadct */
+			e->quarterpel = BitstreamGetBit(bs);		/* quarterpel */
+		}
+	}
+}
+
+
+/* vop estimation header */
+static void
+read_vop_complexity_estimation_header(Bitstream * bs, DECODER * dec, int coding_type)
+{
+	ESTIMATION * e = &dec->estimation;
+
+	if (e->method == 0) 
+	{
+		if (coding_type == I_VOP) {
+			if (e->opaque)		BitstreamSkip(bs, 8);	/* dcecs_opaque */
+			if (e->transparent) BitstreamSkip(bs, 8);	/* */
+			if (e->intra_cae)	BitstreamSkip(bs, 8);	/* */
+			if (e->inter_cae)	BitstreamSkip(bs, 8);	/* */
+			if (e->no_update)	BitstreamSkip(bs, 8);	/* */
+			if (e->upsampling)	BitstreamSkip(bs, 8);	/* */
+			if (e->intra_blocks) BitstreamSkip(bs, 8);	/* */
+			if (e->not_coded_blocks) BitstreamSkip(bs, 8);	/* */
+			if (e->dct_coefs)	BitstreamSkip(bs, 8);	/* */
+			if (e->dct_lines)	BitstreamSkip(bs, 8);	/* */
+			if (e->vlc_symbols) BitstreamSkip(bs, 8);	/* */
+			if (e->vlc_bits)	BitstreamSkip(bs, 8);	/* */
+			if (e->sadct)		BitstreamSkip(bs, 8);	/* */
+		}
+	
+		if (coding_type == P_VOP) {
+			if (e->opaque) BitstreamSkip(bs, 8);		/* */
+			if (e->transparent) BitstreamSkip(bs, 8);	/* */
+			if (e->intra_cae)	BitstreamSkip(bs, 8);	/* */
+			if (e->inter_cae)	BitstreamSkip(bs, 8);	/* */
+			if (e->no_update)	BitstreamSkip(bs, 8);	/* */
+			if (e->upsampling) BitstreamSkip(bs, 8);	/* */
+			if (e->intra_blocks) BitstreamSkip(bs, 8);	/* */
+			if (e->not_coded_blocks)	BitstreamSkip(bs, 8);	/* */
+			if (e->dct_coefs)	BitstreamSkip(bs, 8);	/* */
+			if (e->dct_lines)	BitstreamSkip(bs, 8);	/* */
+			if (e->vlc_symbols) BitstreamSkip(bs, 8);	/* */
+			if (e->vlc_bits)	BitstreamSkip(bs, 8);	/* */
+			if (e->inter_blocks) BitstreamSkip(bs, 8);	/* */
+			if (e->inter4v_blocks) BitstreamSkip(bs, 8);	/* */
+			if (e->apm)			BitstreamSkip(bs, 8);	/* */
+			if (e->npm)			BitstreamSkip(bs, 8);	/* */
+			if (e->forw_back_mc_q) BitstreamSkip(bs, 8);	/* */
+			if (e->halfpel2)	BitstreamSkip(bs, 8);	/* */
+			if (e->halfpel4)	BitstreamSkip(bs, 8);	/* */
+			if (e->sadct)		BitstreamSkip(bs, 8);	/* */
+			if (e->quarterpel)	BitstreamSkip(bs, 8);	/* */
+		}
+		if (coding_type == B_VOP) {
+			if (e->opaque)		BitstreamSkip(bs, 8);	/* */
+			if (e->transparent)	BitstreamSkip(bs, 8);	/* */
+			if (e->intra_cae)	BitstreamSkip(bs, 8);	/* */
+			if (e->inter_cae)	BitstreamSkip(bs, 8);	/* */
+			if (e->no_update)	BitstreamSkip(bs, 8);	/* */
+			if (e->upsampling)	BitstreamSkip(bs, 8);	/* */
+			if (e->intra_blocks) BitstreamSkip(bs, 8);	/* */
+			if (e->not_coded_blocks) BitstreamSkip(bs, 8);	/* */
+			if (e->dct_coefs)	BitstreamSkip(bs, 8);	/* */
+			if (e->dct_lines)	BitstreamSkip(bs, 8);	/* */
+			if (e->vlc_symbols)	BitstreamSkip(bs, 8);	/* */
+			if (e->vlc_bits)	BitstreamSkip(bs, 8);	/* */
+			if (e->inter_blocks) BitstreamSkip(bs, 8);	/* */
+			if (e->inter4v_blocks) BitstreamSkip(bs, 8);	/* */
+			if (e->apm)			BitstreamSkip(bs, 8);	/* */
+			if (e->npm)			BitstreamSkip(bs, 8);	/* */
+			if (e->forw_back_mc_q) BitstreamSkip(bs, 8);	/* */
+			if (e->halfpel2)	BitstreamSkip(bs, 8);	/* */
+			if (e->halfpel4)	BitstreamSkip(bs, 8);	/* */
+			if (e->interpolate_mc_q) BitstreamSkip(bs, 8);	/* */
+			if (e->sadct)		BitstreamSkip(bs, 8);	/* */
+			if (e->quarterpel)	BitstreamSkip(bs, 8);	/* */
+		}
+
+		if (coding_type == S_VOP && dec->sprite_enable == SPRITE_STATIC) {
+			if (e->intra_blocks) BitstreamSkip(bs, 8);	/* */
+			if (e->not_coded_blocks) BitstreamSkip(bs, 8);	/* */
+			if (e->dct_coefs)	BitstreamSkip(bs, 8);	/* */
+			if (e->dct_lines)	BitstreamSkip(bs, 8);	/* */
+			if (e->vlc_symbols)	BitstreamSkip(bs, 8);	/* */
+			if (e->vlc_bits)	BitstreamSkip(bs, 8);	/* */
+			if (e->inter_blocks) BitstreamSkip(bs, 8);	/* */
+			if (e->inter4v_blocks)	BitstreamSkip(bs, 8);	/* */
+			if (e->apm)			BitstreamSkip(bs, 8);	/* */
+			if (e->npm)			BitstreamSkip(bs, 8);	/* */
+			if (e->forw_back_mc_q)	BitstreamSkip(bs, 8);	/* */
+			if (e->halfpel2)	BitstreamSkip(bs, 8);	/* */
+			if (e->halfpel4)	BitstreamSkip(bs, 8);	/* */
+			if (e->interpolate_mc_q) BitstreamSkip(bs, 8);	/* */
+		}
+	}
+}
+
+
 
 
 
@@ -576,10 +735,10 @@ BitstreamReadHeaders(Bitstream * bs,
 					dec->quarterpel = 0;
 				
 
-				if (!BitstreamGetBit(bs))	// complexity_estimation_disable
+				dec->complexity_estimation_disable = BitstreamGetBit(bs);	/* complexity estimation disable */
+				if (!dec->complexity_estimation_disable)
 				{
-					DPRINTF(DPRINTF_ERROR, "complexity_estimation not supported");
-					return -1;
+					read_vol_complexity_estimation_header(bs, dec);
 				}
 
 				BitstreamSkip(bs, 1);	// resync_marker_disable
@@ -598,12 +757,8 @@ BitstreamReadHeaders(Bitstream * bs,
 						BitstreamSkip(bs, 2);	// requested_upstream_message_type
 						BitstreamSkip(bs, 1);	// newpred_segment_type
 					}
-					dec->reduced_resolution_enable = BitstreamGetBit(bs);
-					if (dec->reduced_resolution_enable)	// reduced_resolution_vop_enable
-					{
-						DPRINTF(DPRINTF_ERROR, "reduced_resolution_vop not supported");
-						//return -1;
-					}
+					dec->reduced_resolution_enable = BitstreamGetBit(bs);	/* reduced_resolution_vop_enable */
+					DPRINTF(DPRINTF_HEADER, "reduced_resolution_enable %i", dec->reduced_resolution_enable);
 				}
 				else
 				{
@@ -611,17 +766,40 @@ BitstreamReadHeaders(Bitstream * bs,
 					dec->reduced_resolution_enable = 0;
 				}
 
-				if ((dec->scalability = BitstreamGetBit(bs)))	// scalability
+				dec->scalability = BitstreamGetBit(bs);	/* scalability */
+				if (dec->scalability)	
 				{
 					DPRINTF(DPRINTF_ERROR, "scalability not supported");
+					BitstreamSkip(bs, 1);	/* hierarchy_type */
+					BitstreamSkip(bs, 4);	/* ref_layer_id */
+					BitstreamSkip(bs, 1);	/* ref_layer_sampling_direc */
+					BitstreamSkip(bs, 5);	/* hor_sampling_factor_n */
+					BitstreamSkip(bs, 5);	/* hor_sampling_factor_m */
+					BitstreamSkip(bs, 5);	/* vert_sampling_factor_n */
+					BitstreamSkip(bs, 5);	/* vert_sampling_factor_m */
+					BitstreamSkip(bs, 1);	/* enhancement_type */
+					if(dec->shape == VIDOBJLAY_SHAPE_BINARY /* && hierarchy_type==0 */) {
+						BitstreamSkip(bs, 1);	/* use_ref_shape */
+						BitstreamSkip(bs, 1);	/* use_ref_texture */
+						BitstreamSkip(bs, 5);	/* shape_hor_sampling_factor_n */
+						BitstreamSkip(bs, 5);	/* shape_hor_sampling_factor_m */
+						BitstreamSkip(bs, 5);	/* shape_vert_sampling_factor_n */
+						BitstreamSkip(bs, 5);	/* shape_vert_sampling_factor_m */
+					}
 					return -1;
 				}
 			} else				// dec->shape == BINARY_ONLY
 			{
 				if (vol_ver_id != 1) {
-					if (BitstreamGetBit(bs))	// scalability
+					dec->scalability = BitstreamGetBit(bs); /* scalability */
+					if (dec->scalability)	
 					{
-					DPRINTF(DPRINTF_ERROR, "scalability not supported");
+						DPRINTF(DPRINTF_ERROR, "scalability not supported");
+						BitstreamSkip(bs, 4);	/* ref_layer_id */
+						BitstreamSkip(bs, 5);	/* hor_sampling_factor_n */
+						BitstreamSkip(bs, 5);	/* hor_sampling_factor_m */
+						BitstreamSkip(bs, 5);	/* vert_sampling_factor_n */
+						BitstreamSkip(bs, 5);	/* vert_sampling_factor_m */
 						return -1;
 					}
 				}
@@ -732,6 +910,7 @@ BitstreamReadHeaders(Bitstream * bs,
 				(coding_type == P_VOP || coding_type == I_VOP)) {
 
 				*reduced_resolution = BitstreamGetBit(bs);
+				DPRINTF(DPRINTF_HEADER, "reduced_resolution %i", *reduced_resolution);
 			}
 			else
 			{
@@ -767,6 +946,12 @@ BitstreamReadHeaders(Bitstream * bs,
 			}
 
 			if (dec->shape != VIDOBJLAY_SHAPE_BINARY_ONLY) {
+
+				if (!dec->complexity_estimation_disable)
+				{
+					read_vop_complexity_estimation_header(bs, dec, coding_type);
+				}
+
 				// intra_dc_vlc_threshold
 				*intra_dc_threshold =
 					intra_dc_threshold_table[BitstreamGetBits(bs, 3)];
@@ -849,7 +1034,7 @@ BitstreamReadHeaders(Bitstream * bs,
 
 		} else if (start_code == USERDATA_START_CODE) {
 			char tmp[256];
-		    int i;
+		    int i, version, build, packed;
 
 			BitstreamSkip(bs, 32);	// user_data_start_code
 
@@ -866,11 +1051,18 @@ BitstreamReadHeaders(Bitstream * bs,
 
 			DPRINTF(DPRINTF_STARTCODE, "<user_data>: %s\n", tmp);
 
-			if(strncmp(tmp, "DivX501b481p", 12) == 0) {
-				dec->packed_mode = 1;
-				DPRINTF(DPRINTF_STARTCODE, "packed_mode = %d\n", dec->packed_mode);
-
+		    /* divx detection */
+			i = sscanf(tmp, "DivX%dBuild%d%c", &version, &build, &packed);
+			if (i < 2)
+				i = sscanf(tmp, "DivX%db%d%c", &version, &build, &packed);
+			
+			if (i >= 2)
+			{
+				dec->packed_mode = (i == 3 && packed == 'p');
+				DPRINTF(DPRINTF_HEADER, "divx version=%i, build=%i packed=%i",
+						version, build, dec->packed_mode);
 			}
+
 		} else					// start_code == ?
 		{
 			if (BitstreamShowBits(bs, 24) == 0x000001) {
@@ -1123,6 +1315,9 @@ BitstreamWriteVopHeader(Bitstream * const bs,
 		// no support for brightness_change!
 	}
 	
+
+	DPRINTF(DPRINTF_HEADER, "quant = %i", frame->quant);
+
 	BitstreamPutBits(bs, frame->quant, 5);	// quantizer
 
 	if (frame->coding_type != I_VOP)
