@@ -52,7 +52,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: encoder.c,v 1.90.2.1 2003-03-17 23:09:27 edgomez Exp $
+ * $Id: encoder.c,v 1.90.2.2 2003-05-28 16:44:38 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -210,7 +210,7 @@ encoder_create(XVID_ENC_PARAM * pParam)
 	/* 1 keyframe each 10 seconds */
 
 	if (pParam->max_key_interval <= 0)
-		pParam->max_key_interval = 10 * pParam->fincr / pParam->fbase;
+		pParam->max_key_interval = 10 * pParam->fbase / pParam->fincr;
 
 	pEnc = (Encoder *) xvid_malloc(sizeof(Encoder), CACHE_LINE);
 	if (pEnc == NULL)
