@@ -856,7 +856,7 @@ MotionEstimation(MBParam * const pParam,
 		}
 	}
 
-	if (current->global_flags & XVID_GMC )	/* first GMC step only for S(GMC)-VOPs */
+	if (current->global_flags & XVID_GMC )	/* GMC only for S(GMC)-VOPs */
 	{
 		current->warp = GlobalMotionEst( pMBs, pParam, current, reference, pRefH, pRefV, pRefHV);
 	}
@@ -2036,21 +2036,22 @@ GlobalMotionEst(const MACROBLOCK * const pMBs,
 
 			oldnum++;
 			meanx += ABS(( sol[0] + (16*mx+8)*sol[1] + (16*my+8)*sol[2] ) - mv.x );
-			meany += ABS(( sol[3] + (16*my+8)*sol[1] - (16*mx+8)*sol[2] ) - mv.y );
-
+			meany += ABS(( sol[3] - (16*mx+8)*sol[2] + (16*my+8)*sol[1] ) - mv.y );
 		}
-		
-	if (2*meanx > oldnum)	/* mittlere Abweichung von Ebene */
+
+	if (4*meanx > oldnum)	/* better fit than 0.25 is useless */
 		meanx /= oldnum;
 	else 
-		meanx = 0.5;
-	if (2*meany > oldnum)
+		meanx = 0.25;
+		
+	if (4*meany > oldnum)
 		meany /= oldnum;
 	else 
-		meanx = 0.5;
-		
-//	fprintf(stderr,"meanx = %8.5f  meany = %8.5f   %d\n",meanx,meany, oldnum);
+		meany = 0.25;
 	
+/*	fprintf(stderr,"sol = (%8.5f, %8.5f, %8.5f, %8.5f)\n",sol[0],sol[1],sol[2],sol[3]);
+	fprintf(stderr,"meanx = %8.5f  meany = %8.5f   %d\n",meanx,meany, oldnum);
+*/	
 	num = 0;
 	for (my = 0; my < MBh; my++)
 		for (mx = 0; mx < MBw; mx++)
@@ -2063,7 +2064,7 @@ GlobalMotionEst(const MACROBLOCK * const pMBs,
 				continue;
 
 			if  ( ( ABS(( sol[0] + (16*mx+8)*sol[1] + (16*my+8)*sol[2] ) - mv.x ) > meanx )
-			   || ( ABS(( sol[3] + (16*my+8)*sol[1] - (16*mx+8)*sol[2] ) - mv.y ) > meany ) )
+			   || ( ABS(( sol[3] - (16*mx+8)*sol[2] + (16*my+8)*sol[1] ) - mv.y ) > meany ) )
 				MBmask[mbnum]=0;
 			else
 				num++;
