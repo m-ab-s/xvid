@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.35 2004-01-21 06:59:23 syskin Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.36 2004-01-22 20:54:31 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -617,19 +617,14 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 #ifdef PASS_SMALLER
 	if (dbytes > s->length) {
 		dbytes = s->length;
-	} else
-		if (dbytes < rc->min_length[s->type-1]) {
-		dbytes = rc->min_length[s->type-1];
-	} else if (dbytes > rc->max_length) {
-		/* ToDo: this condition is always wrong as max_length == maximum frame
-		 * length of first pass, so the first condition already caps the frame
-		 * size... */
-		capped_to_max_framesize = 1;
-		dbytes = rc->max_length;
-		DPRINTF(XVID_DEBUG_RC,"[xvid rc] -- frame:%d Capped to maximum frame size\n",
-				data->frame_num);
 	}
 #endif
+
+	/* Prevent stupid desired sizes under logical values */
+	if (dbytes < rc->min_length[s->type-1]) {
+		dbytes = rc->min_length[s->type-1];
+	}
+
 	/*------------------------------------------------------------------------
 	 * Desired frame length <-> quantizer mapping
 	 *-----------------------------------------------------------------------*/

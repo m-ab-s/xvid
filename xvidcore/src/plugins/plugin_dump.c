@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: plugin_dump.c,v 1.1.2.4 2003-11-19 15:42:38 syskin Exp $
+ * $Id: plugin_dump.c,v 1.1.2.5 2004-01-22 20:54:31 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -31,40 +31,40 @@
 
 int xvid_plugin_dump(void * handle, int opt, void * param1, void * param2)
 {
-    switch(opt)
-    {
+    switch(opt) {
     case XVID_PLG_INFO :
-        {
+	{
         xvid_plg_info_t * info = (xvid_plg_info_t*)param1;
         info->flags = XVID_REQORIGINAL;
-        return 0;
-        }
+        return(0);
+	}
 
     case XVID_PLG_CREATE :
+		*((void**)param2) = NULL; /* We don't have any private data to bind here */
     case XVID_PLG_DESTROY :
     case XVID_PLG_BEFORE :
 	case XVID_PLG_FRAME :
-       return 0;
+		return(0);
 
     case XVID_PLG_AFTER :
-       {
-           xvid_plg_data_t * data = (xvid_plg_data_t*)param1;
-           IMAGE img;
-           char tmp[100];
-           img.y = data->original.plane[0];
-           img.u = data->original.plane[1];
-           img.v = data->original.plane[2];
-           sprintf(tmp, "ori-%03i.pgm", data->frame_num);
-           image_dump_yuvpgm(&img, data->original.stride[0], data->width, data->height, tmp);
+	{
+		xvid_plg_data_t * data = (xvid_plg_data_t*)param1;
+		IMAGE img;
+		char tmp[100];
+		img.y = data->original.plane[0];
+		img.u = data->original.plane[1];
+		img.v = data->original.plane[2];
+		sprintf(tmp, "ori-%03i.pgm", data->frame_num);
+		image_dump_yuvpgm(&img, data->original.stride[0], data->width, data->height, tmp);
 
-           img.y = data->current.plane[0];
-           img.u = data->current.plane[1];
-           img.v = data->current.plane[2];
-           sprintf(tmp, "enc-%03i.pgm", data->frame_num);
-           image_dump_yuvpgm(&img, data->reference.stride[0], data->width, data->height, tmp);
-       }
+		img.y = data->current.plane[0];
+		img.u = data->current.plane[1];
+		img.v = data->current.plane[2];
+		sprintf(tmp, "enc-%03i.pgm", data->frame_num);
+		image_dump_yuvpgm(&img, data->reference.stride[0], data->width, data->height, tmp);
+	}
 
-       return 0;
+	return(0);
     }
 
     return XVID_ERR_FAIL;
