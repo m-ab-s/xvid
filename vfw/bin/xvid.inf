@@ -61,7 +61,7 @@ HKLM,%UnInstallPath%,DisplayName,,%UninstallDispName%
 HKLM,%UnInstallPath%,UninstallString,,"%11%\rundll32.exe setupapi,InstallHinfSection Remove_XviD 132 %17%\%InfFile%"
 
 [MPEG4.DoReg]
-;HKLM,Software\Microsoft\Windows\CurrentVersion\RunOnce\Setup,"Registering XviD Direct Show ;Decoder...",,"%11%\regsvr32.exe /s %11%\xvid_c32.ax"
+;HKLM,Software\Microsoft\Windows\CurrentVersion\RunOnce\Setup,"Registering XviD Direct Show ;Decoder...",,"%11%\regsvr32.exe /s %11%\xvid.ax"
 
 [MPEG4.DelReg]
 HKLM,SYSTEM\CurrentControlSet\Control\MediaResources\icm\vidc.XVID
@@ -70,7 +70,7 @@ HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\drivers.desc,xvid.dll,,""
 HKLM,%UnInstallPath%
 
 [MPEG4.Unregister]
-;HKLM,Software\Microsoft\Windows\CurrentVersion\RunOnce\Setup,"Unregistering XviD Direct Show ;Decoder...",,"%11%\regsvr32.exe /s /u %11%\xvid_c32.ax"
+;HKLM,Software\Microsoft\Windows\CurrentVersion\RunOnce\Setup,"Unregistering XviD Direct Show ;Decoder...",,"%11%\regsvr32.exe /s /u %11%\xvid.ax"
 
 [DestinationDirs]
 DefaultDestDir = 11	; LDID_SYS
