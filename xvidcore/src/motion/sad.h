@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: sad.h,v 1.18.2.3 2003-09-10 22:19:00 edgomez Exp $
+ * $Id: sad.h,v 1.18.2.4 2003-11-13 23:11:24 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -145,6 +145,17 @@ dev16Func dev16_altivec;
 
 #ifdef ARCH_IS_IA64
 dev16Func dev16_ia64;
+#endif
+
+typedef uint32_t (sse8Func_16bit)(const int16_t * cur,
+								  const int16_t * ref,
+								  const uint32_t stride);
+typedef sse8Func_16bit *sse8Func_16bitPtr;
+extern sse8Func_16bitPtr sse8_16bit;
+
+sse8Func_16bit sse8_16bit_c;
+#ifdef ARCH_IS_IA32
+sse8Func_16bit sse8_16bit_mmx;
 #endif
 
 #endif							/* _ENCODER_SAD_H_ */

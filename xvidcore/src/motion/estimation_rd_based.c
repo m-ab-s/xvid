@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_rd_based.c,v 1.1.2.8 2003-10-11 16:36:10 syskin Exp $
+ * $Id: estimation_rd_based.c,v 1.1.2.9 2003-11-13 23:11:24 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -60,7 +60,6 @@ Block_CalcBits(	int16_t * const coeff,
 	int sum;
 	int bits;
 	int distortion = 0;
-	int i;
 
 	fdct(data);
 
@@ -74,14 +73,23 @@ Block_CalcBits(	int16_t * const coeff,
 		if (quant_type) dequant_h263_inter(dqcoeff, coeff, quant);
 		else dequant_mpeg_inter(dqcoeff, coeff, quant);
 
-		for (i = 0; i < 64; i++)
-			distortion += (data[i] - dqcoeff[i])*(data[i] - dqcoeff[i]);
-
+		distortion = sse8_16bit(data, dqcoeff, 8*sizeof(int16_t));
 	} else {
+		const static int16_t zero_block[64] =
+			{
+				0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0,
+			};
 		bits = 0;
-		for (i = 0; i < 64; i++)
-			distortion += data[i]*data[i];
+		distortion = sse8_16bit(data, zero_block, 8*sizeof(int16_t));
 	}
+
 
 	return bits + (LAMBDA*distortion)/(quant*quant);
 }
@@ -156,12 +164,9 @@ Block_CalcBitsIntra(MACROBLOCK * pMB,
 	bits[1] += coded = CodeCoeffIntra_CalcBits(qcoeff, scan_tables[direction]);
 	if (coded > 0) cbp[1] |= 1 << (5 - block);
 
-	for (i = 0; i < 64; i++)
-		distortion += (coeff[i] - dqcoeff[i])*(coeff[i] - dqcoeff[i]);
-
+	distortion = sse8_16bit(coeff, dqcoeff, 8*sizeof(int16_t));
 
 	return (LAMBDA*distortion)/(quant*quant);
-
 }
 
 

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: sad.c,v 1.13.2.7 2003-10-01 23:23:01 edgomez Exp $
+ * $Id: sad.c,v 1.13.2.8 2003-11-13 23:11:24 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -35,6 +35,7 @@ sad16biFuncPtr sad16bi;
 sad8biFuncPtr sad8bi;		/* not really sad16, but no difference in prototype */
 dev16FuncPtr dev16;
 sad16vFuncPtr sad16v;
+sse8Func_16bitPtr sse8_16bit;
 
 sadInitFuncPtr sadInit;
 
@@ -276,4 +277,29 @@ mrsad16_c(const uint8_t * const cur,
 	}
 
 	return MRSAD16_CORRFACTOR * sad;
+}
+
+uint32_t
+sse8_16bit_c(const int16_t * b1,
+			 const int16_t * b2,
+			 const uint32_t stride)
+{
+	int i;
+	int sse = 0;
+
+	for (i=0; i<8; i++) {
+		sse += (b1[0] - b2[0])*(b1[0] - b2[0]);
+		sse += (b1[1] - b2[1])*(b1[1] - b2[1]);
+		sse += (b1[2] - b2[2])*(b1[2] - b2[2]);
+		sse += (b1[3] - b2[3])*(b1[3] - b2[3]);
+		sse += (b1[4] - b2[4])*(b1[4] - b2[4]);
+		sse += (b1[5] - b2[5])*(b1[5] - b2[5]);
+		sse += (b1[6] - b2[6])*(b1[6] - b2[6]);
+		sse += (b1[7] - b2[7])*(b1[7] - b2[7]);
+
+		b1 = (const int16_t*)((int8_t*)b1+stride);
+		b2 = (const int16_t*)((int8_t*)b2+stride);
+	}
+
+	return(sse);
 }

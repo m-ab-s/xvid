@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.19 2003-11-02 23:02:52 edgomez Exp $
+ * $Id: xvid.c,v 1.45.2.20 2003-11-13 23:11:24 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -280,13 +280,14 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	yv12_to_uyvyi   = yv12_to_uyvyi_c;
 
 	/* Functions used in motion estimation algorithms */
-	calc_cbp = calc_cbp_c;
-	sad16    = sad16_c;
-	sad8     = sad8_c;
-	sad16bi  = sad16bi_c;
-	sad8bi   = sad8bi_c;
-	dev16    = dev16_c;
-	sad16v	 = sad16v_c;
+	calc_cbp   = calc_cbp_c;
+	sad16      = sad16_c;
+	sad8       = sad8_c;
+	sad16bi    = sad16bi_c;
+	sad8bi     = sad8bi_c;
+	dev16      = dev16_c;
+	sad16v	   = sad16v_c;
+	sse8_16bit = sse8_16bit_c;
 
 /*	Halfpel8_Refine = Halfpel8_Refine_c; */
 
@@ -380,6 +381,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		sad8bi  = sad8bi_mmx;
 		dev16    = dev16_mmx;
 		sad16v	 = sad16v_mmx;
+		sse8_16bit = sse8_16bit_mmx;
 	}
 
 	/* these 3dnow functions are faster than mmx, but slower than xmm. */

@@ -20,7 +20,7 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: sad_mmx.asm,v 1.11.2.2 2003-11-03 15:51:50 edgomez Exp $
+; * $Id: sad_mmx.asm,v 1.11.2.3 2003-11-13 23:11:24 edgomez Exp $
 ; *
 ; ***************************************************************************/
 
@@ -263,13 +263,14 @@ mmx_one:
 
 SECTION .text
 
-cglobal  sad16_mmx
-cglobal  sad16v_mmx
-cglobal  sad8_mmx
-cglobal  sad16bi_mmx
-cglobal  sad8bi_mmx
-cglobal  dev16_mmx
-
+cglobal sad16_mmx
+cglobal sad16v_mmx
+cglobal sad8_mmx
+cglobal sad16bi_mmx
+cglobal sad8bi_mmx
+cglobal dev16_mmx
+cglobal sse8_16bit_mmx
+	
 ;-----------------------------------------------------------------------------
 ;
 ; uint32_t sad16_mmx(const uint8_t * const cur,
@@ -619,4 +620,72 @@ dev16_mmx:
 
   movd eax, mm6
 
+  ret
+
+;-----------------------------------------------------------------------------
+;
+; uint32_t sse8_16bit_mmx(const int16_t *b1,
+;                         const int16_t *b2,
+;                         const uint32_t stride);
+;
+;-----------------------------------------------------------------------------
+
+%macro ROW_SSE_MMX 2
+  movq mm0, [%1]
+  movq mm1, [%1+8]
+  psubw mm0, [%2]
+  psubw mm1, [%2+8]
+  pmaddwd mm0, mm0
+  pmaddwd mm1, mm1
+  paddd mm2, mm0
+  paddd mm2, mm1
+%endmacro	
+	
+sse8_16bit_mmx:
+  push esi
+  push edi
+
+  ;; Load the function params
+  mov esi, [esp+8+4]
+  mov edi, [esp+8+8]
+  mov edx, [esp+8+12]
+
+  ;; Reset the sse accumulator
+  pxor mm2, mm2
+
+  ;; Let's go
+  ROW_SSE_MMX esi, edi
+  lea esi, [esi+edx]
+  lea edi, [edi+edx]
+  ROW_SSE_MMX esi, edi
+  lea esi, [esi+edx]
+  lea edi, [edi+edx]
+  ROW_SSE_MMX esi, edi
+  lea esi, [esi+edx]
+  lea edi, [edi+edx]
+  ROW_SSE_MMX esi, edi
+  lea esi, [esi+edx]
+  lea edi, [edi+edx]
+  ROW_SSE_MMX esi, edi
+  lea esi, [esi+edx]
+  lea edi, [edi+edx]
+  ROW_SSE_MMX esi, edi
+  lea esi, [esi+edx]
+  lea edi, [edi+edx]
+  ROW_SSE_MMX esi, edi
+  lea esi, [esi+edx]
+  lea edi, [edi+edx]
+  ROW_SSE_MMX esi, edi
+  lea esi, [esi+edx]
+  lea edi, [edi+edx]
+
+  ;; Finish adding each dword of the accumulator
+  movq mm3, mm2
+  psrlq mm2, 32
+  paddd mm2, mm3
+  movd eax, mm2
+
+  ;; All done
+  pop edi
+  pop esi
   ret
