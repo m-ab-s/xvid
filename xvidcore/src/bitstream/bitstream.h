@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.h,v 1.17.2.7 2003-11-19 15:42:38 syskin Exp $
+ * $Id: bitstream.h,v 1.17.2.8 2003-11-19 15:46:55 syskin Exp $
  *
  ****************************************************************************/
 
@@ -143,7 +143,7 @@ void BitstreamWriteVopHeader(Bitstream * const bs,
 							 const MBParam * pParam,
 							 const FRAMEINFO * const frame,
 							 int vop_coded,
-							 int quant);
+							 unsigned int quant);
 
 void BitstreamWriteUserData(Bitstream * const bs,
 							uint8_t * data,
