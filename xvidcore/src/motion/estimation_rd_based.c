@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_rd_based.c,v 1.1.2.4 2003-10-01 23:23:01 edgomez Exp $
+ * $Id: estimation_rd_based.c,v 1.1.2.5 2003-10-03 14:23:00 syskin Exp $
  *
  ****************************************************************************/
 
@@ -69,7 +69,7 @@ Block_CalcBits(	int16_t * const coeff,
 
 	if (sum > 0) {
 		*cbp |= 1 << (5 - block);
-		bits = BITS_MULT * CodeCoeffInter_CalcBits(coeff, scan_tables[0]);
+		bits = BITS_MULT * CodeCoeffInter_CalcBits(coeff, data->scan_table);
 
 		if (quant_type) dequant_inter(dqcoeff, coeff, quant);
 		else dequant4_inter(dqcoeff, coeff, quant);
@@ -112,7 +112,7 @@ Block_CalcBitsIntra(int16_t * const coeff,
 		*dcpred = b_dc;
 	}
 
-	bits = BITS_MULT*CodeCoeffIntra_CalcBits(coeff, scan_tables[0]);
+	bits = BITS_MULT*CodeCoeffIntra_CalcBits(coeff, data->scan_table);
 	if (bits != 0) *cbp |= 1 << (5 - block);
 
 	if (block < 4) bits += BITS_MULT*dcy_tab[coeff[0] + 255].len;
@@ -524,6 +524,8 @@ xvid_me_ModeDecision_RD(SearchData * const Data,
 	VECTOR backup[5], *v;
 	Data->iQuant = iQuant;
 	Data->cbp = c;
+	Data->scan_table = VopFlags & XVID_VOP_ALTERNATESCAN ?
+						scan_tables[2] : scan_tables[0];
 
 	pMB->mcsel = 0;
 
@@ -630,6 +632,8 @@ xvid_me_ModeDecision_Fast(SearchData * const Data,
 	int InterBias = MV16_INTER_BIAS;
 	int thresh = 0;
 	int top = 0, top_right = 0, left = 0;
+	Data->scan_table = VopFlags & XVID_VOP_ALTERNATESCAN ?
+						scan_tables[2] : scan_tables[0];
 
 	pMB->mcsel = 0;
 

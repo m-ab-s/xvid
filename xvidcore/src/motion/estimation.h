@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation.h,v 1.1.2.3 2003-10-03 12:41:02 syskin Exp $
+ * $Id: estimation.h,v 1.1.2.4 2003-10-03 14:23:00 syskin Exp $
  *
  ****************************************************************************/
 
@@ -110,6 +110,7 @@ typedef struct
 	uint32_t iQuant;
 	uint32_t quant_type;
 	int * cbp;
+	const uint16_t * scan_table;
 
 } SearchData;
 
