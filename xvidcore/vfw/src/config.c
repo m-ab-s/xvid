@@ -1557,6 +1557,11 @@ static BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
   or fasle if changes were canceled.
 
   */
+
+#ifndef PSH_NOCONTEXTHELP
+#define PSH_NOCONTEXTHELP 0x02000000
+#endif
+
 static BOOL adv_dialog(HWND hParent, CONFIG * config, const int * dlgs, int size)
 {
 	PROPSHEETINFO psi[6];
@@ -1583,7 +1588,7 @@ static BOOL adv_dialog(HWND hParent, CONFIG * config, const int * dlgs, int size
 	}
 
 	psh.dwSize = sizeof(PROPSHEETHEADER);
-	psh.dwFlags = PSH_PROPSHEETPAGE | PSH_NOAPPLYNOW;
+	psh.dwFlags = PSH_PROPSHEETPAGE | PSH_NOAPPLYNOW | PSH_NOCONTEXTHELP;
 	psh.hwndParent = hParent;
 	psh.hInstance = g_hInst;
 	psh.pszCaption = (LPSTR) "XviD Configuration";
