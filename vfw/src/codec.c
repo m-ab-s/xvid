@@ -23,6 +23,7 @@
  *
  *	History:
  *
+ *	17.04.2002	re-enabled lumi masking for 1st pass
  *	15.04.2002	updated cbr support
  *	04.04.2002	separated 2-pass code to 2pass.c
  *				interlacing support
@@ -364,10 +365,10 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 
 	frame.general |= XVID_HALFPEL;
 
-	if(codec->config.motion_search > 4)
+	if (codec->config.motion_search > 4)
 		frame.general |= XVID_INTER4V;
 
-	if(((codec->config.mode == DLG_MODE_2PASS_1) ? 0 : codec->config.lum_masking) == 1)
+	if (codec->config.lum_masking)
 		frame.general |= XVID_LUMIMASKING;
 
 	if (codec->config.interlacing)
