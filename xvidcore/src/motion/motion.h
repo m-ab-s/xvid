@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion.h,v 1.13.2.2 2002-09-25 21:28:48 Isibaar Exp $
+ *  $Id: motion.h,v 1.13.2.3 2002-10-03 08:26:19 syskin Exp $
  *
  ***************************************************************************/
 
@@ -164,6 +164,10 @@ MEanalysis(	const IMAGE * const pRef,
 			MBParam * const pParam,
 			MACROBLOCK * const pMBs,
 			const uint32_t iFcode);
+
+int
+FindFcode(	const MBParam * const pParam,
+			const FRAMEINFO * const current);
 
 
 #endif							/* _MOTION_H_ */

@@ -269,7 +269,7 @@ CheckCandidateDirectno4v(const int x, const int y, const int Direction, int * co
 	const uint8_t *ReferenceB;
 	VECTOR mvs, b_mvs;
 
-	if (( x > 31) || ( x < -31) || ( y > 31) || (y < -31)) return;
+	if (( x > 31) || ( x < -32) || ( y > 31) || (y < -32)) return;
 	
 		sad = lambda_vec16[data->iQuant] * d_mv_bits(x, y, 1);
 
@@ -1710,4 +1710,33 @@ MEanalysis(	const IMAGE * const pRef,
 	emms();
 	return 0; // B frame
 
+}
+
+int
+FindFcode(	const MBParam * const pParam,
+			const FRAMEINFO * const current)
+{
+	uint32_t x, y;
+	int max = 0, min = 0, i;
+
+	for (y = 0; y < pParam->mb_height; y++) {
+		for (x = 0; x < pParam->mb_width; x++) {
+		
+			MACROBLOCK *pMB = &current->mbs[x + y * pParam->mb_width];
+			for(i = 0; i < (pMB->mode == MODE_INTER4V ? 4:1); i++) {
+				if (pMB->mvs[i].x > max) max = pMB->mvs[i].x;
+				if (pMB->mvs[i].y > max) max = pMB->mvs[i].y;
+
+				if (pMB->mvs[i].x < min) min = pMB->mvs[i].x;
+				if (pMB->mvs[i].y < min) min = pMB->mvs[i].y;
+			}
+		}
+	}
+
+	min = -min;
+	max += 1;
+	if (min > max) max = min;
+
+	for (i = 1; (max > 32 << (i - 1)); i++);
+	return i;
 }
