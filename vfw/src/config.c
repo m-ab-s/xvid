@@ -87,6 +87,7 @@ REG_INT const reg_ints[] = {
 	{"motion_search",			&reg.motion_search,				6},
 	{"quant_type",				&reg.quant_type,				0},
 	{"fourcc_used",				&reg.fourcc_used,				0},
+	{"vhq_mode",				&reg.vhq_mode,					0},
 	{"max_key_interval",		&reg.max_key_interval,			300},
 	{"min_key_interval",		&reg.min_key_interval,			1},
 	{"lum_masking",				&reg.lum_masking,				0},
@@ -642,6 +643,7 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 		SendDlgItemMessage(hDlg, IDC_MOTION, CB_SETCURSEL, config->motion_search, 0);
 		SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_SETCURSEL, config->quant_type, 0);
 		SendDlgItemMessage(hDlg, IDC_FOURCC, CB_SETCURSEL, config->fourcc_used, 0);
+		SendDlgItemMessage(hDlg, IDC_VHQ, CB_SETCURSEL, config->vhq_mode, 0);
 		SetDlgItemInt(hDlg, IDC_MAXKEY, config->max_key_interval, FALSE);
 		SetDlgItemInt(hDlg, IDC_MINKEY, config->min_key_interval, FALSE);
 		CheckDlgButton(hDlg, IDC_LUMMASK, config->lum_masking ? BST_CHECKED : BST_UNCHECKED);
@@ -777,6 +779,7 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 		config->motion_search = SendDlgItemMessage(hDlg, IDC_MOTION, CB_GETCURSEL, 0, 0);
 		config->quant_type = SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_GETCURSEL, 0, 0);
 		config->fourcc_used = SendDlgItemMessage(hDlg, IDC_FOURCC, CB_GETCURSEL, 0, 0);
+		config->vhq_mode = SendDlgItemMessage(hDlg, IDC_VHQ, CB_GETCURSEL, 0, 0);
 		config->max_key_interval = config_get_uint(hDlg, IDC_MAXKEY, config->max_key_interval);
 		config->min_key_interval = config_get_uint(hDlg, IDC_MINKEY, config->min_key_interval);
 		config->lum_masking = ISDLGSET(IDC_LUMMASK);
@@ -1273,6 +1276,11 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DIVX");
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DX50");
 
+			SendDlgItemMessage(hDlg, IDC_VHQ, CB_ADDSTRING, 0, (LPARAM)"0 - Off");
+			SendDlgItemMessage(hDlg, IDC_VHQ, CB_ADDSTRING, 0, (LPARAM)"1 - Mode Decision");
+			SendDlgItemMessage(hDlg, IDC_VHQ, CB_ADDSTRING, 0, (LPARAM)"2 - Limited Search");
+			SendDlgItemMessage(hDlg, IDC_VHQ, CB_ADDSTRING, 0, (LPARAM)"3 - Medium Search");
+			SendDlgItemMessage(hDlg, IDC_VHQ, CB_ADDSTRING, 0, (LPARAM)"4 - Wide Search");
 			/* XXX: reduced resolution is not ready for prime-time */
 			ShowWindow(GetDlgItem(hDlg, IDC_REDUCED), SW_HIDE);
 		}
