@@ -46,14 +46,14 @@ log2bin(uint32_t value)
   int n = 0;
 
   while (value) {
-    value >>= 1;
-    n++;
+	value >>= 1;
+	n++;
   }
   return n;
 #else
   __asm {
-    bsr eax, value
-    inc eax
+	bsr eax, value
+	inc eax
   }
 #endif
 }
@@ -64,10 +64,7 @@ log2bin(uint32_t value)
 static int log2bin_table[16] = 
 	{ 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4};
 */
-/*    1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 */ 
-
-
-
+/*	1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 */ 
 
 #define RDIV(a,b) (((a)>0 ? (a) + ((b)>>1) : (a) - ((b)>>1))/(b))
 #define RSHIFT(a,b) ( (a)>0 ? ((a) + (1<<((b)-1)))>>(b) : ((a) + (1<<((b)-1))-1)>>(b))
@@ -87,41 +84,41 @@ static const uint32_t MTab[16] = {
 // Conversely, *dst is the macroblock top-left adress.
 
 void Predict_16x16_C(const NEW_GMC_DATA * const This,
-                     uint8_t *dst, const uint8_t *src,
-                     int dststride, int srcstride, int x, int y, int rounding);
+					 uint8_t *dst, const uint8_t *src,
+					 int dststride, int srcstride, int x, int y, int rounding);
 
 void Predict_8x8_C(const NEW_GMC_DATA * const This,
-                   uint8_t *uDst, const uint8_t *uSrc,
-                   uint8_t *vDst, const uint8_t *vSrc,
-                   int dststride, int srcstride, int x, int y, int rounding);
+				   uint8_t *uDst, const uint8_t *uSrc,
+				   uint8_t *vDst, const uint8_t *vSrc,
+				   int dststride, int srcstride, int x, int y, int rounding);
 
-void get_average_mv_C(NEW_GMC_DATA *Dsp, VECTOR * const mv,
-                      int x, int y, int qpel);
+void get_average_mv_C(const NEW_GMC_DATA * const Dsp, VECTOR * const mv,
+					  int x, int y, int qpel);
 
 /* ************************************************************ */
 // simplified version for 1 warp point
 
 void Predict_1pt_16x16_C(const NEW_GMC_DATA * const This,
-                         uint8_t *Dst, const uint8_t *Src, 
-                         int dststride, int srcstride, int x, int y, int rounding);
+						 uint8_t *Dst, const uint8_t *Src, 
+						 int dststride, int srcstride, int x, int y, int rounding);
 
 void Predict_1pt_8x8_C(const NEW_GMC_DATA * const This,
-                       uint8_t *uDst, const uint8_t *uSrc,
-                       uint8_t *vDst, const uint8_t *vSrc,
-                       int dststride, int srcstride, int x, int y, int rounding);
+					   uint8_t *uDst, const uint8_t *uSrc,
+					   uint8_t *vDst, const uint8_t *vSrc,
+					   int dststride, int srcstride, int x, int y, int rounding);
 
-void get_average_mv_1pt_C(NEW_GMC_DATA *Dsp, VECTOR * const mv,
-                          int x, int y, int qpel);
+void get_average_mv_1pt_C(const NEW_GMC_DATA * const Dsp, VECTOR * const mv,
+						  int x, int y, int qpel);
 
 /* ************************************************************* */
 
 
   // Warning! It's Accuracy being passed, not 'resolution'!
 
-void generate_GMCparameters( int nb_pts, const int accuracy,
-                                 const WARPPOINTS *const pts,
-                                 const int width, const int height,
-                                 NEW_GMC_DATA *const gmc);
+void generate_GMCparameters(int nb_pts, const int accuracy,
+							const WARPPOINTS *const pts,
+							const int width, const int height,
+							NEW_GMC_DATA *const gmc);
 
 /* ******************************************************************* */
 

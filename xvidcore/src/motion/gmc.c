@@ -10,7 +10,7 @@
  *
  *	This program is distributed in the hope that it will be useful,
  *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
  *	GNU General Public License for more details.
  *
  *	You should have received a copy of the GNU General Public License
@@ -23,187 +23,186 @@
 #include "../global.h"
 #include "../encoder.h"
 #include "gmc.h"
-#include "motion_est.h"
 
 #include <stdio.h>
 
 /* These are mainly the new GMC routines by -Skal- (C) 2003 */
 
 //////////////////////////////////////////////////////////
-// Pts = 2 or 3 
+// Pts = 2 or 3
 
-// Warning! *src is the global frame pointer (that is: adress 
-// of pixel 0,0), not the macroblock one. 
-// Conversely, *dst is the macroblock top-left adress. 
+// Warning! *src is the global frame pointer (that is: adress
+// of pixel 0,0), not the macroblock one.
+// Conversely, *dst is the macroblock top-left adress.
 
 
 void Predict_16x16_C(const NEW_GMC_DATA * const This,
-                     uint8_t *dst, const uint8_t *src,
-                     int dststride, int srcstride, int x, int y, int rounding)
+					 uint8_t *dst, const uint8_t *src,
+					 int dststride, int srcstride, int x, int y, int rounding)
 {
-  const int W   = This->sW;
-  const int H   = This->sH;
-  const int rho = 3 - This->accuracy;
-  const int Rounder = ( (1<<7) - (rounding<<(2*rho)) ) << 16;
+	const int W = This->sW;
+	const int H	= This->sH;
+	const int rho = 3 - This->accuracy;
+	const int Rounder = ( (1<<7) - (rounding<<(2*rho)) ) << 16;
 
-  const int dUx = This->dU[0];
-  const int dVx = This->dV[0];
-  const int dUy = This->dU[1];
-  const int dVy = This->dV[1];
+	const int dUx = This->dU[0];
+	const int dVx = This->dV[0];
+	const int dUy = This->dU[1];
+	const int dVy = This->dV[1];
 
-  int Uo = This->Uo + 16*(dUy*y + dUx*x);
-  int Vo = This->Vo + 16*(dVy*y + dVx*x);
+	int Uo = This->Uo + 16*(dUy*y + dUx*x);
+	int Vo = This->Vo + 16*(dVy*y + dVx*x);
 
-  int i, j;
+	int i, j;
 
-  dst += 16;
-  for (j=16; j>0; --j)
-  {
-    int U = Uo, V = Vo;
-    Uo += dUy; Vo += dVy;
-    for (i=-16; i<0; ++i)
-    {
-      unsigned int f0, f1, ri, rj;
-      int Offset;
+	dst += 16;
+	for (j=16; j>0; --j)
+	{
+	int U = Uo, V = Vo;
+	Uo += dUy; Vo += dVy;
+	for (i=-16; i<0; ++i)
+	{
+		unsigned int f0, f1, ri, rj;
+		int Offset;
 
-      int u = ( U >> 16 ) << rho;
-      int v = ( V >> 16 ) << rho;
-      U += dUx; V += dVx;
+		int u = ( U >> 16 ) << rho;
+		int v = ( V >> 16 ) << rho;
+		U += dUx; V += dVx;
 
-      ri = 16;
-      if ((uint32_t)u<=(uint32_t)W) { ri = MTab[u&15]; Offset = u>>4;  }
-      else if (u>W) Offset = W>>4;
-      else Offset = -1;
-	  
-      rj = 16;
-      if ((uint32_t)v<=(uint32_t)H) { rj = MTab[v&15]; Offset += (v>>4)*srcstride; }
-      else if (v>H) Offset += (H>>4)*srcstride;
-	  else Offset -= srcstride; 
+		ri = 16;
+		if ((uint32_t)u<=(uint32_t)W) { ri = MTab[u&15]; Offset = u>>4;	}
+		else if (u>W) Offset = W>>4;
+		else Offset = -1;
+	 
+		rj = 16;
+		if ((uint32_t)v<=(uint32_t)H) { rj = MTab[v&15]; Offset += (v>>4)*srcstride; }
+		else if (v>H) Offset += (H>>4)*srcstride;
+		else Offset -= srcstride;
 
-      f0  = src[ Offset     +0 ];
-      f0 |= src[ Offset     +1 ] << 16;
-      f1  = src[ Offset+srcstride +0 ];
-      f1 |= src[ Offset+srcstride +1 ] << 16;
-      f0 = (ri*f0)>>16;
-      f1 = (ri*f1) & 0x0fff0000;
-      f0 |= f1; 
-      f0 = ( rj*f0 + Rounder ) >> 24;
+		f0	= src[ Offset	 +0 ];
+		f0 |= src[ Offset	 +1 ] << 16;
+		f1	= src[ Offset+srcstride +0 ];
+		f1 |= src[ Offset+srcstride +1 ] << 16;
+		f0 = (ri*f0)>>16;
+		f1 = (ri*f1) & 0x0fff0000;
+		f0 |= f1;
+		f0 = ( rj*f0 + Rounder ) >> 24;
 
-      dst[i] = (uint8_t)f0;
-    }
-    dst += dststride;
-  }
+		dst[i] = (uint8_t)f0;
+	}
+	dst += dststride;
+	}
 }
 
 
 void Predict_8x8_C(const NEW_GMC_DATA * const This,
-                   uint8_t *uDst, const uint8_t *uSrc,
-                   uint8_t *vDst, const uint8_t *vSrc,
-                   int dststride, int srcstride, int x, int y, int rounding)
+					 uint8_t *uDst, const uint8_t *uSrc,
+					 uint8_t *vDst, const uint8_t *vSrc,
+					 int dststride, int srcstride, int x, int y, int rounding)
 {
-  const int W   = This->sW >> 1;
-  const int H   = This->sH >> 1;
-  const int rho = 3-This->accuracy;
-  const int32_t Rounder = ( 128 - (rounding<<(2*rho)) ) << 16;
+	const int W	 = This->sW >> 1;
+	const int H	 = This->sH >> 1;
+	const int rho = 3-This->accuracy;
+	const int32_t Rounder = ( 128 - (rounding<<(2*rho)) ) << 16;
 
-  const int32_t dUx = This->dU[0];
-  const int32_t dVx = This->dV[0];
-  const int32_t dUy = This->dU[1];
-  const int32_t dVy = This->dV[1];
+	const int32_t dUx = This->dU[0];
+	const int32_t dVx = This->dV[0];
+	const int32_t dUy = This->dU[1];
+	const int32_t dVy = This->dV[1];
 
-  int32_t Uo = This->Uco + 8*(dUy*y + dUx*x);
-  int32_t Vo = This->Vco + 8*(dVy*y + dVx*x);
+	int32_t Uo = This->Uco + 8*(dUy*y + dUx*x);
+	int32_t Vo = This->Vco + 8*(dVy*y + dVx*x);
 
-  int i, j;
+	int i, j;
 
-  uDst += 8;
-  vDst += 8;
-  for (j=8; j>0; --j)
-  {
-    int32_t U = Uo, V = Vo;
-    Uo += dUy; Vo += dVy;
+	uDst += 8;
+	vDst += 8;
+	for (j=8; j>0; --j)
+	{
+	int32_t U = Uo, V = Vo;
+	Uo += dUy; Vo += dVy;
 
-    for (i=-8; i<0; ++i) 
-    {
-      int Offset;
-      uint32_t f0, f1, ri, rj;
-      int32_t u, v;
+	for (i=-8; i<0; ++i)
+	{
+		int Offset;
+		uint32_t f0, f1, ri, rj;
+		int32_t u, v;
 
-      u = ( U >> 16 ) << rho;
-      v = ( V >> 16 ) << rho;
-      U += dUx; V += dVx;
+		u = ( U >> 16 ) << rho;
+		v = ( V >> 16 ) << rho;
+		U += dUx; V += dVx;
 
-      if ((uint32_t)u<=(uint32_t)W) {
-        ri = MTab[u&15];
-        Offset = u>>4;
-      }
-      else {
-        ri = 16;
-        if (u>W) Offset = W>>4;
-        else Offset = -1;
-      }
-      if ((uint32_t)v<=(uint32_t)H) {
-        rj = MTab[v&15];
-        Offset += (v>>4)*srcstride;
-      }
-      else {
-        rj = 16;
-        if (v>H) Offset += (H>>4)*srcstride;
+		if ((uint32_t)u<=(uint32_t)W) {
+		ri = MTab[u&15];
+		Offset = u>>4;
+		}
+		else {
+		ri = 16;
+		if (u>W) Offset = W>>4;
+		else Offset = -1;
+		}
+		if ((uint32_t)v<=(uint32_t)H) {
+		rj = MTab[v&15];
+		Offset += (v>>4)*srcstride;
+		}
+		else {
+		rj = 16;
+		if (v>H) Offset += (H>>4)*srcstride;
 		else Offset -= srcstride;
-      }
+		}
 
-      f0  = uSrc[ Offset        +0 ];
-      f0 |= uSrc[ Offset        +1 ] << 16;
-      f1  = uSrc[ Offset+srcstride +0 ];
-      f1 |= uSrc[ Offset+srcstride +1 ] << 16;
-      f0 = (ri*f0)>>16;
-      f1 = (ri*f1) & 0x0fff0000;
-      f0 |= f1; 
-      f0 = ( rj*f0 + Rounder ) >> 24;
+		f0	= uSrc[ Offset		+0 ];
+		f0 |= uSrc[ Offset		+1 ] << 16;
+		f1	= uSrc[ Offset+srcstride +0 ];
+		f1 |= uSrc[ Offset+srcstride +1 ] << 16;
+		f0 = (ri*f0)>>16;
+		f1 = (ri*f1) & 0x0fff0000;
+		f0 |= f1;
+		f0 = ( rj*f0 + Rounder ) >> 24;
 
-      uDst[i] = (uint8_t)f0;
+		uDst[i] = (uint8_t)f0;
 
-      f0  = vSrc[ Offset        +0 ];
-      f0 |= vSrc[ Offset        +1 ] << 16;
-      f1  = vSrc[ Offset+srcstride +0 ];
-      f1 |= vSrc[ Offset+srcstride +1 ] << 16;
-      f0 = (ri*f0)>>16;  
-      f1 = (ri*f1) & 0x0fff0000;
-      f0 |= f1; 
-      f0 = ( rj*f0 + Rounder ) >> 24;
+		f0	= vSrc[ Offset		+0 ];
+		f0 |= vSrc[ Offset		+1 ] << 16;
+		f1	= vSrc[ Offset+srcstride +0 ];
+		f1 |= vSrc[ Offset+srcstride +1 ] << 16;
+		f0 = (ri*f0)>>16; 
+		f1 = (ri*f1) & 0x0fff0000;
+		f0 |= f1; 
+		f0 = ( rj*f0 + Rounder ) >> 24;
 
-      vDst[i] = (uint8_t)f0;
-    }
-    uDst += dststride;
-    vDst += dststride;
-  }
+		vDst[i] = (uint8_t)f0;
+	}
+	uDst += dststride;
+	vDst += dststride;
+	}
 }
 
 
-void get_average_mv_C(NEW_GMC_DATA *Dsp, VECTOR * const mv,
-                      int x, int y, int qpel)
+void get_average_mv_C(const NEW_GMC_DATA * const Dsp, VECTOR * const mv,
+						int x, int y, int qpel)
 {
-  int i, j;
-  int vx = 0, vy = 0;
-  int32_t uo = Dsp->Uo + 16*(Dsp->dU[1]*y + Dsp->dU[0]*x);
-  int32_t vo = Dsp->Vo + 16*(Dsp->dV[1]*y + Dsp->dV[0]*x);
-  for (j=16; j>0; --j)
-  {
-    int32_t U, V;
-    U = uo; uo += Dsp->dU[1];
-    V = vo; vo += Dsp->dV[1];
-    for (i=16; i>0; --i)   
-    {
-      int32_t u,v;
-      u = U >> 16; U += Dsp->dU[0]; vx += u; 
-      v = V >> 16; V += Dsp->dV[0]; vy += v;
-    }
-  }
-  vx -= (256*x+120) << (5+Dsp->accuracy);  // 120 = 15*16/2
-  vy -= (256*y+120) << (5+Dsp->accuracy);
+	int i, j;
+	int vx = 0, vy = 0;
+	int32_t uo = Dsp->Uo + 16*(Dsp->dU[1]*y + Dsp->dU[0]*x);
+	int32_t vo = Dsp->Vo + 16*(Dsp->dV[1]*y + Dsp->dV[0]*x);
+	for (j=16; j>0; --j)
+	{
+	int32_t U, V;
+	U = uo; uo += Dsp->dU[1];
+	V = vo; vo += Dsp->dV[1];
+	for (i=16; i>0; --i)	 
+	{
+		int32_t u,v;
+		u = U >> 16; U += Dsp->dU[0]; vx += u; 
+		v = V >> 16; V += Dsp->dV[0]; vy += v;
+	}
+	}
+	vx -= (256*x+120) << (5+Dsp->accuracy);	// 120 = 15*16/2
+	vy -= (256*y+120) << (5+Dsp->accuracy);
 
-  mv->x = RSHIFT( vx, 8+Dsp->accuracy - qpel );
-  mv->y = RSHIFT( vy, 8+Dsp->accuracy - qpel );
+	mv->x = RSHIFT( vx, 8+Dsp->accuracy - qpel );
+	mv->y = RSHIFT( vy, 8+Dsp->accuracy - qpel );
 }
 
 //////////////////////////////////////////////////////////
@@ -211,210 +210,210 @@ void get_average_mv_C(NEW_GMC_DATA *Dsp, VECTOR * const mv,
 
 
 void Predict_1pt_16x16_C(const NEW_GMC_DATA * const This,
-                         uint8_t *Dst, const uint8_t *Src, 
-                         int dststride, int srcstride, int x, int y, int rounding)
+						 uint8_t *Dst, const uint8_t *Src, 
+						 int dststride, int srcstride, int x, int y, int rounding)
 {
-  const int W   = This->sW;
-  const int H   = This->sH;
-  const int rho = 3-This->accuracy;
-  const int32_t Rounder = ( 128 - (rounding<<(2*rho)) ) << 16;
+	const int W	 = This->sW;
+	const int H	 = This->sH;
+	const int rho = 3-This->accuracy;
+	const int32_t Rounder = ( 128 - (rounding<<(2*rho)) ) << 16;
 
 
-  int32_t uo = This->Uo + (x<<8);     // ((16*x)<<4)
-  int32_t vo = This->Vo + (y<<8);
-  const uint32_t ri = MTab[uo & 15];
-  const uint32_t rj = MTab[vo & 15];
-  int i, j;
+	int32_t uo = This->Uo + (x<<8);	 // ((16*x)<<4)
+	int32_t vo = This->Vo + (y<<8);
+	const uint32_t ri = MTab[uo & 15];
+	const uint32_t rj = MTab[vo & 15];
+	int i, j;
 
-  int32_t Offset;
-  if ((uint32_t)vo<=(uint32_t)H) Offset  = (vo>>4)*srcstride;
-  else if (vo>H)                 Offset  = ( H>>4)*srcstride;
-  else                           Offset  =-16*srcstride;
-  if ((uint32_t)uo<=(uint32_t)W) Offset += (uo>>4);
-  else if (uo>W)                 Offset += ( W>>4);
-  else                           Offset -= 16;
+	int32_t Offset;
+	if ((uint32_t)vo<=(uint32_t)H) Offset	= (vo>>4)*srcstride;
+	else if (vo>H)				 Offset	= ( H>>4)*srcstride;
+	else							 Offset	=-16*srcstride;
+	if ((uint32_t)uo<=(uint32_t)W) Offset += (uo>>4);
+	else if (uo>W)				 Offset += ( W>>4);
+	else							 Offset -= 16;
 
-  Dst += 16;
+	Dst += 16;
 
-  for(j=16; j>0; --j, Offset+=srcstride-16)
-  {
-    for(i=-16; i<0; ++i, ++Offset)
-    {
-      uint32_t f0, f1;
-      f0  = Src[ Offset        +0 ];
-      f0 |= Src[ Offset        +1 ] << 16;
-      f1  = Src[ Offset+srcstride +0 ];
-      f1 |= Src[ Offset+srcstride +1 ] << 16;
-      f0 = (ri*f0)>>16;
-      f1 = (ri*f1) & 0x0fff0000;
-      f0 |= f1; 
-      f0 = ( rj*f0 + Rounder ) >> 24;
-      Dst[i] = (uint8_t)f0;
-    }
-    Dst += dststride;
-  }
-}   
+	for(j=16; j>0; --j, Offset+=srcstride-16)
+	{
+	for(i=-16; i<0; ++i, ++Offset)
+	{
+		uint32_t f0, f1;
+		f0	= Src[ Offset		+0 ];
+		f0 |= Src[ Offset		+1 ] << 16;
+		f1	= Src[ Offset+srcstride +0 ];
+		f1 |= Src[ Offset+srcstride +1 ] << 16;
+		f0 = (ri*f0)>>16;
+		f1 = (ri*f1) & 0x0fff0000;
+		f0 |= f1; 
+		f0 = ( rj*f0 + Rounder ) >> 24;
+		Dst[i] = (uint8_t)f0;
+	}
+	Dst += dststride;
+	}
+}	 
 
 
 void Predict_1pt_8x8_C(const NEW_GMC_DATA * const This,
-                       uint8_t *uDst, const uint8_t *uSrc,
-                       uint8_t *vDst, const uint8_t *vSrc,
-                       int dststride, int srcstride, int x, int y, int rounding)
+						 uint8_t *uDst, const uint8_t *uSrc,
+						 uint8_t *vDst, const uint8_t *vSrc,
+						 int dststride, int srcstride, int x, int y, int rounding)
 {
-  const int W   = This->sW >> 1;
-  const int H   = This->sH >> 1;
-  const int rho = 3-This->accuracy;
-  const int32_t Rounder = ( 128 - (rounding<<(2*rho)) ) << 16;
+	const int W	 = This->sW >> 1;
+	const int H	 = This->sH >> 1;
+	const int rho = 3-This->accuracy;
+	const int32_t Rounder = ( 128 - (rounding<<(2*rho)) ) << 16;
 
-  int32_t uo = This->Uco + (x<<7);
-  int32_t vo = This->Vco + (y<<7);
-  const uint32_t rri = MTab[uo & 15];
-  const uint32_t rrj = MTab[vo & 15];
-  int i, j;
+	int32_t uo = This->Uco + (x<<7);
+	int32_t vo = This->Vco + (y<<7);
+	const uint32_t rri = MTab[uo & 15];
+	const uint32_t rrj = MTab[vo & 15];
+	int i, j;
 
-  int32_t Offset;
-  if ((uint32_t)vo<=(uint32_t)H) Offset  = (vo>>4)*srcstride;
-  else if (vo>H)                 Offset  = ( H>>4)*srcstride;
-  else                           Offset  =-8*srcstride;
-  if ((uint32_t)uo<=(uint32_t)W) Offset += (uo>>4);
-  else if (uo>W)                 Offset += ( W>>4);
-  else                           Offset -= 8;
+	int32_t Offset;
+	if ((uint32_t)vo<=(uint32_t)H) Offset = (vo>>4)*srcstride;
+	else if (vo>H) Offset = ( H>>4)*srcstride;
+	else Offset =-8*srcstride;
+	if ((uint32_t)uo<=(uint32_t)W) Offset += (uo>>4);
+	else if (uo>W) Offset += (W>>4);
+	else Offset -= 8;
 
-  uDst += 8;
-  vDst += 8;
-  for(j=8; j>0; --j, Offset+=srcstride-8)
-  {
-    for(i=-8; i<0; ++i, Offset++)
-    {
-      uint32_t f0, f1;
-      f0  = uSrc[ Offset        +0 ]; 
-      f0 |= uSrc[ Offset        +1 ] << 16;
-      f1  = uSrc[ Offset+srcstride +0 ];
-      f1 |= uSrc[ Offset+srcstride +1 ] << 16;
-      f0 = (rri*f0)>>16;
-      f1 = (rri*f1) & 0x0fff0000; 
-      f0 |= f1; 
-      f0 = ( rrj*f0 + Rounder ) >> 24;
-      uDst[i] = (uint8_t)f0;   
+	uDst += 8;
+	vDst += 8;
+	for(j=8; j>0; --j, Offset+=srcstride-8)
+	{
+	for(i=-8; i<0; ++i, Offset++)
+	{
+		uint32_t f0, f1;
+		f0	= uSrc[ Offset + 0 ]; 
+		f0 |= uSrc[ Offset + 1 ] << 16;
+		f1	= uSrc[ Offset + srcstride + 0 ];
+		f1 |= uSrc[ Offset + srcstride + 1 ] << 16;
+		f0 = (rri*f0)>>16;
+		f1 = (rri*f1) & 0x0fff0000; 
+		f0 |= f1; 
+		f0 = ( rrj*f0 + Rounder ) >> 24;
+		uDst[i] = (uint8_t)f0;	 
 
-      f0  = vSrc[ Offset        +0 ];   
-      f0 |= vSrc[ Offset        +1 ] << 16;
-      f1  = vSrc[ Offset+srcstride +0 ];
-      f1 |= vSrc[ Offset+srcstride +1 ] << 16;
-      f0 = (rri*f0)>>16;
-      f1 = (rri*f1) & 0x0fff0000;
-      f0 |= f1;
-      f0 = ( rrj*f0 + Rounder ) >> 24;
-      vDst[i] = (uint8_t)f0;
-    }
-    uDst += dststride;
-    vDst += dststride;
-  }
+		f0	= vSrc[ Offset + 0 ];	 
+		f0 |= vSrc[ Offset + 1 ] << 16;
+		f1	= vSrc[ Offset + srcstride + 0 ];
+		f1 |= vSrc[ Offset + srcstride + 1 ] << 16;
+		f0 = (rri*f0)>>16;
+		f1 = (rri*f1) & 0x0fff0000;
+		f0 |= f1;
+		f0 = ( rrj*f0 + Rounder ) >> 24;
+		vDst[i] = (uint8_t)f0;
+	}
+	uDst += dststride;
+	vDst += dststride;
+	}
 }
 
 
-void get_average_mv_1pt_C(NEW_GMC_DATA *Dsp, VECTOR * const mv,
-                          int x, int y, int qpel)
+void get_average_mv_1pt_C(const NEW_GMC_DATA * const Dsp, VECTOR * const mv,
+							int x, int y, int qpel)
 {
-  mv->x = RSHIFT(Dsp->Uo<<qpel, 3);
-  mv->y = RSHIFT(Dsp->Vo<<qpel, 3);
+	mv->x = RSHIFT(Dsp->Uo<<qpel, 3);
+	mv->y = RSHIFT(Dsp->Vo<<qpel, 3);
 }
 
 //////////////////////////////////////////////////////////
 
 
-  // Warning! It's Accuracy being passed, not 'resolution'!
+	// Warning! It's Accuracy being passed, not 'resolution'!
 
 void generate_GMCparameters( int nb_pts, const int accuracy,
-                                 const WARPPOINTS *const pts,
-                                 const int width, const int height,
-                                 NEW_GMC_DATA *const gmc)
+								 const WARPPOINTS *const pts,
+								 const int width, const int height,
+								 NEW_GMC_DATA *const gmc)
 {
-  gmc->sW = width  << 4;
-  gmc->sH = height << 4;
-  gmc->accuracy  = accuracy;
-  gmc->num_wp = nb_pts;
+	gmc->sW = width	<< 4;
+	gmc->sH = height << 4;
+	gmc->accuracy = accuracy;
+	gmc->num_wp = nb_pts;
 
-    // reduce the number of points, if possible
-  if (nb_pts<3 || (pts->duv[2].x==-pts->duv[1].y && pts->duv[2].y==pts->duv[1].x)) {
-    if (nb_pts<2 || (pts->duv[1].x==0 && pts->duv[1].y==0)) {
-      if (nb_pts<1 || (pts->duv[0].x==0 && pts->duv[0].y==0)) {
-        nb_pts = 0;
-      }
-      else nb_pts = 1;
-    }
-    else nb_pts = 2;
-  }
-  else nb_pts = 3;
-  
-  // now, nb_pts stores the actual number of points required for interpolation
+	// reduce the number of points, if possible
+	if (nb_pts<3 || (pts->duv[2].x==-pts->duv[1].y && pts->duv[2].y==pts->duv[1].x)) {
+	if (nb_pts<2 || (pts->duv[1].x==0 && pts->duv[1].y==0)) {
+		if (nb_pts<1 || (pts->duv[0].x==0 && pts->duv[0].y==0)) {
+		nb_pts = 0;
+		}
+		else nb_pts = 1;
+	}
+	else nb_pts = 2;
+	}
+	else nb_pts = 3;
+	
+	// now, nb_pts stores the actual number of points required for interpolation
 
-  if (nb_pts<=1)
-  {
-    if (nb_pts==1) {
-        // store as 4b fixed point
-      gmc->Uo = pts->duv[0].x << accuracy;
-      gmc->Vo = pts->duv[0].y << accuracy;
-      gmc->Uco = ((pts->duv[0].x>>1) | (pts->duv[0].x&1)) << accuracy;     // DIV2RND()
-      gmc->Vco = ((pts->duv[0].y>>1) | (pts->duv[0].y&1)) << accuracy;     // DIV2RND()
-    }
-    else {    // zero points?!
-      gmc->Uo  = gmc->Vo  = 0;
-      gmc->Uco = gmc->Vco = 0;
-    }
+	if (nb_pts<=1)
+	{
+	if (nb_pts==1) {
+		// store as 4b fixed point
+		gmc->Uo = pts->duv[0].x << accuracy;
+		gmc->Vo = pts->duv[0].y << accuracy;
+		gmc->Uco = ((pts->duv[0].x>>1) | (pts->duv[0].x&1)) << accuracy;	 // DIV2RND()
+		gmc->Vco = ((pts->duv[0].y>>1) | (pts->duv[0].y&1)) << accuracy;	 // DIV2RND()
+	}
+	else {	// zero points?!
+		gmc->Uo	= gmc->Vo	= 0;
+		gmc->Uco = gmc->Vco = 0;
+	}
 
-    gmc->predict_16x16  = Predict_1pt_16x16_C;
-    gmc->predict_8x8    = Predict_1pt_8x8_C;
-    gmc->get_average_mv = get_average_mv_1pt_C;
-  }
-  else {      // 2 or 3 points
-    const int rho   = 3 - accuracy;  // = {3,2,1,0} for Acc={0,1,2,3}
-    int Alpha = log2bin(width-1);
-    int Ws = 1 << Alpha;
+	gmc->predict_16x16	= Predict_1pt_16x16_C;
+	gmc->predict_8x8	= Predict_1pt_8x8_C;
+	gmc->get_average_mv = get_average_mv_1pt_C;
+	}
+	else {		// 2 or 3 points
+	const int rho	 = 3 - accuracy;	// = {3,2,1,0} for Acc={0,1,2,3}
+	int Alpha = log2bin(width-1);
+	int Ws = 1 << Alpha;
 
-    gmc->dU[0] = 16*Ws + RDIV( 8*Ws*pts->duv[1].x, width );   // dU/dx
-    gmc->dV[0] =         RDIV( 8*Ws*pts->duv[1].y, width );   // dV/dx
+	gmc->dU[0] = 16*Ws + RDIV( 8*Ws*pts->duv[1].x, width );	 // dU/dx
+	gmc->dV[0] =		 RDIV( 8*Ws*pts->duv[1].y, width );	 // dV/dx
 
-/*   disabled, because possibly buggy? */
+/*	 disabled, because possibly buggy? */
 
 /* if (nb_pts==2) {
-      gmc->dU[1] = -gmc->dV[0];  // -Sin
-      gmc->dV[1] =  gmc->dU[0] ;  //  Cos
-    }
-    else */
+		gmc->dU[1] = -gmc->dV[0];	// -Sin
+		gmc->dV[1] =	gmc->dU[0] ;	//	Cos
+	}
+	else */
 	{
-      const int Beta = log2bin(height-1);
-      const int Hs = 1<<Beta;
-      gmc->dU[1] =         RDIV( 8*Hs*pts->duv[2].x, height );   // dU/dy
-      gmc->dV[1] = 16*Hs + RDIV( 8*Hs*pts->duv[2].y, height );   // dV/dy
-      if (Beta>Alpha) {
-        gmc->dU[0] <<= (Beta-Alpha);
-        gmc->dV[0] <<= (Beta-Alpha);
-        Alpha = Beta;
-        Ws = Hs;
-      }
-      else {
-        gmc->dU[1] <<= Alpha - Beta;
-        gmc->dV[1] <<= Alpha - Beta;
-      }
-    }
-      // upscale to 16b fixed-point
-    gmc->dU[0] <<= (16-Alpha - rho);
-    gmc->dU[1] <<= (16-Alpha - rho);
-    gmc->dV[0] <<= (16-Alpha - rho);
-    gmc->dV[1] <<= (16-Alpha - rho);
+		const int Beta = log2bin(height-1);
+		const int Hs = 1<<Beta;
+		gmc->dU[1] =		 RDIV( 8*Hs*pts->duv[2].x, height );	 // dU/dy
+		gmc->dV[1] = 16*Hs + RDIV( 8*Hs*pts->duv[2].y, height );	 // dV/dy
+		if (Beta>Alpha) {
+		gmc->dU[0] <<= (Beta-Alpha);
+		gmc->dV[0] <<= (Beta-Alpha);
+		Alpha = Beta;
+		Ws = Hs;
+		}
+		else {
+		gmc->dU[1] <<= Alpha - Beta;
+		gmc->dV[1] <<= Alpha - Beta;
+		}
+	}
+		// upscale to 16b fixed-point
+	gmc->dU[0] <<= (16-Alpha - rho);
+	gmc->dU[1] <<= (16-Alpha - rho);
+	gmc->dV[0] <<= (16-Alpha - rho);
+	gmc->dV[1] <<= (16-Alpha - rho);
 
-    gmc->Uo  = ( pts->duv[0].x   <<(16+ accuracy)) + (1<<15);
-    gmc->Vo  = ( pts->duv[0].y   <<(16+ accuracy)) + (1<<15);
-    gmc->Uco = ((pts->duv[0].x-1)<<(17+ accuracy)) + (1<<17);
-    gmc->Vco = ((pts->duv[0].y-1)<<(17+ accuracy)) + (1<<17);
-    gmc->Uco = (gmc->Uco + gmc->dU[0] + gmc->dU[1])>>2;
-    gmc->Vco = (gmc->Vco + gmc->dV[0] + gmc->dV[1])>>2;
+	gmc->Uo	= ( pts->duv[0].x	 <<(16+ accuracy)) + (1<<15);
+	gmc->Vo	= ( pts->duv[0].y	 <<(16+ accuracy)) + (1<<15);
+	gmc->Uco = ((pts->duv[0].x-1)<<(17+ accuracy)) + (1<<17);
+	gmc->Vco = ((pts->duv[0].y-1)<<(17+ accuracy)) + (1<<17);
+	gmc->Uco = (gmc->Uco + gmc->dU[0] + gmc->dU[1])>>2;
+	gmc->Vco = (gmc->Vco + gmc->dV[0] + gmc->dV[1])>>2;
 
-    gmc->predict_16x16  = Predict_16x16_C;
-    gmc->predict_8x8    = Predict_8x8_C;
-    gmc->get_average_mv = get_average_mv_C;
-  }
+	gmc->predict_16x16	= Predict_16x16_C;
+	gmc->predict_8x8	= Predict_8x8_C;
+	gmc->get_average_mv = get_average_mv_C;
+	}
 }
 
 //////////////////////////////////////////////////////////
@@ -431,7 +430,7 @@ generate_GMCimage(	const NEW_GMC_DATA *const gmc_data, // [input] precalculated 
 					const int stride,
 					const int stride2,
 					const int fcode, 				// [input] some parameters...
-  					const int32_t quarterpel,		// [input] for rounding avgMV
+						const int32_t quarterpel,		// [input] for rounding avgMV
 					const int reduced_resolution,	// [input] ignored
 					const int32_t rounding,			// [input] for rounding image data
 					MACROBLOCK *const pMBs, 		// [output] average motion vectors
