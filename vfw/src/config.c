@@ -24,6 +24,8 @@
  *	History:
  *
  *	... ???
+ *      11.03.2002      Version 0.02;   Min Chen <chenm001@163.com>
+ *                                      now get Core Version use xvid_init()
  *      05.03.2002      Version 0.01;   Min Chen <chenm001@163.com>
  *                                      Add Core version display to about box
  *                              
@@ -649,10 +651,16 @@ BOOL CALLBACK config_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 				SetDlgItemText(hDlg, IDC_BUILD, __TIME__ ", " __DATE__);
 				
-				// 
+				// Add by Chen at 2002-03-05 to display core version at about box
+				// Change by Chen at 2002-03-11 now use xvid_init() to get core version
 				{
 					char chTemp[64];
-					sprintf(chTemp,"Core Version %d.%d",(API_VERSION>>16),(API_VERSION&0xFFFFU));
+					// 2002-03-11 Change start
+					XVID_INIT_PARAM xinit;
+					xvid_init(NULL,0,&xinit,NULL);
+					sprintf(chTemp,"Core Version %d.%d",(xinit.api_version>>16),(xinit.api_version&0xFFFFU));
+					// 2002-03-11 Change End
+					//sprintf(chTemp,"Core Version %d.%d",(API_VERSION>>16),(API_VERSION&0xFFFFU));
 					SetDlgItemText(hDlg, IDC_CORE_VERSION, chTemp);
 				}
 
