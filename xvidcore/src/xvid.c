@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.23 2003-12-11 17:18:29 Isibaar Exp $
+ * $Id: xvid.c,v 1.45.2.24 2003-12-13 00:04:09 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -481,8 +481,6 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		interpolate8x8_halfpel_hv = interpolate8x8_halfpel_hv_3dne;
 	}
 
-#if defined(EXPERIMENTAL_SSE2_CODE) /* mark the whole SSE2 stuff as experimental. At least on
-									   my P4, it crashes... */
 	if ((cpu_flags & XVID_CPU_SSE2)) {
 
 		calc_cbp = calc_cbp_sse2;
@@ -497,12 +495,11 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		sad16    = sad16_sse2;
 		dev16    = dev16_sse2;
 
-		/* DCT operators */
+		/* DCT operators
+		 * no iDCT because it's not "Walken matching" */
 		fdct = fdct_sse2_skal;
-		idct = idct_sse2_dmitry;
 	}
-#endif
-#endif
+#endif /* ARCH_IS_IA32 */
 
 #if defined(ARCH_IS_IA64)
 	if ((cpu_flags & XVID_CPU_ASM)) { /* use assembler routines? */

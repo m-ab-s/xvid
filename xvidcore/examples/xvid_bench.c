@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_bench.c,v 1.9.2.9 2003-11-30 16:13:15 edgomez Exp $
+ * $Id: xvid_bench.c,v 1.9.2.10 2003-12-13 00:04:08 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -342,7 +342,9 @@ void test_sad()
 	int tst;
 	CPU *cpu;
 	int i;
-	uint8_t Cur[16*16], Ref1[16*16], Ref2[16*16];
+	DECLARE_ALIGNED_MATRIX(Cur,  16, 16, uint8_t, 16);
+	DECLARE_ALIGNED_MATRIX(Ref1, 16, 16, uint8_t, 16);
+	DECLARE_ALIGNED_MATRIX(Ref2, 16, 16, uint8_t, 16);
 
 	printf( "\n ======  test SAD ======\n" );
 	for(i=0; i<16*16;++i) {
@@ -634,7 +636,7 @@ for(s=CRC32_INITIAL,qm=1; qm<=255; ++qm) {              \
   for(q=1; q<=max_Q; ++q) {                 \
 	for(tst=0; tst<nb_tests; ++tst)         \
 	  (FUNC)((DST), (SRC), q, mpeg_quant_matrices);              \
-	s = calc_crc((uint8_t*)(DST), sizeof((DST)), s); \
+	s = calc_crc((uint8_t*)(DST), 64*sizeof(int16_t), s); \
   }                                         \
   emms();                                   \
 }                                           \
@@ -649,7 +651,7 @@ for(s=CRC32_INITIAL,qm=1; qm<=255; ++qm) {              \
   for(q=1; q<=max_Q; ++q) {                 \
 	for(tst=0; tst<nb_tests; ++tst)         \
 	  (FUNC)((DST), (SRC), q, q, mpeg_quant_matrices);           \
-	s = calc_crc((uint8_t*)(DST), sizeof((DST)), s); \
+	s = calc_crc((uint8_t*)(DST), 64*sizeof(int16_t), s); \
   }                                         \
   emms();                                   \
 }                                           \
@@ -659,11 +661,12 @@ void test_quant()
 {
 	const int nb_tests = 1*speed_ref;
 	const int max_Q = 31;
-	uint16_t mpeg_quant_matrices[64*8];
+	DECLARE_ALIGNED_MATRIX(mpeg_quant_matrices, 8, 64, uint16_t, 16);
 
 	int i, qm;
 	CPU *cpu;
-	int16_t  Src[8*8], Dst[8*8];
+	DECLARE_ALIGNED_MATRIX(Src, 8, 8, int16_t, 16);
+	DECLARE_ALIGNED_MATRIX(Dst, 8, 8, int16_t, 16);
 	uint8_t Quant[8*8];
 
 	printf( "\n =====  test quant =====\n" );
@@ -755,7 +758,10 @@ void test_cbp()
 	const int nb_tests = 10000*speed_ref;
 	int i;
 	CPU *cpu;
-	int16_t  Src1[6*64], Src2[6*64], Src3[6*64], Src4[6*64];
+	DECLARE_ALIGNED_MATRIX(Src1, 6, 64, int16_t, 16);
+	DECLARE_ALIGNED_MATRIX(Src2, 6, 64, int16_t, 16);
+	DECLARE_ALIGNED_MATRIX(Src3, 6, 64, int16_t, 16);
+	DECLARE_ALIGNED_MATRIX(Src4, 6, 64, int16_t, 16);
 
 	printf( "\n =====  test cbp =====\n" );
 
@@ -1333,7 +1339,8 @@ void test_bugs1()
 void test_dct_precision_diffs()
 {
 	CPU *cpu;
-	short Blk[8*8], Blk0[8*8];
+	DECLARE_ALIGNED_MATRIX(Blk, 8, 8, int16_t, 16);
+	DECLARE_ALIGNED_MATRIX(Blk0, 8, 8, int16_t, 16);
 
 	printf( "\n =====  fdct/idct precision diffs =====\n" );
 
@@ -1366,12 +1373,13 @@ void test_quant_bug()
 	const int max_Q = 31;
 	int i, n, qm, q;
 	CPU *cpu;
-	int16_t  Src[8*8], Dst[8*8];
+	DECLARE_ALIGNED_MATRIX(Src, 8, 8, int16_t, 16);
+	DECLARE_ALIGNED_MATRIX(Dst, 8, 8, int16_t, 16);
 	uint8_t Quant[8*8];
 	CPU cpu_bug_list[] = { { "PLAINC", 0 }, { "MMX   ", XVID_CPU_MMX }, {0,0} };
 	uint16_t Crcs_Inter[2][32];
 	uint16_t Crcs_Intra[2][32];
-	uint16_t mpeg_quant_matrices[64*8];
+	DECLARE_ALIGNED_MATRIX(mpeg_quant_matrices, 8, 64, uint16_t, 16);
 
 	printf( "\n =====  test MPEG4-quantize bug =====\n" );
 
