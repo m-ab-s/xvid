@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.8 2002-09-30 14:16:02 chl Exp $
+ *  $Id: encoder.c,v 1.76.2.9 2002-10-02 12:57:25 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -744,16 +744,26 @@ ipvop_loop:
 	if (pEnc->bframenum_head > 0) {
 		pEnc->bframenum_head = pEnc->bframenum_tail = 0;
 
+		/* write an empty marker to the bitstream.
+		   
+		   for divx5 decoder compatibility, this marker must consist
+		   of a not-coded p-vop, with a time_base of zero, and time_increment 
+		   indentical to the future-referece frame.
+		*/
+
 		if ((pEnc->global & XVID_GLOBAL_PACKED)) {
+			int tmp;
 			
 			DPRINTF(DPRINTF_DEBUG,"*** EMPTY bf: head=%i tail=%i   queue: head=%i tail=%i size=%i",
 				pEnc->bframenum_head, pEnc->bframenum_tail,
 				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
 
-			set_timecodes(pEnc->current,pEnc->reference,pEnc->mbParam.fbase);
-			BitstreamWriteVopHeader(&bs, &pEnc->mbParam, pEnc->current, 0);
 			BitstreamPad(&bs);
-			BitstreamPutBits(&bs, 0x7f, 8);
+
+			tmp = pEnc->current->seconds;
+			pEnc->current->seconds = 0; /* force time_base = 0 */
+			BitstreamWriteVopHeader(&bs, &pEnc->mbParam, pEnc->current, 0);
+			pEnc->current->seconds = tmp;
 
 			pFrame->length = BitstreamLength(&bs);
 			pFrame->intra = 0;
@@ -815,22 +825,20 @@ bvop_loop:
 		pEnc->queue_head =  (pEnc->queue_head + 1) % pEnc->mbParam.max_bframes;
 		pEnc->queue_size--;
 
-	} else if (BitstreamPos(&bs) == 0) {
+	} else {
 
-		DPRINTF(DPRINTF_DEBUG,"*** SKIP bf: head=%i tail=%i   queue: head=%i tail=%i size=%i",
+		/* if nothing was encoded, write an 'ignore this frame' flag
+		   to the bitstream */
+
+		if (BitstreamPos(&bs) == 0) {
+
+			DPRINTF(DPRINTF_DEBUG,"*** SKIP bf: head=%i tail=%i   queue: head=%i tail=%i size=%i",
 				pEnc->bframenum_head, pEnc->bframenum_tail,
 				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
 
-		pFrame->intra = 0;
-
-		set_timecodes(pEnc->current,pEnc->reference,pEnc->mbParam.fbase);
-		BitstreamWriteVopHeader(&bs, &pEnc->mbParam, pEnc->current, 0); // write N_VOP
-		BitstreamPad(&bs);
-		pFrame->length = BitstreamLength(&bs);
-		
-		return XVID_ERR_OK;
-
-	} else {
+			BitstreamPutBits(&bs, 0x7f, 8);
+			pFrame->intra = 0;
+		}
 
 		pFrame->length = BitstreamLength(&bs);
 		return XVID_ERR_OK;
