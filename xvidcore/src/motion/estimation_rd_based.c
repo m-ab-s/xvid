@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_rd_based.c,v 1.1.2.1 2003-09-10 22:18:59 edgomez Exp $
+ * $Id: estimation_rd_based.c,v 1.1.2.2 2003-09-28 16:12:32 syskin Exp $
  *
  ****************************************************************************/
 
@@ -524,6 +524,8 @@ xvid_me_ModeDecision_RD(SearchData * const Data,
 	VECTOR backup[5], *v;
 	Data->iQuant = iQuant;
 	Data->cbp = c;
+
+	pMB->mcsel = 0;
 
 	v = Data->qpel ? Data->currentQMV : Data->currentMV;
 	for (i = 0; i < 5; i++) {
