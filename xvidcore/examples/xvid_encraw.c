@@ -3,7 +3,7 @@
  *  XVID MPEG-4 VIDEO CODEC
  *  - Console based test application  -
  *
- *  Copyright(C) 2002 Christoph Lampert
+ *  Copyright(C) 2002-2003 Christoph Lampert
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.1.2.2 2003-01-13 00:36:27 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.1.2.3 2003-01-19 15:10:11 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -96,21 +96,17 @@ static int   ARG_MAXFRAMENR = ABS_MAXFRAMENR;
 static char *ARG_INPUTFILE = NULL;
 static int   ARG_INPUTTYPE = 0;
 static int   ARG_SAVEMPEGSTREAM = 0;
-static int   ARG_OUTPUTTYPE = 0;
 static char *ARG_OUTPUTFILE = NULL;
 static int   ARG_HINTMODE = HINT_MODE_NONE;
 static int   XDIM = 0;
 static int   YDIM = 0;
-static int   ARG_BQRATIO = 150;
-static int   ARG_BQOFFSET = 100;
+static int   ARG_BQRATIO = 120;
+static int   ARG_BQOFFSET = 0;
 static int   ARG_MAXBFRAMES = 0;
 #define IMAGE_SIZE(x,y) ((x)*(y)*3/2)
 
 #define MAX(A,B) ( ((A)>(B)) ? (A) : (B) )
 #define SMALL_EPS 1e-10
-
-#define LONG_PACK(a,b,c,d) ((long) (((long)(a))<<24) | (((long)(b))<<16) | \
-                                   (((long)(c))<<8)  |((long)(d)))
 
 #define SWAP(a) ( (((a)&0x000000ff)<<24) | (((a)&0x0000ff00)<<8) | \
                   (((a)&0x00ff0000)>>8)  | (((a)&0xff000000)>>24) )
@@ -180,7 +176,7 @@ int main(int argc, char *argv[])
 	FILE *hints_file = NULL;
 
 	printf("xvid_encraw - raw mpeg4 bitstream encoder ");
-	printf("written by Christoph Lampert 2002\n\n");
+	printf("written by Christoph Lampert 2002-2003\n\n");
 
 /*****************************************************************************
  *                            Command line parsing
@@ -242,10 +238,6 @@ int main(int argc, char *argv[])
 		else if (strcmp("-m", argv[i]) == 0 && i < argc - 1 ) {
 			i++;
 			ARG_SAVEMPEGSTREAM = atoi(argv[i]);
-		}
-		else if (strcmp("-mt", argv[i]) == 0 && i < argc - 1 ) {
-			i++;
-			ARG_OUTPUTTYPE = atoi(argv[i]);
 		}
 		else if (strcmp("-mv", argv[i]) == 0 && i < argc - 1 ) {
 			i++;
@@ -346,7 +338,6 @@ int main(int argc, char *argv[])
 	}
 
 	/* now we know the sizes, so allocate memory */
-
 	in_buffer = (unsigned char *) malloc(IMAGE_SIZE(XDIM,YDIM));
 	if (!in_buffer)
 		goto free_all_memory;
@@ -372,33 +363,11 @@ int main(int argc, char *argv[])
  *                            Main loop
  ****************************************************************************/
 
-	totalsize = LONG_PACK('M','P','4','U');
-	if(*((char *)(&totalsize)) == 'M')
-		bigendian = 1;
-	else
-		bigendian = 0;
-
-	if (ARG_SAVEMPEGSTREAM && (ARG_OUTPUTTYPE || ARG_OUTPUTFILE)) {
-
-		if (ARG_OUTPUTFILE == NULL && ARG_OUTPUTTYPE)
-			ARG_OUTPUTFILE = "stream.mp4u";
-		else if(ARG_OUTPUTFILE == NULL && !ARG_OUTPUTTYPE)
-			ARG_OUTPUTFILE = "stream.m4v";
+	if (ARG_SAVEMPEGSTREAM && ARG_OUTPUTFILE) {
 
 		if((out_file = fopen(ARG_OUTPUTFILE, "w+b")) == NULL) {
 			fprintf(stderr, "Error opening output file %s\n", ARG_OUTPUTFILE);
 			goto release_all;
-		}
-
-		/* Write header */
-		if (ARG_OUTPUTTYPE) {
-
-			long test = LONG_PACK('M','P','4','U');
-
-			test = (!bigendian)?SWAP(test):test;
-
-			fwrite(&test, sizeof(test), 1, out_file);
-
 		}
 
 	}
@@ -444,23 +413,22 @@ int main(int argc, char *argv[])
 						  &m4v_size, &frame_type, &hints_size);
 		enctime = msecond() - enctime;
 
-		totalenctime += enctime;
-		totalsize += m4v_size;
+		/* if it's a not coded VOP (aka NVOP) then we write nothing */
+		if(frame_type == 5) goto next_frame;
 
 		{
-			char *type;
+			char *type[] = {"P", "I", "B", "S", "Packed", "N", "Unknown"};
 
-			switch(frame_type) {
-			case 0: type = "P"; break;
-			case 1: type = "I"; break;
-			case 2: type = "B"; break;
-			default: type = "N"; break;
-			}
+			if(frame_type<0 || frame_type>5) frame_type = 6;			
 
-			printf("Frame %5d: type %s, enctime=%6.1f ms, size=%6d bytes\n",
-				   (int)filenr, type, (float)enctime, (int)m4v_size);
+			printf("Frame %5d: type = %s, enctime(ms) =%6.1f, length(bytes) =%7d\n",
+				   (int)filenr, type[frame_type], (float)enctime, (int)m4v_size);
 
 		}
+
+		/* Update encoding time stats */
+		totalenctime += enctime;
+		totalsize += m4v_size;
 
 /*****************************************************************************
  *                       Save hints to file
@@ -488,24 +456,19 @@ int main(int argc, char *argv[])
 				out_file = NULL;
 			}
 			else {
-				/* Using mp4u container */
-				if (ARG_OUTPUTTYPE) {
-					long size = m4v_size;
-					size = (!bigendian)?SWAP(size):size;
-					fwrite(&size, sizeof(size), 1, out_file);
-				}
 
 				/* Write mp4 data */
-				fwrite(mp4_buffer, m4v_size, 1, out_file);
+				fwrite(mp4_buffer, 1, m4v_size, out_file);
 
 			}
 		}
 
+	next_frame:
 		/* Read the header if it's pgm stream */ 
 		if (ARG_INPUTTYPE)
 			status = read_pgmheader(in_file);
 
-		filenr++;
+		if(frame_type != 5) filenr++;
 
 	} while ( (!status) && (filenr<ARG_MAXFRAMENR) );
 
@@ -518,7 +481,7 @@ int main(int argc, char *argv[])
 	totalsize    /= filenr;
 	totalenctime /= filenr;
 
-	printf("Avg: enctime %5.2f ms, %5.2f fps, size %7d bytes\n",
+	printf("Avg: enctime(ms) =%7.2f, fps =%7.2f, length(bytes) = %7d\n",
 		   totalenctime, 1000/totalenctime, (int)totalsize);
 
 /*****************************************************************************
@@ -599,9 +562,7 @@ static void usage()
 	fprintf(stderr, " -m boolean     : save mpeg4 raw stream (0 False*, !=0 True)\n");
 	fprintf(stderr, " -o string      : output container filename (only usefull when -m 1 is used) :\n");
 	fprintf(stderr, "                  When this option is not used : one file per encoded frame\n");
-	fprintf(stderr, "                  When this option is used :\n");
-	fprintf(stderr, "                    + stream.m4v with -mt 0\n");
-	fprintf(stderr, "                    + stream.mp4u with -mt 1\n");
+	fprintf(stderr, "                  When this option is used : save to 'string' (default=stream.m4v)\n");
 	fprintf(stderr, " -mt integer    : output type (m4v=0, mp4u=1)\n");
 	fprintf(stderr, " -mv integer    : Use motion vector hints (no hints=0, get hints=1, set hints=2)\n");
 	fprintf(stderr, " -help          : prints this help message\n");
