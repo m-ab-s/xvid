@@ -135,7 +135,7 @@ set_intra_matrix(uint8_t * matrix)
 		intra_matrix[i] = (int16_t) matrix[i];
 		intra_matrix_fix[i] = FIX(intra_matrix[i]);
 	}
-	return custom_intra_matrix | change;
+	return /*custom_intra_matrix |*/ change;
 }
 
 
@@ -155,5 +155,5 @@ set_inter_matrix(uint8_t * matrix)
 		inter_matrix[i] = (int16_t) matrix[i];
 		inter_matrix_fix[i] = FIX(inter_matrix[i]);
 	}
-	return custom_inter_matrix | change;
+	return /*custom_inter_matrix |*/ change;
 }
