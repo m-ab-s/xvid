@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.60 2003-12-20 22:20:54 edgomez Exp $
+ * $Id: xvid.h,v 1.27.2.61 2003-12-27 10:50:50 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -73,7 +73,7 @@ extern "C" {
  * doesnt hurt but not increasing it could cause difficulty for decoders in the
  * future
  */
-#define XVID_BS_VERSION "0024"
+#define XVID_BS_VERSION "0025"
 
 
 /*****************************************************************************

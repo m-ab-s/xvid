@@ -24,9 +24,6 @@ Active Items to work on:
 * two pass code should not introduce quality regressions (every tester)
   - first feedback proved kfthresholding was hurting quality, a
     decision on its behavior has to be settled.   
-* YV12/I420/USER clarification
-  - item submited by Ivan Kalvachev <ivan at cacad.com>
-    Planes are swaped
 * MMX MPEG4 quantization is unprecise. This is probably an inherent
   problem in some MMX opcode precision.
 
@@ -54,5 +51,6 @@ Already completed items:
 * trellis for mpeg and relaxed optimization for big levels (skal)
 * thread safe mpeg quantizing (michael)
 * Interlacing for bvop and svop (syskin)
+* YV12/I420/USER clarification (christoph)
 
-Last edited: $Date: 2003-12-05 14:44:35 $
+Last edited: $Date: 2003-12-27 10:50:50 $

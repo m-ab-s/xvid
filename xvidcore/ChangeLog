@@ -5,6 +5,650 @@
 # relevant.
 #
 
+2003-12-25 20:57:52 GMT	                                	patch-161
+
+    Summary:
+      Thread safe PP.
+    Revision:
+      xvidcore--devapi4--1.0--patch-161
+
+    From Michael:
+     * Thread safe PP, context is now stored in DECODER struct.
+
+    modified files:
+     src/decoder.c src/decoder.h src/image/postprocessing.c
+     src/image/postprocessing.h
+
+
+2003-12-25 20:49:36 GMT	                                	patch-160
+
+    Summary:
+      Added Turbo option to VFW GUI
+    Revision:
+      xvidcore--devapi4--1.0--patch-160
+
+    From Michael:
+     * Added turbo mode that enables all fast ME flags.
+
+    modified files:
+     vfw/src/codec.c vfw/src/config.c vfw/src/config.h
+     vfw/src/resource.h vfw/src/resource.rc
+
+
+2003-12-25 20:46:16 GMT	                                	patch-159
+
+    Summary:
+      Cartoon mode usage written to stream.
+    Revision:
+      xvidcore--devapi4--1.0--patch-159
+
+    From Michael:
+     * @encoding: write cartoon usage in the version user data.
+     * @decoding: detect cartoon flag appended to version string
+                  and force FILM PP disabling.
+
+    modified files:
+     src/bitstream/bitstream.c src/bitstream/bitstream.h
+     src/decoder.c src/decoder.h src/encoder.c
+
+
+2003-12-21 13:34:03 GMT	                                	patch-158
+
+    Summary:
+      Removed unused var in VFW GUI
+    Revision:
+      xvidcore--devapi4--1.0--patch-158
+
+    Removed unused var in VFW GUI
+    
+
+    modified files:
+     vfw/src/config.c
+
+
+2003-12-21 13:32:52 GMT	                                	patch-157
+
+    Summary:
+      Two pass small update
+    Revision:
+      xvidcore--devapi4--1.0--patch-157
+
+    from syskin:
+     * allow second pass to be bigger than 1st one
+       (not tested, the quant mapping formula may not be adapted for this
+        usage, so take this change as experimental, and prefer doing
+        second pass still smaller than 1st one)
+     * let ivops benefit from positive overflow.
+    
+    from me:
+     * set frame type in quant zones (was a buglet)
+
+    modified files:
+     src/plugins/plugin_2pass2.c
+
+
+2003-12-20 22:28:07 GMT	                                	patch-156
+
+    Summary:
+      New VFW defaults
+    Revision:
+      xvidcore--devapi4--1.0--patch-156
+
+    From michael:
+     * new VFW default values
+
+    modified files:
+     vfw/src/config.c
+
+
+2003-12-20 22:12:38 GMT	                                	patch-155
+
+    Summary:
+      Added ARGB colorspace.
+    Revision:
+      xvidcore--devapi4--1.0--patch-155
+
+    Christoph Nägeli naegelic(at)ee{dot}ethz<dot>ch asked me to add C
+    support for ARGB colorspace. He provided the encoding part, and i
+    extended the original patch in order to have full support for ARGB
+    both for encoding and decoding (though it's C only, read *slow*).
+
+    modified files:
+     src/image/colorspace.c src/image/colorspace.h
+     src/image/image.c src/xvid.c src/xvid.h
+
+
+2003-12-20 21:29:37 GMT	                                	patch-154
+
+    Summary:
+      Added 2pass1 comment about fast 1st pass.
+    Revision:
+      xvidcore--devapi4--1.0--patch-154
+
+    Just added a comment on fast 1st pass, so it explains why
+    we do it that way and why some things are left aside.
+
+    modified files:
+     src/plugins/plugin_2pass1.c
+
+
+2003-12-20 20:03:51 GMT	                                	patch-153
+
+    Summary:
+      Win32 VC6 wrong libc linking.
+    Revision:
+      xvidcore--devapi4--1.0--patch-153
+
+    From sysKin:
+     * Changed single thread libc linking to multithreaded version.
+
+    modified files:
+     vfw/vfw.dsp
+
+
+2003-12-20 15:28:53 GMT	                                	patch-152
+
+    Summary:
+      VOL flags updating -- take #2
+    Revision:
+      xvidcore--devapi4--1.0--patch-152
+
+    From sysKin:
+     * VOL flags updates fix take #2
+
+    modified files:
+     src/encoder.c
+
+
+2003-12-20 15:10:30 GMT	                                	patch-151
+
+    Summary:
+      Fast ME tunings.
+    Revision:
+      xvidcore--devapi4--1.0--patch-151
+
+    From michael:
+     * fast refinement for 8x8 blocks
+     * more reliable behavior for all fast ME decisions
+
+    modified files:
+     src/motion/estimation_bvop.c src/motion/estimation_pvop.c
+     src/xvid.h
+
+
+2003-12-20 14:59:58 GMT	                                	patch-150
+
+    Summary:
+      VFW AR revamping -- take #2
+    Revision:
+      xvidcore--devapi4--1.0--patch-150
+
+    From sysKin:
+     * more AR revamping
+
+    modified files:
+     vfw/src/codec.c vfw/src/config.c vfw/src/config.h
+     vfw/src/resource.h vfw/src/resource.rc
+
+
+2003-12-20 14:57:40 GMT	                                	patch-149
+
+    Summary:
+      Unbuffured IO for 1st pass stat files
+    Revision:
+      xvidcore--devapi4--1.0--patch-149
+
+    Unbuffured IO for 1st pass stat files
+    
+
+    modified files:
+     src/plugins/plugin_2pass1.c
+
+
+2003-12-18 17:44:07 GMT	                                	patch-148
+
+    Summary:
+      Forgotten bit of patch-141
+    Revision:
+      xvidcore--devapi4--1.0--patch-148
+
+    Damn i forgot to merge the 1st pass changes... so lame, i tested the
+    original patch but not the merged one.
+
+    modified files:
+     src/plugins/plugin_2pass1.c
+
+
+2003-12-18 14:45:39 GMT	                                	patch-147
+
+    Summary:
+      More postprocessing.
+    Revision:
+      xvidcore--devapi4--1.0--patch-147
+
+    From michael:
+     * added film noise effect.
+     * moved postproc initialization to decoder initialization.
+     * added support for this postproc filter into DShow.
+
+    modified files:
+     dshow/src/CAbout.cpp dshow/src/CAbout.h
+     dshow/src/CXvidDecoder.cpp dshow/src/resource.h
+     dshow/src/xvid.ax.rc src/decoder.c src/image/postprocessing.c
+     src/image/postprocessing.h src/xvid.c src/xvid.h
+
+
+2003-12-18 14:38:19 GMT	                                	patch-146
+
+    Summary:
+      BFrames ME speed up flags.
+    Revision:
+      xvidcore--devapi4--1.0--patch-146
+
+    From michael:
+     * Added 3 ME flags to skip some bvop ME steps and thus speed up
+       ME for bvops (at the expense of quality loss).
+        - skip delta search
+        - fast interpolate mode
+        - early stop
+
+    modified files:
+     src/motion/estimation.h src/motion/estimation_bvop.c
+     src/motion/estimation_common.c src/motion/estimation_pvop.c
+     src/xvid.h
+
+
+2003-12-18 14:11:01 GMT	                                	patch-145
+
+    Summary:
+      VFW defaults changed
+    Revision:
+      xvidcore--devapi4--1.0--patch-145
+
+    From michael:
+     * disabled DXN profiles. Better not say we are compatible to avoid
+       problems with DXN. Mostly because of VBV lacking.
+     * Changed overflow defaults to 5/5/5 with new 2pass code.
+
+    modified files:
+     vfw/src/config.c
+
+
+2003-12-17 16:45:59 GMT	                                	patch-144
+
+    Summary:
+      Forgotten bit for AR support in VFW
+    Revision:
+      xvidcore--devapi4--1.0--patch-144
+
+    Koepi might have forgotten to send me this change:
+     * added resource id to the resource header
+
+    modified files:
+     vfw/src/resource.h
+
+
+2003-12-17 15:11:37 GMT	                                	patch-143
+
+    Summary:
+      Lower starting quantizer for CBR encoding
+    Revision:
+      xvidcore--devapi4--1.0--patch-143
+
+    From christoph:
+     * Lower starting quantizer for CBR encodings.
+
+    modified files:
+     src/plugins/plugin_single.c
+
+
+2003-12-17 15:04:33 GMT	                                	patch-142
+
+    Summary:
+      Small xvid_encraw updates
+    Revision:
+      xvidcore--devapi4--1.0--patch-142
+
+    From christoph:
+     * set upper frame size limit to 4096 pixels
+     * GME refinement flag set where it belongs to.
+
+    modified files:
+     examples/xvid_encraw.c
+
+
+2003-12-17 15:01:52 GMT	                                	patch-141
+
+    Summary:
+      Two pass update.
+    Revision:
+      xvidcore--devapi4--1.0--patch-141
+
+    This patch improves the two pass code, quantizer distribution is
+    smoother and results seem to be better.
+    
+    * Two pass now scales only a specific part of the frame length.
+      This required changing the stats file format (added a header+MV
+      length field) and the xvid_plg_data_t structure (binary compatible).
+    * Overflow improvement and degradation set to 10% instead of 60%
+      Assymetric values may help...
+    * Some cleanup work done on the encoder part of the API header.
+    
+    NB: plg data struct will be cleaned up before 1.0 so if you rely on it
+        please read the header file to know which part will disappear.
+
+    modified files:
+     src/encoder.c src/plugins/plugin_2pass1.c
+     src/plugins/plugin_2pass2.c src/xvid.h
+
+
+2003-12-17 13:53:34 GMT	                                	patch-140
+
+    Summary:
+      VOL flags fix.
+    Revision:
+      xvidcore--devapi4--1.0--patch-140
+
+    From sysKin:
+     * VOL flags updated as they should
+
+    modified files:
+     src/encoder.c
+
+
+2003-12-17 11:07:15 GMT	                                	patch-139
+
+    Summary:
+      VFW GUI Update.
+    Revision:
+      xvidcore--devapi4--1.0--patch-139
+
+    From Koepi:
+     * typo in GMC description
+     * Added AR widget (experimental)
+
+    modified files:
+     vfw/src/codec.c vfw/src/config.c vfw/src/config.h
+     vfw/src/resource.rc
+
+
+2003-12-14 12:44:36 GMT	                                	patch-138
+
+    Summary:
+      Fix PP crash
+    Revision:
+      xvidcore--devapi4--1.0--patch-138
+
+    Fix PP crash
+    
+
+    modified files:
+     src/decoder.c
+
+
+2003-12-14 12:43:21 GMT	                                	patch-137
+
+    Summary:
+      Texture bit counting for bframes
+    Revision:
+      xvidcore--devapi4--1.0--patch-137
+
+    Texture bit counting for bframes
+    
+
+    modified files:
+     src/bitstream/mbcoding.c
+
+
+2003-12-12 23:58:18 GMT	                                	patch-136
+
+    Summary:
+      SSE2 code enabled.
+    Revision:
+      xvidcore--devapi4--1.0--patch-136
+
+    * SSE2 code enabled by default (only sane ones, _no_ idct)
+    * Aligned data in xvid_bench to avoid crashes with SSE2 code
+      because of unaligned read accesses.
+
+    modified files:
+     examples/xvid_bench.c src/xvid.c
+
+
+2003-12-12 22:50:33 GMT	                                	patch-135
+
+    Summary:
+      DShow update.
+    Revision:
+      xvidcore--devapi4--1.0--patch-135
+
+    From michael (from nic):
+     * Dshow updates (colorspace etc...)
+     * Deblocking option.
+
+    modified files:
+     dshow/src/CAbout.cpp dshow/src/CAbout.h
+     dshow/src/CXvidDecoder.cpp dshow/src/CXvidDecoder.h
+     dshow/src/resource.h dshow/src/xvid.ax.rc
+
+
+2003-12-12 14:18:13 GMT	                                	patch-134
+
+    Summary:
+      Added missing postproc init
+    Revision:
+      xvidcore--devapi4--1.0--patch-134
+
+    Added missing postproc init
+    
+
+    modified files:
+     src/xvid.c
+
+
+2003-12-12 14:16:29 GMT	                                	patch-133
+
+    Summary:
+      YUV space clarifications and fix.
+    Revision:
+      xvidcore--devapi4--1.0--patch-133
+
+    From christoph:
+     * Put some comments
+     * fixed UV swapping in USER case.
+
+    modified files:
+     src/image/image.c
+
+
+2003-12-12 14:01:52 GMT	                                	patch-132
+
+    Summary:
+      Default compilation flags change.
+    Revision:
+      xvidcore--devapi4--1.0--patch-132
+
+    from christoph:
+     - -fgcse was causing trouble on Suse9 gcc
+     - -01->-02
+
+    modified files:
+     build/generic/configure.in
+
+
+2003-12-12 13:43:35 GMT	                                	patch-131
+
+    Summary:
+      Pixel Aspect Ratio support improvement.
+    Revision:
+      xvidcore--devapi4--1.0--patch-131
+
+    * 1:1 VGA is default now (old behavior)
+    * When passed EXT PAR type, we now (try to) sanityse the
+      par_width/par_height value:
+       - make it positive
+       - using 0 (typical memset reseting) defaults to 1
+       - simplify the PAR (using gcd)
+       - then range it in [1..255] (can be lossy)
+    * Specify valid range in API header
+    
+    Bitstream version bumped to 24.
+    
+    PS: this patch supersedes sysKin's one in CVS.
+
+    modified files:
+     src/encoder.c src/xvid.h
+
+
+2003-12-10 22:57:50 GMT	                                	patch-130
+
+    Summary:
+      xvid_decraw cmdline changes.
+    Revision:
+      xvidcore--devapi4--1.0--patch-130
+
+    * -nframes -> -frames (why did i put a 'n' there ?)
+    * -save changed its meaning, it now controls per frame Elementary
+      Stream saving.
+    * -o string is now independent from -save.
+    
+    So now it's possible to save both a ES file per frame + a ES file for the
+    sequence.
+
+    modified files:
+     examples/xvid_encraw.c
+
+
+2003-12-10 15:08:20 GMT	                                	patch-129
+
+    Summary:
+      Decoder bugfixes.
+    Revision:
+      xvidcore--devapi4--1.0--patch-129
+
+    From syskin:
+     * bvops MBs were going banana from time to time because they were
+       referencing wrong future ref MBs.
+     * decoder now informs the client app about bvop lag, returning
+       XVID_TYPE_NOTHING, up to the client app to display (or not)
+       the bvop lag frame (black with error message).
+    
+    Fixing previous patch a bit:
+     * added $Id: ChangeLog,v 1.1.2.5 2003-12-27 10:50:50 edgomez Exp $ fields
+     * Fixed copyright
+
+    modified files:
+     dshow/src/CXvidDecoder.cpp src/decoder.c
+     src/image/postprocessing.c src/image/postprocessing.h
+
+
+2003-12-10 14:53:58 GMT	                                	patch-128
+
+    Summary:
+      Deblocking code.
+    Revision:
+      xvidcore--devapi4--1.0--patch-128
+
+    Patch from michael:
+     * added deblocking code
+    
+    Merge work:
+     * Added postprocessing.[ch] to project files
+     * added #include "image/postprocessing.h" directive in decoder.c
+     * new lines missing (gcc is so pedantic)
+    
+    NB: slice rendering + postprocessing is impossible. Slice rendering is
+        somewhat abandoned.
+
+    new files:
+     src/image/.arch-ids/postprocessing.c.id
+     src/image/.arch-ids/postprocessing.h.id
+     src/image/postprocessing.c src/image/postprocessing.h
+
+    modified files:
+     build/generic/sources.inc build/win32/libxvidcore.dsp
+     src/decoder.c src/xvid.h
+
+
+2003-12-08 18:33:26 GMT	                                	patch-127
+
+    Summary:
+      Don't read out of bounds
+    Revision:
+      xvidcore--devapi4--1.0--patch-127
+
+    Don't read out of bounds
+    
+
+    modified files:
+     src/plugins/plugin_2pass2.c
+
+
+2003-12-08 18:31:41 GMT	                                	patch-126
+
+    Summary:
+      Macroblock structure cleanup
+    Revision:
+      xvidcore--devapi4--1.0--patch-126
+
+    Macroblock structure cleanup
+    
+
+    modified files:
+     src/global.h
+
+
+2003-12-07 15:09:41 GMT	                                	patch-125
+
+    Summary:
+      Small fixes.
+    Revision:
+      xvidcore--devapi4--1.0--patch-125
+
+    From gruel:
+     * xvid.h: Minor color space correction.
+    
+    From sysKin:
+     * codec.c: Zones fix
+
+    modified files:
+     src/xvid.h vfw/src/codec.c
+
+
+2003-12-07 14:57:14 GMT	                                	patch-124
+
+    Summary:
+      HUGE file handling in twopass.
+    Revision:
+      xvidcore--devapi4--1.0--patch-124
+
+    Because of a lacking cast, two pass did not handle well some very
+    large target size (bitrate mode is not affected).
+    
+    It should now be safe specifying target sizes up to 2^31kB which
+    represents 2TB. Someone using XviD in studios ? ;-)
+
+    modified files:
+     src/plugins/plugin_2pass2.c
+
+#########################################################################
+# 1.0.0 beta2
+#########################################################################
+
+2003-12-05 14:43:53 GMT	                                	patch-123
+
+    Summary:
+      Marking 1.0.0 Beta2
+    Revision:
+      xvidcore--devapi4--1.0--patch-123
+
+    Marking 1.0.0 Beta2
+    
+
+    modified files:
+     ChangeLog TODO build/generic/configure.in
+
+
 2003-12-05 14:35:22 GMT	                                	patch-122
 
     Summary:
