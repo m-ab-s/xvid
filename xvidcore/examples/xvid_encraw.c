@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.19 2003-04-27 19:53:09 chl Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.20 2003-04-27 20:36:13 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -499,10 +499,10 @@ main(int argc,
 		totalenctime = -1;
 	}
 
-	printf("Avg: enctime(ms) =%7.2f, fps =%7.2f, length(bytes) = %7d, ",
+	printf("Avg: enctime(ms) =%7.2f, fps =%7.2f, length(bytes) = %7d",
 		   totalenctime, 1000 / totalenctime, (int) totalsize);
    if (ARG_STATS) {
-       printf("psnr y = %2.2f, psnr u = %2.2f, psnr v = %2.2f",
+       printf(", psnr y = %2.2f, psnr u = %2.2f, psnr v = %2.2f",
     		  totalPSNR[0],totalPSNR[1],totalPSNR[2]);
 	}
 	printf("\n");
