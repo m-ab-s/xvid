@@ -172,10 +172,6 @@ SOURCE=.\src\codec.h
 
 SOURCE=.\src\config.h
 # End Source File
-# Begin Source File
-
-SOURCE=.\src\xvid.h
-# End Source File
 # End Group
 # Begin Group "Resource Files"
 
