@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.1.2.3 2003-11-15 02:51:41 suxen_drol Exp $
+ * $Id: CXvidDecoder.cpp,v 1.1.2.4 2003-12-09 14:32:52 syskin Exp $
  *
  ****************************************************************************/
 
@@ -596,6 +596,7 @@ repeat :
 	if (pIn->IsPreroll() != S_OK)
 	{
 		length = xvid_decore(m_create.handle, XVID_DEC_DECODE, &m_frame, &stats);
+
 		if (length < 0)
 		{
             DPRINTF("*** XVID_DEC_DECODE");
@@ -616,6 +617,12 @@ repeat :
 
 		m_frame.output.csp = tmp;
 	}
+
+	if (stats.type == XVID_TYPE_NOTHING) {
+		DPRINTF("B-Frame decoder lag");
+		return S_FALSE;
+	}
+
 
 	if (stats.type == XVID_TYPE_VOL)
 	{
