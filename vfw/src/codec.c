@@ -661,15 +661,18 @@ LRESULT decompress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO 
 	}
 	/* --- yv12 --- */
 
-	result = decompress_query(codec, lpbiInput, lpbiOutput);
+	result = decompress_query(codec, lpbiInput, NULL);
 	if (result != ICERR_OK) 
 	{
 		return result;
 	}
 
-	memcpy(outhdr, inhdr, sizeof(BITMAPINFOHEADER));
 	outhdr->biSize = sizeof(BITMAPINFOHEADER);
-	outhdr->biCompression = FOURCC_YUY2;
+	outhdr->biWidth = inhdr->biWidth;
+	outhdr->biHeight = inhdr->biHeight;
+	outhdr->biPlanes = 1;
+	outhdr->biBitCount = 24;
+	outhdr->biCompression = BI_RGB;	/* sonic foundry vegas video v3 only supports BI_RGB */
 	outhdr->biSizeImage = outhdr->biWidth * outhdr->biHeight * outhdr->biBitCount;
 	outhdr->biXPelsPerMeter = 0;
 	outhdr->biYPelsPerMeter = 0;
