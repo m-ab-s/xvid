@@ -337,8 +337,20 @@ int codec_2pass_init(CODEC* codec)
 
 			twopass->movie_curve = ((double)(bframe_total_ext + pframe_total_ext + i_boost_total) /
 				(bframe_total_ext + pframe_total_ext));
-			twopass->average_bframe = (double)bframe_total_ext / bframes / twopass->movie_curve;
-			twopass->average_pframe = (double)pframe_total_ext / pframes / twopass->movie_curve;
+
+			if (bframes)
+				twopass->average_bframe = (double)bframe_total_ext / bframes / twopass->movie_curve;
+
+			if (pframes)
+				twopass->average_pframe = (double)pframe_total_ext / pframes / twopass->movie_curve;
+			else
+				if (bframes)
+					twopass->average_pframe = twopass->average_bframe;  // b-frame packed bitstream fix
+				else
+				{
+					DEBUGERR("ERROR:  No p-frames or b-frames were present in the 1st pass.  Rate control cannot function properly!");
+					return ICERR_ERROR;
+				}
 
 
 
@@ -966,9 +978,8 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 	if (twopass->nns_array_pos >= twopass->nns_array_length)
 	{
 		twopass->nns_array_pos = 0;
-		DEBUG("ERROR: VIDEO EXCEEDS 1ST PASS!!!");
-		frame->intra = -1;
-		return 2;
+		DEBUGERR("ERROR: VIDEO EXCEEDS 1ST PASS!!!");
+		return ICERR_ERROR;
 	}
 
 	memcpy(&twopass->nns1, &twopass->nns1_array[twopass->nns_array_pos], sizeof(NNSTATS));
@@ -1170,10 +1181,10 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 						}
 					}
 				}
-				curve_temp = curve_temp * twopass->curve_comp_scale + twopass->curve_bias_bonus;
-
 				if (twopass->nns1.dd_v & NNSTATS_BFRAME)
 					curve_temp *= twopass->average_bframe / twopass->average_pframe;
+
+				curve_temp = curve_temp * twopass->curve_comp_scale + twopass->curve_bias_bonus;
 
 				bytes2 += ((int)curve_temp);
 				curve_comp_error += curve_temp - ((int)curve_temp);
@@ -1430,7 +1441,12 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 
 	if (capped_to_max_framesize == 0)
 	{
-		if (twopass->nns1.dd_v & NNSTATS_BFRAME)
+		if (twopass->nns1.quant & NNSTATS_KEYFRAME)
+		{
+			last_bquant = frame->quant;
+			last_pquant = frame->quant;
+		}
+		else if (twopass->nns1.dd_v & NNSTATS_BFRAME)
 			last_bquant = frame->quant;
 		else
 			last_pquant = frame->quant;
@@ -1588,23 +1604,23 @@ int codec_2pass_update(CODEC* codec, XVID_ENC_FRAME* frame, XVID_ENC_STATS* stat
 		else if (codec->twopass.nns1.dd_v & NNSTATS_SKIPFRAME) {
 			frame_type="skipped";
 			frame->quant = 2;
-			codec->twopass.bytes1 = 8;
-			codec->twopass.desired_bytes2 = 8;
-			frame->length = 8;
+			codec->twopass.bytes1 = 1;
+			codec->twopass.desired_bytes2 = 1;
+			frame->length = 1;
 		}
 		else if (codec->twopass.nns1.dd_v & NNSTATS_PADFRAME) {
 			frame_type="padded";
 			frame->quant = 2;
-			codec->twopass.bytes1 = 8;
-			codec->twopass.desired_bytes2 = 8;
-			frame->length = 8;
+			codec->twopass.bytes1 = 7;
+			codec->twopass.desired_bytes2 = 7;
+			frame->length = 7;
 		}
 		else if (codec->twopass.nns1.dd_v & NNSTATS_DELAYFRAME) {
 			frame_type="delayed";
 			frame->quant = 2;
-			codec->twopass.bytes1 = 8;
-			codec->twopass.desired_bytes2 = 8;
-			frame->length = 8;
+			codec->twopass.bytes1 = 1;
+			codec->twopass.desired_bytes2 = 1;
+			frame->length = 1;
 		}
 
 		DEBUG2ND(frame->quant, quant_type, frame_type, codec->twopass.bytes1, codec->twopass.desired_bytes2, frame->length, codec->twopass.overflow, credits_pos)
@@ -1623,9 +1639,15 @@ void codec_2pass_finish(CODEC* codec)
 	char s[100];
 
 	if (codec->twopass.nns1_array)
+	{
 		free(codec->twopass.nns1_array);
+		codec->twopass.nns1_array = NULL;
+	}
 	if (codec->twopass.nns2_array)
+	{
 		free(codec->twopass.nns2_array);
+		codec->twopass.nns2_array = NULL;
+	}
 	codec->twopass.nns_array_size = 0;
 	codec->twopass.nns_array_length = 0;
 	codec->twopass.nns_array_pos = 0;
