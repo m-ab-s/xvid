@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.c,v 1.39.2.14 2003-06-29 16:17:51 chl Exp $
+ * $Id: bitstream.c,v 1.39.2.15 2003-07-28 12:29:07 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1079,8 +1079,8 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 {
 	static const unsigned int vo_id = 0;
 	static const unsigned int vol_id = 0;
-	int vol_ver_id=1;
-    int vol_type_ind=VIDOBJLAY_TYPE_SIMPLE;
+	int vol_ver_id = 1;
+	int vol_type_ind = VIDOBJLAY_TYPE_SIMPLE;
 
 	if ( (pParam->vol_flags & XVID_VOL_QUARTERPEL) ||  
          (pParam->vol_flags & XVID_VOL_GMC) || 
@@ -1115,10 +1115,13 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	BitstreamPad(bs);
 	BitstreamPutBits(bs, VISOBJ_START_CODE, 32);
 	BitstreamPutBits(bs, 0, 1);		/* is_visual_object_identifier */
+
+	/* Video type */
 	BitstreamPutBits(bs, VISOBJ_TYPE_VIDEO, 4);		/* visual_object_type */
+	BitstreamPutBit(bs, 0); /* video_signal_type */
 	
 	/* video object_start_code & vo_id */
-	BitstreamPad(bs);
+	BitstreamPadAlways(bs); /* next_start_code() */
 	BitstreamPutBits(bs, VIDOBJ_START_CODE|(vo_id&0x5), 32);
 
 	/* video_object_layer_start_code & vol_id */
@@ -1136,7 +1139,7 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	{
 		BitstreamPutBit(bs, 1);		/* is_object_layer_identified */
 		BitstreamPutBits(bs, vol_ver_id, 4);	/* vol_ver_id == 2 */
-		BitstreamPutBits(bs, 4, 3); /* vol_ver_priority (1==lowest, 7==highest) ?? */
+		BitstreamPutBits(bs, 4, 3); /* vol_ver_priority (1==highest, 7==lowest) */
 	}
 
 	BitstreamPutBits(bs, 1, 4);	/* aspect_ratio_info (1=1:1) */
@@ -1239,6 +1242,8 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	
 	BitstreamPutBit(bs, 0);		/* scalability */
 
+	BitstreamPadAlways(bs); /* next_start_code(); */
+
 	/* fake divx5 id, to ensure compatibility with divx5 decoder */
 #define DIVX5_ID "DivX000b000p"
 	if (pParam->max_bframes > 0 && (pParam->global_flags & XVID_GLOBAL_PACKED)) {
@@ -1301,6 +1306,14 @@ BitstreamWriteVopHeader(
 
 	if (!vop_coded) {
 		BitstreamPutBits(bs, 0, 1);
+#if 0
+		BitstreamPadAlways(bs); /*  next_start_code() */
+#endif
+		/* NB: It's up to the function caller to write the next_start_code().
+		 * At the moment encoder.c respects that requisite because a VOP
+		 * always ends with a next_start_code either if it's coded or not
+		 * and encoder.c terminates a frame with a next_start_code in whatever
+		 * case */
 		return;
 	}
 

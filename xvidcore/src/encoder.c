@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.33 2003-07-13 09:57:51 syskin Exp $
+ * $Id: encoder.c,v 1.95.2.34 2003-07-28 12:28:55 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1356,7 +1356,8 @@ FrameCodeI(Encoder * pEnc,
 
 	set_timecodes(pEnc->current,pEnc->reference,pEnc->mbParam.fbase);
 
-	BitstreamPadAlways(bs);
+	BitstreamPad(bs);
+
 	BitstreamWriteVopHeader(bs, &pEnc->mbParam, pEnc->current, 1);
 
 	pEnc->current->sStat.iTextBits = 0;
@@ -1395,16 +1396,8 @@ FrameCodeI(Encoder * pEnc,
 	}
 	emms();
 
-/* XXX: Remove the two #if 0 blocks when we are sure we must always pad the stream */
-#if 0
-	/* for divx5 compatibility, we must always pad between the packed p and b frames */
-	if ((pEnc->mbParam.global_flags & XVID_GLOBAL_PACKED) && pEnc->bframenum_tail > 0)
-#endif
-		BitstreamPadAlways(bs);
-#if 0
-	else
-		BitstreamPad(bs);
-#endif
+	BitstreamPadAlways(bs); /* next_start_code() at the end of VideoObjectPlane() */
+
     pEnc->current->length = (BitstreamPos(bs) - bits) / 8;
 
 	pEnc->fMvPrevSigma = -1;
@@ -1437,7 +1430,7 @@ FrameCodeP(Encoder * pEnc,
 	int bIntra=0, skip_possible;
 	FRAMEINFO *const current = pEnc->current; 
 	FRAMEINFO *const reference = pEnc->reference; 
-  MBParam * const pParam = &pEnc->mbParam;
+	MBParam * const pParam = &pEnc->mbParam;
 	int mb_width = pParam->mb_width;
 	int mb_height = pParam->mb_height;
 
@@ -1545,7 +1538,7 @@ FrameCodeP(Encoder * pEnc,
 	set_timecodes(current,reference,pParam->fbase);
 	if (vol_header)
 	{	BitstreamWriteVolHeader(bs, &pEnc->mbParam);	
-		BitstreamPadAlways(bs);
+		BitstreamPad(bs);
 	}
 
 	BitstreamWriteVopHeader(bs, &pEnc->mbParam, current, 1);
@@ -1791,16 +1784,7 @@ FrameCodeP(Encoder * pEnc,
 	} 
 	*/
 
-/* XXX: Remove the two #if 0 blocks when we are sure we must always pad the stream */
-#if 0
-   	/* for divx5 compatibility, we must always pad between the packed p and b frames */
-	if ((pParam->global_flags & XVID_GLOBAL_PACKED) && pEnc->bframenum_tail > 0)
-#endif
-		BitstreamPadAlways(bs);
-#if 0
-	else
-		BitstreamPad(bs);
-#endif
+	BitstreamPadAlways(bs); /* next_start_code() at the end of VideoObjectPlane() */
 
     current->length = (BitstreamPos(bs) - bits) / 8;
 
@@ -1921,7 +1905,7 @@ FrameCodeB(Encoder * pEnc,
 
 	/* TODO: dynamic fcode/bcode ??? */
 
-    BitstreamPadAlways(bs);
+    BitstreamPadAlways(bs); /* next_start_code() at the end of VideoObjectPlane() */
 	frame->length = (BitstreamPos(bs) - bits) / 8;
 
 #ifdef BFRAMES_DEC_DEBUG
