@@ -12,6 +12,7 @@
 #define	MODE_INTRA		3
 #define MODE_INTRA_Q	4
 #define MODE_NOT_CODED	16
+#define MODE_NOT_CODED_GMC	17
 
 /* --- bframe specific --- */
 

@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.23 2002-12-16 08:54:44 suxen_drol Exp $
+ *  $Id: decoder.c,v 1.37.2.24 2002-12-29 16:59:50 suxen_drol Exp $
  *
  *************************************************************************/
 
@@ -915,7 +915,7 @@ decoder_pframe(DECODER * dec,
 			} 
 			else if (gmc_mv)	/* not coded S_VOP macroblock */
 			{
-				mb->mode = MODE_NOT_CODED;
+				mb->mode = MODE_NOT_CODED_GMC;
 				mb->mvs[0].x = mb->mvs[1].x = mb->mvs[2].x = mb->mvs[3].x = gmc_sanitize(gmc_mv[0].x, dec->quarterpel, fcode);
 				mb->mvs[0].y = mb->mvs[1].y = mb->mvs[2].y = mb->mvs[3].y = gmc_sanitize(gmc_mv[0].y, dec->quarterpel, fcode);
 				decoder_mbinter(dec, mb, x, y, 0, 0, bs, quant, rounding, reduced_resolution);
@@ -1467,7 +1467,9 @@ decoder_bframe(DECODER * dec,
 			mb->b_mvs[0] = mb->b_mvs[1] = mb->b_mvs[2] = mb->b_mvs[3] =
 			mb->mvs[0] = mb->mvs[1] = mb->mvs[2] = mb->mvs[3] = zeromv;
 
-			// the last P_VOP is skip macroblock ?
+			// skip if the co-located P_VOP macroblock is not coded 
+			// note: gmc+not_coded isn't skipped
+
 			if (last_mb->mode == MODE_NOT_CODED) {
 				//DEBUG2("Skip MB in B-frame at (X,Y)=!",x,y);
 				mb->cbp = 0;
