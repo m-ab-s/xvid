@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.1.2.14 2004-01-30 03:21:20 syskin Exp $
+ * $Id: CXvidDecoder.cpp,v 1.1.2.15 2004-01-30 13:13:10 syskin Exp $
  *
  ****************************************************************************/
 
@@ -372,10 +372,12 @@ HRESULT CXvidDecoder::CheckInputType(const CMediaType * mtIn)
 	switch(hdr->biCompression)
 	{
 
-	
+	case FOURCC_MP4V:
+		if (!(supported_4cc & SUPPORT_MP4V)) return VFW_E_TYPE_NOT_ACCEPTED;
+		break;	
 	case FOURCC_DIVX :
 		if (!(supported_4cc & SUPPORT_DIVX)) return VFW_E_TYPE_NOT_ACCEPTED;
-		else break;
+		break;
 	case FOURCC_DX50 :
 		if (!(supported_4cc & SUPPORT_DX50)) return VFW_E_TYPE_NOT_ACCEPTED;
 	case FOURCC_XVID :
