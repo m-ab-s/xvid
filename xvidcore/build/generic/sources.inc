@@ -83,6 +83,12 @@ SRC_IA64 = \
 	$(SRCDIR)/quant/ia64_asm/quant_h263_ia64.s \
 	$(SRCDIR)/utils/ia64_asm/mem_transfer_ia64.s
 
+SRC_IA64_IDCT_GCC = \
+	$(SRCDIR)/dct/ia64_asm/idct_ia64_gcc.s
+
+SRC_IA64_IDCT_ECC = \
+	$(SRCDIR)/dct/ia64_asm/idct_ia64_ecc.s
+
 SRC_PPC = \
 	$(SRCDIR)/bitstream/ppc_asm/cbp_ppc.s
 

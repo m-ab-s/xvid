@@ -426,7 +426,7 @@ if test "$ARCHITECTURE" = "IA64" ; then
 
    case `basename $CC` in
 	*ecc*)
-		DCT_IA64_SOURCES="idct_ia64_ecc.s"
+		DCT_IA64_SOURCES="SRC_IA64_IDCT_ECC"
 
 		dnl If the compiler is ecc, then i don't know its options
 		dnl fallback to "no options"
@@ -435,7 +435,7 @@ if test "$ARCHITECTURE" = "IA64" ; then
 		fi
 		;;
 	*)
-		DCT_IA64_SOURCES="idct_ia64_gcc.s"
+		DCT_IA64_SOURCES="SRC_IA64_IDCT_GCC"
 		;;
    esac
 
