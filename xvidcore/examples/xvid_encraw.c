@@ -21,7 +21,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.40 2003-12-17 08:38:06 chl Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.41 2004-03-23 09:27:20 chl Exp $
  *
  ****************************************************************************/
 
@@ -729,7 +729,7 @@ read_pgmheader(FILE * handle)
 		return (1);
 
 	fscanf(handle, "%d %d %d", &xsize, &ysize, &depth);
-	if ((xsize > 1440) || (ysize > 2880) || (depth != 255)) {
+	if ((xsize > 4096) || (ysize > 4096*3/2) || (depth != 255)) {
 		fprintf(stderr, "%d %d %d\n", xsize, ysize, depth);
 		return (2);
 	}
