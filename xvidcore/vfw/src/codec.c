@@ -362,6 +362,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	    pass2.version = XVID_VERSION;
         pass2.bitrate = codec->config.bitrate * CONFIG_KBPS;
 		pass2.filename = codec->config.stats;
+		pass2.container_frame_overhead = 24;
 
         plugins[create.num_plugins].func = xvid_plugin_2pass2;
         plugins[create.num_plugins].param = &pass2;

@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.19 2003-05-17 13:26:28 suxen_drol Exp $
+ * $Id: xvid.h,v 1.27.2.20 2003-05-22 22:56:17 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -475,6 +475,8 @@ typedef struct {
     int kftreshold;
 	int kfreduction;
     int min_key_interval;
+
+	int container_frame_overhead;
 }xvid_plugin_2pass2_t;
 
 

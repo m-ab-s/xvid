@@ -25,7 +25,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.9 2003-05-22 22:17:44 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.10 2003-05-22 22:56:22 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -704,10 +704,10 @@ static int rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t ** handle)
 	DPRINTF(XVID_DEBUG_RC, "Target bitrate: %ld\n", rc->param.bitrate);
 	DPRINTF(XVID_DEBUG_RC, "Target filesize: %lld\n", rc->target);
 
-#if 0
-	rc->target -= rc->num_frames*24;	/* avi file header */
-#endif
-    
+	/* Compensate the mean frame overhead caused by the container */
+	rc->target -= rc->num_frames*rc->param.container_frame_overhead;
+	DPRINTF(XVID_DEBUG_RC, "Container Frame overhead: %d\n", rc->param.container_frame_overhead);
+	DPRINTF(XVID_DEBUG_RC, "Target filesize (after container compensation): %lld\n", rc->target);
 
 	pre_process0(rc);
 
