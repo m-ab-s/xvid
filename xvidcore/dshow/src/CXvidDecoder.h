@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.h,v 1.1.2.2 2003-06-09 13:49:00 edgomez Exp $
+ * $Id: CXvidDecoder.h,v 1.1.2.3 2003-11-15 02:51:41 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -65,6 +65,10 @@ DEFINE_GUID(CLSID_DX50,		mmioFOURCC('d','x','5','0'), 0x0000, 0x0010, 0x80, 0x00
 DEFINE_GUID(CLSID_DX50_UC,	mmioFOURCC('D','X','5','0'), 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 
 
+/* MEDIATYPE_IYUV is not always defined in the directx headers */
+DEFINE_GUID(CLSID_MEDIASUBTYPE_IYUV, 0x56555949, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
+
+
 class CXvidDecoder : public CVideoTransformFilter, public IXvidDecoder, public ISpecifyPropertyPages
 {
 
@@ -92,12 +96,6 @@ public :
 private :
 
 	HRESULT ChangeColorspace(GUID subtype, GUID formattype, void * format);
-
-	// data
-
-	HINSTANCE m_hdll;
-	int (*m_xvid_global)(void *, int, void *, void *);
-	int (*m_xvid_decore)(void *, int, void *, void *);
 
 	xvid_dec_create_t m_create;
 	xvid_dec_frame_t m_frame;

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.1.2.2 2003-06-09 13:49:00 edgomez Exp $
+ * $Id: CXvidDecoder.cpp,v 1.1.2.3 2003-11-15 02:51:41 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -52,6 +52,7 @@
 #include "IXvidDecoder.h"
 #include "CXvidDecoder.h"
 #include "CAbout.h"
+
 
 
 const AMOVIESETUP_MEDIATYPE sudInputPinTypes[] =
@@ -179,53 +180,20 @@ STDMETHODIMP CXvidDecoder::NonDelegatingQueryInterface(REFIID riid, void **ppv)
 
 
 
-/* dummy decore() */
-
-static int dummy_xvid_decore(void * handle, int opt, void * param1, void * param2)
-{
-	return XVID_ERR_FAIL;
-}
-
-
 
 /* constructor */
-
-#define XVID_DLL_NAME		"xvid.dll"
-#define XVID_GLOBAL_NAME	"xvid_global"
-#define XVID_DECORE_NAME	"xvid_decore"
 
 CXvidDecoder::CXvidDecoder(LPUNKNOWN punk, HRESULT *phr) :
     CVideoTransformFilter(NAME("CXvidDecoder"), punk, CLSID_XVID)
 {
 	DPRINTF("Constructor");
 
-	m_xvid_decore = dummy_xvid_decore;
-	
-	m_hdll = LoadLibrary(XVID_DLL_NAME);
-	if (m_hdll == NULL) {
-		DPRINTF("dll load failed");
-		MessageBox(0, XVID_DLL_NAME " not found","Error", 0);
-		return;
-	}
-
-	m_xvid_global = (int (__cdecl *)(void *, int, void *, void *))GetProcAddress(m_hdll, XVID_GLOBAL_NAME);
-	if (m_xvid_global == NULL) {
-		MessageBox(0, XVID_GLOBAL_NAME "() not found", "Error", 0);
-		return;
-	}
-
-	m_xvid_decore = (int (__cdecl *)(void *, int, void *, void *))GetProcAddress(m_hdll, XVID_DECORE_NAME);
-	if (m_xvid_decore == NULL) {
-		MessageBox(0, XVID_DECORE_NAME "() not found", "Error", 0);
-		return;
-	}
-
 	xvid_gbl_init_t init;
 	memset(&init, 0, sizeof(init));
 	init.version = XVID_VERSION;
-	if (m_xvid_global(0, XVID_GBL_INIT, &init, NULL) < 0)
+	if (xvid_global(0, XVID_GBL_INIT, &init, NULL) < 0)
 	{
-		MessageBox(0, XVID_GLOBAL_NAME "() failed", "Error", 0);
+		MessageBox(0, "xvid_global() failed", "Error", 0);
 		return;
 	}
 
@@ -247,14 +215,8 @@ CXvidDecoder::~CXvidDecoder()
 
 	if (m_create.handle != NULL)
 	{
-		m_xvid_decore(m_create.handle, XVID_DEC_DESTROY, 0, 0);
+		xvid_decore(m_create.handle, XVID_DEC_DESTROY, 0, 0);
 		m_create.handle = NULL;
-	}
-
-	if (m_hdll != NULL)
-	{
-		FreeLibrary(m_hdll);
-		m_hdll = NULL;
 	}
 }
 
@@ -330,6 +292,7 @@ HRESULT CXvidDecoder::CheckInputType(const CMediaType * mtIn)
 
 /* get list of supported output colorspaces */
 
+
 HRESULT CXvidDecoder::GetMediaType(int iPosition, CMediaType *mtOut)
 {
 	DPRINTF("GetMediaType");
@@ -360,9 +323,9 @@ HRESULT CXvidDecoder::GetMediaType(int iPosition, CMediaType *mtOut)
 	{
 	case 0	:
 #ifdef USE_IYUV
-		vih->bmiHeader.biCompression = MEDIASUBTYPE_IYUV.Data1;
+		vih->bmiHeader.biCompression = CLSID_MEDIASUBTYPE_IYUV.Data1;
 		vih->bmiHeader.biBitCount = 12;
-		mtOut->SetSubtype(&MEDIASUBTYPE_IYUV);
+		mtOut->SetSubtype(&CLSID_MEDIASUBTYPE_IYUV);
 		break;
 #endif
 	case 1	:
@@ -459,7 +422,7 @@ HRESULT CXvidDecoder::ChangeColorspace(GUID subtype, GUID formattype, void * for
 		return S_FALSE;
 	}
 
-	if (subtype == MEDIASUBTYPE_IYUV)
+	if (subtype == CLSID_MEDIASUBTYPE_IYUV)
 	{
 		DPRINTF("IYUV");
 		m_frame.output.csp = XVID_CSP_I420;
@@ -590,7 +553,7 @@ HRESULT CXvidDecoder::Transform(IMediaSample *pIn, IMediaSample *pOut)
 
 	if (m_create.handle == NULL)
 	{
-		if (m_xvid_decore(0, XVID_DEC_CREATE, &m_create, 0) < 0)
+		if (xvid_decore(0, XVID_DEC_CREATE, &m_create, 0) < 0)
 		{
             DPRINTF("*** XVID_DEC_CREATE error");
 			return S_FALSE;
@@ -632,7 +595,7 @@ repeat :
 
 	if (pIn->IsPreroll() != S_OK)
 	{
-		length = m_xvid_decore(m_create.handle, XVID_DEC_DECODE, &m_frame, &stats);
+		length = xvid_decore(m_create.handle, XVID_DEC_DECODE, &m_frame, &stats);
 		if (length < 0)
 		{
             DPRINTF("*** XVID_DEC_DECODE");
@@ -644,7 +607,7 @@ repeat :
 		int tmp = m_frame.output.csp;
 		m_frame.output.csp = XVID_CSP_NULL;
 
-		length = m_xvid_decore(m_create.handle, XVID_DEC_DECODE, &m_frame, &stats);
+		length = xvid_decore(m_create.handle, XVID_DEC_DECODE, &m_frame, &stats);
 		if (length < 0)
 		{
             DPRINTF("*** XVID_DEC_DECODE");
