@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.2 2002-09-26 01:54:54 h Exp $
+ *  $Id: encoder.c,v 1.76.2.3 2002-09-27 17:25:17 h Exp $
  *
  ****************************************************************************/
 
@@ -659,7 +659,7 @@ encoder_encode_bframes(Encoder * pEnc,
 {
 	uint16_t x, y;
 	Bitstream bs;
-	uint32_t bits;
+	uint32_t bits, mode;
 
 	int input_valid = 1;
 
@@ -907,9 +907,12 @@ bvop_loop:
 	if (pEnc->iFrameNum == 0 || pFrame->intra == 1 || pEnc->bframenum_dx50bvop >= 0 ||
 		(pFrame->intra < 0 && pEnc->iMaxKeyInterval > 0 &&
 		 pEnc->iFrameNum >= pEnc->iMaxKeyInterval)
-		|| image_mad(&pEnc->reference->image, &pEnc->current->image,
+		|| /*image_mad(&pEnc->reference->image, &pEnc->current->image,
 					 pEnc->mbParam.edged_width, pEnc->mbParam.width,
-					 pEnc->mbParam.height) > 30) {
+					 pEnc->mbParam.height) > 30) {*/
+			2 == (mode = MEanalysis(&pEnc->reference->image, &pEnc->current->image,
+					 &pEnc->mbParam, pEnc->current->mbs, pEnc->current->fcode))) {
+
 		/*
 		 * This will be coded as an Intra Frame
 		 */
@@ -957,7 +960,7 @@ bvop_loop:
 		 * NB : sequences like "IIBB" decode fine with msfdam but,
 		 *      go screwy with divx 5.00
 		 */
-	} else if (pEnc->bframenum_tail >= pEnc->mbParam.max_bframes) {
+	} else if (pEnc->bframenum_tail >= pEnc->mbParam.max_bframes || mode != 0) {
 		/*
 		 * This will be coded as a Predicted Frame
 		 */
