@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: image.c,v 1.26.2.10 2003-10-01 23:23:01 edgomez Exp $
+ * $Id: image.c,v 1.26.2.11 2003-11-05 16:15:47 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -258,13 +258,13 @@ image_interpolate(const IMAGE * refn,
 	n_ptr = refn->y;
 	h_ptr = refh->y;
 	v_ptr = refv->y;
-	hv_ptr = refhv->y;
 
 	n_ptr -= offset;
 	h_ptr -= offset;
 	v_ptr -= offset;
-	hv_ptr -= offset;
 
+	/* Note we initialize the hv pointer later, as we can optimize code a bit
+	 * doing it down to up in quarterpel and up to down in halfpel */
 	if(quarterpel) {
 
 		for (y = 0; y < (edged_height - EDGE_SIZE); y += 8) {
@@ -286,24 +286,25 @@ image_interpolate(const IMAGE * refn,
 			n_ptr += stride_add;
 		}
 
-		h_ptr = refh->y;
-		h_ptr -= offset;
+		h_ptr = refh->y + (edged_height - EDGE_SIZE - EDGE_SIZE2)*edged_width - EDGE_SIZE2;
+		hv_ptr = refhv->y + (edged_height - EDGE_SIZE - EDGE_SIZE2)*edged_width - EDGE_SIZE2;
 
 		for (y = 0; y < (edged_height - EDGE_SIZE); y = y + 8) {
+			hv_ptr -= stride_add;
+			h_ptr -= stride_add;
+			hv_ptr -= EDGE_SIZE;
+			h_ptr -= EDGE_SIZE;
+
 			for (x = 0; x < (edged_width - EDGE_SIZE); x = x + 8) {
+				hv_ptr -= 8;
+				h_ptr -= 8;
 				interpolate8x8_6tap_lowpass_v(hv_ptr, h_ptr, edged_width, rounding);
-				hv_ptr += 8;
-				h_ptr += 8;
 			}
-
-			hv_ptr += EDGE_SIZE;
-			h_ptr += EDGE_SIZE;
-
-			hv_ptr += stride_add;
-			h_ptr += stride_add;
 		}
-	}
-	else {
+	} else {
+
+		hv_ptr = refhv->y;
+		hv_ptr -= offset;
 
 		for (y = 0; y < (edged_height - EDGE_SIZE); y += 8) {
 			for (x = 0; x < (edged_width - EDGE_SIZE); x += 8) {

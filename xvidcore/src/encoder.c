@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.46 2003-10-27 00:50:05 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.47 2003-11-05 16:15:47 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1410,6 +1410,9 @@ FrameCodeI(Encoder * pEnc,
 	pEnc->fMvPrevSigma = -1;
 	pEnc->mbParam.m_fcode = 2;
 
+	pEnc->current->is_edged = 0; /* not edged */
+	pEnc->current->is_interpolated = -1; /* not interpolated (fake rounding -1) */
+
 	return 1;					/* intra */
 }
 
@@ -1452,10 +1455,13 @@ FrameCodeP(Encoder * pEnc,
 	}
 
 
-	start_timer();
-	image_setedges(pRef, pParam->edged_width, pParam->edged_height,
-				   pParam->width, pParam->height);
-	stop_edges_timer();
+	if (!reference->is_edged) {	
+		start_timer();
+		image_setedges(pRef, pParam->edged_width, pParam->edged_height,
+					   pParam->width, pParam->height);
+		stop_edges_timer();
+		reference->is_edged = 1;
+	}
 
 	pParam->m_rounding_type = 1 - pParam->m_rounding_type;
 	current->rounding_type = pParam->m_rounding_type;
@@ -1467,13 +1473,16 @@ FrameCodeP(Encoder * pEnc,
 		iLimit = mb_width * mb_height + 1;
 
 	if ((current->vop_flags & XVID_VOP_HALFPEL)) {
-		start_timer();
-		image_interpolate(pRef, &pEnc->vInterH, &pEnc->vInterV,
-						  &pEnc->vInterHV, pParam->edged_width,
-						  pParam->edged_height,
-						  (pParam->vol_flags & XVID_VOL_QUARTERPEL),
-						  current->rounding_type);
-		stop_inter_timer();
+		if (reference->is_interpolated != current->rounding_type) {
+			start_timer();
+			image_interpolate(pRef, &pEnc->vInterH, &pEnc->vInterV,
+							  &pEnc->vInterHV, pParam->edged_width,
+							  pParam->edged_height,
+							  (pParam->vol_flags & XVID_VOL_QUARTERPEL),
+							  current->rounding_type);
+			stop_inter_timer();
+			reference->is_interpolated = current->rounding_type;
+		}
 	}
 
 	current->coding_type = P_VOP;
@@ -1781,6 +1790,17 @@ FrameCodeP(Encoder * pEnc,
 		memcpy(current->mbs, reference->mbs, sizeof(MACROBLOCK) * mb_width * mb_height);
 	}
 
+	pEnc->current->is_edged = 0; /* not edged */
+	pEnc->current->is_interpolated = -1; /* not interpolated (fake rounding -1) */
+
+	/* what was this frame's interpolated reference will become 
+		forward (past) reference in b-frame coding */
+
+	image_swap(&pEnc->vInterH, &pEnc->f_refh);
+	image_swap(&pEnc->vInterV, &pEnc->f_refv);
+	image_swap(&pEnc->vInterHV, &pEnc->f_refhv);
+
+
 	/* XXX: debug
 	{
 		char s[100];
@@ -1832,24 +1852,38 @@ FrameCodeB(Encoder * pEnc,
 #endif
 
 	/* forward  */
-	image_setedges(f_ref, pEnc->mbParam.edged_width,
-				   pEnc->mbParam.edged_height, pEnc->mbParam.width,
-				   pEnc->mbParam.height);
-	start_timer();
-	image_interpolate(f_ref, &pEnc->f_refh, &pEnc->f_refv, &pEnc->f_refhv,
-					  pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
-					  (pEnc->mbParam.vol_flags & XVID_VOL_QUARTERPEL), 0);
-	stop_inter_timer();
+	if (!pEnc->reference->is_edged) {
+		image_setedges(f_ref, pEnc->mbParam.edged_width,
+					   pEnc->mbParam.edged_height, pEnc->mbParam.width,
+					   pEnc->mbParam.height);
+		pEnc->current->is_edged = 1;	
+	}
+
+	if (pEnc->reference->is_interpolated != 0) {
+		start_timer();
+		image_interpolate(f_ref, &pEnc->f_refh, &pEnc->f_refv, &pEnc->f_refhv,
+						  pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
+						  (pEnc->mbParam.vol_flags & XVID_VOL_QUARTERPEL), 0);
+		stop_inter_timer();
+		pEnc->reference->is_interpolated = 0;
+	}
 
 	/* backward */
-	image_setedges(b_ref, pEnc->mbParam.edged_width,
-				   pEnc->mbParam.edged_height, pEnc->mbParam.width,
-				   pEnc->mbParam.height);
-	start_timer();
-	image_interpolate(b_ref, &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV,
-					  pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
-					  (pEnc->mbParam.vol_flags & XVID_VOL_QUARTERPEL), 0);
-	stop_inter_timer();
+	if (!pEnc->current->is_edged) {
+		image_setedges(b_ref, pEnc->mbParam.edged_width,
+					   pEnc->mbParam.edged_height, pEnc->mbParam.width,
+					   pEnc->mbParam.height);
+		pEnc->current->is_edged = 1;
+	}
+
+	if (pEnc->current->is_interpolated != 0) {
+		start_timer();
+		image_interpolate(b_ref, &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV,
+						pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
+						(pEnc->mbParam.vol_flags & XVID_VOL_QUARTERPEL), 0);
+		stop_inter_timer();
+		pEnc->current->is_interpolated = 0;
+	}
 
 	start_timer();
 	MotionEstimationBVOP(&pEnc->mbParam, frame,
