@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.16 2003-04-27 14:21:35 chl Exp $
+ * $Id: xvid.h,v 1.27.2.17 2003-05-12 12:29:08 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -116,6 +116,20 @@ typedef struct {
 	int stride[4];			/* [in] image stride; "bytes per row"*/
 } xvid_image_t;
 
+/* video-object-sequence profiles */
+#define XVID_PROFILE_S_L0       0x08    /* simple */
+#define XVID_PROFILE_S_L1       0x01
+#define XVID_PROFILE_S_L2       0x02
+#define XVID_PROFILE_S_L3       0x03
+#define XVID_PROFILE_ARTS_L1    0x91    /* advanced realtime simple */
+#define XVID_PROFILE_ARTS_L2    0x92
+#define XVID_PROFILE_ARTS_L3    0x93
+#define XVID_PROFILE_ARTS_L4    0x94
+#define XVID_PROFILE_AS_L0      0xf0    /* advanced simple */
+#define XVID_PROFILE_AS_L1      0xf1
+#define XVID_PROFILE_AS_L2      0xf2
+#define XVID_PROFILE_AS_L3      0xf3
+#define XVID_PROFILE_AS_L4      0xf4
 
 /* aspect ratios */
 #define XVID_PAR_11_VGA	    1	/* 1:1 vga (square) */
@@ -133,6 +147,7 @@ typedef struct {
 #define XVID_TYPE_PVOP		2		/* predicted frame */
 #define XVID_TYPE_BVOP		3		/* bidirectionally encoded */
 #define XVID_TYPE_SVOP		4		/* predicted+sprite frame */
+
 
 /*****************************************************************************
  * xvid_global()
@@ -255,6 +270,19 @@ typedef struct
 } xvid_dec_stats_t;
 
 
+
+#define XVID_ZONE_QUANT     1
+#define XVID_ZONE_WEIGHT    2
+typedef struct
+{
+    int frame;
+    int mode;
+    int increment;
+    int base;
+} xvid_enc_zone_t;
+
+
+
 /*****************************************************************************
   xvid plugin system -- internals
 
@@ -263,6 +291,7 @@ typedef struct
   after encoding each frame xvidcore will call XVID_PLG_AFTER
   xvidcore will call XVID_PLG_DESTROY during XVID_ENC_DESTROY
  ****************************************************************************/
+
 
 #define XVID_PLG_CREATE     0
 #define XVID_PLG_DESTROY    1
@@ -279,7 +308,7 @@ typedef struct
 typedef struct
 {
     int version;
-    int flags;              /* plugin flags */
+    int flags;              /* [in:opt] plugin flags */
 } xvid_plg_info_t;
 
 
@@ -287,14 +316,17 @@ typedef struct
 {
     int version;
 
-    int width;
-    int height;
-    int mb_width;
-    int mb_height;
-	int fincr;
-    int fbase;
+    int num_zones;          /* [out] */
+    xvid_enc_zone_t * zones;    /* [out] */
 
-    void * param;
+    int width;              /* [out] */
+    int height;             /* [out] */
+    int mb_width;           /* [out] */
+    int mb_height;          /* [out] */
+	int fincr;              /* [out] */
+    int fbase;              /* [out] */
+
+    void * param;           /* [out] */
 } xvid_plg_create_t;
 
 
@@ -310,12 +342,17 @@ typedef struct
 {
     int version;
 
+    xvid_enc_zone_t * zone;    /* [out] current zone */
+    
     int width;              /* [out] */
     int height;             /* [out] */
     int mb_width;           /* [out] */
     int mb_height;          /* [out] */
 	int fincr;              /* [out] */
     int fbase;              /* [out] */
+
+    int min_quant[3];       /* [out] */
+    int max_quant[3];       /* [out] */
     
     xvid_image_t reference; /* [out] -> [out] */
     xvid_image_t current;   /* [out] -> [in,out] */
@@ -367,11 +404,9 @@ typedef struct
 } xvid_enc_plugin_t;
 
 
-
-xvid_plugin_func xvid_plugin_fixed;   /* fixed quantizer control */
-xvid_plugin_func xvid_plugin_cbr;   /* constant bitrate control */
-xvid_plugin_func xvid_plugin_2pass1;   /* 2pass rate control: first pass */
-xvid_plugin_func xvid_plugin_2pass2;   /* 2pass rate control: second pass */
+xvid_plugin_func xvid_plugin_single;   /* single-pass rate control */
+xvid_plugin_func xvid_plugin_2pass1;   /* two-pass rate control: first pass */
+xvid_plugin_func xvid_plugin_2pass2;   /* two-pass rate control: second pass */
 
 xvid_plugin_func xvid_plugin_lumimasking;  /* lumimasking */
 
@@ -379,24 +414,15 @@ xvid_plugin_func xvid_plugin_psnr;  /* write psnr values to stdout */
 xvid_plugin_func xvid_plugin_dump;  /* dump before and after yuvpgms */
 
 
-typedef struct
-{
-    int version;
-    int quant_increment;
-    int quant_base;
-} xvid_plugin_fixed_t;
 
-
-typedef struct
+typedef struct          /* single pass rate control */
 {
     int version;
     int bitrate;				/* bits per second */
-    int max_quantizer;
-    int min_quantizer;
     int reaction_delay_factor;
     int averaging_period;
     int buffer;
-} xvid_plugin_cbr_t;
+} xvid_plugin_single_t;
 
 
 typedef struct {
@@ -414,9 +440,9 @@ typedef struct {
 
 typedef struct {
     int version;
+    int bitrate;				/* bits per second */
     char * filename;
-	int bitrate;				/* bits per second */
-
+	
     int keyframe_boost;             /* keyframe boost percentage: [0..100...]; */
     int payback_method;
     int bitrate_payback_delay;
@@ -424,8 +450,6 @@ typedef struct {
     int curve_compression_low;
     int max_overflow_improvement;
     int max_overflow_degradation;
-    int min_quant[3];
-    int max_quant[3];
 
     int use_alt_curve;
 	int alt_curve_high_dist;
@@ -543,8 +567,13 @@ typedef enum {
 /* XVID_ENC_CREATE param1 */
 typedef struct {
 	int version;
+
+    int profile;            /* [in]     profile@level; refer to XVID_PROFILE_xxx */
 	int width;				/* [in]		frame dimensions; width, pixel units */
 	int height;				/* [in]		frame dimensions; height, pixel units */
+
+    int num_zones;          /* [in:opt] number of bitrate zones */
+    xvid_enc_zone_t * zones; /*             ^^ zone array */
 
     int num_plugins;        /* [in:opt] number of plugins */
     xvid_enc_plugin_t * plugins; /*        ^^ plugin array */
@@ -569,6 +598,9 @@ typedef struct {
 
 	int bquant_ratio;		/* [in:opt]	bframe quantizer multipier/offeset; used to decide bframes quant when bquant==-1 */
 	int bquant_offset;		/*			bquant = (avg(past_ref_quant,future_ref_quant)*bquant_ratio + bquant_offset) / 100 */
+
+    int min_quant[3];       /* [in:opt] */
+    int max_quant[3];       /* [in:opt] */
 
 /* ^^^ -------------------------------------------------------------------------*/
 

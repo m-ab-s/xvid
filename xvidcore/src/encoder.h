@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.27.2.6 2003-03-26 11:01:03 suxen_drol Exp $
+ *  $Id: encoder.h,v 1.27.2.7 2003-05-12 12:28:31 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -79,10 +79,15 @@ typedef struct
 	uint32_t fincr;
 	uint32_t fbase;
 
+    int profile;
+
 	xvid_global_t global_flags;
 	int bquant_ratio;
 	int bquant_offset;
 	int frame_drop_ratio;
+
+    int min_quant[3];
+    int max_quant[3];
 
 #ifdef _SMP
 	int num_threads;
@@ -169,6 +174,10 @@ typedef struct
 
 	int iFrameNum;
 	int bitrate;
+
+    // zones
+    unsigned int num_zones;
+    xvid_enc_zone_t * zones;
 
     // plugins
     unsigned int num_plugins;    /* note: we store plugin flags in MBPARAM */

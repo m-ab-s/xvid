@@ -513,24 +513,9 @@ BitstreamReadHeaders(Bitstream * bs,
 			DPRINTF(DPRINTF_HEADER, "vol id %i", start_code & VIDOBJLAY_START_CODE_MASK);
 
 			BitstreamSkip(bs, 32);	// video_object_layer_start_code
-
 			BitstreamSkip(bs, 1);	// random_accessible_vol
 
-			// video_object_type_indication
-			if (BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_SIMPLE && 
-				BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_CORE && 
-				BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_MAIN && 
-				BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_ACE && 
-                BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_ART_SIMPLE &&
-                BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_ASP &&
-				BitstreamShowBits(bs, 8) != 0)	// BUGGY DIVX
-			{
-				DPRINTF(DPRINTF_ERROR,"video_object_type_indication %i not supported ",
-					BitstreamShowBits(bs, 8));
-				return -1;
-			}
-			BitstreamSkip(bs, 8);
-
+            BitstreamSkip(bs, 8);   // video_object_type_indication
 
 			if (BitstreamGetBit(bs))	// is_object_layer_identifier
 			{
@@ -1129,7 +1114,6 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	static const unsigned int vo_id = 0;
 	static const unsigned int vol_id = 0;
 	int vol_ver_id=1;
-	int profile = 0x03;	/* simple profile/level 3 */
     int vol_type_ind=VIDOBJLAY_TYPE_SIMPLE;
 
 	if ( (pParam->vol_flags & XVID_VOL_QUARTERPEL) ||  
@@ -1138,13 +1122,11 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 		vol_ver_id = 2;
 
     if ((pParam->vol_flags & XVID_VOL_REDUCED_ENABLE)) {
-		profile = 0x93;	/* advanced realtime simple profile/level 3 */
         vol_type_ind = VIDOBJLAY_TYPE_ART_SIMPLE;
     }
 
 	if ((pParam->vol_flags & XVID_VOL_QUARTERPEL) || 
         (pParam->vol_flags & XVID_VOL_GMC)) {
-		profile = 0xf3;	/* advanced simple profile/level 2 */
         vol_type_ind = VIDOBJLAY_TYPE_ASP;
     }
 
@@ -1153,8 +1135,10 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 /* no padding here, anymore. You have to make sure that you are 
    byte aligned, and that always 1-8 padding bits have been written */
 
-	BitstreamPutBits(bs, VISOBJSEQ_START_CODE, 32);
-	BitstreamPutBits(bs, profile, 8);
+    if (pParam->profile) {
+	    BitstreamPutBits(bs, VISOBJSEQ_START_CODE, 32);
+	    BitstreamPutBits(bs, pParam->profile, 8);
+    }
 
 	// visual_object_start_code
 	BitstreamPad(bs);
@@ -1171,7 +1155,7 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	BitstreamPutBits(bs, VIDOBJLAY_START_CODE|(vol_id&0x4), 32);
 
 	BitstreamPutBit(bs, 0);		// random_accessible_vol
-	BitstreamPutBits(bs, 0, 8);	// video_object_type_indication
+	BitstreamPutBits(bs, vol_type_ind, 8);	// video_object_type_indication
 
 	if (vol_ver_id == 1)
 	{

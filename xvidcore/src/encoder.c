@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.20 2003-04-27 21:48:39 edgomez Exp $
+ *  $Id: encoder.c,v 1.95.2.21 2003-05-12 12:27:32 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -134,6 +134,8 @@ enc_create(xvid_enc_create_t * create)
 		return XVID_ERR_MEMORY;
 	memset(pEnc, 0, sizeof(Encoder));
 
+    pEnc->mbParam.profile = create->profile;
+
 	/* global flags */
     pEnc->mbParam.global_flags = create->global;
 
@@ -150,6 +152,18 @@ enc_create(xvid_enc_create_t * create)
 	pEnc->mbParam.fbase = create->fincr <= 0 ? 25 : create->fbase;
     if (pEnc->mbParam.fincr>0)
 	    simplify_time(&pEnc->mbParam.fincr, &pEnc->mbParam.fbase);
+
+    /* zones */
+    if(create->num_zones > 0) {
+		pEnc->num_zones = create->num_zones;
+		pEnc->zones = xvid_malloc(sizeof(xvid_enc_zone_t) * pEnc->num_zones, CACHE_LINE);
+		if (pEnc->zones == NULL)
+			goto xvid_err_memory0;
+        memcpy(pEnc->zones, create->zones, sizeof(xvid_enc_zone_t) * pEnc->num_zones);
+	} else {
+		pEnc->num_zones = 0;
+		pEnc->zones = NULL;
+	}
 
     /* plugins */
     if(create->num_plugins > 0) {
@@ -174,6 +188,8 @@ enc_create(xvid_enc_create_t * create)
 
         memset(&pcreate, 0, sizeof(xvid_plg_create_t));
         pcreate.version = XVID_VERSION;
+        pcreate.num_zones = pEnc->num_zones;
+        pcreate.zones = pEnc->zones;
         pcreate.width = pEnc->mbParam.width;
         pcreate.height = pEnc->mbParam.height;
         pcreate.fincr = pEnc->mbParam.fincr;
@@ -202,6 +218,12 @@ enc_create(xvid_enc_create_t * create)
 	pEnc->mbParam.max_bframes = MAX(create->max_bframes, 0);
 	pEnc->mbParam.bquant_ratio = MAX(create->bquant_ratio, 0);
 	pEnc->mbParam.bquant_offset = create->bquant_offset;
+
+    /* min/max quant */
+    for (n=0; n<3; n++) {
+        pEnc->mbParam.min_quant[n] = create->min_quant[n] > 0 ? create->min_quant[n] : 2;
+        pEnc->mbParam.max_quant[n] = create->max_quant[n] > 0 ? create->max_quant[n] : 31;
+    }
 	
 	/* frame drop ratio */
 	pEnc->mbParam.frame_drop_ratio = MAX(create->frame_drop_ratio, 0);
@@ -505,6 +527,8 @@ enc_create(xvid_enc_create_t * create)
     }
     xvid_free(pEnc->plugins);
 
+    xvid_free(pEnc->zones);
+
 	xvid_free(pEnc);
 
 	create->handle = NULL;
@@ -620,6 +644,9 @@ enc_destroy(Encoder * pEnc)
         xvid_free(pEnc->plugins);
     }
 
+    if (pEnc->num_plugins>0)
+        xvid_free(pEnc->zones);
+
 	xvid_free(pEnc);
 
 	return 0;  /* ok */
@@ -640,6 +667,10 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
 
     memset(&data, 0, sizeof(xvid_plg_data_t));
     data.version = XVID_VERSION;
+
+    /* find zone */
+    for(i=0; i<pEnc->num_zones && pEnc->zones[i].frame<=frame->frame_num; i++) ;
+    data.zone = i>0 ? &pEnc->zones[i-1] : NULL;
 
     data.width = pEnc->mbParam.width;
     data.height = pEnc->mbParam.height;
@@ -668,7 +699,7 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
 
     if (opt == XVID_PLG_BEFORE) {
         data.type = XVID_TYPE_AUTO;
-        data.quant = 2;
+        data.quant = 0;
         
 		if ((pEnc->mbParam.plugin_flags & XVID_REQDQUANTS)) {
             data.dquant = pEnc->temp_dquants;
@@ -760,7 +791,7 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
     /* copy modified values back into frame*/
     if (opt == XVID_PLG_BEFORE) {
         *type = data.type;
-        *quant = data.quant;
+        *quant = data.quant > 0 ? data.quant : 2;   /* default */
 
         if ((pEnc->mbParam.plugin_flags & XVID_REQDQUANTS)) {
             for (j=0; j<pEnc->mbParam.mb_height; j++)

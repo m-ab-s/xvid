@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbtransquant.c,v 1.21.2.11 2003-05-11 13:26:14 chl Exp $
+ * $Id: mbtransquant.c,v 1.21.2.12 2003-05-12 12:33:16 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -745,7 +745,7 @@ static const int Trellis_Lambda_Tabs[31] = {
 };
 #undef TL
 
-static inline int Find_Last(const int16_t *C, const uint16_t *Zigzag, int i)
+static __inline int Find_Last(const int16_t *C, const uint16_t *Zigzag, int i)
 {
   while(i>=0)
     if (C[Zigzag[i]])
@@ -778,13 +778,13 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
   const int Lambda = Trellis_Lambda_Tabs[Q-1];    // it's 1/lambda, actually
 
   int Run_Start = -1;
-  Run_Costs[-1] = 2<<16;                          // source (w/ CBP penalty)
   uint32_t Min_Cost = 2<<16;
 
   int Last_Node = -1;
   uint32_t Last_Cost = 0;
 
   int i, j;
+  Run_Costs[-1] = 2<<16;                          // source (w/ CBP penalty)
 
   Non_Zero = Find_Last(Out, Zigzag, Non_Zero);
   if (Non_Zero<0)
@@ -969,7 +969,7 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
 
 #define DBG 0
 
-static inline uint32_t Evaluate_Cost(const int16_t *C, int Mult, int Bias,
+static __inline uint32_t Evaluate_Cost(const int16_t *C, int Mult, int Bias,
                                 const uint16_t * Zigzag, int Max, int Lambda)
 {
 #if (DBG>0)

@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass1.c,v 1.1.2.2 2003-04-08 14:01:09 suxen_drol Exp $
+ * $Id: plugin_2pass1.c,v 1.1.2.3 2003-05-12 12:33:16 suxen_drol Exp $
  *
  *****************************************************************************/
 
@@ -36,6 +36,8 @@
 typedef struct
 {
 	FILE * stat_file;
+
+    double fq_error;
 } rc_2pass1_t;
 
 
@@ -60,6 +62,15 @@ static int rc_2pass1_create(xvid_plg_create_t * create, rc_2pass1_t ** handle)
 	if((rc->stat_file = fopen(param->filename, "w+")) == NULL)
 		return(XVID_ERR_FAIL);
 
+    {
+        int i;
+        printf("---\n");
+        for (i=0;i<create->num_zones;i++) {
+            printf("[%i] %i\n", create->zones[i].frame, create->zones[i].increment);
+        }
+        printf("---\n");
+    }
+
 	/*
 	 * The File Header
 	 */
@@ -67,6 +78,8 @@ static int rc_2pass1_create(xvid_plg_create_t * create, rc_2pass1_t ** handle)
     fprintf(rc->stat_file, "version %i.%i.%i\n",XVID_MAJOR(XVID_VERSION), XVID_MINOR(XVID_VERSION), XVID_PATCH(XVID_VERSION));
 	fprintf(rc->stat_file, "start\n");
     fprintf(rc->stat_file, "type quantizer length kblocks mblocks ublocks\n");  */
+    
+    rc->fq_error = 0;
 
     *handle = rc;
 	return(0);
@@ -75,7 +88,6 @@ static int rc_2pass1_create(xvid_plg_create_t * create, rc_2pass1_t ** handle)
 
 static int rc_2pass1_destroy(rc_2pass1_t * rc, xvid_plg_destroy_t * destroy)
 {
-    //fprintf(rc->stat_file, "stop\n");
 	fclose(rc->stat_file);
 
 	free(rc);
@@ -85,8 +97,16 @@ static int rc_2pass1_destroy(rc_2pass1_t * rc, xvid_plg_destroy_t * destroy)
 
 static int rc_2pass1_before(rc_2pass1_t * rc, xvid_plg_data_t * data)
 {
-    data->quant = 2;
-    data->type = XVID_TYPE_AUTO;
+     if (data->quant <= 0) {
+        if (data->zone && data->zone->mode == XVID_ZONE_QUANT) {
+            rc->fq_error += (double)data->zone->increment / (double)data->zone->base;
+            data->quant = (int)rc->fq_error;
+            rc->fq_error -= data->quant;
+   
+        }else {
+            data->quant = 2;
+        }
+    }
     return 0;
 }
 

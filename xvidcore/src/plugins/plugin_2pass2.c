@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.2 2003-04-08 14:01:09 suxen_drol Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.3 2003-05-12 12:33:16 suxen_drol Exp $
  *
  *****************************************************************************/
 
@@ -686,12 +686,6 @@ static int rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t ** handle)
     if (rc->param.curve_compression_low <= 0) rc->param.curve_compression_low = 0;
     if (rc->param.max_overflow_improvement <= 0) rc->param.max_overflow_improvement = 60;
     if (rc->param.max_overflow_degradation <= 0) rc->param.max_overflow_degradation = 60;
-    if (rc->param.min_quant[0] <= 0) rc->param.min_quant[0] = 2;
-    if (rc->param.max_quant[0] <= 0) rc->param.max_quant[0] = 31;
-    if (rc->param.min_quant[1] <= 0) rc->param.min_quant[1] = 2;
-    if (rc->param.max_quant[1] <= 0) rc->param.max_quant[1] = 31;
-    if (rc->param.min_quant[2] <= 0) rc->param.min_quant[2] = 2;
-    if (rc->param.max_quant[2] <= 0) rc->param.max_quant[2] = 31;
 
     if (rc->param.use_alt_curve <= 0) rc->param.use_alt_curve = 0;
     if (rc->param.alt_curve_high_dist <= 0) rc->param.alt_curve_high_dist = 500;
@@ -992,10 +986,10 @@ static int rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 
     /* cap to min/max quant */
 
-    if (data->quant < rc->param.min_quant[s->type-1]) {
-        data->quant = rc->param.min_quant[s->type-1];
-    }else if (data->quant > rc->param.max_quant[s->type-1]) {
-        data->quant = rc->param.max_quant[s->type-1];
+    if (data->quant < data->min_quant[s->type-1]) {
+        data->quant = data->min_quant[s->type-1];
+    }else if (data->quant > data->max_quant[s->type-1]) {
+        data->quant = data->max_quant[s->type-1];
     }
 
     /* subsequent p/b frame quants can only be +- 2 */

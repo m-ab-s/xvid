@@ -21,7 +21,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.h,v 1.17.2.3 2003-04-04 22:13:35 edgomez Exp $
+ * $Id: bitstream.h,v 1.17.2.4 2003-05-12 12:31:05 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -60,8 +60,8 @@
 
 #define VIDOBJLAY_TYPE_SIMPLE			1
 /*#define VIDOBJLAY_TYPE_SIMPLE_SCALABLE    2 */
-#define VIDOBJLAY_TYPE_CORE				3
-#define VIDOBJLAY_TYPE_MAIN				4
+/*#define VIDOBJLAY_TYPE_CORE				3 */
+/*#define VIDOBJLAY_TYPE_MAIN				4 */
 /*#define VIDOBJLAY_TYPE_NBIT				5 */
 /*#define VIDOBJLAY_TYPE_ANIM_TEXT			6 */
 /*#define VIDOBJLAY_TYPE_ANIM_MESH			7 */
@@ -69,9 +69,13 @@
 /*#define VIDOBJLAY_TYPE_STILL_SCALABLE		9 */
 #define VIDOBJLAY_TYPE_ART_SIMPLE		10
 /*#define VIDOBJLAY_TYPE_CORE_SCALABLE		11 */
-#define VIDOBJLAY_TYPE_ACE				12
-/*#define VIDOBJLAY_TYPE_SIMPLE_FBA			13 */
+/*#define VIDOBJLAY_TYPE_ACE				12 */
+/*#define VIDOBJLAY_TYPE_ADVANCED_SCALABLE_TEXTURE 13 */
+/*#define VIDOBJLAY_TYPE_SIMPLE_FBA			14 */
+/*#define VIDEOJLAY_TYPE_SIMPLE_STUDIO    15*/
+/*#define VIDEOJLAY_TYPE_CORE_STUDIO      16*/
 #define VIDOBJLAY_TYPE_ASP              17
+/*#define VIDOBJLAY_TYPE_FGS              18*/
 
 
 /*#define VIDOBJLAY_AR_SQUARE           1 */
