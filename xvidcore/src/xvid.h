@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.33 2003-08-26 14:07:11 edgomez Exp $
+ * $Id: xvid.h,v 1.27.2.34 2003-09-04 18:40:01 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -531,6 +531,7 @@ int xvid_encore(void *handle, int opt, void *param1, void *param2);
 /* only valid for vol_flags|=XVID_VOL_REDUCED_ENABLED */
 #define XVID_VOP_REDUCED         (1<<11) /* reduced resolution vop */
 
+#define XVID_VOP_FAST_MODEDECISION_RD (1<< 8) /* use simplified R-D mode decision */
 
 
 
@@ -562,7 +563,8 @@ int xvid_encore(void *handle, int opt, void *param1, void *param2);
 #define XVID_ME_UNRESTRICTED8         (1<<22) /* unrestricted ME, not implemented */
 #define XVID_ME_OVERLAPPING8          (1<<23) /* overlapping ME, not implemented */
 
-
+#define XVID_ME_DETECT_STATIC_MOTION  (1<<24) /* speed-up ME by detecting stationary scenes */
+#define XVID_ME_FASTREFINE16		  (1<<25) /* use low-complexity refinement functions */
 
 /* XVID_ENC_CREATE param1 */
 typedef struct {

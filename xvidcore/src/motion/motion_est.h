@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.h,v 1.3.2.18 2003-08-28 11:06:16 syskin Exp $
+ * $Id: motion_est.h,v 1.3.2.19 2003-09-04 18:40:02 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -110,7 +110,10 @@ typedef struct
 	VECTOR predMV;
 	VECTOR * currentMV;
 	VECTOR * currentQMV;
+	VECTOR * currentMV2;
+	VECTOR * currentQMV2;
 	int32_t * iMinSAD;
+	int32_t * iMinSAD2;
 	const uint8_t * RefP[6]; /* N, V, H, HV, cU, cV */
 	const uint8_t * CurU;
 	const uint8_t * CurV;
