@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.63 2004-01-30 18:53:50 chl Exp $
+ * $Id: encoder.c,v 1.95.2.64 2004-02-16 03:40:47 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1440,7 +1440,7 @@ FrameCodeI(Encoder * pEnc,
 		start_timer();
 		image_setedges(&pEnc->current->image,
 			pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
-			pEnc->mbParam.width, pEnc->mbParam.height);
+			pEnc->mbParam.width, pEnc->mbParam.height, 0);
 		stop_edges_timer();
 	}
 
@@ -1551,7 +1551,7 @@ FrameCodeP(Encoder * pEnc,
 	if (!reference->is_edged) {	
 		start_timer();
 		image_setedges(pRef, pParam->edged_width, pParam->edged_height,
-					   pParam->width, pParam->height);
+					   pParam->width, pParam->height, 0);
 		stop_edges_timer();
 		reference->is_edged = 1;
 	}
@@ -1949,7 +1949,7 @@ FrameCodeB(Encoder * pEnc,
 	if (!pEnc->reference->is_edged) {
 		image_setedges(f_ref, pEnc->mbParam.edged_width,
 					   pEnc->mbParam.edged_height, pEnc->mbParam.width,
-					   pEnc->mbParam.height);
+					   pEnc->mbParam.height, 0);
 		pEnc->current->is_edged = 1;	
 	}
 
@@ -1966,7 +1966,7 @@ FrameCodeB(Encoder * pEnc,
 	if (!pEnc->current->is_edged) {
 		image_setedges(b_ref, pEnc->mbParam.edged_width,
 					   pEnc->mbParam.edged_height, pEnc->mbParam.width,
-					   pEnc->mbParam.height);
+					   pEnc->mbParam.height, 0);
 		pEnc->current->is_edged = 1;
 	}
 

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: image.h,v 1.11.2.3 2003-10-01 23:23:01 edgomez Exp $
+ * $Id: image.h,v 1.11.2.4 2004-02-16 03:40:07 syskin Exp $
  *
  ****************************************************************************/
 
@@ -63,7 +63,8 @@ void image_setedges(IMAGE * image,
 					uint32_t edged_width,
 					uint32_t edged_height,
 					uint32_t width,
-					uint32_t height);
+					uint32_t height,
+					int bs_version);
 
 void image_interpolate(const IMAGE * refn,
 					   IMAGE * refh,

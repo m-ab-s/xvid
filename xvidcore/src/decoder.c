@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.32 2004-02-15 13:26:04 syskin Exp $
+ * $Id: decoder.c,v 1.49.2.33 2004-02-16 03:40:47 syskin Exp $
  *
  ****************************************************************************/
 
@@ -779,7 +779,7 @@ decoder_pframe(DECODER * dec,
 
 	start_timer();
 	image_setedges(&dec->refn[0], dec->edged_width, dec->edged_height,
-					dec->width, dec->height);
+					dec->width, dec->height, dec->bs_version);
 	stop_edges_timer();
 
 	if (gmc_warp) {
@@ -1180,9 +1180,9 @@ decoder_bframe(DECODER * dec,
 
 	start_timer();
 	image_setedges(&dec->refn[0], dec->edged_width, dec->edged_height,
-					dec->width, dec->height);
+					dec->width, dec->height, dec->bs_version);
 	image_setedges(&dec->refn[1], dec->edged_width, dec->edged_height,
-					dec->width, dec->height);
+					dec->width, dec->height, dec->bs_version);
 	stop_edges_timer();
 
 	for (y = 0; y < dec->mb_height; y++) {

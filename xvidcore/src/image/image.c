@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: image.c,v 1.26.2.16 2004-02-07 10:01:27 chl Exp $
+ * $Id: image.c,v 1.26.2.17 2004-02-16 03:40:07 syskin Exp $
  *
  ****************************************************************************/
 
@@ -127,13 +127,16 @@ image_copy(IMAGE * image1,
 	memcpy(image1->v, image2->v, edged_width * height / 4);
 }
 
+/* setedges bug was fixed in this BS version */
+#define SETEDGES_BUG_BEFORE		18
 
 void
 image_setedges(IMAGE * image,
 			   uint32_t edged_width,
 			   uint32_t edged_height,
 			   uint32_t width,
-			   uint32_t height)
+			   uint32_t height,
+			   int bs_version)
 {
 	const uint32_t edged_width2 = edged_width / 2;
 	uint32_t width2;
@@ -141,14 +144,16 @@ image_setedges(IMAGE * image,
 	uint8_t *dst;
 	uint8_t *src;
 
-
 	dst = image->y - (EDGE_SIZE + EDGE_SIZE * edged_width);
 	src = image->y;
 
 	/* According to the Standard Clause 7.6.4, padding is done starting at 16
-	 * pixel width and height multiples */
-	width  = (width+15)&~15;
-	height = (height+15)&~15;
+	 * pixel width and height multiples. This was not respected in old xvids */
+	if (bs_version == 0 || bs_version >= SETEDGES_BUG_BEFORE) {
+		width  = (width+15)&~15;
+		height = (height+15)&~15;
+	}
+
 	width2 = width/2;
 
 	for (i = 0; i < EDGE_SIZE; i++) {
