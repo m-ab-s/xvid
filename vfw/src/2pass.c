@@ -23,6 +23,7 @@
  *
  *	History:
  *
+ *	17.04.2002	changed 1st pass quant to always be 2 (2pass_update())
  *	07.04.2002	added max bitrate constraint, overflow controls (foxer)
  *	31.03.2002	inital version;
  *
@@ -1072,7 +1073,8 @@ int codec_2pass_update(CODEC* codec, XVID_ENC_FRAME* frame, XVID_ENC_STATS* stat
 		nns1.md_u = nns1.md_y = 0;
 		nns1.mk_u = nns1.mk_y = 0;
 
-		nns1.quant = stats->quant;
+//		nns1.quant = stats->quant;
+		nns1.quant = 2;				// ugly fix for lumi masking in 1st pass returning new quant
 		if (frame->intra) 
 		{
 			nns1.quant |= NNSTATS_KEYFRAME;

@@ -23,6 +23,7 @@
  *
  *	History:
  *
+ *	17.04.2002	re-enabled lumi masking in 1st pass
  *	15.04.2002	updated cbr support
  *	07.04.2002	min keyframe interval checkbox
  *				2-pass max bitrate and overflow customization
@@ -487,7 +488,7 @@ void adv_mode(HWND hDlg, int mode)
 
 	const int twopass1_disable[] = {
 		IDC_CBR_REACTIONDELAY, IDC_CBR_AVERAGINGPERIOD, IDC_CBR_BUFFER,
-		IDC_LUMMASK, IDC_MINIQUANT, IDC_MAXIQUANT, IDC_MINPQUANT, IDC_MAXPQUANT,
+		IDC_MINIQUANT, IDC_MAXIQUANT, IDC_MINPQUANT, IDC_MAXPQUANT,
 		IDC_KFBOOST, IDC_DUMMY2PASS,
 		IDC_CURVECOMPH, IDC_CURVECOMPL, IDC_PAYBACK, IDC_PAYBACKBIAS, IDC_PAYBACKPROP,
 		IDC_STATS2, IDC_STATS2_BROWSE,
