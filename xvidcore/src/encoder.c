@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.15 2003-03-26 14:56:10 edgomez Exp $
+ *  $Id: encoder.c,v 1.95.2.16 2003-03-27 17:09:48 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -664,10 +664,10 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
         data.type = XVID_TYPE_AUTO;
         data.quant = 2;
         
-        if ((pEnc->mbParam.plugin_flags & XVID_REQDQUANTS)) {
+		if ((pEnc->mbParam.plugin_flags & XVID_REQDQUANTS)) {
             data.dquant = pEnc->temp_dquants;
             data.dquant_stride = pEnc->mbParam.mb_width;
-            memset(data.dquant, 0, data.mb_width*data.mb_height);
+			memset(data.dquant, 0, data.mb_width*data.mb_height);
         }
        
         /* todo: [vol,vop,motion]_flags*/
@@ -1041,7 +1041,7 @@ repeat:
 		}else{
 			type = MEanalysis(&pEnc->reference->image, pEnc->current,
 					&pEnc->mbParam, pEnc->mbParam.iMaxKeyInterval,
-					pEnc->iFrameNum, pEnc->bframenum_tail);
+					pEnc->iFrameNum, pEnc->bframenum_tail, xFrame->bframe_threshold);
 
             if (type == B_VOP && !(pEnc->current->vop_flags & XVID_VOP_DYNAMIC_BFRAMES)) {
                 type = P_VOP;   /* disable dynamic bframes */

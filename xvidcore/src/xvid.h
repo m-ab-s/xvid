@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.13 2003-03-26 14:56:10 edgomez Exp $
+ * $Id: xvid.h,v 1.27.2.14 2003-03-27 17:09:48 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -601,6 +601,7 @@ typedef struct {
 	
 	int type;				/* [in:opt] coding type */
 	int quant;				/* [in] frame quantizer; if <=0, automatatic (ratecontrol) */
+	int bframe_threshold;
 
 	void *bitstream;		/* [in:opt] bitstream ptr (written to)*/
 	int length;				/* [in:opt] bitstream length (bytes) */
