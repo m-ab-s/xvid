@@ -907,7 +907,7 @@ SearchP(const IMAGE * const pRef,
 
 	get_pmvdata2(pMBs, pParam->mb_width, 0, x, y, 0, pmv, Data->temp);  //has to be changed to get_pmv(2)()
 	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
-				pParam->width, pParam->height, Data->iFcode, pParam->m_quarterpel);
+		pParam->width, pParam->height, Data->iFcode - pParam->m_quarterpel);
 
 	Data->Cur = pCur->y + (x + y * Data->iEdgedWidth) * 16;
 	Data->CurV = pCur->v + (x + y * (Data->iEdgedWidth/2)) * 8;
@@ -1022,8 +1022,8 @@ SearchP(const IMAGE * const pRef,
 	if((pParam->m_quarterpel) && (MotionFlags & PMV_QUARTERPELREFINE16)) {
 
 		Data->qpel_precision = 1;
-		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
-				pParam->width, pParam->height, Data->iFcode, 0);
+		get_range_qpel(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
+				pParam->width, pParam->height, Data->iFcode);
 
 		SubpelRefine(Data);
 	}
@@ -1125,7 +1125,7 @@ Search8(const SearchData * const OldData,
 		Data->qpel_precision = 0;
 		
 		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 8,
-				pParam->width, pParam->height, OldData->iFcode, pParam->m_quarterpel);
+				pParam->width, pParam->height, OldData->iFcode - pParam->m_quarterpel);
 		CheckCandidate = CheckCandidate8;
 
 		if (MotionFlags & PMV_EXTSEARCH8) {
@@ -1159,8 +1159,8 @@ Search8(const SearchData * const OldData,
 			if((!(Data->currentQMV->x & 1)) && (!(Data->currentQMV->y & 1)) &&
 				(MotionFlags & PMV_QUARTERPELREFINE8)) {
 			Data->qpel_precision = 1;
-			get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 8,
-				pParam->width, pParam->height, OldData->iFcode, 0);
+			get_range_qpel(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 8,
+				pParam->width, pParam->height, OldData->iFcode);
 			SubpelRefine(Data);
 			}
 		}
@@ -1264,7 +1264,7 @@ SearchBF(	const uint8_t * const pRef,
 	Data->predMV = *predMV;
 
 	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
-				pParam->width, pParam->height, iFcode, pParam->m_quarterpel);
+				pParam->width, pParam->height, iFcode - pParam->m_quarterpel);
 
 	pmv[0] = Data->predMV;
 	if (Data->qpel) { pmv[0].x /= 2; pmv[0].y /= 2; }
@@ -1293,8 +1293,8 @@ SearchBF(	const uint8_t * const pRef,
 		Data->currentQMV->x = 2*Data->currentMV->x;
 		Data->currentQMV->y = 2*Data->currentMV->y;
 		Data->qpel_precision = 1;
-		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
-					pParam->width, pParam->height, iFcode, 0);
+		get_range_qpel(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
+					pParam->width, pParam->height, iFcode);
 		SubpelRefine(Data);
 	}
 
@@ -1547,8 +1547,8 @@ SearchInterpolate(const uint8_t * const f_Ref,
 	fData->bpredMV = bData.predMV = *b_predMV;
 
 	fData->currentMV[0] = fData->currentMV[2];
-	get_range(&fData->min_dx, &fData->max_dx, &fData->min_dy, &fData->max_dy, x, y, 16, pParam->width, pParam->height, fcode, pParam->m_quarterpel);
-	get_range(&bData.min_dx, &bData.max_dx, &bData.min_dy, &bData.max_dy, x, y, 16, pParam->width, pParam->height, bcode, pParam->m_quarterpel);
+	get_range(&fData->min_dx, &fData->max_dx, &fData->min_dy, &fData->max_dy, x, y, 16, pParam->width, pParam->height, fcode - pParam->m_quarterpel);
+	get_range(&bData.min_dx, &bData.max_dx, &bData.min_dy, &bData.max_dy, x, y, 16, pParam->width, pParam->height, bcode - pParam->m_quarterpel);
 
 	if (fData->currentMV[0].x > fData->max_dx) fData->currentMV[0].x = fData->max_dx;
 	if (fData->currentMV[0].x < fData->min_dx) fData->currentMV[0].x = fData->min_dx;
@@ -1587,8 +1587,8 @@ SearchInterpolate(const uint8_t * const f_Ref,
 	if (fData->qpel) {
 		CheckCandidate = CheckCandidateInt;
 		fData->qpel_precision = bData.qpel_precision = 1;
-		get_range(&fData->min_dx, &fData->max_dx, &fData->min_dy, &fData->max_dy, x, y, 16, pParam->width, pParam->height, fcode, 0);
-		get_range(&bData.min_dx, &bData.max_dx, &bData.min_dy, &bData.max_dy, x, y, 16, pParam->width, pParam->height, bcode, 0);
+		get_range_qpel(&fData->min_dx, &fData->max_dx, &fData->min_dy, &fData->max_dy, x, y, 16, pParam->width, pParam->height, fcode);
+		get_range_qpel(&bData.min_dx, &bData.max_dx, &bData.min_dy, &bData.max_dy, x, y, 16, pParam->width, pParam->height, bcode);
 		fData->currentQMV[2].x = fData->currentQMV[0].x = 2 * fData->currentMV[0].x;
 		fData->currentQMV[2].y = fData->currentQMV[0].y = 2 * fData->currentMV[0].y;
 		fData->currentQMV[1].x = 2 * fData->currentMV[1].x;
@@ -1788,7 +1788,7 @@ SearchPhinted (	const IMAGE * const pRef,
 	MainSearchFunc * MainSearchPtr;
 
 	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
-				pParam->width, pParam->height, Data->iFcode, pParam->m_quarterpel);
+				pParam->width, pParam->height, Data->iFcode - pParam->m_quarterpel);
 
 	Data->Cur = pCur->y + (x + y * Data->iEdgedWidth) * 16;
 	Data->CurV = pCur->v + (x + y * (Data->iEdgedWidth/2)) * 8;
@@ -1851,8 +1851,8 @@ SearchPhinted (	const IMAGE * const pRef,
 	}
 
 	if((pParam->m_quarterpel) && (MotionFlags & PMV_QUARTERPELREFINE16)) {
-		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
-				pParam->width, pParam->height, Data->iFcode, 0);
+		get_range_qpel(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
+				pParam->width, pParam->height, Data->iFcode);
 		Data->qpel_precision = 1;
 		SubpelRefine(Data);
 	}
@@ -2008,7 +2008,7 @@ MEanalyzeMB (	const uint8_t * const pRef,
 			else Data->predMV = get_pmv2(pMBs, pParam->mb_width, 0, x, y, 0); //else median
 
 	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
-				pParam->width, pParam->height, Data->iFcode, pParam->m_quarterpel);
+				pParam->width, pParam->height, Data->iFcode - pParam->m_quarterpel);
 
 	Data->Cur = pCur + (x + y * pParam->edged_width) * 16;
 	Data->Ref = pRef + (x + y * pParam->edged_width) * 16;

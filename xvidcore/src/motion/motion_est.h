@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion_est.h,v 1.1.2.8 2002-11-20 15:29:07 syskin Exp $
+ *  $Id: motion_est.h,v 1.1.2.9 2002-12-08 14:57:09 syskin Exp $
  *
  ***************************************************************************/
 
@@ -165,12 +165,10 @@ get_range(int32_t * const min_dx,
 		  const uint32_t block_sz,	/* block dimension, 8 or 16 */
 		  const uint32_t width,
 		  const uint32_t height,
-		  const uint32_t fcode,
-		  const uint32_t quarterpel)
+		  const uint32_t fcode)
 {
-
 	int k;
-	const int search_range = 32 << (fcode - 1 - quarterpel);
+	const int search_range = 32 << (fcode - 1);
 	const int high = search_range - 1;
 	const int low = -search_range;
 
@@ -183,7 +181,34 @@ get_range(int32_t * const min_dx,
 	*min_dx = MAX(low, k);
 	k = -2 * (int)((y+1) * block_sz);
 	*min_dy = MAX(low, k);
+}
 
+static void __inline
+get_range_qpel(int32_t * const min_dx,
+		  int32_t * const max_dx,
+		  int32_t * const min_dy,
+		  int32_t * const max_dy,
+		  const uint32_t x,
+		  const uint32_t y,
+		  const uint32_t block_sz,	/* block dimension, 8 or 16 */
+		  const uint32_t width,
+		  const uint32_t height,
+		  const uint32_t fcode)
+{
+	int k;
+	const int search_range = 32 << (fcode - 1);
+	const int high = search_range - 1;
+	const int low = -search_range;
+
+	k = 4 * (int)(width - x*block_sz);
+	*max_dx = MIN(high, k);
+	k = 4 * (int)(height -  y*block_sz);
+	*max_dy = MIN(high, k);
+	
+	k = -4 * (int)((x+1) * block_sz);
+	*min_dx = MAX(low, k);
+	k = -4 * (int)((y+1) * block_sz);
+	*min_dy = MAX(low, k);
 }
 
 
