@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.4 2003-05-17 13:24:10 suxen_drol Exp $
+ * $Id: decoder.c,v 1.49.2.5 2003-05-22 16:34:05 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -304,7 +304,7 @@ decoder_mbintra(DECODER * dec,
 			block[i * 64 + 0] = dc_dif;
 			start_coeff = 1;
 
-			DPRINTF(XVID_DEBUG_COEFF,"block[0] %i", dc_dif);
+			DPRINTF(XVID_DEBUG_COEFF,"block[0] %i\n", dc_dif);
 		} else {
 			start_coeff = 0;
 		}
@@ -737,7 +737,7 @@ decoder_iframe(DECODER * dec,
 			}
 			mb = &dec->mbs[y * dec->mb_width + x];
 
-			DPRINTF(XVID_DEBUG_MB, "macroblock (%i,%i) %08x", x, y, BitstreamShowBits(bs, 32));
+			DPRINTF(XVID_DEBUG_MB, "macroblock (%i,%i) %08x\n", x, y, BitstreamShowBits(bs, 32));
 
 			mcbpc = get_mcbpc_intra(bs);
 			mb->mode = mcbpc & 7;
@@ -764,7 +764,7 @@ decoder_iframe(DECODER * dec,
 
 			if (dec->interlacing) {
 				mb->field_dct = BitstreamGetBit(bs);
-				DPRINTF(XVID_DEBUG_MB,"deci: field_dct: %i", mb->field_dct);
+				DPRINTF(XVID_DEBUG_MB,"deci: field_dct: %i\n", mb->field_dct);
 			}
 
 			decoder_mbintra(dec, mb, x, y, acpred_flag, cbp, bs, quant,
@@ -802,7 +802,7 @@ get_motion_vector(DECODER * dec,
 	mv.x = get_mv(bs, fcode);
 	mv.y = get_mv(bs, fcode);
 
-	DPRINTF(XVID_DEBUG_MV,"mv_diff (%i,%i) pred (%i,%i) result (%i,%i)", mv.x, mv.y, pmv.x, pmv.y, mv.x+pmv.x, mv.y+pmv.y);
+	DPRINTF(XVID_DEBUG_MV,"mv_diff (%i,%i) pred (%i,%i) result (%i,%i)\n", mv.x, mv.y, pmv.x, pmv.y, mv.x+pmv.x, mv.y+pmv.y);
 
 	mv.x += pmv.x;
 	mv.y += pmv.y;
@@ -901,7 +901,7 @@ decoder_pframe(DECODER * dec,
 			}
 			mb = &dec->mbs[y * dec->mb_width + x];
 
-			DPRINTF(XVID_DEBUG_MB, "macroblock (%i,%i) %08x", x, y, BitstreamShowBits(bs, 32));
+			DPRINTF(XVID_DEBUG_MB, "macroblock (%i,%i) %08x\n", x, y, BitstreamShowBits(bs, 32));
 
 			/* if (!(dec->mb_skip[y*dec->mb_width + x]=BitstreamGetBit(bs))) */ /* not_coded */
 			if (!(BitstreamGetBit(bs)))	/* block _is_ coded */
@@ -919,8 +919,8 @@ decoder_pframe(DECODER * dec,
 				mb->mode = mcbpc & 7;
 				cbpc = (mcbpc >> 4);
 				
-				DPRINTF(XVID_DEBUG_MB, "mode %i", mb->mode);
-				DPRINTF(XVID_DEBUG_MB, "cbpc %i", cbpc);
+				DPRINTF(XVID_DEBUG_MB, "mode %i\n", mb->mode);
+				DPRINTF(XVID_DEBUG_MB, "cbpc %i\n", cbpc);
 				acpred_flag = 0;
 
 				intra = (mb->mode == MODE_INTRA || mb->mode == MODE_INTRA_Q);
@@ -935,38 +935,38 @@ decoder_pframe(DECODER * dec,
 				}
 
 				cbpy = get_cbpy(bs, intra);
-				DPRINTF(XVID_DEBUG_MB, "cbpy %i  mcsel %i ", cbpy,mcsel);
+				DPRINTF(XVID_DEBUG_MB, "cbpy %i  mcsel %i \n", cbpy,mcsel);
 
 				cbp = (cbpy << 2) | cbpc;
 
 				if (mb->mode == MODE_INTER_Q || mb->mode == MODE_INTRA_Q) {
 					int dquant = dquant_table[BitstreamGetBits(bs, 2)];
-					DPRINTF(XVID_DEBUG_MB, "dquant %i", dquant);
+					DPRINTF(XVID_DEBUG_MB, "dquant %i\n", dquant);
 					quant += dquant;
 					if (quant > 31) {
 						quant = 31;
 					} else if (quant < 1) {
 						quant = 1;
 					}
-					DPRINTF(XVID_DEBUG_MB, "quant %i", quant);
+					DPRINTF(XVID_DEBUG_MB, "quant %i\n", quant);
 				}
 				mb->quant = quant;
 
 				if (dec->interlacing) {
 					if (cbp || intra) {
 						mb->field_dct = BitstreamGetBit(bs);
-						DPRINTF(XVID_DEBUG_MB,"decp: field_dct: %i", mb->field_dct);
+						DPRINTF(XVID_DEBUG_MB,"decp: field_dct: %i\n", mb->field_dct);
 					}
 
 					if (mb->mode == MODE_INTER || mb->mode == MODE_INTER_Q) {
 						mb->field_pred = BitstreamGetBit(bs);
-						DPRINTF(XVID_DEBUG_MB, "decp: field_pred: %i", mb->field_pred);
+						DPRINTF(XVID_DEBUG_MB, "decp: field_pred: %i\n", mb->field_pred);
 
 						if (mb->field_pred) {
 							mb->field_for_top = BitstreamGetBit(bs);
-							DPRINTF(XVID_DEBUG_MB,"decp: field_for_top: %i", mb->field_for_top);
+							DPRINTF(XVID_DEBUG_MB,"decp: field_for_top: %i\n", mb->field_for_top);
 							mb->field_for_bot = BitstreamGetBit(bs);
-							DPRINTF(XVID_DEBUG_MB,"decp: field_for_bot: %i", mb->field_for_bot);
+							DPRINTF(XVID_DEBUG_MB,"decp: field_for_bot: %i\n", mb->field_for_bot);
 						}
 					}
 				}
@@ -1691,7 +1691,7 @@ decoder_bframe(DECODER * dec,
 				break;
 
 			default:
-				DPRINTF(XVID_DEBUG_ERROR,"Not support B-frame mb_type = %i", mb->mb_type);
+				DPRINTF(XVID_DEBUG_ERROR,"Not support B-frame mb_type = %i\n", mb->mb_type);
 			}
 		} /* End of for */
 	}
@@ -1792,7 +1792,7 @@ repeat:
 	coding_type =	BitstreamReadHeaders(&bs, dec, &rounding, &reduced_resolution, 
 			&quant, &fcode_forward, &fcode_backward, &intra_dc_threshold, &gmc_warp);
 
-	DPRINTF(XVID_DEBUG_HEADER, "coding_type=%i,  packed=%i,  time=%lli,  time_pp=%i,  time_bp=%i", 
+	DPRINTF(XVID_DEBUG_HEADER, "coding_type=%i,  packed=%i,  time=%lli,  time_pp=%i,  time_bp=%i\n", 
 							coding_type,	dec->packed_mode, dec->time, dec->time_pp, dec->time_bp);
 
 	if (coding_type == -1) /* nothing */
@@ -1896,7 +1896,7 @@ repeat:
 
 		if (dec->low_delay)
 		{
-			DPRINTF(XVID_DEBUG_ERROR, "warning: bvop found in low_delay==1 stream");
+			DPRINTF(XVID_DEBUG_ERROR, "warning: bvop found in low_delay==1 stream\n");
 			dec->low_delay = 1;
 		}
 

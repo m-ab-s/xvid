@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.24 2003-05-17 13:24:56 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.95.2.25 2003-05-22 16:34:47 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -938,7 +938,7 @@ repeat:
 	{
 		if (pEnc->bframenum_head < pEnc->bframenum_tail) {
 		
-			DPRINTF(XVID_DEBUG_DEBUG,"*** BFRAME (flush) bf: head=%i tail=%i   queue: head=%i tail=%i size=%i",
+			DPRINTF(XVID_DEBUG_DEBUG,"*** BFRAME (flush) bf: head=%i tail=%i   queue: head=%i tail=%i size=%i\n",
 					pEnc->bframenum_head, pEnc->bframenum_tail,
 					pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
 
@@ -965,7 +965,7 @@ repeat:
 			int tmp;
 			int bits;
 			
-			DPRINTF(XVID_DEBUG_DEBUG,"*** EMPTY bf: head=%i tail=%i   queue: head=%i tail=%i size=%i",
+			DPRINTF(XVID_DEBUG_DEBUG,"*** EMPTY bf: head=%i tail=%i   queue: head=%i tail=%i size=%i\n",
 				pEnc->bframenum_head, pEnc->bframenum_tail,
 				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
 
@@ -1003,7 +1003,7 @@ repeat:
 		if (xFrame->input.csp == XVID_CSP_NULL)	/* no futher input */
 		{
 
-            DPRINTF(XVID_DEBUG_DEBUG,"*** FINISH bf: head=%i tail=%i   queue: head=%i tail=%i size=%i",
+            DPRINTF(XVID_DEBUG_DEBUG,"*** FINISH bf: head=%i tail=%i   queue: head=%i tail=%i size=%i\n",
 				pEnc->bframenum_head, pEnc->bframenum_tail,
 				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
 
@@ -1026,7 +1026,7 @@ repeat:
 		                   pEnc->mbParam.edged_width, pEnc->mbParam.height);
                 }
 
-                DPRINTF(XVID_DEBUG_DEBUG,"*** PFRAME bf: head=%i tail=%i   queue: head=%i tail=%i size=%i",
+                DPRINTF(XVID_DEBUG_DEBUG,"*** PFRAME bf: head=%i tail=%i   queue: head=%i tail=%i size=%i\n",
 				pEnc->bframenum_head, pEnc->bframenum_tail,
 				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
 
@@ -1040,7 +1040,7 @@ repeat:
                     goto done;
                 }
             }
-            DPRINTF(XVID_DEBUG_DEBUG, "*** END");
+            DPRINTF(XVID_DEBUG_DEBUG, "*** END\n");
 
 			emms();
 			return XVID_ERR_END;	/* end of stream reached */
@@ -1132,7 +1132,7 @@ repeat:
 		else if (pEnc->current->quant > 31)
             pEnc->current->quant = 31;
  
-		DPRINTF(XVID_DEBUG_DEBUG,"*** BFRAME (store) bf: head=%i tail=%i   queue: head=%i tail=%i size=%i  quant=%i",
+		DPRINTF(XVID_DEBUG_DEBUG,"*** BFRAME (store) bf: head=%i tail=%i   queue: head=%i tail=%i size=%i  quant=%i\n",
 				pEnc->bframenum_head, pEnc->bframenum_tail,
 				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size,pEnc->current->quant);
 
@@ -1146,7 +1146,7 @@ repeat:
     }
 
 
-		DPRINTF(XVID_DEBUG_DEBUG,"*** XXXXXX bf: head=%i tail=%i   queue: head=%i tail=%i size=%i",
+		DPRINTF(XVID_DEBUG_DEBUG,"*** XXXXXX bf: head=%i tail=%i   queue: head=%i tail=%i size=%i\n",
 				pEnc->bframenum_head, pEnc->bframenum_tail,
 				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
 
@@ -1197,7 +1197,7 @@ repeat:
 
 	if (type == I_VOP) {
 
-		DPRINTF(XVID_DEBUG_DEBUG,"*** IFRAME bf: head=%i tail=%i   queue: head=%i tail=%i size=%i",
+		DPRINTF(XVID_DEBUG_DEBUG,"*** IFRAME bf: head=%i tail=%i   queue: head=%i tail=%i size=%i\n",
 				pEnc->bframenum_head, pEnc->bframenum_tail,
 				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
 		
@@ -1240,7 +1240,7 @@ repeat:
 
     } else { // (type == P_VOP || type == S_VOP)
 
-		DPRINTF(XVID_DEBUG_DEBUG,"*** PFRAME bf: head=%i tail=%i   queue: head=%i tail=%i size=%i",
+		DPRINTF(XVID_DEBUG_DEBUG,"*** PFRAME bf: head=%i tail=%i   queue: head=%i tail=%i size=%i\n",
 				pEnc->bframenum_head, pEnc->bframenum_tail,
 				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
 		
@@ -1699,12 +1699,12 @@ FrameCodeP(Encoder * pEnc,
 				VECTOR predMV = get_qpmv2(pEnc->current->mbs, pEnc->mbParam.mb_width, 0, x, y, 0);
 				pMB->pmvs[0].x = pMB->qmvs[0].x - predMV.x;  
 				pMB->pmvs[0].y = pMB->qmvs[0].y - predMV.y; 
-				DPRINTF(XVID_DEBUG_MV,"mv_diff (%i,%i) pred (%i,%i) result (%i,%i)", pMB->pmvs[0].x, pMB->pmvs[0].y, predMV.x, predMV.y, pMB->mvs[0].x, pMB->mvs[0].y);
+				DPRINTF(XVID_DEBUG_MV,"mv_diff (%i,%i) pred (%i,%i) result (%i,%i)\n", pMB->pmvs[0].x, pMB->pmvs[0].y, predMV.x, predMV.y, pMB->mvs[0].x, pMB->mvs[0].y);
 			} else {
 				VECTOR predMV = get_pmv2(pEnc->current->mbs, pEnc->mbParam.mb_width, 0, x, y, 0);
 				pMB->pmvs[0].x = pMB->mvs[0].x - predMV.x; 
 				pMB->pmvs[0].y = pMB->mvs[0].y - predMV.y; 
-				DPRINTF(XVID_DEBUG_MV,"mv_diff (%i,%i) pred (%i,%i) result (%i,%i)", pMB->pmvs[0].x, pMB->pmvs[0].y, predMV.x, predMV.y, pMB->mvs[0].x, pMB->mvs[0].y);
+				DPRINTF(XVID_DEBUG_MV,"mv_diff (%i,%i) pred (%i,%i) result (%i,%i)\n", pMB->pmvs[0].x, pMB->pmvs[0].y, predMV.x, predMV.y, pMB->mvs[0].x, pMB->mvs[0].y);
 			}
 
 
@@ -1716,12 +1716,12 @@ FrameCodeP(Encoder * pEnc,
 						VECTOR predMV = get_qpmv2(pEnc->current->mbs, pEnc->mbParam.mb_width, 0, x, y, k);
 						pMB->pmvs[k].x = pMB->qmvs[k].x - predMV.x;  
 						pMB->pmvs[k].y = pMB->qmvs[k].y - predMV.y; 
-				DPRINTF(XVID_DEBUG_MV,"mv_diff (%i,%i) pred (%i,%i) result (%i,%i)", pMB->pmvs[k].x, pMB->pmvs[k].y, predMV.x, predMV.y, pMB->mvs[k].x, pMB->mvs[k].y);
+				DPRINTF(XVID_DEBUG_MV,"mv_diff (%i,%i) pred (%i,%i) result (%i,%i)\n", pMB->pmvs[k].x, pMB->pmvs[k].y, predMV.x, predMV.y, pMB->mvs[k].x, pMB->mvs[k].y);
 					} else {
 						VECTOR predMV = get_pmv2(pEnc->current->mbs, pEnc->mbParam.mb_width, 0, x, y, k);
 						pMB->pmvs[k].x = pMB->mvs[k].x - predMV.x; 
 						pMB->pmvs[k].y = pMB->mvs[k].y - predMV.y; 
-				DPRINTF(XVID_DEBUG_MV,"mv_diff (%i,%i) pred (%i,%i) result (%i,%i)", pMB->pmvs[k].x, pMB->pmvs[k].y, predMV.x, predMV.y, pMB->mvs[k].x, pMB->mvs[k].y);
+				DPRINTF(XVID_DEBUG_MV,"mv_diff (%i,%i) pred (%i,%i) result (%i,%i)\n", pMB->pmvs[k].x, pMB->pmvs[k].y, predMV.x, predMV.y, pMB->mvs[k].x, pMB->mvs[k].y);
 					}
 
 				}
@@ -1771,7 +1771,7 @@ FrameCodeP(Encoder * pEnc,
 	pEnc->fMvPrevSigma = fSigma;
 
 	/* frame drop code */
-	//DPRINTF(XVID_DEBUG_DEBUG, "kmu %i %i %i", pEnc->current->sStat.kblks, pEnc->current->sStat.mblks, pEnc->current->sStat.ublks);
+	//DPRINTF(XVID_DEBUG_DEBUG, "kmu %i %i %i\n", pEnc->current->sStat.kblks, pEnc->current->sStat.mblks, pEnc->current->sStat.ublks);
 	if (pEnc->current->sStat.kblks + pEnc->current->sStat.mblks <
 		(pEnc->mbParam.frame_drop_ratio * mb_width * mb_height) / 100)
 	{

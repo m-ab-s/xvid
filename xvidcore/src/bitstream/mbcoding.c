@@ -738,13 +738,13 @@ CodeBlockInter(const FRAMEINFO * const frame,
 	if (frame->vol_flags & XVID_VOL_INTERLACING) {
 		if (pMB->cbp) {
 			BitstreamPutBit(bs, pMB->field_dct);
-			DPRINTF(XVID_DEBUG_MB,"codep: field_dct: %i", pMB->field_dct);
+			DPRINTF(XVID_DEBUG_MB,"codep: field_dct: %i\n", pMB->field_dct);
 		}
 
 		// if inter block, write field ME flag
 		if (pMB->mode == MODE_INTER || pMB->mode == MODE_INTER_Q) {
 			BitstreamPutBit(bs, pMB->field_pred);
-			DPRINTF(XVID_DEBUG_MB,"codep: field_pred: %i", pMB->field_pred);
+			DPRINTF(XVID_DEBUG_MB,"codep: field_pred: %i\n", pMB->field_pred);
 
 			// write field prediction references
 			if (pMB->field_pred) {
@@ -1162,7 +1162,7 @@ get_coeff(Bitstream * bs,
 		level = BitstreamGetBits(bs, 8);
 
 		if (level == 0 || level == 128)
-			DPRINTF(XVID_DEBUG_ERROR, "Illegal LEVEL for ESCAPE mode 4: %d", level);
+			DPRINTF(XVID_DEBUG_ERROR, "Illegal LEVEL for ESCAPE mode 4: %d\n", level);
 
 		return (level << 24) >> 24;
 	}
@@ -1224,11 +1224,11 @@ get_intra_block(Bitstream * bs,
 		coeff += run;
 		block[scan[coeff]] = level;
 
-		DPRINTF(XVID_DEBUG_COEFF,"block[%i] %i", scan[coeff], level);
-		//DPRINTF(XVID_DEBUG_COEFF,"block[%i] %i %08x", scan[coeff], level, BitstreamShowBits(bs, 32));
+		DPRINTF(XVID_DEBUG_COEFF,"block[%i] %i\n", scan[coeff], level);
+		//DPRINTF(XVID_DEBUG_COEFF,"block[%i] %i %08x\n", scan[coeff], level, BitstreamShowBits(bs, 32));
 
 		if (level < -2047 || level > 2047) {
-			DPRINTF(XVID_DEBUG_ERROR,"warning: intra_overflow %i", level);
+			DPRINTF(XVID_DEBUG_ERROR,"warning: intra_overflow %i\n", level);
 		}
 		coeff++;
 	} while (!last);
@@ -1258,11 +1258,11 @@ get_inter_block(Bitstream * bs,
 
 		block[scan[p]] = level;
 
-		DPRINTF(XVID_DEBUG_COEFF,"block[%i] %i", scan[p], level);
-		// DPRINTF(XVID_DEBUG_COEFF,"block[%i] %i %08x", scan[p], level, BitstreamShowBits(bs, 32));
+		DPRINTF(XVID_DEBUG_COEFF,"block[%i] %i\n", scan[p], level);
+		// DPRINTF(XVID_DEBUG_COEFF,"block[%i] %i %08x\n", scan[p], level, BitstreamShowBits(bs, 32));
 
 		if (level < -2047 || level > 2047) {
-			DPRINTF(XVID_DEBUG_ERROR,"warning: inter overflow %i", level);
+			DPRINTF(XVID_DEBUG_ERROR,"warning: inter overflow %i\n", level);
 		}
 		p++;
 	} while (!last);

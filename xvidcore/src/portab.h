@@ -23,7 +23,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: portab.h,v 1.46.2.6 2003-05-17 13:26:51 suxen_drol Exp $
+ * $Id: portab.h,v 1.46.2.7 2003-05-22 16:35:03 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -132,7 +132,7 @@ extern unsigned int xvid_debug;
             va_start(args, fmt);
             vsprintf(buf, fmt, args);
             OutputDebugString(buf);
-            fprintf(stderr, "%s\n", buf);
+            fprintf(stderr, "%s", buf);
          }
      }
 #    else
@@ -219,7 +219,6 @@ extern unsigned int xvid_debug;
             va_start(args, format);
             if(xvid_debug & level) {
                    vfprintf(stderr, format, args);
-                   fprintf(stderr, "\n");
             }
         }
 
@@ -335,7 +334,7 @@ extern unsigned int xvid_debug;
              char buf[DPRINTF_BUF_SZ];
              va_start(args, fmt);
              vsprintf(buf, fmt, args);
-             fprintf(stderr, "%s\n", buf);
+             fprintf(stderr, "%s", buf);
          }
      }
 #    else /* _DEBUG */
@@ -412,7 +411,6 @@ extern unsigned int xvid_debug;
             va_start(args, format);
             if(xvid_debug & level) {
                    vfprintf(stderr, format, args);
-                   fprintf(stderr, "\n");
             }
         }
 

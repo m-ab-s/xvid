@@ -501,7 +501,7 @@ image_chroma_optimize(IMAGE * img, int width, int height, int edged_width)
 #undef IMG_V
 	}
 	
-	DPRINTF(XVID_DEBUG_DEBUG,"chroma_optimized_pixels = %i/%i", pixels, width*height/4);
+	DPRINTF(XVID_DEBUG_DEBUG,"chroma_optimized_pixels = %i/%i\n", pixels, width*height/4);
 }
 
 

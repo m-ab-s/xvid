@@ -25,7 +25,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.7 2003-05-22 10:57:33 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.8 2003-05-22 16:36:07 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -174,7 +174,7 @@ static int load_stats(rc_2pass2_t *rc, char * filename)
         }else if (type == 'b') {
             s->type = XVID_TYPE_BVOP;
         }else{  /* unknown type */
-            DPRINTF(XVID_DEBUG_RC, "unknown stats frame type; assuming pvop");
+            DPRINTF(XVID_DEBUG_RC, "unknown stats frame type; assuming pvop\n");
             s->type = XVID_TYPE_PVOP;
         }
 
@@ -539,8 +539,8 @@ void pre_process1(rc_2pass2_t * rc)
 
         /* special info for alt curve:  bias bonus and quantizer thresholds */
 
-		DPRINTF(XVID_DEBUG_RC, "avg scaled framesize:%i", (int)rc->avg_length[XVID_TYPE_PVOP-1]);
-		DPRINTF(XVID_DEBUG_RC, "bias bonus:%i bytes", (int)rc->alt_curve_curve_bias_bonus);
+		DPRINTF(XVID_DEBUG_RC, "avg scaled framesize:%i\n", (int)rc->avg_length[XVID_TYPE_PVOP-1]);
+		DPRINTF(XVID_DEBUG_RC, "bias bonus:%i bytes\n", (int)rc->alt_curve_curve_bias_bonus);
 
 		for (i=1; i <= (int)(rc->alt_curve_high*2)+1; i++) {
             double curve_temp, dbytes;
@@ -589,7 +589,7 @@ void pre_process1(rc_2pass2_t * rc)
 				if (newquant != oldquant) {
                     int percent = (int)((i - rc->avg_length[XVID_TYPE_PVOP-1]) * 100.0 / rc->avg_length[XVID_TYPE_PVOP-1]);
 					oldquant = newquant;
-					DPRINTF(XVID_DEBUG_RC, "quant:%i threshold at %i : %i percent", newquant, i, percent);
+					DPRINTF(XVID_DEBUG_RC, "quant:%i threshold at %i : %i percent\n", newquant, i, percent);
 				}
 			}
 		}
@@ -1047,11 +1047,11 @@ static int rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 
 		if (data->quant > rc->last_quant[s->type-1] + 2) {
 			data->quant = rc->last_quant[s->type-1] + 2;
-			DPRINTF(XVID_DEBUG_RC, "p/b-frame quantizer prevented from rising too steeply");
+			DPRINTF(XVID_DEBUG_RC, "p/b-frame quantizer prevented from rising too steeply\n");
 		}
 		if (data->quant < rc->last_quant[s->type-1] - 2) {
 			data->quant = rc->last_quant[s->type-1] - 2;
-			DPRINTF(XVID_DEBUG_RC, "p/b-frame quantizer prevented from falling too steeply");
+			DPRINTF(XVID_DEBUG_RC, "p/b-frame quantizer prevented from falling too steeply\n");
 		}
 	}
 
