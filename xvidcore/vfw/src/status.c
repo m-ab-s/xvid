@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: status.c,v 1.1.2.1 2003-06-10 10:07:03 suxen_drol Exp $
+ * $Id: status.c,v 1.1.2.2 2003-08-07 13:25:16 syskin Exp $
  *
  *****************************************************************************/
 
@@ -273,6 +273,7 @@ void status_create(status_t * s, unsigned int fps_inc, unsigned int fps_base)
 /* feed stats info into the window */
 void status_update(status_t *s, int type, int length, int quant)
 {
+	if (type == 4) type = 2; /* XVID_TYPE_SVOP to XVID_TYPE_PVOP */
     s->count[0]++;
     s->count[type]++;
 
