@@ -34,7 +34,7 @@ static __inline int gmc_sanitize(int value, int quarterpel, int fcode)
 {
 	int length = 1 << (fcode+4);
 
-	if (quarterpel) value *= 2;
+//	if (quarterpel) value *= 2;
 
 	if (value < -length) 
 		return -length;
