@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: interpolate8x8.h,v 1.10.2.2 2003-06-09 13:54:07 edgomez Exp $
+ * $Id: interpolate8x8.h,v 1.10.2.3 2003-07-13 10:01:00 syskin Exp $
  *
  ****************************************************************************/
 
@@ -147,39 +147,22 @@ interpolate8x8_switch(uint8_t * const cur,
 					  const uint32_t stride,
 					  const uint32_t rounding)
 {
-	int32_t ddx, ddy;
 
-	switch (((dx & 1) << 1) + (dy & 1))	/* ((dx%2)?2:0)+((dy%2)?1:0) */
-	{
+	const uint8_t * const src = refn + (y + (dy>>1)) * stride + x + (dx>>1);
+	uint8_t * const dst = cur + y * stride + x;
+
+	switch (((dx & 1) << 1) + (dy & 1))	{ /* ((dx%2)?2:0)+((dy%2)?1:0) */
 	case 0:
-		ddx = dx / 2;
-		ddy = dy / 2;
-		transfer8x8_copy(cur + y * stride + x,
-						 refn + (int)((y + ddy) * stride + x + ddx), stride);
+		transfer8x8_copy(dst, src, stride);
 		break;
-
 	case 1:
-		ddx = dx / 2;
-		ddy = (dy - 1) / 2;
-		interpolate8x8_halfpel_v(cur + y * stride + x,
-								 refn + (int)((y + ddy) * stride + x + ddx), stride,
-								 rounding);
+		interpolate8x8_halfpel_v(dst, src, stride, rounding);
 		break;
-
 	case 2:
-		ddx = (dx - 1) / 2;
-		ddy = dy / 2;
-		interpolate8x8_halfpel_h(cur + y * stride + x,
-								 refn + (int)((y + ddy) * stride + x + ddx), stride,
-								 rounding);
+		interpolate8x8_halfpel_h(dst, src, stride, rounding);
 		break;
-
 	default:
-		ddx = (dx - 1) / 2;
-		ddy = (dy - 1) / 2;
-		interpolate8x8_halfpel_hv(cur + y * stride + x,
-								 refn + (int)((y + ddy) * stride + x + ddx), stride,
-								  rounding);
+		interpolate8x8_halfpel_hv(dst, src, stride, rounding);
 		break;
 	}
 }
@@ -222,42 +205,27 @@ interpolate32x32_switch(uint8_t * const cur,
 static __inline uint8_t *
 interpolate8x8_switch2(uint8_t * const buffer,
 					  const uint8_t * const refn,
-					  const uint32_t x,
-					  const uint32_t y,
-					  const int32_t dx,
+					  const int x,
+					  const int y,
+					  const int dx,
 					  const int dy,
 					  const uint32_t stride,
 					  const uint32_t rounding)
 {
-	int32_t ddx, ddy;
 
-	switch (((dx & 1) << 1) + (dy & 1))	/* ((dx%2)?2:0)+((dy%2)?1:0) */
-	{
+	const uint8_t * const src = refn + (y + (dy>>1)) * stride + x + (dx>>1);
+
+	switch (((dx & 1) << 1) + (dy & 1))	{ /* ((dx%2)?2:0)+((dy%2)?1:0) */
 	case 0:
-		return (uint8_t *)refn + (int)((y + dy/2) * stride + x + dx/2);
-
+		return (uint8_t *)src;
 	case 1:
-		ddx = dx / 2;
-		ddy = (dy - 1) / 2;
-		interpolate8x8_halfpel_v(buffer,
-								 refn + (int)((y + ddy) * stride + x + ddx), stride,
-								 rounding);
+		interpolate8x8_halfpel_v(buffer, src, stride, rounding);
 		break;
-
 	case 2:
-		ddx = (dx - 1) / 2;
-		ddy = dy / 2;
-		interpolate8x8_halfpel_h(buffer,
-								 refn + (int)((y + ddy) * stride + x + ddx), stride,
-								 rounding);
+		interpolate8x8_halfpel_h(buffer, src, stride, rounding);
 		break;
-
 	default:
-		ddx = (dx - 1) / 2;
-		ddy = (dy - 1) / 2;
-		interpolate8x8_halfpel_hv(buffer,
-								 refn + (int)((y + ddy) * stride + x + ddx), stride,
-								  rounding);
+		interpolate8x8_halfpel_hv(buffer, src, stride, rounding);
 		break;
 	}
 	return buffer;
