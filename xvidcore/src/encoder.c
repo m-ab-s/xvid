@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.19 2003-04-27 21:18:49 edgomez Exp $
+ *  $Id: encoder.c,v 1.95.2.20 2003-04-27 21:48:39 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -581,6 +581,8 @@ enc_destroy(Encoder * pEnc)
 	image_destroy(&pEnc->f_refv, pEnc->mbParam.edged_width,
 				  pEnc->mbParam.edged_height);
 	image_destroy(&pEnc->f_refhv, pEnc->mbParam.edged_width,
+				  pEnc->mbParam.edged_height);
+	image_destroy(&pEnc->vGMC, pEnc->mbParam.edged_width,
 				  pEnc->mbParam.edged_height);
 
 	if ((pEnc->mbParam.plugin_flags & XVID_REQORIGINAL)) {	
