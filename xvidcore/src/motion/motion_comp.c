@@ -173,6 +173,44 @@ compensate8x8_interpolate(	int16_t * const dct_codes,
 	}
 }
 
+
+static __inline void
+compensate16x16_interpolate_ro(int16_t * const dct_codes,
+								const uint8_t * const cur,
+								const uint8_t * const ref,
+								const uint8_t * const refh,
+								const uint8_t * const refv,
+								const uint8_t * const refhv,
+								uint8_t * const tmp,
+								const uint32_t x, const uint32_t y,
+								const int32_t dx, const int32_t dy,
+								const int32_t stride,
+								const int quarterpel)
+{
+	const uint8_t * ptr;
+
+	if(quarterpel) {
+		if ((dx&3) | (dy&3)) {
+			interpolate16x16_quarterpel(tmp - y * stride - x,
+										(uint8_t *) ref, tmp + 32,
+										tmp + 64, tmp + 96, x, y, dx, dy, stride, 0);
+			ptr = tmp;
+		} else ptr =  ref + (y + dy/4)*stride + x + dx/4; // fullpixel position
+
+	} else ptr = get_ref(ref, refh, refv, refhv, x, y, 1, dx, dy, stride);
+
+	transfer_8to16subro(dct_codes, cur + y * stride + x,
+						  ptr, stride);
+	transfer_8to16subro(dct_codes+64, cur + y * stride + x + 8,
+						  ptr + 8, stride);
+	transfer_8to16subro(dct_codes+128, cur + y * stride + x + 8*stride,
+						  ptr + 8*stride, stride);
+	transfer_8to16subro(dct_codes+192, cur + y * stride + x + 8*stride+8,
+						  ptr + 8*stride + 8, stride);
+
+}
+
+
 /* XXX: slow, inelegant... */
 static void
 interpolate18x18_switch(uint8_t * const cur,
@@ -262,36 +300,22 @@ MBMotionCompensation(MACROBLOCK * const mb,
 
 	if ( (!reduced_resolution) && (mb->mode == MODE_NOT_CODED) ) {	/* quick copy for early SKIP */
 /* early SKIP is only activated in P-VOPs, not in S-VOPs, so mcsel can never be 1 */
-	
-/*		if (mb->mcsel) {
-			transfer16x16_copy(cur->y + 16 * (i + j * edged_width),
-						   refGMC->y + 16 * (i + j * edged_width),
-						   edged_width);
-			transfer8x8_copy(cur->u + 8 * (i + j * edged_width/2),
-							refGMC->u + 8 * (i + j * edged_width/2),
-							edged_width / 2);
-			transfer8x8_copy(cur->v + 8 * (i + j * edged_width/2),
-							refGMC->v + 8 * (i + j * edged_width/2),
-							edged_width / 2);
-		} else 
-*/
-		{
-			transfer16x16_copy(cur->y + 16 * (i + j * edged_width),
+
+		transfer16x16_copy(cur->y + 16 * (i + j * edged_width),
 						   ref->y + 16 * (i + j * edged_width),
 						   edged_width);
 	
-			transfer8x8_copy(cur->u + 8 * (i + j * edged_width/2),
+		transfer8x8_copy(cur->u + 8 * (i + j * edged_width/2),
 							ref->u + 8 * (i + j * edged_width/2),
 							edged_width / 2);
-			transfer8x8_copy(cur->v + 8 * (i + j * edged_width/2),
+		transfer8x8_copy(cur->v + 8 * (i + j * edged_width/2),
 							ref->v + 8 * (i + j * edged_width/2),
 							edged_width / 2);
-		}
 		return;
 	}
 
 	if ((mb->mode == MODE_NOT_CODED || mb->mode == MODE_INTER 
-				|| mb->mode == MODE_INTER_Q) /*&& !quarterpel*/) {
+				|| mb->mode == MODE_INTER_Q)) {
 
 	/* reduced resolution + GMC:  not possible */
 
@@ -400,8 +424,8 @@ MBMotionCompensationBVOP(MBParam * pParam,
 							f_refv->y, f_refhv->y, tmp, 16 * i, 16 * j, dx,
 							dy, edged_width, quarterpel, 0, 0);
 
-		dx /= 1 + quarterpel;
-		dy /= 1 + quarterpel;
+		if (quarterpel) { dx /= 2; dy /= 2; }
+
 		CompensateChroma(	(dx >> 1) + roundtab_79[dx & 0x3],
 							(dy >> 1) + roundtab_79[dy & 0x3],
 							i, j, cur, f_ref, tmp,
@@ -412,12 +436,12 @@ MBMotionCompensationBVOP(MBParam * pParam,
 	case MODE_BACKWARD:
 		b_dx = bmvs->x; b_dy = bmvs->y;
 
-		compensate16x16_interpolate(&dct_codes[0 * 64], cur->y, b_ref->y, b_refh->y,
-							b_refv->y, b_refhv->y, tmp, 16 * i, 16 * j, b_dx,
-							b_dy, edged_width, quarterpel, 0, 0);
+		compensate16x16_interpolate_ro(&dct_codes[0 * 64], cur->y, b_ref->y, b_refh->y,
+										b_refv->y, b_refhv->y, tmp, 16 * i, 16 * j, b_dx,
+										b_dy, edged_width, quarterpel);
 
-		b_dx /= 1 + quarterpel;
-		b_dy /= 1 + quarterpel;
+		if (quarterpel) { b_dx /= 2; b_dy /= 2; }
+
 		CompensateChroma(	(b_dx >> 1) + roundtab_79[b_dx & 0x3],
 							(b_dy >> 1) + roundtab_79[b_dy & 0x3],
 							i, j, cur, b_ref, tmp,
