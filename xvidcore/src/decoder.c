@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.9 2002-11-08 22:34:16 suxen_drol Exp $
+ *  $Id: decoder.c,v 1.37.2.10 2002-11-11 15:49:29 Isibaar Exp $
  *
  *************************************************************************/
 
@@ -1476,8 +1476,9 @@ decoder_decode(DECODER * dec,
 		if (stats)
 			stats->notify = XVID_DEC_VOP;
 		frame->length = 1;
-		image_output(&dec->cur, dec->width, dec->height, dec->edged_width,
+		image_output(&dec->refn[0], dec->width, dec->height, dec->edged_width,
 					 frame->image, frame->stride, frame->colorspace, dec->interlacing);
+		emms();
 		return XVID_ERR_OK;
 	}
 
