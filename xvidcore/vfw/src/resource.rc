@@ -68,6 +68,8 @@ BEGIN
                     SS_CENTERIMAGE
     LTEXT           "Minimum I-frame interval:",IDC_STATIC,12,120,94,12,
                     SS_CENTERIMAGE
+    CONTROL         "Use cartoon mode",IDC_CARTOON,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,13,143,74,10
 END
 
 IDD_MAIN DIALOGEX 0, 0, 225, 255
@@ -941,6 +943,11 @@ BEGIN
     IDC_BQUANTOFFSET        "B-frame quantizer offset from last p-frame quantizer; refer to b-frame quant ratio (above)"
     IDC_VHQ                 "VHQ enables an additional search process to increase quality."
     IDC_CHROMA_OPT          "Interpolates colours in bright/dark areas for achieving a nicer edge impression"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_CARTOON             "Enables special motion estimation features for cartoons/anime."
 END
 
 STRINGTABLE DISCARDABLE 

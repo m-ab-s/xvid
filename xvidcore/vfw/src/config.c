@@ -192,6 +192,7 @@ static const REG_INT reg_ints[] = {
     {"motion_search",			&reg.motion_search,				6},
 	{"vhq_mode",				&reg.vhq_mode,					0},
     {"chromame",				&reg.chromame,					0},
+    {"cartoon_mode",			&reg.cartoon_mode,				0},
 	{"max_key_interval",		&reg.max_key_interval,			300},
 	{"min_key_interval",		&reg.min_key_interval,			1},
 	{"frame_drop_ratio",		&reg.frame_drop_ratio,			0},	
@@ -823,6 +824,7 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
 		SendDlgItemMessage(hDlg, IDC_MOTION, CB_SETCURSEL, config->motion_search, 0);
 		SendDlgItemMessage(hDlg, IDC_VHQ, CB_SETCURSEL, config->vhq_mode, 0);
         CheckDlg(hDlg, IDC_CHROMAME, config->chromame);
+        CheckDlg(hDlg, IDC_CARTOON, config->cartoon_mode);
 		SetDlgItemInt(hDlg, IDC_FRAMEDROP, config->frame_drop_ratio, FALSE);
 		SetDlgItemInt(hDlg, IDC_MAXKEY, config->max_key_interval, FALSE);
 		SetDlgItemInt(hDlg, IDC_MINKEY, config->min_key_interval, FALSE);
@@ -947,6 +949,7 @@ void adv_download(HWND hDlg, int idd, CONFIG * config)
 		config->motion_search = SendDlgItemMessage(hDlg, IDC_MOTION, CB_GETCURSEL, 0, 0);
 		config->vhq_mode = SendDlgItemMessage(hDlg, IDC_VHQ, CB_GETCURSEL, 0, 0);
 		config->chromame = IsDlgChecked(hDlg, IDC_CHROMAME);
+		config->cartoon_mode = IsDlgChecked(hDlg, IDC_CARTOON);
 
         config->frame_drop_ratio = config_get_uint(hDlg, IDC_FRAMEDROP, config->frame_drop_ratio);
 

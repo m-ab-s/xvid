@@ -568,6 +568,13 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	if (codec->config.chromame)
 		frame.motion |= XVID_ME_CHROMA_PVOP + XVID_ME_CHROMA_BVOP;
 
+	if (codec->config.cartoon_mode) {
+		frame.vop_flags |= XVID_VOP_CARTOON;
+#if 0 /* Seems to cause crashes with P4 cpus */
+		frame.motion |= XVID_ME_DETECT_STATIC_MOTION;
+#endif
+	}
+
 	frame.motion |= pmvfast_presets[codec->config.motion_search];
 
 	switch (codec->config.vhq_mode)

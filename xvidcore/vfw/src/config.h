@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: config.h,v 1.1.2.9 2003-06-13 11:52:14 suxen_drol Exp $
+ * $Id: config.h,v 1.1.2.10 2003-10-28 23:42:09 edgomez Exp $
  *
  ****************************************************************************/
 #ifndef _CONFIG_H_
@@ -151,6 +151,7 @@ typedef struct
 	int motion_search;
 	int vhq_mode;
 	int chromame;
+	int cartoon_mode;
     int max_key_interval;
 	int min_key_interval;
 	int frame_drop_ratio;
