@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: interpolate8x8.h,v 1.10.2.5 2003-08-18 19:02:50 edgomez Exp $
+ * $Id: interpolate8x8.h,v 1.10.2.6 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -257,24 +257,24 @@ static __inline void interpolate8x8_quarterpel(uint8_t * const cur,
 	int32_t x_int, y_int, x_frac, y_frac;
 
 	x_int = xRef/4;
-	if (xRef < 0 && xRef % 4) 
+	if (xRef < 0 && xRef % 4)
 		x_int--;
 
-	x_frac = xRef - (4*x_int); 
+	x_frac = xRef - (4*x_int);
 
 	y_int  = yRef/4;
 	if (yRef < 0 && yRef % 4)
 		y_int--;
 
 	y_frac = yRef - (4*y_int);
- 
+
 	src = refn + y_int * stride + x_int;
 	halfpel_h = refh;
 	halfpel_v = refv;
 	halfpel_hv = refhv;
 
 	dst = cur + y * stride + x;
-	
+
 	switch((y_frac << 2) | (x_frac)) {
 
 	case 0:
@@ -285,40 +285,40 @@ static __inline void interpolate8x8_quarterpel(uint8_t * const cur,
 		interpolate8x8_lowpass_h(halfpel_h, src, stride, rounding);
 		interpolate8x8_avg2(dst, src, halfpel_h, stride, rounding, 8);
   		break;
-  
+
 	case 2:
 	    interpolate8x8_lowpass_h(dst, src, stride, rounding);
   		break;
-  
+
 	case 3:
 		interpolate8x8_lowpass_h(halfpel_h, src, stride, rounding);
 		interpolate8x8_avg2(dst, src + 1, halfpel_h, stride, rounding, 8);
   		break;
-  
+
 	case 4:
 		interpolate8x8_lowpass_v(halfpel_v, src, stride, rounding);
 		interpolate8x8_avg2(dst, src, halfpel_v, stride, rounding, 8);
  		break;
-   
+
 	case 5:
 		interpolate8x8_lowpass_h(halfpel_h, src, stride, rounding);
 		interpolate8x8_avg2(halfpel_v, src, halfpel_h, stride, rounding, 9);
 		interpolate8x8_lowpass_v(halfpel_hv, halfpel_v, stride, rounding);
 		interpolate8x8_avg2(dst, halfpel_v, halfpel_hv, stride, rounding, 8);
  		break;
-   
+
 	case 6:
 		interpolate8x8_lowpass_hv(halfpel_hv, halfpel_h, src, stride, rounding);
 		interpolate8x8_avg2(dst, halfpel_h, halfpel_hv, stride, rounding, 8);
  		break;
-   
+
 	case 7:
 		interpolate8x8_lowpass_h(halfpel_h, src, stride, rounding);
 		interpolate8x8_avg2(halfpel_v, src + 1, halfpel_h, stride, rounding, 9);
 		interpolate8x8_lowpass_v(halfpel_hv, halfpel_v, stride, rounding);
 		interpolate8x8_avg2(dst, halfpel_v, halfpel_hv, stride, rounding, 8);
  		break;
-   
+
 	case 8:
 	    interpolate8x8_lowpass_v(dst, src, stride, rounding);
 		break;
@@ -328,34 +328,34 @@ static __inline void interpolate8x8_quarterpel(uint8_t * const cur,
 		interpolate8x8_avg2(halfpel_v, src, halfpel_h, stride, rounding, 9);
 		interpolate8x8_lowpass_v(dst, halfpel_v, stride, rounding);
   		break;
-  
+
 	case 10:
 		interpolate8x8_lowpass_hv(dst, halfpel_h, src, stride, rounding);
 		break;
-  
+
 	case 11:
 		interpolate8x8_lowpass_h(halfpel_h, src, stride, rounding);
 		interpolate8x8_avg2(halfpel_v, src + 1, halfpel_h, stride, rounding, 9);
 		interpolate8x8_lowpass_v(dst, halfpel_v, stride, rounding);
    		break;
- 
+
 	case 12:
 		interpolate8x8_lowpass_v(halfpel_v, src, stride, rounding);
 		interpolate8x8_avg2(dst, src+stride, halfpel_v, stride, rounding, 8);
    		break;
- 
+
 	case 13:
 		interpolate8x8_lowpass_h(halfpel_h, src, stride, rounding);
 		interpolate8x8_avg2(halfpel_v, src, halfpel_h, stride, rounding, 9);
 		interpolate8x8_lowpass_v(halfpel_hv, halfpel_v, stride, rounding);
 		interpolate8x8_avg2(dst, halfpel_v+stride, halfpel_hv, stride, rounding, 8);
  		break;
-   
+
 	case 14:
 		interpolate8x8_lowpass_hv(halfpel_hv, halfpel_h, src, stride, rounding);
 		interpolate8x8_avg2(dst, halfpel_h+stride, halfpel_hv, stride, rounding, 8);
  		break;
-   
+
 	case 15:
 		interpolate8x8_lowpass_h(halfpel_h, src, stride, rounding);
 		interpolate8x8_avg2(halfpel_v, src + 1, halfpel_h, stride, rounding, 9);
@@ -383,17 +383,17 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
 	int32_t x_int, y_int, x_frac, y_frac;
 
 	x_int = xRef/4;
-	if (xRef < 0 && xRef % 4) 
+	if (xRef < 0 && xRef % 4)
 		x_int--;
 
-	x_frac = xRef - (4*x_int); 
+	x_frac = xRef - (4*x_int);
 
 	y_int  = yRef/4;
 	if (yRef < 0 && yRef % 4)
 		y_int--;
 
 	y_frac = yRef - (4*y_int);
- 
+
 	src = refn + y_int * stride + x_int;
 	halfpel_h = refh;
 	halfpel_v = refv;
@@ -418,7 +418,7 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
 	case 2:
 	    interpolate16x16_lowpass_h(dst, src, stride, rounding);
   		break;
-  
+
 	case 3:
 		interpolate16x16_lowpass_h(halfpel_h, src, stride, rounding);
 		interpolate8x8_avg2(dst, src + 1, halfpel_h, stride, rounding, 8);
@@ -434,7 +434,7 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
 		interpolate8x8_avg2(dst+8*stride, src+8*stride, halfpel_v+8*stride, stride, rounding, 8);
 		interpolate8x8_avg2(dst+8*stride+8, src+8*stride+8, halfpel_v+8*stride+8, stride, rounding, 8);
 		break;
-	
+
 	case 5:
 		interpolate16x16_lowpass_h(halfpel_h, src, stride, rounding);
 		interpolate8x8_avg2(halfpel_v, src, halfpel_h, stride, rounding, 9);
@@ -448,7 +448,7 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
 		interpolate8x8_avg2(dst+8*stride, halfpel_hv+8*stride, halfpel_v+8*stride, stride, rounding, 8);
 		interpolate8x8_avg2(dst+8*stride+8, halfpel_hv+8*stride+8, halfpel_v+8*stride+8, stride, rounding, 8);
 		break;
-   
+
 	case 6:
 		interpolate16x16_lowpass_hv(halfpel_hv, halfpel_h, src, stride, rounding);
 		interpolate8x8_avg2(dst, halfpel_h, halfpel_hv, stride, rounding, 8);
@@ -456,7 +456,7 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
 		interpolate8x8_avg2(dst+8*stride, halfpel_h+8*stride, halfpel_hv+8*stride, stride, rounding, 8);
 		interpolate8x8_avg2(dst+8*stride+8, halfpel_h+8*stride+8, halfpel_hv+8*stride+8, stride, rounding, 8);
 		break;
-   
+
 	case 7:
 		interpolate16x16_lowpass_h(halfpel_h, src, stride, rounding);
 		interpolate8x8_avg2(halfpel_v, src+1, halfpel_h, stride, rounding, 9);
@@ -470,7 +470,7 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
 		interpolate8x8_avg2(dst+8*stride, halfpel_hv+8*stride, halfpel_v+8*stride, stride, rounding, 8);
 		interpolate8x8_avg2(dst+8*stride+8, halfpel_hv+8*stride+8, halfpel_v+8*stride+8, stride, rounding, 8);
 		break;
-   
+
 	case 8:
 	    interpolate16x16_lowpass_v(dst, src, stride, rounding);
 		break;
@@ -483,11 +483,11 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
 		interpolate8x8_avg2(halfpel_v+8*stride+8, src+8*stride+8, halfpel_h+8*stride+8, stride, rounding, 9);
 		interpolate16x16_lowpass_v(dst, halfpel_v, stride, rounding);
 		break;
-  
+
 	case 10:
 		interpolate16x16_lowpass_hv(dst, halfpel_h, src, stride, rounding);
 		break;
-  
+
 	case 11:
 		interpolate16x16_lowpass_h(halfpel_h, src, stride, rounding);
 		interpolate8x8_avg2(halfpel_v, src+1, halfpel_h, stride, rounding, 9);
@@ -496,7 +496,7 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
 		interpolate8x8_avg2(halfpel_v+8*stride+8, src+1+8*stride+8, halfpel_h+8*stride+8, stride, rounding, 9);
 		interpolate16x16_lowpass_v(dst, halfpel_v, stride, rounding);
 		break;
- 
+
 	case 12:
 		interpolate16x16_lowpass_v(halfpel_v, src, stride, rounding);
 		interpolate8x8_avg2(dst, src+stride, halfpel_v, stride, rounding, 8);
@@ -504,7 +504,7 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
 		interpolate8x8_avg2(dst+8*stride, src+stride+8*stride, halfpel_v+8*stride, stride, rounding, 8);
 		interpolate8x8_avg2(dst+8*stride+8, src+stride+8*stride+8, halfpel_v+8*stride+8, stride, rounding, 8);
 		break;
- 
+
 	case 13:
 		interpolate16x16_lowpass_h(halfpel_h, src, stride, rounding);
 		interpolate8x8_avg2(halfpel_v, src, halfpel_h, stride, rounding, 9);
@@ -518,7 +518,7 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
 		interpolate8x8_avg2(dst+8*stride, halfpel_hv+8*stride, halfpel_v+stride+8*stride, stride, rounding, 8);
 		interpolate8x8_avg2(dst+8*stride+8, halfpel_hv+8*stride+8, halfpel_v+stride+8*stride+8, stride, rounding, 8);
 		break;
-   
+
 	case 14:
 		interpolate16x16_lowpass_hv(halfpel_hv, halfpel_h, src, stride, rounding);
 		interpolate8x8_avg2(dst, halfpel_h+stride, halfpel_hv, stride, rounding, 8);
@@ -526,7 +526,7 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
 		interpolate8x8_avg2(dst+8*stride, halfpel_h+stride+8*stride, halfpel_hv+8*stride, stride, rounding, 8);
 		interpolate8x8_avg2(dst+8*stride+8, halfpel_h+stride+8*stride+8, halfpel_hv+8*stride+8, stride, rounding, 8);
 		break;
-   
+
 	case 15:
 		interpolate16x16_lowpass_h(halfpel_h, src, stride, rounding);
 		interpolate8x8_avg2(halfpel_v, src+1, halfpel_h, stride, rounding, 9);

@@ -50,7 +50,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: reduced.c,v 1.2.2.2 2003-06-09 13:54:13 edgomez Exp $
+ * $Id: reduced.c,v 1.2.2.3 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -110,7 +110,7 @@ void xvid_Copy_Upsampled_8x8_16To8_C(uint8_t *Dst, const int16_t *Src, const int
     for(x=0; x<7; ++x)
       Filter_9331(Dst+2*x+1, Dst2+2*x+1, Src+x, Src+x+8);
     Filter_31(Dst+15, Dst2+15, Src+7, Src+7+8);
-    Src += 8; 
+    Src += 8;
     Dst += 2*BpS;
   }
   Dst[0] = CLIP(Src[0], 0, 255);
@@ -155,7 +155,7 @@ void xvid_Add_Upsampled_8x8_16To8_C(uint8_t *Dst, const int16_t *Src, const int 
     for(x=0; x<7; ++x)
       Filter_Add_9331(Dst+2*x+1, Dst2+2*x+1, Src+x, Src+x+8);
     Filter_Add_31(Dst+15, Dst2+15, Src+7, Src+7+8);
-    Src += 8; 
+    Src += 8;
     Dst += 2*BpS;
   }
   ADD(Dst[0], Src[0]);

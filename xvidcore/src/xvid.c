@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.14 2003-08-23 15:11:23 edgomez Exp $
+ * $Id: xvid.c,v 1.45.2.15 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -151,7 +151,7 @@ detect_cpu_flags()
  * to the CPU features forced by the library client or autodetected (depending
  * on the XVID_CPU_FORCE flag). It also initializes vlc coding tables and all
  * image colorspace transformation tables.
- * 
+ *
  * Returned value : XVID_ERR_OK
  *                  + API_VERSION in the input XVID_INIT_PARAM structure
  *                  + core build  "   "    "       "               "
@@ -159,7 +159,7 @@ detect_cpu_flags()
  ****************************************************************************/
 
 
-static 
+static
 int xvid_gbl_init(xvid_gbl_init_t * init)
 {
 	unsigned int cpu_flags;
@@ -271,7 +271,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	yv12_to_rgba    = yv12_to_rgba_c;
 	yv12_to_yuyv    = yv12_to_yuyv_c;
 	yv12_to_uyvy    = yv12_to_uyvy_c;
- 
+
 	yv12_to_rgb555i = yv12_to_rgb555i_c;
 	yv12_to_rgb565i = yv12_to_rgb565i_c;
 	yv12_to_bgri    = yv12_to_bgri_c;
@@ -289,7 +289,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	sad8bi   = sad8bi_c;
 	dev16    = dev16_c;
 	sad16v	 = sad16v_c;
-	
+
 /*	Halfpel8_Refine = Halfpel8_Refine_c; */
 
 #if defined(ARCH_IS_IA32)
@@ -370,7 +370,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		yv12_to_bgra  = yv12_to_bgra_mmx;
 		yv12_to_yuyv  = yv12_to_yuyv_mmx;
 		yv12_to_uyvy  = yv12_to_uyvy_mmx;
-		
+
 		yv12_to_yuyvi = yv12_to_yuyvi_mmx;
 		yv12_to_uyvyi = yv12_to_uyvyi_mmx;
 
@@ -528,7 +528,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	  transfer_16to8add = transfer_16to8add_ia64;
 	  transfer8x8_copy = transfer8x8_copy_ia64;
 	}
-#endif 
+#endif
 
 #if defined(ARCH_IS_PPC)
 	if ((cpu_flags & XVID_CPU_ASM))
@@ -600,7 +600,7 @@ xvid_gbl_convert(xvid_gbl_convert_t* convert)
 	{
 		case XVID_CSP_YV12 :
 			img.y = convert->input.plane[0];
-			img.v = (uint8_t*)convert->input.plane[0] + convert->input.stride[0]*height; 
+			img.v = (uint8_t*)convert->input.plane[0] + convert->input.stride[0]*height;
 			img.u = (uint8_t*)convert->input.plane[0] + convert->input.stride[0]*height + (convert->input.stride[0]/2)*height2;
 			image_output(&img, width, height, width,
 						(uint8_t**)convert->output.plane, convert->output.stride,
@@ -686,7 +686,7 @@ static int test_transform(void * funcA, void * funcB, const char * nameB,
 	DECLARE_ALIGNED_MATRIX(arrayB, 1, 64, int16_t, CACHE_LINE);
 	int min, max;
 	int count = 0;
-	
+
 	int tmp;
 	int min_error = 0x10000*64;
 	int max_error = 0;
@@ -828,7 +828,7 @@ static int test_quant(void * funcA, void * funcB, const char * nameB,
 	if (errors>0)
 		printf("\t(%i errors out of %i)", errors, count);
 	printf("\n");
-	
+
 	return 0;
 }
 
@@ -990,7 +990,7 @@ int xvid_init_test(int flags)
  * to the CPU features forced by the library client or autodetected (depending
  * on the XVID_CPU_FORCE flag). It also initializes vlc coding tables and all
  * image colorspace transformation tables.
- * 
+ *
  ****************************************************************************/
 
 

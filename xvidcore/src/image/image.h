@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: image.h,v 1.11.2.2 2003-06-09 13:53:56 edgomez Exp $
+ * $Id: image.h,v 1.11.2.3 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -53,18 +53,18 @@ void image_destroy(IMAGE * image,
 
 void image_swap(IMAGE * image1,
 				IMAGE * image2);
-				
+
 void image_copy(IMAGE * image1,
 				IMAGE * image2,
 				uint32_t edged_width,
 				uint32_t height);
-				
+
 void image_setedges(IMAGE * image,
 					uint32_t edged_width,
 					uint32_t edged_height,
 					uint32_t width,
 					uint32_t height);
-					
+
 void image_interpolate(const IMAGE * refn,
 					   IMAGE * refh,
 					   IMAGE * refv,

@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: cbp.c,v 1.10.2.2 2003-06-09 13:51:56 edgomez Exp $
+ * $Id: cbp.c,v 1.10.2.3 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -60,14 +60,14 @@ calc_cbp_c(const int16_t codes[6 * 64])
 	uint32_t cbp = 0;
 
 /* uses fixed relation: 4*codes = 1*codes64 */
-/* if prototype is changed (e.g. from int16_t to something like int32) this routine 
+/* if prototype is changed (e.g. from int16_t to something like int32) this routine
    has to be changed! */
 
 	do  {
 		uint64_t *codes64 = (uint64_t*)codes;	/* the compiler doesn't really make this */
 		uint32_t *codes32 = (uint32_t*)codes;	/* variables, just "addressing modes" */
 
-		cbp += cbp; 
+		cbp += cbp;
         if (codes[1] || codes32[1]) {
 			cbp++;
 		}

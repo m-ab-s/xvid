@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbcoding.c,v 1.44.2.13 2003-08-06 20:25:04 chl Exp $
+ * $Id: mbcoding.c,v 1.44.2.14 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -49,7 +49,7 @@ static REVERSE_EVENT DCT3D[2][4096];
 #ifdef BIGLUT
 static VLC coeff_VLC[2][2][4096][64];
 VLC *intra_table;
-static VLC *inter_table; 
+static VLC *inter_table;
 #else
 static VLC coeff_VLC[2][2][64][64];
 #endif
@@ -93,7 +93,7 @@ init_vlc_tables(void)
 
 #ifdef BIGLUT
 	intra_table = coeff_VLC[1];
-	inter_table = coeff_VLC[0]; 
+	inter_table = coeff_VLC[0];
 #endif
 
 
@@ -251,7 +251,7 @@ init_vlc_tables(void)
 
 		for (l=limit; l<= 2*limit-1; l++)
 		{
-			sprite_trajectory_code[l+16384].code = l; 
+			sprite_trajectory_code[l+16384].code = l;
 			sprite_trajectory_code[l+16384].len = k+1;
 		}
 	}
@@ -514,7 +514,7 @@ CodeCoeffIntra(Bitstream * bs,
 
 /* returns the number of bits required to encode qcoeff */
 
-int 
+int
 CodeCoeffIntra_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag)
 {
 	int bits = 0;
@@ -765,9 +765,9 @@ MBCoding(const FRAMEINFO * const frame,
 		 Bitstream * bs,
 		 Statistics * pStat)
 {
-	if (frame->coding_type != I_VOP)  
+	if (frame->coding_type != I_VOP)
 			BitstreamPutBit(bs, 0);	/* not_coded */
-			
+
 	if (pMB->mode == MODE_INTRA || pMB->mode == MODE_INTRA_Q)
 		CodeBlockIntra(frame, pMB, qcoeff, bs, pStat);
 	else
@@ -927,7 +927,7 @@ MBCodingBVOP(const MACROBLOCK * mb,
  * for BVOP addbits == max(fcode,bcode) - 1
  * returns true or false
  */
-int 
+int
 check_resync_marker(Bitstream * bs, int addbits)
 {
 	uint32_t nbits;
@@ -967,7 +967,7 @@ get_mcbpc_inter(Bitstream * bs)
 {
 
 	uint32_t index;
-	
+
 	index = MIN(BitstreamShowBits(bs, 9), 256);
 
 	BitstreamSkip(bs, mcbpc_inter_table[index].len);
@@ -1535,7 +1535,7 @@ uint8_t const max_run[2][2][64] = {
 			0, 0, 0, 0, 0, 0, 0, 0,
 		},
 		/* intra = 0, last = 1 */
-		{							
+		{
 			0, 40, 1, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0,
@@ -1579,8 +1579,8 @@ uint8_t const max_run[2][2][64] = {
 VLC sprite_trajectory_code[32768];
 
 VLC sprite_trajectory_len[15] = {
-	{ 0x00 , 2}, 
-	{ 0x02 , 3}, { 0x03, 3}, { 0x04, 3}, { 0x05, 3}, { 0x06, 3}, 
+	{ 0x00 , 2},
+	{ 0x02 , 3}, { 0x03, 3}, { 0x04, 3}, { 0x05, 3}, { 0x06, 3},
 	{ 0x0E , 4}, { 0x1E, 5}, { 0x3E, 6}, { 0x7E, 7}, { 0xFE, 8},
 	{ 0x1FE, 9}, {0x3FE,10}, {0x7FE,11}, {0xFFE,12} };
 

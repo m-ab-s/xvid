@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion.h,v 1.20.2.5 2003-09-10 22:18:59 edgomez Exp $
+ *  $Id: motion.h,v 1.20.2.6 2003-10-01 23:23:01 edgomez Exp $
  *
  ***************************************************************************/
 
@@ -61,7 +61,7 @@ bool MotionEstimation(MBParam * const pParam,
 					const IMAGE * const pGMC,
 					const uint32_t iLimit);
 
-void 
+void
 MotionEstimationBVOP(MBParam * const pParam,
 						FRAMEINFO * const frame,
 						const int32_t time_bp,
@@ -108,8 +108,8 @@ GlobalMotionEstRefine(
 				const IMAGE * const pRefHV);
 
 int
-globalSAD(const WARPPOINTS *const wp, 
-		  const MBParam * const pParam, 
+globalSAD(const WARPPOINTS *const wp,
+		  const MBParam * const pParam,
 		  const MACROBLOCK * const pMBs,
 		  const FRAMEINFO * const current,
 		  const IMAGE * const pRef,
@@ -146,7 +146,7 @@ MBMotionCompensation(MACROBLOCK * const mb,
 					const int reduced_resolution,
 					const int32_t rounding);
 
-void 
+void
 MBMotionCompensationBVOP(MBParam * pParam,
 							MACROBLOCK * const mb,
 							const uint32_t i,

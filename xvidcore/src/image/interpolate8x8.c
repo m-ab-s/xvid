@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: interpolate8x8.c,v 1.10.2.4 2003-08-07 15:42:36 chl Exp $
+ * $Id: interpolate8x8.c,v 1.10.2.5 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -84,7 +84,7 @@ void interpolate8x8_avg4_c(uint8_t *dst, const uint8_t *src1, const uint8_t *src
         dst[5] = (src1[5] + src2[5] + src3[5] + src4[5] + round) >> 2;
         dst[6] = (src1[6] + src2[6] + src3[6] + src4[6] + round) >> 2;
         dst[7] = (src1[7] + src2[7] + src3[7] + src4[7] + round) >> 2;
-        
+
 		dst += stride;
         src1 += stride;
         src2 += stride;
@@ -102,7 +102,7 @@ interpolate8x8_halfpel_h_c(uint8_t * const dst,
 						   const uint32_t rounding)
 {
 	uintptr_t j;
-	
+
 	if (rounding)
 		for (j = 0; j < 8*stride; j+=stride)
 		{
@@ -341,7 +341,7 @@ void interpolate16x16_lowpass_v_c(uint8_t *dst, uint8_t *src, int32_t stride, in
         int32_t src15 = src[15 * stride];
         int32_t src16 = src[16 * stride];
 
-        
+
         dst[0] = CLIP(((7 * ((src0<<1) - src2) +  23 * src1 + 3 * src3 - src4 + round_add) >> 5), 0, 255);
         dst[stride] = CLIP(((19 * src1 + 20 * src2 - src5 + 3 * (src4 - src0 - (src3<<1)) + round_add) >> 5), 0, 255);
         dst[2*stride] = CLIP(((20 * (src2 + src3) + (src0<<1) + 3 * (src5 - ((src1 + src4)<<1)) - src6 + round_add) >> 5), 0, 255);
@@ -382,7 +382,7 @@ void interpolate8x8_lowpass_v_c(uint8_t *dst, uint8_t *src, int32_t stride, int3
         int32_t src6 = src[6 * stride];
         int32_t src7 = src[7 * stride];
         int32_t src8 = src[8 * stride];
-        
+
         dst[0]			= CLIP(((7 * ((src0<<1) - src2) + 23 * src1 + 3 * src3 - src4 + round_add) >> 5), 0, 255);
         dst[stride]		= CLIP(((19 * src1 + 20 * src2 - src5 + 3 * (src4 - src0 - (src3 << 1)) + round_add) >> 5), 0, 255);
         dst[2 * stride] = CLIP(((20 * (src2 + src3) + (src0<<1) + 3 * (src5 - ((src1 + src4) <<1 )) - src6 + round_add) >> 5), 0, 255);

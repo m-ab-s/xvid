@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_fixed.c,v 1.1.2.3 2003-06-09 13:55:07 edgomez Exp $
+ * $Id: plugin_fixed.c,v 1.1.2.4 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -103,9 +103,9 @@ distribute_quants(int **quants, int lquant, int n_lquant, int n_hquant)
 	 * length. Let's call 'r' the remaining part of the euclidian division.
 	 *
 	 * We could stop there and have something like this:
-	 *         M == quant type of the quantity 'max' 
-	 *         m == quant type of the quantity 'min' 
-	 * 
+	 *         M == quant type of the quantity 'max'
+	 *         m == quant type of the quantity 'min'
+	 *
 	 * (MM.........Mm)*(MMMMMM...M)
 	 *  '----------'    '--------'
 	 *  '----|------'       |-> repeated 'r' times
@@ -153,7 +153,7 @@ distribute_quants(int **quants, int lquant, int n_lquant, int n_hquant)
 	 *
 	 */
 
-	
+
 	max = MAX(nlow, nhigh);
 	min = MIN(nlow, nhigh);
 
@@ -168,7 +168,7 @@ distribute_quants(int **quants, int lquant, int n_lquant, int n_hquant)
 
 	/* How much packets of (q+1)M quantizers + 1m quantizer */
 	a = r;
-	
+
 	/* How much packets of (q)M quantizers + 1m quantizer */
 	b = min - r;
 
@@ -248,7 +248,7 @@ static int rc_fixed_create(xvid_plg_create_t * create, rc_fixed_t ** handle)
 		quant_low = 31;
 		rc->quant_base = 1;
 		rc->quant_increment = quant_low;
-	}		
+	}
 
 	/* How much low quants we have to distribute) */
 	nquant_low = rc->quant_base*(quant_low+1) - rc->quant_increment;
@@ -264,7 +264,7 @@ static int rc_fixed_create(xvid_plg_create_t * create, rc_fixed_t ** handle)
 		free(rc);
 		return(XVID_ERR_MEMORY);
 	}
-	
+
     *handle = rc;
 	return(0);
 }

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: sad.c,v 1.13.2.6 2003-09-10 22:19:00 edgomez Exp $
+ * $Id: sad.c,v 1.13.2.7 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -69,7 +69,7 @@ sad16_c(const uint8_t * const cur,
 			sad += abs(ptr_cur[14] - ptr_ref[14]);
 			sad += abs(ptr_cur[15] - ptr_ref[15]);
 
-			if (sad >= best_sad) 
+			if (sad >= best_sad)
 				return sad;
 
 			ptr_cur += stride;
@@ -163,7 +163,7 @@ sad8_c(const uint8_t * const cur,
 		sad += abs(ptr_cur[5] - ptr_ref[5]);
 		sad += abs(ptr_cur[6] - ptr_ref[6]);
 		sad += abs(ptr_cur[7] - ptr_ref[7]);
-		
+
 		ptr_cur += stride;
 		ptr_ref += stride;
 
@@ -209,29 +209,29 @@ dev16_c(const uint8_t * const cur,
 	return dev;
 }
 
-uint32_t sad16v_c(const uint8_t * const cur, 
-			   const uint8_t * const ref, 
-			   const uint32_t stride, 
+uint32_t sad16v_c(const uint8_t * const cur,
+			   const uint8_t * const ref,
+			   const uint32_t stride,
 			   int32_t *sad)
 {
 	sad[0] = sad8(cur, ref, stride);
 	sad[1] = sad8(cur + 8, ref + 8, stride);
 	sad[2] = sad8(cur + 8*stride, ref + 8*stride, stride);
 	sad[3] = sad8(cur + 8*stride + 8, ref + 8*stride + 8, stride);
-	
+
 	return sad[0]+sad[1]+sad[2]+sad[3];
 }
 
-uint32_t sad32v_c(const uint8_t * const cur, 
-			   const uint8_t * const ref, 
-			   const uint32_t stride, 
+uint32_t sad32v_c(const uint8_t * const cur,
+			   const uint8_t * const ref,
+			   const uint32_t stride,
 			   int32_t *sad)
 {
 	sad[0] = sad16(cur, ref, stride, 256*4096);
 	sad[1] = sad16(cur + 16, ref + 16, stride, 256*4096);
 	sad[2] = sad16(cur + 16*stride, ref + 16*stride, stride, 256*4096);
 	sad[3] = sad16(cur + 16*stride + 16, ref + 16*stride + 16, stride, 256*4096);
-	
+
 	return sad[0]+sad[1]+sad[2]+sad[3];
 }
 

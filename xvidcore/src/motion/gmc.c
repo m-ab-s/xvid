@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: gmc.c,v 1.1.2.5 2003-09-30 18:20:31 edgomez Exp $
+ * $Id: gmc.c,v 1.1.2.6 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -72,7 +72,7 @@ void Predict_16x16_C(const NEW_GMC_DATA * const This,
 			if (u > 0 && u <= W) { ri = MTab[u&15]; Offset = u>>4;	}
 			else if (u > W) Offset = W>>4;
 			else Offset = -1;
- 
+
 			if (v > 0 && v <= H) { rj = MTab[v&15]; Offset += (v>>4)*srcstride; }
 			else if (v > H) Offset += (H>>4)*srcstride;
 			else Offset -= srcstride;
@@ -135,7 +135,7 @@ void Predict_8x8_C(const NEW_GMC_DATA * const This,
 				if (u>W) Offset = W>>4;
 				else Offset = -1;
 			}
-			
+
 			if (v > 0 && v <= H) {
 				rj = MTab[v&15];
 				Offset += (v>>4)*srcstride;
@@ -160,9 +160,9 @@ void Predict_8x8_C(const NEW_GMC_DATA * const This,
 			f0 |= vSrc[Offset + 1] << 16;
 			f1	= vSrc[Offset + srcstride + 0];
 			f1 |= vSrc[Offset + srcstride + 1] << 16;
-			f0 = (ri*f0)>>16; 
+			f0 = (ri*f0)>>16;
 			f1 = (ri*f1) & 0x0fff0000;
-			f0 |= f1; 
+			f0 |= f1;
 			f0 = (rj*f0 + Rounder) >> 24;
 
 			vDst[i] = (uint8_t)f0;
@@ -184,10 +184,10 @@ void get_average_mv_C(const NEW_GMC_DATA * const Dsp, VECTOR * const mv,
 	int32_t U, V;
 	U = uo; uo += Dsp->dU[1];
 	V = vo; vo += Dsp->dV[1];
-	for (i=16; i>0; --i)	 
+	for (i=16; i>0; --i)
 	{
 		int32_t u,v;
-		u = U >> 16; U += Dsp->dU[0]; vx += u; 
+		u = U >> 16; U += Dsp->dU[0]; vx += u;
 		v = V >> 16; V += Dsp->dV[0]; vy += v;
 	}
 	}
@@ -203,7 +203,7 @@ void get_average_mv_C(const NEW_GMC_DATA * const Dsp, VECTOR * const mv,
  */
 
 void Predict_1pt_16x16_C(const NEW_GMC_DATA * const This,
-						 uint8_t *Dst, const uint8_t *Src, 
+						 uint8_t *Dst, const uint8_t *Src,
 						 int dststride, int srcstride, int x, int y, int rounding)
 {
 	const int W	 = This->sW;
@@ -239,13 +239,13 @@ void Predict_1pt_16x16_C(const NEW_GMC_DATA * const This,
 		f1 |= Src[ Offset+srcstride +1 ] << 16;
 		f0 = (ri*f0)>>16;
 		f1 = (ri*f1) & 0x0fff0000;
-		f0 |= f1; 
+		f0 |= f1;
 		f0 = ( rj*f0 + Rounder ) >> 24;
 		Dst[i] = (uint8_t)f0;
 	}
 	Dst += dststride;
 	}
-}	 
+}
 
 void Predict_1pt_8x8_C(const NEW_GMC_DATA * const This,
 						 uint8_t *uDst, const uint8_t *uSrc,
@@ -278,17 +278,17 @@ void Predict_1pt_8x8_C(const NEW_GMC_DATA * const This,
 	for(i=-8; i<0; ++i, Offset++)
 	{
 		uint32_t f0, f1;
-		f0	= uSrc[ Offset + 0 ]; 
+		f0	= uSrc[ Offset + 0 ];
 		f0 |= uSrc[ Offset + 1 ] << 16;
 		f1	= uSrc[ Offset + srcstride + 0 ];
 		f1 |= uSrc[ Offset + srcstride + 1 ] << 16;
 		f0 = (rri*f0)>>16;
-		f1 = (rri*f1) & 0x0fff0000; 
-		f0 |= f1; 
+		f1 = (rri*f1) & 0x0fff0000;
+		f0 |= f1;
 		f0 = ( rrj*f0 + Rounder ) >> 24;
-		uDst[i] = (uint8_t)f0;	 
+		uDst[i] = (uint8_t)f0;
 
-		f0	= vSrc[ Offset + 0 ];	 
+		f0	= vSrc[ Offset + 0 ];
 		f0 |= vSrc[ Offset + 1 ] << 16;
 		f1	= vSrc[ Offset + srcstride + 0 ];
 		f1 |= vSrc[ Offset + srcstride + 1 ] << 16;
@@ -335,7 +335,7 @@ void generate_GMCparameters( int nb_pts, const int accuracy,
 	else nb_pts = 2;
 	}
 	else nb_pts = 3;
-	
+
 	/* now, nb_pts stores the actual number of points required for interpolation */
 
 	if (nb_pts<=1)
@@ -435,8 +435,8 @@ generate_GMCimage(	const NEW_GMC_DATA *const gmc_data, /* [input] precalculated 
 			const int mbnum = mj*mb_width+mi;
 			if (pGMC)
 			{
-				gmc_data->predict_16x16(gmc_data, 
-							pGMC->y + mj*16*stride + mi*16, pRef->y, 
+				gmc_data->predict_16x16(gmc_data,
+							pGMC->y + mj*16*stride + mi*16, pRef->y,
 							stride, stride, mi, mj, rounding);
 
 				gmc_data->predict_8x8(gmc_data,

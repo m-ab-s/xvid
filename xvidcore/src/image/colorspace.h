@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: colorspace.h,v 1.5.2.3 2003-08-13 11:43:55 edgomez Exp $
+ * $Id: colorspace.h,v 1.5.2.4 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -160,9 +160,9 @@ packedFunc yv12_to_uyvyi_mmx;
 
 
 typedef void (planarFunc) (
-				uint8_t * y_dst, uint8_t * u_dst, uint8_t * v_dst, 
+				uint8_t * y_dst, uint8_t * u_dst, uint8_t * v_dst,
 				int y_dst_stride, int uv_dst_stride,
-				uint8_t * y_src, uint8_t * u_src, uint8_t * v_src, 
+				uint8_t * y_src, uint8_t * u_src, uint8_t * v_src,
 				int y_src_stride, int uv_src_stride,
 				int width, int height, int vflip);
 typedef planarFunc *planarFuncPtr;

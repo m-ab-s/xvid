@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbprediction.c,v 1.13.2.8 2003-09-10 22:19:00 edgomez Exp $
+ * $Id: mbprediction.c,v 1.13.2.9 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -206,7 +206,7 @@ predict_acdc(MACROBLOCK * pMBs,
 
 
 /* decoder: add predictors to dct_codes[] and
-   store current coeffs to pred_values[] for future prediction 
+   store current coeffs to pred_values[] for future prediction
 */
 
 
@@ -376,10 +376,10 @@ calc_acdc_bits(MACROBLOCK * pMB,
 
 	/* undo prediction */
 	if (direction == 1) {
-		for (i = 1; i < 8; i++)	
+		for (i = 1; i < 8; i++)
 			qcoeff[i] = tmp[i];
 	}else{						/* acpred_direction == 2 */
-		for (i = 1; i < 8; i++)	
+		for (i = 1; i < 8; i++)
 			qcoeff[i*8] = tmp[i];
 	}
 
@@ -397,10 +397,10 @@ apply_acdc(MACROBLOCK * pMB,
 	unsigned int i;
 
 	if (pMB->acpred_directions[block] == 1) {
-		for (i = 1; i < 8; i++)	
+		for (i = 1; i < 8; i++)
 			qcoeff[i] = predictors[i];
 	} else {
-		for (i = 1; i < 8; i++)	
+		for (i = 1; i < 8; i++)
 			qcoeff[i * 8] = predictors[i];
 	}
 }
@@ -441,10 +441,10 @@ MBPrediction(FRAMEINFO * frame,
 			for (j = 0; j < 6; j++)
 				pMB->acpred_directions[j] = 0;
 		}else{
-			for (j = 0; j < 6; j++) 
+			for (j = 0; j < 6; j++)
 				apply_acdc(pMB, j, &qcoeff[j * 64], predictors[j]);
 		}
-		
+
 		pMB->cbp = calc_cbp(qcoeff);
 	}
 }

@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_rd_based.c,v 1.1.2.3 2003-09-30 18:20:31 edgomez Exp $
+ * $Id: estimation_rd_based.c,v 1.1.2.4 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -623,7 +623,7 @@ xvid_me_ModeDecision_Fast(SearchData * const Data,
 	int inter4v = (VopFlags & XVID_VOP_INTER4V) && (pMB->dquant == 0);
 	const uint32_t iQuant = pMB->quant;
 	const int skip_possible = (coding_type == P_VOP) && (pMB->dquant == 0);
-    int sad; 
+    int sad;
 	int min_rd = -1, intra_rd, i, cbp = 63, c[2] = {0, 0};
 	VECTOR backup[5], *v;
 	int sad_backup[5];

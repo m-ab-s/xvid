@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.12 2003-09-24 01:38:29 edgomez Exp $
+ * $Id: decoder.c,v 1.49.2.13 2003-10-01 23:23:00 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -72,7 +72,7 @@ decoder_resize(DECODER * dec)
 
 	image_destroy(&dec->gmc, dec->edged_width, dec->edged_height);
 
-	if (dec->last_mbs) 
+	if (dec->last_mbs)
 		xvid_free(dec->last_mbs);
 	if (dec->mbs)
 		xvid_free(dec->mbs);
@@ -209,7 +209,7 @@ decoder_create(xvid_dec_create_t * create)
 	if (dec->fixed_dimensions)
 		return decoder_resize(dec);
 	else
-		return 0;		
+		return 0;
 }
 
 
@@ -411,12 +411,12 @@ decoder_mbinter(DECODER * dec,
 		for (i = 0; i < 4; i++)
 			mv[i] = pMB->mvs[i];
 	}
-	
+
 	if (pMB->mode == MODE_INTER || pMB->mode == MODE_INTER_Q) {
 
 		uv_dx = mv[0].x / (1 + dec->quarterpel);
 		uv_dy = mv[0].y / (1 + dec->quarterpel);
-		
+
 		uv_dx = (uv_dx >> 1) + roundtab_79[uv_dx & 0x3];
 		uv_dy = (uv_dy >> 1) + roundtab_79[uv_dy & 0x3];
 
@@ -452,7 +452,7 @@ decoder_mbinter(DECODER * dec,
 
 	} else {	/* MODE_INTER4V */
 		int sum;
-		
+
 		if(dec->quarterpel)
 			sum = (mv[0].x / 2) + (mv[1].x / 2) + (mv[2].x / 2) + (mv[3].x / 2);
 		else
@@ -476,7 +476,7 @@ decoder_mbinter(DECODER * dec,
 								  mv[1].x, mv[1].y, stride,  rounding);
 			interpolate16x16_switch(dec->cur.y, dec->refn[0].y , 32*x_pos, 32*y_pos + 16,
 								  mv[2].x, mv[2].y, stride,  rounding);
-			interpolate16x16_switch(dec->cur.y, dec->refn[0].y , 32*x_pos + 16, 32*y_pos + 16, 
+			interpolate16x16_switch(dec->cur.y, dec->refn[0].y , 32*x_pos + 16, 32*y_pos + 16,
 								  mv[3].x, mv[3].y, stride,  rounding);
 			interpolate16x16_switch(dec->cur.u, dec->refn[0].u , 16 * x_pos, 16 * y_pos,
 								  uv_dx, uv_dy, stride2, rounding);
@@ -484,7 +484,7 @@ decoder_mbinter(DECODER * dec,
 								  uv_dx, uv_dy, stride2, rounding);
 
 			/* set_block(pY_Cur, stride, 32, 32, 127); */
-		} 
+		}
 		else
 		{
 			if(dec->quarterpel) {
@@ -508,7 +508,7 @@ decoder_mbinter(DECODER * dec,
 									  mv[1].x, mv[1].y, stride,  rounding);
 				interpolate8x8_switch(dec->cur.y, dec->refn[0].y , 16*x_pos, 16*y_pos + 8,
 									  mv[2].x, mv[2].y, stride,  rounding);
-				interpolate8x8_switch(dec->cur.y, dec->refn[0].y , 16*x_pos + 8, 16*y_pos + 8, 
+				interpolate8x8_switch(dec->cur.y, dec->refn[0].y , 16*x_pos + 8, 16*y_pos + 8,
 									  mv[3].x, mv[3].y, stride,  rounding);
 			}
 
@@ -613,13 +613,13 @@ decoder_mbgmc(DECODER * dec,
 	pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = pMB->amv;
 
 	start_timer();
-	
+
 /* this is where the calculations are done */
-	
+
 	{	NEW_GMC_DATA * gmc_data = &dec->new_gmc_data;
 
-			gmc_data->predict_16x16(gmc_data, 
-					dec->cur.y + y_pos*16*stride + x_pos*16, dec->refn[0].y, 
+			gmc_data->predict_16x16(gmc_data,
+					dec->cur.y + y_pos*16*stride + x_pos*16, dec->refn[0].y,
 					stride, stride, x_pos, y_pos, rounding);
 
 			gmc_data->predict_8x8(gmc_data,
@@ -633,7 +633,7 @@ decoder_mbgmc(DECODER * dec,
 		pMB->amv.y = gmc_sanitize(pMB->amv.y, dec->quarterpel, fcode);
 	}
 	pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = pMB->amv;
-	
+
 /*
 	transfer16x16_copy(pY_Cur, dec->gmc.y + (y_pos << 4)*stride + (x_pos  << 4), stride);
 	transfer8x8_copy(pU_Cur, dec->gmc.u + (y_pos << 3)*stride2 + (x_pos  << 3), stride2);
@@ -642,7 +642,7 @@ decoder_mbgmc(DECODER * dec,
 
 
 	stop_transfer_timer();
-	
+
 	if (!cbp) return;
 
 	for (i = 0; i < 6; i++) {
@@ -705,7 +705,7 @@ decoder_iframe(DECODER * dec,
 	uint32_t x, y;
 	uint32_t mb_width = dec->mb_width;
 	uint32_t mb_height = dec->mb_height;
-	
+
 	if (reduced_resolution)
 	{
 		mb_width = (dec->width + 31) / 32;
@@ -728,7 +728,7 @@ decoder_iframe(DECODER * dec,
 
 			if (check_resync_marker(bs, 0))
 			{
-				bound = read_video_packet_header(bs, dec, 0, 
+				bound = read_video_packet_header(bs, dec, 0,
 							&quant, NULL, NULL, &intra_dc_threshold);
 				x = bound % mb_width;
 				y = bound / mb_width;
@@ -842,7 +842,7 @@ decoder_pframe(DECODER * dec,
 	int cp_mb, st_mb;
 	uint32_t mb_width = dec->mb_width;
 	uint32_t mb_height = dec->mb_height;
-	
+
 	if (reduced_resolution)
 	{
 		mb_width = (dec->width + 31) / 32;
@@ -855,20 +855,20 @@ decoder_pframe(DECODER * dec,
 	stop_edges_timer();
 
 	if (gmc_warp)
-	{	
+	{
 
 		/* accuracy:  0==1/2, 1=1/4, 2=1/8, 3=1/16 */
-/*		{	
+/*		{
 			fprintf(stderr,"GMC parameters acc=%d(-> 1/%d), %d pts!!!\n",
 				dec->sprite_warping_accuracy,(2<<dec->sprite_warping_accuracy),
 				dec->sprite_warping_points);
 		}*/
 
-		generate_GMCparameters(	dec->sprite_warping_points, 
-				dec->sprite_warping_accuracy, gmc_warp, 
+		generate_GMCparameters(	dec->sprite_warping_points,
+				dec->sprite_warping_accuracy, gmc_warp,
 				dec->width, dec->height, &dec->new_gmc_data);
 
-/* image warping is done block-based  in decoder_mbgmc(), now */	
+/* image warping is done block-based  in decoder_mbgmc(), now */
 	}
 
 	bound = 0;
@@ -884,7 +884,7 @@ decoder_pframe(DECODER * dec,
 
 			if (check_resync_marker(bs, fcode - 1))
 			{
-				bound = read_video_packet_header(bs, dec, fcode - 1, 
+				bound = read_video_packet_header(bs, dec, fcode - 1,
 					&quant, &fcode, NULL, &intra_dc_threshold);
 				x = bound % mb_width;
 				y = bound / mb_width;
@@ -908,7 +908,7 @@ decoder_pframe(DECODER * dec,
 				mcbpc = get_mcbpc_inter(bs);
 				mb->mode = mcbpc & 7;
 				cbpc = (mcbpc >> 4);
-				
+
 				DPRINTF(XVID_DEBUG_MB, "mode %i\n", mb->mode);
 				DPRINTF(XVID_DEBUG_MB, "cbpc %i\n", cbpc);
 				acpred_flag = 0;
@@ -957,7 +957,7 @@ decoder_pframe(DECODER * dec,
 						}
 					}
 				}
-				
+
 				if (mcsel) {
 					decoder_mbgmc(dec, mb, x, y, fcode, cbp, bs, quant,
 								rounding, reduced_resolution);
@@ -1026,7 +1026,7 @@ decoder_pframe(DECODER * dec,
 				if (reduced_resolution)
 				{
 					transfer32x32_copy(dec->cur.y + (32*y)*dec->edged_width + (32*x),
-									 dec->refn[0].y + (32*y)*dec->edged_width + (32*x), 
+									 dec->refn[0].y + (32*y)*dec->edged_width + (32*x),
 									 dec->edged_width);
 
 					transfer16x16_copy(dec->cur.u + (16*y)*dec->edged_width/2 + (16*x),
@@ -1040,7 +1040,7 @@ decoder_pframe(DECODER * dec,
 				else
 				{
 					transfer16x16_copy(dec->cur.y + (16*y)*dec->edged_width + (16*x),
-									 dec->refn[0].y + (16*y)*dec->edged_width + (16*x), 
+									 dec->refn[0].y + (16*y)*dec->edged_width + (16*x),
 									 dec->edged_width);
 
 					transfer8x8_copy(dec->cur.u + (8*y)*dec->edged_width/2 + (8*x),
@@ -1051,7 +1051,7 @@ decoder_pframe(DECODER * dec,
 									 dec->refn[0].v + (8*y)*dec->edged_width/2 + (8*x),
 									 dec->edged_width/2);
 				}
-				
+
 				stop_transfer_timer();
 
 				if(dec->out_frm && cp_mb > 0) {
@@ -1182,7 +1182,7 @@ decoder_bf_mbinter(DECODER * dec,
 						      pMB->mvs[1].x, pMB->mvs[1].y, stride, 0);
 		interpolate8x8_switch(dec->cur.y, dec->refn[ref].y, 16*x_pos, 16*y_pos + 8,
 							  pMB->mvs[2].x, pMB->mvs[2].y, stride, 0);
-		interpolate8x8_switch(dec->cur.y, dec->refn[ref].y, 16*x_pos + 8, 16*y_pos + 8, 
+		interpolate8x8_switch(dec->cur.y, dec->refn[ref].y, 16*x_pos + 8, 16*y_pos + 8,
 							  pMB->mvs[3].x, pMB->mvs[3].y, stride, 0);
 	}
 
@@ -1558,7 +1558,7 @@ decoder_bframe(DECODER * dec,
 			mb->mvs[0] = mb->mvs[1] = mb->mvs[2] = mb->mvs[3] = zeromv;
 
 			/*
-			 * skip if the co-located P_VOP macroblock is not coded 
+			 * skip if the co-located P_VOP macroblock is not coded
 			 * if not codec in co-located S_VOP macroblock is _not_
 			 * automatically skipped
 			 */
@@ -1618,7 +1618,7 @@ decoder_bframe(DECODER * dec,
 				get_b_motion_vector(dec, bs, x, y, &mv, 1, zeromv);
 
 			case MODE_DIRECT_NONE_MV:
-				{	
+				{
 					const int64_t TRB = dec->time_pp - dec->time_bp, TRD = dec->time_pp;
 					int i;
 
@@ -1695,7 +1695,7 @@ decoder_bframe(DECODER * dec,
 
 
 /* perform post processing if necessary, and output the image */
-void decoder_output(DECODER * dec, IMAGE * img, MACROBLOCK * mbs, 
+void decoder_output(DECODER * dec, IMAGE * img, MACROBLOCK * mbs,
 					xvid_dec_frame_t * frame, xvid_dec_stats_t * stats, int coding_type)
 {
 
@@ -1776,10 +1776,10 @@ decoder_decode(DECODER * dec,
 
 repeat:
 
-	coding_type =	BitstreamReadHeaders(&bs, dec, &rounding, &reduced_resolution, 
+	coding_type =	BitstreamReadHeaders(&bs, dec, &rounding, &reduced_resolution,
 			&quant, &fcode_forward, &fcode_backward, &intra_dc_threshold, &gmc_warp);
 
-	DPRINTF(XVID_DEBUG_HEADER, "coding_type=%i,  packed=%i,  time=%lli,  time_pp=%i,  time_bp=%i\n", 
+	DPRINTF(XVID_DEBUG_HEADER, "coding_type=%i,  packed=%i,  time=%lli,  time_pp=%i,  time_bp=%i\n",
 							coding_type,	dec->packed_mode, dec->time, dec->time_pp, dec->time_bp);
 
 	if (coding_type == -1) /* nothing */
@@ -1794,7 +1794,7 @@ repeat:
 	{
 		if (coding_type == -3)
 			decoder_resize(dec);
-			
+
 		if (stats)
 		{
 			stats->type = XVID_TYPE_VOL;
@@ -1810,7 +1810,7 @@ repeat:
 			return BitstreamPos(&bs)/8;	/* number of bytes consumed */
 		}
 		goto repeat;
-	} 
+	}
 
 	dec->p_bmv.x = dec->p_bmv.y = dec->p_fmv.y = dec->p_fmv.y = 0;	/* init pred vector to 0 */
 
@@ -1832,11 +1832,11 @@ repeat:
 			decoder_iframe(dec, &bs, reduced_resolution, quant, intra_dc_threshold);
 			break;
 		case P_VOP :
-			decoder_pframe(dec, &bs, rounding, reduced_resolution, quant, 
+			decoder_pframe(dec, &bs, rounding, reduced_resolution, quant,
 						fcode_forward, intra_dc_threshold, NULL);
 			break;
 		case S_VOP :
-			decoder_pframe(dec, &bs, rounding, reduced_resolution, quant, 
+			decoder_pframe(dec, &bs, rounding, reduced_resolution, quant,
 						fcode_forward, intra_dc_threshold, &gmc_warp);
 			break;
 		case N_VOP :
@@ -1892,7 +1892,7 @@ repeat:
 			image_printf(&dec->cur, dec->edged_width, dec->height, 16, 16,
 						"broken b-frame, mising ref frames");
 		}else if (dec->time_pp <= dec->time_bp) {
-			/* this occurs when dx50_bvop_compatibility==0 sequences are 
+			/* this occurs when dx50_bvop_compatibility==0 sequences are
 			decoded in vfw. */
 			image_printf(&dec->cur, dec->edged_width, dec->height, 16, 16,
 						"broken b-frame, tpp=%i tbp=%i", dec->time_pp, dec->time_bp);
@@ -1933,7 +1933,7 @@ done :
 			image_printf(&dec->cur, dec->edged_width, dec->height, 16, 64,
 				"bframe decoder lag");
 
-			decoder_output(dec, &dec->cur, NULL, frame, stats, P_VOP);	
+			decoder_output(dec, &dec->cur, NULL, frame, stats, P_VOP);
 			if (stats) stats->type = XVID_TYPE_NOTHING;
 
 		}

@@ -22,13 +22,13 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: simple_idct.c,v 1.2.2.3 2003-06-09 19:42:21 edgomez Exp $
+ * $Id: simple_idct.c,v 1.2.2.4 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
 /*
   based upon some outcommented c code from mpeg2dec (idct_mmx.c
-  written by Aaron Holtzman <aholtzma@ess.engr.uvic.ca>) 
+  written by Aaron Holtzman <aholtzma@ess.engr.uvic.ca>)
  */
 
 #include "../portab.h"
@@ -91,7 +91,7 @@ static __inline void idctRowCondDC (int16_t * const row)
 #else
 #define ROW0_MASK 0xffffLL
 #endif
-	if ( ((((uint64_t *)row)[0] & ~ROW0_MASK) | 
+	if ( ((((uint64_t *)row)[0] & ~ROW0_MASK) |
               ((uint64_t *)row)[1]) == 0) {
             temp = (row[0] << 3) & 0xffff;
             temp += temp << 16;
@@ -103,7 +103,7 @@ static __inline void idctRowCondDC (int16_t * const row)
 #else
 	if (!(((uint32_t*)row)[1] |
               ((uint32_t*)row)[2] |
-              ((uint32_t*)row)[3] | 
+              ((uint32_t*)row)[3] |
               row[1])) {
             temp = (row[0] << 3) & 0xffff;
             temp += temp << 16;
@@ -146,13 +146,13 @@ static __inline void idctRowCondDC (int16_t * const row)
 
             MAC16(b0, W5, row[5]);
             MAC16(b0, W7, row[7]);
-            
+
             MAC16(b1, -W1, row[5]);
             MAC16(b1, -W5, row[7]);
-            
+
             MAC16(b2, W7, row[5]);
             MAC16(b2, W3, row[7]);
-            
+
             MAC16(b3, W3, row[5]);
             MAC16(b3, -W1, row[7]);
 	}
@@ -236,7 +236,7 @@ void simple_idct_c(int16_t * const block)
     int i;
     for(i=0; i<8; i++)
         idctRowCondDC(block + i*8);
-    
+
     for(i=0; i<8; i++)
         idctSparseCol(block + i);
 }

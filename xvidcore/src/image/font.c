@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: font.c,v 1.4.2.2 2003-06-09 13:53:33 edgomez Exp $
+ * $Id: font.c,v 1.4.2.3 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -33,16 +33,16 @@
 #define FONT_HEIGHT	6
 
 
-static const char ascii33[33][FONT_WIDTH*FONT_HEIGHT] = { 
+static const char ascii33[33][FONT_WIDTH*FONT_HEIGHT] = {
 
 	/* ! */
-	{0,0,1,0,	
+	{0,0,1,0,
 	 0,0,1,0,
 	 0,0,1,0,
 	 0,0,1,0,
 	 0,0,0,0,
 	 0,0,1,0},
-	
+
 	/* " */
 	{0,1,0,1,
 	 0,1,0,1,
@@ -50,7 +50,7 @@ static const char ascii33[33][FONT_WIDTH*FONT_HEIGHT] = {
 	 0,0,0,0,
 	 0,0,0,0,
 	 0,0,0,0},
-	
+
 	/* # */
 	{0,1,1,0,
 	 1,1,1,1,
@@ -66,7 +66,7 @@ static const char ascii33[33][FONT_WIDTH*FONT_HEIGHT] = {
 	 0,1,1,1,
 	 1,1,0,1,
 	 0,1,1,0},
-	
+
 	/* % */
 	{1,1,0,1,
 	 1,0,0,1,
@@ -114,7 +114,7 @@ static const char ascii33[33][FONT_WIDTH*FONT_HEIGHT] = {
 	 1,1,1,1,
 	 0,1,1,0,
 	 1,0,0,1},
-	
+
 	/* + */
 	{0,0,0,0,
 	 0,0,1,0,
@@ -122,7 +122,7 @@ static const char ascii33[33][FONT_WIDTH*FONT_HEIGHT] = {
 	 0,1,1,1,
 	 0,0,1,0,
 	 0,0,1,0},
-	
+
 	/* , */
 	{0,0,0,0,
 	 0,0,0,0,
@@ -130,7 +130,7 @@ static const char ascii33[33][FONT_WIDTH*FONT_HEIGHT] = {
 	 0,0,0,0,
 	 0,1,1,0,
 	 0,0,1,0},
-	
+
 	/* - */
 	{0,0,0,0,
 	 0,0,0,0,
@@ -162,7 +162,7 @@ static const char ascii33[33][FONT_WIDTH*FONT_HEIGHT] = {
 	 1,1,0,1,
 	 1,0,0,1,
 	 0,1,1,0},
-	
+
 	/* 1 */
 	{0,0,1,0,
 	 0,0,1,0,
@@ -170,7 +170,7 @@ static const char ascii33[33][FONT_WIDTH*FONT_HEIGHT] = {
 	 0,0,1,0,
 	 0,0,1,0,
 	 0,0,1,0},
-	
+
 	/* 2 */
 	{0,1,1,0,
 	 1,0,0,1,
@@ -178,7 +178,7 @@ static const char ascii33[33][FONT_WIDTH*FONT_HEIGHT] = {
 	 0,1,0,0,
 	 1,0,0,0,
 	 1,1,1,1},
-	
+
 	/* 3 */
 	{0,1,1,0,
 	 1,0,0,1,
@@ -294,7 +294,7 @@ static const char ascii33[33][FONT_WIDTH*FONT_HEIGHT] = {
 };
 
 
-static const char ascii65[26][FONT_WIDTH*FONT_HEIGHT] = { 
+static const char ascii65[26][FONT_WIDTH*FONT_HEIGHT] = {
 	/* A */
 	{0,1,1,0,
 	 1,0,0,1,
@@ -302,7 +302,7 @@ static const char ascii65[26][FONT_WIDTH*FONT_HEIGHT] = {
 	 1,1,1,1,
 	 1,0,0,1,
 	 1,0,0,1},
-	
+
 	/* B */
 	{1,1,1,0,
 	 1,0,0,1,
@@ -310,7 +310,7 @@ static const char ascii65[26][FONT_WIDTH*FONT_HEIGHT] = {
 	 1,0,0,1,
 	 1,0,0,1,
 	 1,1,1,0},
-	
+
 	/* C */
 	{0,1,1,0,
 	 1,0,0,1,
@@ -318,7 +318,7 @@ static const char ascii65[26][FONT_WIDTH*FONT_HEIGHT] = {
 	 1,0,0,0,
 	 1,0,0,1,
 	 0,1,1,0},
-	
+
 	/* D */
 	{1,1,0,0,
 	 1,0,1,0,
@@ -508,7 +508,7 @@ static const char ascii65[26][FONT_WIDTH*FONT_HEIGHT] = {
 
 
 
-static const char ascii91[6][FONT_WIDTH*FONT_HEIGHT] = { 
+static const char ascii91[6][FONT_WIDTH*FONT_HEIGHT] = {
 	/* [ */
 	{0,1,1,0,
 	 0,1,0,0,
@@ -581,7 +581,7 @@ void draw_num(IMAGE * img, const int stride, const int height,
 
 #define FONT_BUF_SZ  1024
 
-void image_printf(IMAGE * img, int edged_width, int height, 
+void image_printf(IMAGE * img, int edged_width, int height,
 				  int x, int y, char *fmt, ...)
 {
 	va_list args;

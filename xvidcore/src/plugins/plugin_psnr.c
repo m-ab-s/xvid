@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: plugin_psnr.c,v 1.1.2.4 2003-06-09 13:55:07 edgomez Exp $
+ * $Id: plugin_psnr.c,v 1.1.2.5 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -49,7 +49,7 @@ int xvid_plugin_psnr(void * handle, int opt, void * param1, void * param2)
        {
        xvid_plg_data_t * data = (xvid_plg_data_t*)param1;
 
-       printf("y_psnr=%2.2f u_psnr=%2.2f v_psnr=%2.2f\n", 
+       printf("y_psnr=%2.2f u_psnr=%2.2f v_psnr=%2.2f\n",
            sse_to_PSNR(data->sse_y, data->width*data->height),
            sse_to_PSNR(data->sse_u, data->width*data->height/4),
            sse_to_PSNR(data->sse_v, data->width*data->height/4));

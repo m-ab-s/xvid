@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: portab.h,v 1.46.2.8 2003-06-09 13:51:07 edgomez Exp $
+ * $Id: portab.h,v 1.46.2.9 2003-10-01 23:23:00 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -68,27 +68,27 @@ extern unsigned int xvid_debug;
 #endif
 
 /*****************************************************************************
- *  Some things that are only architecture dependant 
+ *  Some things that are only architecture dependant
  ****************************************************************************/
 
 #if defined(ARCH_IS_32BIT)
 #    define CACHE_LINE 64
 #    define ptr_t uint32_t
 #    define intptr_t int32_t
-#    if _MSC_VER < 1300 
-#        define uintptr_t uint32_t 
+#    if _MSC_VER < 1300
+#        define uintptr_t uint32_t
 #    else
 #        include <stdarg.h>
-#    endif 
+#    endif
 #elif defined(ARCH_IS_64BIT)
 #    define CACHE_LINE  64
 #    define ptr_t uint64_t
 #    define intptr_t int64_t
-#    if _MSC_VER < 1300 
+#    if _MSC_VER < 1300
 #        define uintptr_t uint64_t
 #    else
 #        include <stdarg.h>
-#    endif 
+#    endif
 #else
 #    error You are trying to compile XviD without defining address bus size.
 #endif

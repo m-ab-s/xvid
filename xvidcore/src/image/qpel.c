@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: qpel.c,v 1.1.4.3 2003-08-26 14:07:11 edgomez Exp $
+ * $Id: qpel.c,v 1.1.4.4 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -217,7 +217,7 @@ uint16_t xvid_Expand_mmx[256][4]; /* 8b -> 64b expansion table */
  * 17 tables, 2K each => 34K
  * Mirroring can be acheived composing 11 basic tables
  * (for instance: (23,19,-6,3)=(20,20,-6,3)+(3,-1,0,0)
- * Using Symmetries (and bswap) could reduce further  
+ * Using Symmetries (and bswap) could reduce further
  * the memory to 7 tables (->14K). */
 
 int16_t xvid_FIR_1_0_0_0[256][4];

@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: idct.c,v 1.6.2.2 2003-06-09 13:52:59 edgomez Exp $
+ * $Id: idct.c,v 1.6.2.3 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -57,7 +57,7 @@
  * v0.16B22  idct_FAST() renamed to idct_int32()
  *        also merged idct_FAST() into a single function, to help VC++
  *        optimize it.
- *        
+ *
  * v0.14  changed int to long, to avoid confusion when compiling on x86
  *        platform ( in VC++ "int" -> 32bits )
  */
@@ -124,7 +124,7 @@ short *blk;
   X8 = W3*(X6+X7);
   X6 = X8 - (W3-W5)*X6;
   X7 = X8 - (W3+W5)*X7;
-  
+
   /* second stage  */
   X8 = X0 + X1;
   X0 -= X1;
@@ -135,7 +135,7 @@ short *blk;
   X4 -= X6;
   X6 = X5 + X7;
   X5 -= X7;
-  
+
   /* third stage  */
   X7 = X8 + X3;
   X8 -= X3;
@@ -143,7 +143,7 @@ short *blk;
   X0 -= X2;
   X2 = (181*(X4+X5)+128)>>8;
   X4 = (181*(X4-X5)+128)>>8;
-  
+
   /* fourth stage  */
   blk[0] = (X7+X1)>>8;
   blk[1] = (X3+X2)>>8;
@@ -190,7 +190,7 @@ short *blk;
   X8 = W3*(X6+X7) + 4;
   X6 = (X8-(W3-W5)*X6)>>3;
   X7 = (X8-(W3+W5)*X7)>>3;
-  
+
   /* second stage */
   X8 = X0 + X1;
   X0 -= X1;
@@ -201,7 +201,7 @@ short *blk;
   X4 -= X6;
   X6 = X5 + X7;
   X5 -= X7;
-  
+
   /* third stage  */
   X7 = X8 + X3;
   X8 -= X3;
@@ -209,7 +209,7 @@ short *blk;
   X0 -= X2;
   X2 = (181*(X4+X5)+128)>>8;
   X4 = (181*(X4-X5)+128)>>8;
-  
+
   /* fourth stage */
   blk[8*0] = iclp[(X7+X1)>>14];
   blk[8*1] = iclp[(X3+X2)>>14];

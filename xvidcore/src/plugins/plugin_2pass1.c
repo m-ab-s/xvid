@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass1.c,v 1.1.2.6 2003-07-29 23:02:34 edgomez Exp $
+ * $Id: plugin_2pass1.c,v 1.1.2.7 2003-10-01 23:23:01 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -56,7 +56,7 @@ static int rc_2pass1_create(xvid_plg_create_t * create, rc_2pass1_t ** handle)
 	if((rc = malloc(sizeof(rc_2pass1_t))) == NULL)
 		return(XVID_ERR_MEMORY);
 
-    /* Initialize safe defaults for 2pass 1 */ 
+    /* Initialize safe defaults for 2pass 1 */
     rc->stat_file = NULL;
 
 	/* Open the 1st pass file */
@@ -72,7 +72,7 @@ static int rc_2pass1_create(xvid_plg_create_t * create, rc_2pass1_t ** handle)
 	fprintf(rc->stat_file, "start\n");
     fprintf(rc->stat_file, "type quantizer length kblocks mblocks ublocks\n");
 #endif
-    
+
     rc->fq_error = 0;
 
     *handle = rc;
@@ -96,7 +96,7 @@ static int rc_2pass1_before(rc_2pass1_t * rc, xvid_plg_data_t * data)
             rc->fq_error += (double)data->zone->increment / (double)data->zone->base;
             data->quant = (int)rc->fq_error;
             rc->fq_error -= data->quant;
-   
+
         }else {
             data->quant = 2;
         }

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: global.h,v 1.21.2.9 2003-09-30 18:20:31 edgomez Exp $
+ * $Id: global.h,v 1.21.2.10 2003-10-01 23:23:00 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -50,7 +50,7 @@
 
 
 /*
- * vop coding types 
+ * vop coding types
  * intra, prediction, backward, sprite, not_coded
  */
 #define I_VOP	0
@@ -83,20 +83,20 @@ VECTOR;
 
 
 
-typedef struct 
+typedef struct
 {
 	VECTOR duv[3];
 }
 WARPPOINTS;
 
-/* save all warping parameters for GMC once and for all, instead of 
+/* save all warping parameters for GMC once and for all, instead of
    recalculating for every block. This is needed for encoding&decoding
-   When switching to incremental calculations, this will get much shorter 
+   When switching to incremental calculations, this will get much shorter
 */
 
 /*	we don't include WARPPOINTS wp	here, but in FRAMEINFO itself */
 
-typedef struct 
+typedef struct
 {
 	int num_wp;		/* [input]: 0=none, 1=translation, 2,3 = warping */
 							/* a value of -1 means: "structure not initialized!" */
@@ -104,13 +104,13 @@ typedef struct
 
 	int W;
 	int H;
-	
-	int ss;		
-	int smask;	
-	int sigma;     
-	
-	int r;		
-	int rho;	
+
+	int ss;
+	int smask;
+	int sigma;
+
+	int r;
+	int rho;
 
 	int i0s;
 	int j0s;
@@ -118,18 +118,18 @@ typedef struct
 	int j1s;
 	int i2s;
 	int j2s;
-	
-	int i1ss; 
-	int j1ss; 
-	int i2ss; 
-	int j2ss; 
+
+	int i1ss;
+	int j1ss;
+	int i2ss;
+	int j2ss;
 
 	int alpha;
 	int beta;
-	int Ws; 
-	int Hs; 
-	
-	int dxF, dyF, dxG, dyG; 
+	int Ws;
+	int Hs;
+
+	int dxF, dyF, dxG, dyG;
 	int Fo, Go;
 	int cFo, cGo;
 } GMC_DATA;
@@ -229,7 +229,7 @@ typedef struct
 	VECTOR amv; /* average motion vectors from GMC  */
 	int32_t mcsel;
 
-/* This structure has become way to big! What to do? Split it up?   */ 
+/* This structure has become way to big! What to do? Split it up?   */
 
 }
 MACROBLOCK;

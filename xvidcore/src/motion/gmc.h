@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: gmc.h,v 1.1.2.5 2003-09-30 18:20:31 edgomez Exp $
+ * $Id: gmc.h,v 1.1.2.6 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -68,16 +68,16 @@ log2bin(uint32_t value)
 /* table lookup might be faster!  (still to be benchmarked) */
 
 /*
-static int log2bin_table[16] = 
+static int log2bin_table[16] =
 	{ 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4};
 */
-/*	1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 */ 
+/*	1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 */
 
 #define RDIV(a,b) (((a)>0 ? (a) + ((b)>>1) : (a) - ((b)>>1))/(b))
 #define RSHIFT(a,b) ( (a)>0 ? ((a) + (1<<((b)-1)))>>(b) : ((a) + (1<<((b)-1))-1)>>(b))
 
 #define MLT(i)  (((16-(i))<<16) + (i))
-static const uint32_t MTab[16] = {  
+static const uint32_t MTab[16] = {
   MLT( 0), MLT( 1), MLT( 2), MLT( 3), MLT( 4), MLT( 5), MLT( 6), MLT( 7),
   MLT( 8), MLT( 9), MLT(10), MLT(11), MLT(12), MLT(13), MLT(14), MLT(15)
 };
@@ -109,7 +109,7 @@ void get_average_mv_C(const NEW_GMC_DATA * const Dsp, VECTOR * const mv,
  */
 
 void Predict_1pt_16x16_C(const NEW_GMC_DATA * const This,
-						 uint8_t *Dst, const uint8_t *Src, 
+						 uint8_t *Dst, const uint8_t *Src,
 						 int dststride, int srcstride, int x, int y, int rounding);
 
 void Predict_1pt_8x8_C(const NEW_GMC_DATA * const This,

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: colorspace.c,v 1.8.2.3 2003-06-09 13:53:20 edgomez Exp $
+ * $Id: colorspace.c,v 1.8.2.4 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -127,7 +127,7 @@ NAME(uint8_t * x_ptr, int x_stride,	\
 	Video Demystified" (ISBN 1-878707-09-4)
 
 	rgb<->yuv _is_ lossy, since most programs do the conversion differently
-		
+
 	SCALEBITS/FIX taken from  ffmpeg
 */
 
@@ -222,7 +222,7 @@ NAME(uint8_t * x_ptr, int x_stride,	\
 	b##UVID += b = x_ptr[(ROW)*x_stride+(SIZE)+(C3)];				\
 	y_ptr[(ROW)*y_stride+1] =									\
 		(uint8_t) ((FIX_IN(Y_R_IN) * r + FIX_IN(Y_G_IN) * g +	\
-					FIX_IN(Y_B_IN) * b) >> SCALEBITS_IN) + Y_ADD_IN;	
+					FIX_IN(Y_B_IN) * b) >> SCALEBITS_IN) + Y_ADD_IN;
 
 #define READ_RGB_UV(UV_ROW,UVID)	\
 	u_ptr[(UV_ROW)*uv_stride] =														\
@@ -372,7 +372,7 @@ MAKE_COLORSPACE(uyvyi_to_yv12_c,   2,2,4, YUYVI_TO_YV12,  1,0,3,2)
 	WRITE_RGB16(1, 1, C1)										\
     WRITE_RGB16(2, 0, C1)										\
 	WRITE_RGB16(3, 1, C1)										\
-	
+
 
 /* rgb/rgbi output */
 
@@ -424,7 +424,7 @@ MAKE_COLORSPACE(uyvyi_to_yv12_c,   2,2,4, YUYVI_TO_YV12,  1,0,3,2)
 #define YV12_TO_YUYV_ROW(SIZE,C1,C2,C3,C4) 	/* nothing */
 #define YV12_TO_YUYV(SIZE,C1,C2,C3,C4)	\
 	WRITE_YUYV(0, 0, C1,C2,C3,C4)		\
-	WRITE_YUYV(1, 0, C1,C2,C3,C4)	
+	WRITE_YUYV(1, 0, C1,C2,C3,C4)
 
 #define YV12_TO_YUYVI_ROW(SIZE,C1,C2,C3,C4) /* nothing */
 #define YV12_TO_YUYVI(SIZE,C1,C2,C3,C4)	\
@@ -457,9 +457,9 @@ MAKE_COLORSPACE(yv12_to_uyvyi_c,   2,2,4, YV12_TO_YUYVI,  1,0,3,2)
 /* yv12 to yv12 copy function */
 
 void
-yv12_to_yv12_c(uint8_t * y_dst, uint8_t * u_dst, uint8_t * v_dst, 
+yv12_to_yv12_c(uint8_t * y_dst, uint8_t * u_dst, uint8_t * v_dst,
 				int y_dst_stride, int uv_dst_stride,
-				uint8_t * y_src, uint8_t * u_src, uint8_t * v_src, 
+				uint8_t * y_src, uint8_t * u_src, uint8_t * v_src,
 				int y_src_stride, int uv_src_stride,
 				int width, int height, int vflip)
 {

@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.22 2003-06-10 20:47:29 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.23 2003-10-01 23:23:01 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -172,7 +172,7 @@ rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t **handle)
 	int i;
 
 	rc = malloc(sizeof(rc_2pass2_t));
-	if (rc == NULL) 
+	if (rc == NULL)
 		return XVID_ERR_MEMORY;
 
 	rc->param = *param;
@@ -251,7 +251,7 @@ rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t **handle)
 		rc->target = rc->param.bitrate / 8;
 	} else {
 		/* Target filesize = bitrate/8 * numframes / framerate */
-		rc->target = 
+		rc->target =
 			((uint64_t)rc->param.bitrate * (uint64_t)rc->num_frames * \
 			 (uint64_t)create->fincr) / \
 			((uint64_t)create->fbase * 8);
@@ -269,7 +269,7 @@ rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t **handle)
 	DPRINTF(XVID_DEBUG_RC, "Container Frame overhead: %d\n", rc->param.container_frame_overhead);
 	DPRINTF(XVID_DEBUG_RC, "Target filesize (after container compensation): %lld\n", rc->target);
 
-	/* 
+	/*
 	 * First data pre processing:
 	 *  - finds the minimum frame length for each frame type during 1st pass.
 	 *     rc->min_size[]
@@ -463,7 +463,7 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	 * even VFW code uses the pframe average length. Note that this length is
 	 * used with desired which represents bframes _and_ pframes length.
 	 *
-	 * XXX: why are we using the avg pframe length for all frame types ? 
+	 * XXX: why are we using the avg pframe length for all frame types ?
 	 */
 	overflow = (int)((double)overflow * desired / rc->avg_length[XVID_TYPE_PVOP-1]);
 
@@ -723,7 +723,7 @@ static void print_stats(rc_2pass2_t * rc)
 }
 #endif
 
-/* pre-process the statistics data 
+/* pre-process the statistics data
    - for each type, count, tot_length, min_length, max_length
    - set keyframes_locations
 */

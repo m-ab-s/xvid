@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: timer.c,v 1.8.2.2 2003-06-09 13:55:51 edgomez Exp $
+ * $Id: timer.c,v 1.8.2.3 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -53,7 +53,7 @@ struct ts tim;
 
 double frequency = 0.0;
 
-/* 
+/*
     determine cpu frequency
 	not very precise but sufficient
 */

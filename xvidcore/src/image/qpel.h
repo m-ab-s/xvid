@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: qpel.h,v 1.1.4.4 2003-09-30 18:20:31 edgomez Exp $
+ * $Id: qpel.h,v 1.1.4.5 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -118,18 +118,18 @@ new_interpolate16x16_quarterpel(uint8_t * const cur,
 
 	const int32_t xRef = x*4 + dx;
 	const int32_t yRef = y*4 + dy;
- 
+
 	Ops = xvid_QP_Funcs; /* TODO: pass as argument */
 	quads = (dx&3) | ((dy&3)<<2);
- 
+
 	x_int = xRef/4;
 	if (xRef < 0 && xRef % 4)
 		x_int--;
- 
+
 	y_int	 = yRef/4;
 	if (yRef < 0 && yRef % 4)
 		y_int--;
- 
+
 	dst = cur + y * stride + x;
 	src = refn + y_int * stride + x_int;
 
@@ -220,18 +220,18 @@ new_interpolate16x8_quarterpel(uint8_t * const cur,
 
 	const int32_t xRef = x*4 + dx;
 	const int32_t yRef = y*4 + dy;
- 
+
 	Ops = xvid_QP_Funcs; /* TODO: pass as argument */
 	quads = (dx&3) | ((dy&3)<<2);
- 
+
 	x_int = xRef/4;
 	if (xRef < 0 && xRef % 4)
 		x_int--;
- 
+
 	y_int	 = yRef/4;
 	if (yRef < 0 && yRef % 4)
 		y_int--;
- 
+
 	dst = cur + y * stride + x;
 	src = refn + y_int * stride + x_int;
 
@@ -320,18 +320,18 @@ new_interpolate8x8_quarterpel(uint8_t * const cur,
 
 	const int32_t xRef = x*4 + dx;
 	const int32_t yRef = y*4 + dy;
- 
+
 	Ops = xvid_QP_Funcs; /* TODO: pass as argument */
 	quads = (dx&3) | ((dy&3)<<2);
- 
+
 	x_int = xRef/4;
 	if (xRef < 0 && xRef % 4)
 		x_int--;
- 
+
 	y_int	 = yRef/4;
 	if (yRef < 0 && yRef % 4)
 		y_int--;
- 
+
 	dst = cur + y * stride + x;
 	src = refn + y_int * stride + x_int;
 

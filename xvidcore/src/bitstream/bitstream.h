@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.h,v 1.17.2.5 2003-06-09 13:51:46 edgomez Exp $
+ * $Id: bitstream.h,v 1.17.2.6 2003-10-01 23:23:01 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -116,10 +116,10 @@
  * Prototypes
  ****************************************************************************/
 
-int read_video_packet_header(Bitstream *bs, 
-							 DECODER * dec, 
-							 const int addbits, 
-							 int *quant, 
+int read_video_packet_header(Bitstream *bs,
+							 DECODER * dec,
+							 const int addbits,
+							 int *quant,
 							 int *fcode_forward,
 							 int *fcode_backward,
 							 int *intra_dc_threshold);
@@ -144,8 +144,8 @@ void BitstreamWriteVopHeader(Bitstream * const bs,
 							 const FRAMEINFO * const frame,
 							 int vop_coded);
 
-void BitstreamWriteUserData(Bitstream * const bs, 
-							uint8_t * data, 
+void BitstreamWriteUserData(Bitstream * const bs,
+							uint8_t * data,
 							const int length);
 
 /* initialise bitstream structure */
@@ -253,7 +253,7 @@ BitstreamSkip(Bitstream * const bs,
 
 
 /* number of bits to next byte alignment */
-static __inline uint32_t 
+static __inline uint32_t
 BitstreamNumBitsToByteAlign(Bitstream *bs)
 {
 	uint32_t n = (32 - bs->pos) % 8;
@@ -440,7 +440,7 @@ BitstreamPad(Bitstream * const bs)
 
 
 /*
- * pad bitstream to the next byte boundary 
+ * pad bitstream to the next byte boundary
  * alway pad: even if currently at the byte boundary
  */
 

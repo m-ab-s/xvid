@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.h,v 1.27.2.14 2003-08-26 14:07:11 edgomez Exp $
+ * $Id: encoder.h,v 1.27.2.15 2003-10-01 23:23:00 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -150,7 +150,7 @@ typedef struct
 	NEW_GMC_DATA new_gmc_data;		/* common data for all MBs */
 
     int length;         /* the encoded size of this frame */
-		
+
 	Statistics sStat;
 }
 FRAMEINFO;
