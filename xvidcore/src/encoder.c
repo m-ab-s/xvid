@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.38 2003-08-07 15:41:33 chl Exp $
+ * $Id: encoder.c,v 1.95.2.39 2003-08-22 16:11:58 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1568,6 +1568,11 @@ FrameCodeP(Encoder * pEnc,
 
 				current->sStat.kblks++;
 
+				if (pEnc->current->vop_flags & XVID_VOP_GREYSCALE)
+				{	pMB->cbp &= 0x3C;		/* keep only bits 5-2 */
+					qcoeff[4*64+0]=0;		/* zero, because for INTRA MBs DC value is saved */
+					qcoeff[5*64+0]=0;
+				}
 				MBCoding(current, pMB, qcoeff, bs, &current->sStat);
 				stop_coding_timer();
 				continue;
@@ -1894,9 +1899,12 @@ FrameCodeB(Encoder * pEnc,
 				}
 			}
 
-#ifdef BFRAMES_DEC_DEBUG
-	BFRAME_DEBUG
-#endif
+			/* keep only bits 5-2 -- Chroma blocks will just be skipped by the
+			 * coding function for BFrames, that's why we don't zero teh DC
+			 * coeffs */
+			if ((frame->vop_flags & XVID_VOP_GREYSCALE))
+				mb->cbp &= 0x3C;
+
 			start_timer();
 			MBCodingBVOP(mb, qcoeff, frame->fcode, frame->bcode, bs,
 						 &frame->sStat, direction);
