@@ -25,12 +25,13 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.8 2003-05-22 16:36:07 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.9 2003-05-22 22:17:44 edgomez Exp $
  *
  *****************************************************************************/
 
 #include <stdio.h>
 #include <math.h>
+#include <limits.h>
 
 #define RAD2DEG 57.295779513082320876798154814105
 #define DEG2RAD 0.017453292519943295769236907684886
@@ -194,9 +195,10 @@ static int load_stats(rc_2pass2_t *rc, char * filename)
 static void print_stats(rc_2pass2_t * rc)
 {
     int i;
-    for (i = 0; i < rc->num_frames; i++) {
+    DPRINTF(XVID_DEBUG_RC, "type quant length scaled_length\n");
+	for (i = 0; i < rc->num_frames; i++) {
         stat_t * s = &rc->stats[i];
-        DPRINTF(XVID_DEBUG_RC, "%i %i %i %i\n", s->type, s->quant, s->length, s->scaled_length);
+        DPRINTF(XVID_DEBUG_RC, "%d %d %d %d\n", s->type, s->quant, s->length, s->scaled_length);
     }
 }
 #endif
@@ -206,7 +208,8 @@ static void print_stats(rc_2pass2_t * rc)
     - set keyframes_locations
 */
 
-void pre_process0(rc_2pass2_t * rc)
+static void
+pre_process0(rc_2pass2_t * rc)
 {
     int i,j;
 
@@ -214,7 +217,10 @@ void pre_process0(rc_2pass2_t * rc)
         rc->count[i]=0;
         rc->tot_length[i] = 0;
         rc->last_quant[i] = 0;
+		rc->min_length[i] = INT_MAX;
     }
+
+	rc->max_length = INT_MIN;
 
     for (i=j=0; i<rc->num_frames; i++) {
         stat_t * s = &rc->stats[i];
@@ -222,11 +228,11 @@ void pre_process0(rc_2pass2_t * rc)
         rc->count[s->type-1]++;
         rc->tot_length[s->type-1] += s->length;
        
-        if (i == 0 || s->length < rc->min_length[s->type-1]) {
+        if (s->length < rc->min_length[s->type-1]) {
             rc->min_length[s->type-1] = s->length;
         }
 
-        if (i == 0 || s->length > rc->max_length) {
+        if (s->length > rc->max_length) {
             rc->max_length = s->length;
         }
 
@@ -243,12 +249,17 @@ void pre_process0(rc_2pass2_t * rc)
 	 * frame to appear in the keyframe locations array.
 	 */
     rc->keyframe_locations[j] = i;
+
+	DPRINTF(XVID_DEBUG_RC, "Min 1st pass IFrame length: %d\n", rc->min_length[0]);
+	DPRINTF(XVID_DEBUG_RC, "Min 1st pass PFrame length: %d\n", rc->min_length[1]);
+	DPRINTF(XVID_DEBUG_RC, "Min 1st pass BFrame length: %d\n", rc->min_length[2]);
 }
 
     
 /* calculate zone weight "center" */
 
-static void zone_process(rc_2pass2_t *rc, const xvid_plg_create_t * create)
+static void
+zone_process(rc_2pass2_t *rc, const xvid_plg_create_t * create)
 {
     int i,j;
     int n = 0;
@@ -304,7 +315,8 @@ static void zone_process(rc_2pass2_t *rc, const xvid_plg_create_t * create)
 
 /* scale the curve */
 
-static void internal_scale(rc_2pass2_t *rc)
+static void
+internal_scale(rc_2pass2_t *rc)
 {
 	int64_t target  = rc->target - rc->tot_quant;
 	int64_t pass1_length = rc->tot_length[0] + rc->tot_length[1] + rc->tot_length[2] - rc->tot_quant;
@@ -313,10 +325,12 @@ static void internal_scale(rc_2pass2_t *rc)
 	int i;
 
 
-	/* perform an initial scale pass.
-	   if a frame size is scaled underneath our hardcoded minimums, then we force the
-	   frame size to the minimum, and deduct the original & scaled frmae length from the
-	   original and target total lengths */
+	/*
+	 * Perform an initial scale pass.
+	 * if a frame size is scaled underneath our hardcoded minimums, then we
+	 * force the frame size to the minimum, and deduct the original & scaled
+	 * frame length from the original and target total lengths
+	 */
 
 	min_size[0] = ((rc->stats[0].blks[0]*22) + 240) / 8;
 	min_size[1] = (rc->stats[0].blks[0] + 88) / 8;
@@ -329,7 +343,9 @@ static void internal_scale(rc_2pass2_t *rc)
         scaler = 1.0;
 	}
 
-    DPRINTF(XVID_DEBUG_RC, "target=%i, tot_length=%i, scaler=%f\n", (int)target, (int)pass1_length, scaler);
+    DPRINTF(XVID_DEBUG_RC,
+			"Before any correction: target=%i, tot_length=%i, scaler=%f\n",
+			(int)target, (int)pass1_length, scaler);
 
 	for (i=0; i<rc->num_frames; i++) {
 		stat_t * s = &rc->stats[i];
@@ -355,7 +371,9 @@ static void internal_scale(rc_2pass2_t *rc)
 		scaler = 1.0;
 	}
 
-	DPRINTF(XVID_DEBUG_RC, "target=%i, tot_length=%i, scaler=%f\n", (int)target, (int)pass1_length, scaler);
+	DPRINTF(XVID_DEBUG_RC,
+			"After correction: target=%i, tot_length=%i, scaler=%f\n",
+			(int)target, (int)pass1_length, scaler);
 
 	for (i=0; i<rc->num_frames; i++) {
 		stat_t * s = &rc->stats[i];
@@ -369,7 +387,8 @@ static void internal_scale(rc_2pass2_t *rc)
 
 
 
-void pre_process1(rc_2pass2_t * rc)
+static void
+pre_process1(rc_2pass2_t * rc)
 {
     int i;
     double total1, total2;
@@ -675,10 +694,15 @@ static int rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t ** handle)
 	if (rc->num_frames  < create->fbase/create->fincr) {
 		rc->target = rc->param.bitrate / 8;	/* one second */
 	}else{
-		rc->target = (rc->param.bitrate * rc->num_frames * create->fincr) / (create->fbase * 8);
+		rc->target = 
+			((uint64_t)rc->param.bitrate * (uint64_t)rc->num_frames * (uint64_t)create->fincr) / \
+			((uint64_t)create->fbase * 8);
 	}
 
-    DPRINTF(XVID_DEBUG_RC, "rc->target : %i\n", rc->target);
+    DPRINTF(XVID_DEBUG_RC, "Number of frames: %d\n", rc->num_frames);
+	DPRINTF(XVID_DEBUG_RC, "Frame rate: %d/%d\n", create->fbase, create->fincr);
+	DPRINTF(XVID_DEBUG_RC, "Target bitrate: %ld\n", rc->param.bitrate);
+	DPRINTF(XVID_DEBUG_RC, "Target filesize: %lld\n", rc->target);
 
 #if 0
 	rc->target -= rc->num_frames*24;	/* avi file header */
@@ -981,11 +1005,16 @@ static int rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	if (desired > rc->max_length) {
 		capped_to_max_framesize = 1;
 		desired = rc->max_length;
+		DPRINTF(XVID_DEBUG_RC,"[%i] Capped to maximum frame size\n",
+				data->frame_num);
 	}
 
 	/* Make sure to not scale below the minimum framesize */
-	if (desired < rc->min_length[s->type-1])
+	if (desired < rc->min_length[s->type-1]) {
 		desired = rc->min_length[s->type-1];
+		DPRINTF(XVID_DEBUG_RC,"[%i] Capped to minimum frame size\n",
+				data->frame_num);
+	}
 
 	/*
 	 * Don't laugh at this very 'simple' quant<->filesize relationship, it
@@ -1047,11 +1076,15 @@ static int rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 
 		if (data->quant > rc->last_quant[s->type-1] + 2) {
 			data->quant = rc->last_quant[s->type-1] + 2;
-			DPRINTF(XVID_DEBUG_RC, "p/b-frame quantizer prevented from rising too steeply\n");
+			DPRINTF(XVID_DEBUG_RC,
+					"[%i] p/b-frame quantizer prevented from rising too steeply\n",
+					data->frame_num);
 		}
 		if (data->quant < rc->last_quant[s->type-1] - 2) {
 			data->quant = rc->last_quant[s->type-1] - 2;
-			DPRINTF(XVID_DEBUG_RC, "p/b-frame quantizer prevented from falling too steeply\n");
+			DPRINTF(XVID_DEBUG_RC,
+					"[%i] p/b-frame quantizer prevented from falling too steeply\n",
+					data->frame_num);
 		}
 	}
 
