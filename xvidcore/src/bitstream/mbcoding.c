@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbcoding.c,v 1.44.2.12 2003-06-09 13:52:12 edgomez Exp $
+ * $Id: mbcoding.c,v 1.44.2.13 2003-08-06 20:25:04 chl Exp $
  *
  ****************************************************************************/
 
@@ -1581,7 +1581,7 @@ VLC sprite_trajectory_code[32768];
 VLC sprite_trajectory_len[15] = {
 	{ 0x00 , 2}, 
 	{ 0x02 , 3}, { 0x03, 3}, { 0x04, 3}, { 0x05, 3}, { 0x06, 3}, 
-	{ 0x0E , 4}, { 0x1E, 5}, { 0x3E, 6}, { 0x7F, 7}, { 0xFE, 8},
+	{ 0x0E , 4}, { 0x1E, 5}, { 0x3E, 6}, { 0x7E, 7}, { 0xFE, 8},
 	{ 0x1FE, 9}, {0x3FE,10}, {0x7FE,11}, {0xFFE,12} };
 
 
