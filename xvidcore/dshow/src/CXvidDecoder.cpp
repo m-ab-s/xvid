@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.1.2.16 2004-01-31 13:44:33 suxen_drol Exp $
+ * $Id: CXvidDecoder.cpp,v 1.1.2.17 2004-02-03 06:57:24 syskin Exp $
  *
  ****************************************************************************/
 
@@ -401,7 +401,7 @@ HRESULT CXvidDecoder::GetMediaType(int iPosition, CMediaType *mtOut)
 		return E_OUTOFMEMORY;
 	}
 
-	ZeroMemory(vih, sizeof (VIDEOINFOHEADER));
+	ZeroMemory(vih, sizeof (VIDEOINFOHEADER2));
 	vih->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 	vih->bmiHeader.biWidth	= m_create.width;
 	vih->bmiHeader.biHeight = m_create.height;
