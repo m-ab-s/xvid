@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.27 2003-11-19 15:59:41 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.28 2003-12-05 14:44:35 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -51,7 +51,7 @@
 
 /* Keyframe settings */
 #define DEFAULT_KFREDUCTION 20
-#define DEFAULT_MIN_KEY_INTERVAL 1
+#define DEFAULT_KFTHRESHOLD 1
 
 /*****************************************************************************
  * Structures
@@ -282,7 +282,7 @@ rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t **handle)
 
 	/* Keyframe settings */
 	_INIT(rc->param.kfreduction, DEFAULT_KFREDUCTION);
-	_INIT(rc->param.min_key_interval, DEFAULT_MIN_KEY_INTERVAL);
+	_INIT(rc->param.kfthreshold, DEFAULT_KFTHRESHOLD);
 #undef _INIT
 
 	/* Initialize some stuff to zero */
@@ -467,23 +467,11 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 
 	/* IFrame user settings*/
 	if (s->type == XVID_TYPE_IVOP) {
-
 		/* Keyframe boosting -- All keyframes benefit from it */
 		dbytes += dbytes*rc->param.keyframe_boost / 100;
 
-		/* Applies keyframe penalties, but not the first frame */
-		if (rc->KF_idx) {
-			int penalty_distance;
-
-			/* Minimum keyframe distance penalties */
-			penalty_distance  = rc->param.min_key_interval;
-			penalty_distance -= rc->keyframe_locations[rc->KF_idx];
-			penalty_distance += rc->keyframe_locations[rc->KF_idx-1];
-
-			/* Ah ah ! guilty keyframe, you're under arrest ! */
-			if (penalty_distance > 0)
-				dbytes -= dbytes*penalty_distance*rc->param.kfreduction/100;
-		}
+#if 0 /* ToDo: decide how to apply kfthresholding */
+#endif
 	} else {
 
 		/* P/S/B frames must reserve some bits for iframe boosting */
@@ -1191,7 +1179,7 @@ static void
 scaled_curve_apply_advanced_parameters(rc_2pass2_t * rc)
 {
 	int i;
-	uint64_t ivop_boost_total;
+	int64_t ivop_boost_total;
 
 	/* Reset the rate controller (per frame type) total byte counters */
 	for (i=0; i<3; i++) rc->tot_scaled_length[i] = 0;
@@ -1214,23 +1202,13 @@ scaled_curve_apply_advanced_parameters(rc_2pass2_t * rc)
 
 		/* Some more work is needed for I frames */
 		if (s->type == XVID_TYPE_IVOP) {
-			int penalty_distance;
 			int ivop_boost;
 
 			/* Accumulate bytes needed for keyframe boosting */
 			ivop_boost = s->scaled_length*rc->param.keyframe_boost/100;
 
-			if (rc->KF_idx) {
-				/* Minimum keyframe distance penalties */
-				penalty_distance  = rc->param.min_key_interval;
-				penalty_distance -= rc->keyframe_locations[rc->KF_idx];
-				penalty_distance += rc->keyframe_locations[rc->KF_idx-1];
-
-				/* Ah ah ! guilty keyframe, you're under arrest ! */
-				if (penalty_distance > 0)
-					 ivop_boost -= (s->scaled_length + ivop_boost)*penalty_distance*rc->param.kfreduction/100;
-			}
-
+#if 0 /* ToDo: decide how to apply kfthresholding */
+#endif
 			/* If the frame size drops under the minimum length, then cap ivop_boost */
 			if (ivop_boost + s->scaled_length < rc->min_length[XVID_TYPE_IVOP-1])
 				ivop_boost = rc->min_length[XVID_TYPE_IVOP-1] - s->scaled_length;
@@ -1260,7 +1238,7 @@ scaled_curve_apply_advanced_parameters(rc_2pass2_t * rc)
 
 	/* Compute the ratio described above
 	 *     taxed_total = sum(0, n, tax*scaled_length)
-	 * <=> taxed_total = tax.sum(0, n, tax*scaled_length)
+	 * <=> taxed_total = tax.sum(0, n, scaled_length)
 	 * <=> tax = taxed_total / original_total */
 	rc->pb_iboost_tax_ratio =
 		(rc->pb_iboost_tax_ratio - ivop_boost_total) /

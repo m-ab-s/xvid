@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: config.h,v 1.1.2.11 2003-11-09 20:49:21 edgomez Exp $
+ * $Id: config.h,v 1.1.2.12 2003-12-05 14:44:35 edgomez Exp $
  *
  ****************************************************************************/
 #ifndef _CONFIG_H_
@@ -138,7 +138,7 @@ typedef struct
 
     /* 2pass2 */
 	int keyframe_boost;
-	int kftreshold;
+	int kfthreshold;
 	int kfreduction;
 	int curve_compression_high;
 	int curve_compression_low;
@@ -152,7 +152,6 @@ typedef struct
 	int chromame;
 	int cartoon_mode;
     int max_key_interval;
-	int min_key_interval;
 	int frame_drop_ratio;
 
     /* quant */

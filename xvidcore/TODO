@@ -17,17 +17,16 @@ Active Items to work on:
 * update/fix CBR plugin
   - misses target bitrate, bitrate burst in static motion/high motion
     transitions
-* bug hunting (ed.gomez/sysKin)
+* bug hunting (ed.gomez/syskin)
   - xvidcore is still a place where bugs feel confortable
 * docbook writing (every developer should contribute)
   - New API has to be documented.
 * two pass code should not introduce quality regressions (every tester)
+  - first feedback proved kfthresholding was hurting quality, a
+    decision on its behavior has to be settled.   
 * YV12/I420/USER clarification
   - item submited by Ivan Kalvachev <ivan at cacad.com>
     Planes are swaped
-* Interlacing is broken
-  - item submited by Ivan Kalvachev <ivan at cacad.com>
-    Artefacts for all interlaced blocks.
 * MMX MPEG4 quantization is unprecise. This is probably an inherent
   problem in some MMX opcode precision.
 
@@ -46,14 +45,14 @@ Already completed items:
 * rawdec (use xvid_decraw instead) (ed.gomez)
 * Support for GMC 3 warp points (christoph)
 * New Qpel code (michael)
-* ME splitting and ME improvements (sysKin)
+* ME splitting and ME improvements (syskin)
 * New unix build process (ed.gomez)
 * New thread/instance safe sse2 code (p.massimino)
 * INSTALL guide for Unix and Win32 (ed.gomez)
 * dshow static link to libxvidcore.lib (peter)
-* update/fix Lumimasking (sysKin)
+* update/fix Lumimasking (syskin)
 * trellis for mpeg and relaxed optimization for big levels (skal)
 * thread safe mpeg quantizing (michael)
+* Interlacing for bvop and svop (syskin)
 
-
-Last edited: $Date: 2003-11-30 16:13:15 $
+Last edited: $Date: 2003-12-05 14:44:35 $

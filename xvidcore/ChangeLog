@@ -5,6 +5,211 @@
 # relevant.
 #
 
+2003-12-05 14:35:22 GMT	                                	patch-122
+
+    Summary:
+      Cap quants correctly (the best we can at least)
+    Revision:
+      xvidcore--devapi4--1.0--patch-122
+
+    Cap quants correctly (the best we can at least)
+    
+
+    modified files:
+     src/plugins/plugin_single.c
+
+
+2003-12-05 14:33:48 GMT	                                	patch-121
+
+    Summary:
+      Small glitch
+    Revision:
+      xvidcore--devapi4--1.0--patch-121
+
+    Small glitch
+    
+
+    modified files:
+     src/motion/vop_type_decision.c
+
+
+2003-12-05 14:06:19 GMT	                                	patch-120
+
+    Summary:
+      KFthresholding changes.
+    Revision:
+      xvidcore--devapi4--1.0--patch-120
+
+    As user reports proved, the logic behind the min_key_interval was
+     1/ misleading because the parameter is kfthreshold indeed and not
+        a minimum keyframe interval
+     2/ the formula was a bit too aggressive (removing 20% of bitrate
+        per frame until distance to next iframe was 1)
+    
+    I posted a RFC to try to settle a decision on what behavior this
+    setting should have. We have still have no clear answer so i prefer
+    just fixing the misleading name right now and wait for a common
+    position about its behavior later.
+    
+    Libraries are *binary* compatible, but *source code* compatibility
+    is broken (rename rc_2pass2_t->min_key_interval to kfthreshold).
+    This is probably the last API change.
+    
+    NB: fixes a type problem during scaling parameter computing which
+        was causing insane pb_iboost_tax_ratio values.
+
+    modified files:
+     src/plugins/plugin_2pass2.c src/xvid.h vfw/src/codec.c
+     vfw/src/config.c vfw/src/config.h
+
+
+2003-12-05 00:20:28 GMT	                                	patch-119
+
+    Summary:
+      ivop decision tuning.
+    Revision:
+      xvidcore--devapi4--1.0--patch-119
+
+    ivop decision tuning from sysKin.
+
+    modified files:
+     src/motion/vop_type_decision.c
+
+
+2003-12-03 18:55:29 GMT	                                	patch-118
+
+    Summary:
+      VOSH header always written.
+    Revision:
+      xvidcore--devapi4--1.0--patch-118
+
+    * profile is set to sane default value in BitstreamWriteVolHeaders
+    * VOSH is now always written (note that the ending code is never
+      written)
+    * doubled variable removed from bvop estimation file.
+    
+    bitstream version set to 23
+    Version 22 was used in CVS by a fix from michael for VOSH, it was just
+    lacking the sane default value setting when profile is 0x00 from user.
+    0x00 is a reserved profile ID in the spec so it wasn't making much sense
+    to write 0x00.
+
+    modified files:
+     src/bitstream/bitstream.c src/motion/estimation_bvop.c
+     src/xvid.h
+
+
+2003-12-03 15:29:30 GMT	                                	patch-117
+
+    Summary:
+      VFW GUI fixes.
+    Revision:
+      xvidcore--devapi4--1.0--patch-117
+
+    min key was misleading because it was legacy code from dev-api-3.
+
+    modified files:
+     vfw/src/codec.c vfw/src/config.c vfw/src/resource.rc
+
+
+2003-12-03 15:22:25 GMT	                                	patch-116
+
+    Summary:
+      ME fixes.
+    Revision:
+      xvidcore--devapi4--1.0--patch-116
+
+    From syskin:
+    - small typo in chroma sad reset
+    - code tweaking
+      + adv diamond search used intead of mainsearch
+      + and some other stuff
+    - thresholds tuned.
+
+    modified files:
+     src/motion/estimation.h src/motion/estimation_bvop.c
+     src/motion/estimation_pvop.c
+
+
+2003-12-01 11:17:20 GMT	                                	patch-115
+
+    Summary:
+      Small changes and interlacing bugfix.
+    Revision:
+      xvidcore--devapi4--1.0--patch-115
+
+    * Interlacing bugfix, code got swapped in a very old patch
+      (back in March)
+    * xvid_encraw forces VOSH writing.
+    * VFW GUI fixes.
+
+    modified files:
+     examples/Makefile examples/xvid_encraw.c
+     src/utils/mbtransquant.c vfw/src/config.c vfw/src/resource.rc
+
+
+2003-11-30 15:47:41 GMT	                                	patch-114
+
+    Summary:
+      Thread safe MPEG4 quantization functions + xvid_bench update
+    Revision:
+      xvidcore--devapi4--1.0--patch-114
+
+    * Thread safe MPEG4 quantization functions.
+      Cleaned up version of patch provided by Michael
+       - fixed compiling problems on gcc
+       - added const qualifiers every where it was possible to help C compiler
+         optimization.
+       - added the mpeg_quant_matrices param to all ASM function prototype
+         in comments (even if it's not used, that shows we do it deliberatly)
+       - forces m[intra][0][0] = 8, otherwise XviD could write invalid streams.
+    * Added real CRC computing in xvid_bench.c
+
+    modified files:
+     TODO examples/xvid_bench.c src/bitstream/bitstream.c
+     src/decoder.c src/decoder.h src/encoder.c src/encoder.h
+     src/motion/estimation.h src/motion/estimation_pvop.c
+     src/motion/estimation_rd_based.c src/quant/quant.h
+     src/quant/quant_h263.c src/quant/quant_matrix.c
+     src/quant/quant_matrix.h src/quant/quant_mpeg.c
+     src/quant/x86_asm/quantize_h263_3dne.asm
+     src/quant/x86_asm/quantize_h263_mmx.asm
+     src/quant/x86_asm/quantize_mpeg_mmx.asm
+     src/quant/x86_asm/quantize_mpeg_xmm.asm
+     src/utils/mbtransquant.c src/xvid.c
+
+
+2003-11-29 18:10:25 GMT	                                	patch-113
+
+    Summary:
+      Fixed csp asm rules for real?
+    Revision:
+      xvidcore--devapi4--1.0--patch-113
+
+    Fixed csp asm rules for real?
+    
+
+    modified files:
+     build/win32/libxvidcore.dsp
+
+
+2003-11-29 17:58:09 GMT	                                	patch-112
+
+    Summary:
+      TODO/ChangeLog updated
+    Revision:
+      xvidcore--devapi4--1.0--patch-112
+
+    TODO/ChangeLog updated
+    
+
+    modified files:
+     ChangeLog TODO
+
+
+#########################################################################
+# 1.0.0 beta1
+#########################################################################
 
 2003-11-29 17:21:08 GMT	                                	patch-111
 

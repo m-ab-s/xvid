@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.46 2003-12-03 19:46:50 edgomez Exp $
+ * $Id: xvid.h,v 1.27.2.47 2003-12-05 14:44:35 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -473,8 +473,11 @@ typedef struct {
 	int max_overflow_improvement; /* [in] percentage of allowed range for a frame that gets bigger because of overflow bonus */
 	int max_overflow_degradation; /* [in] percentage of allowed range for a frame that gets smaller because of overflow penalty */
 
-	int kfreduction;              /* [in] */
-	int min_key_interval;         /* [in] Minimum interval of frames between two IFrames */
+	int kfreduction;              /* [in] maximum bitrate reduction applied to an iframe under the kfthreshold distance limit */
+	int kfthreshold;              /* [in] if an iframe is closer to the next iframe than this distance, a quantity of bits
+								   *      is substracted from its bit allocation. The reduction is computed as multiples of
+								   *      kfreduction/kthreshold. It reaches kfreduction when the distance == kfthreshold,
+								   *      0 for 1<distance<kfthreshold */
 
 	int container_frame_overhead; /* [in] How many bytes the controller has to compensate per frame due to container format overhead */
 }xvid_plugin_2pass2_t;

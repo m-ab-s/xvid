@@ -180,6 +180,7 @@ static const REG_INT reg_ints[] = {
     /* 2pass2 */
 	{"keyframe_boost",			&reg.keyframe_boost,			0},
 	{"kfreduction",				&reg.kfreduction,				20},
+	{"kfthreshold",				&reg.kfthreshold,				1},
 	{"curve_compression_high",	&reg.curve_compression_high,	0},
 	{"curve_compression_low",	&reg.curve_compression_low,		0},
 	{"overflow_control_strength", &reg.overflow_control_strength, 10},
@@ -192,7 +193,6 @@ static const REG_INT reg_ints[] = {
     {"chromame",				&reg.chromame,					0},
     {"cartoon_mode",			&reg.cartoon_mode,				0},
 	{"max_key_interval",		&reg.max_key_interval,			300},
-	{"min_key_interval",		&reg.min_key_interval,			1},
 	{"frame_drop_ratio",		&reg.frame_drop_ratio,			0},	
 	
     /* quant */
@@ -797,7 +797,7 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
 
 		SetDlgItemInt(hDlg, IDC_CURVECOMPH, config->curve_compression_high, FALSE);
 		SetDlgItemInt(hDlg, IDC_CURVECOMPL, config->curve_compression_low, FALSE);
-		SetDlgItemInt(hDlg, IDC_MINKEY, config->min_key_interval, FALSE);
+		SetDlgItemInt(hDlg, IDC_MINKEY, config->kfthreshold, FALSE);
 		break;
 
     case IDD_ZONE :
@@ -917,7 +917,7 @@ void adv_download(HWND hDlg, int idd, CONFIG * config)
 		CONSTRAINVAL(config->curve_compression_high, 0, 100);
 		CONSTRAINVAL(config->curve_compression_low, 0, 100);
 
-		config->min_key_interval = config_get_uint(hDlg, IDC_MINKEY, config->min_key_interval);
+		config->kfthreshold = config_get_uint(hDlg, IDC_MINKEY, config->kfthreshold);
 
 		break;
 

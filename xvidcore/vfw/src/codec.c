@@ -384,7 +384,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
         pass2.max_overflow_improvement = codec->config.twopass_max_overflow_improvement;
         pass2.max_overflow_degradation = codec->config.twopass_max_overflow_degradation;
 	    pass2.kfreduction = codec->config.kfreduction;
-        pass2.min_key_interval = codec->config.min_key_interval;
+        pass2.kfthreshold = codec->config.kfthreshold;
         pass2.container_frame_overhead = 24;    /* AVI */
 
         plugins[create.num_plugins].func = xvid_plugin_2pass2;
