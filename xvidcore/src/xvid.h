@@ -1,4 +1,3 @@
-#define KOEPI_2PASS
 /*****************************************************************************
 *
 *  XVID MPEG-4 VIDEO CODEC
@@ -29,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.10 2002-11-08 10:10:48 suxen_drol Exp $
+*  $Id: xvid.h,v 1.17.2.11 2002-11-08 10:30:59 suxen_drol Exp $
 *
 *****************************************************************************/
 
