@@ -23,6 +23,7 @@
  *
  *	History:
  *
+ *	23.06.2002	XVID_CPU_CHKONLY; loading speed up
  *	25.04.2002	ICDECOMPRESS_PREROLL
  *	17.04.2002	re-enabled lumi masking for 1st pass
  *	15.04.2002	updated cbr support
@@ -294,7 +295,10 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	param.max_key_interval = codec->config.max_key_interval;
 
 #ifdef BFRAMES
-    param.packed = codec->config.packed;
+	param.global = 0;
+	if (codec->config.packed) param.global |= XVID_GLOBAL_PACKED;
+	if (codec->config.dx50bvop) param.global |= XVID_GLOBAL_DX50BVOP;
+	if (codec->config.debug) param.global |= XVID_GLOBAL_DEBUG;
 	param.max_bframes = codec->config.max_bframes;
 	param.bquant_ratio = codec->config.bquant_ratio;
 #endif

@@ -119,11 +119,15 @@ BEGIN
     EDITTEXT        IDC_MINKEY,112,80,76,12,ES_AUTOHSCROLL | ES_NUMBER
     EDITTEXT        IDC_MAXBFRAMES,111,146,76,12,ES_AUTOHSCROLL
     LTEXT           "Maximum B-frames:",IDC_BSTATIC2,7,150,101,11
-    GROUPBOX        "B-frame control",IDC_BSTATIC1,4,133,192,59
+    GROUPBOX        "B-frame control",IDC_BSTATIC1,4,133,192,80
     EDITTEXT        IDC_BQUANTRATIO,111,162,76,12,ES_AUTOHSCROLL
     LTEXT           "B-frame quantizer ratio (%):",IDC_BSTATIC3,7,162,89,8
     CONTROL         "Packed bitstream",IDC_PACKED,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,13,175,71,10
+    CONTROL         "DX50 B-VOP compatibility",IDC_DX50BVOP,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,13,186,97,10
+    CONTROL         "Print debug info on each frame",IDC_DEBUG,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,13,198,113,10
 END
 
 IDD_QUANT DIALOG DISCARDABLE  0, 0, 200, 217

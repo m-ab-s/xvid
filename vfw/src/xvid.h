@@ -37,7 +37,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.4 2002-06-20 10:51:08 suxen_drol Exp $
+*  $Id: xvid.h,v 1.5 2002-06-23 03:59:49 suxen_drol Exp $
 *
 *****************************************************************************/
 
@@ -97,6 +97,7 @@ extern "C" {
 
 #define XVID_CPU_IA64		0x00000080
 
+#define XVID_CPU_CHKONLY	0x40000000		/* check cpu only; dont init globals */
 #define XVID_CPU_FORCE		0x80000000
 
 
@@ -174,6 +175,11 @@ extern "C" {
  * Encoder constants
  ****************************************************************************/
 
+/* Flags for XVID_ENC_PARAM.global */
+#define XVID_GLOBAL_PACKED		0x00000001	/* packed bitstream */
+#define XVID_GLOBAL_DX50BVOP	0x00000002	/* dx50 bvop compatibility */
+#define XVID_GLOBAL_DEBUG		0x00000004	/* print debug info on each frame */
+
 /* Flags for XVID_ENC_FRAME.general */
 #define XVID_VALID_FLAGS		0x80000000
 
@@ -240,7 +246,7 @@ extern "C" {
 		int min_quantizer;		/* the lower limit of the quantizer */
 		int max_key_interval;	/* the maximum interval between key frames */
 #ifdef BFRAMES
-		int packed;				/* enable packed mode */
+		int global;				/* global/debug options */
 		int max_bframes;		/* max sequential bframes (0=disable bframes) */
 		int bquant_ratio;		/* bframe quantizer multipier (percentage).
 								 * used only when bquant < 1
