@@ -531,7 +531,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		}
 	}
 
-    if ((profiles[codec->config.profile].flags & PROFILE_REDUCED) && 
+    if ((profiles[codec->config.profile].flags & PROFILE_REDUCED) &&
 	    codec->config.reduced_resolution) {
 		frame.vol_flags |= XVID_VOL_REDUCED_ENABLE;
 		frame.vop_flags |= XVID_VOP_REDUCED;	/* XXX: need auto decion mode */
@@ -542,8 +542,10 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		frame.motion |= XVID_ME_QUARTERPELREFINE16 | XVID_ME_QUARTERPELREFINE8;
 	}
 
-	if ((profiles[codec->config.profile].flags & PROFILE_GMC) && codec->config.gmc)
+	if ((profiles[codec->config.profile].flags & PROFILE_GMC) && codec->config.gmc) {
 		frame.vol_flags |= XVID_VOL_GMC;
+		frame.motion |= XVID_GME_REFINE;
+	}
 
 	if ((profiles[codec->config.profile].flags & PROFILE_INTERLACE) && codec->config.interlacing)
 		frame.vol_flags |= XVID_VOL_INTERLACING;
