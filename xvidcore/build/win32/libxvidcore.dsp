@@ -101,6 +101,18 @@ SOURCE=..\..\gpl.txt
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\INSTALL
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\LICENSE
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\README.txt
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\todo.txt
 # End Source File
 # Begin Source File
@@ -453,7 +465,7 @@ SOURCE=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\xvid\clean1_skalfdct\xvidcore\src\image\x86_asm
+InputDir=\xvid\clean0\xvidcore\src\image\x86_asm
 IntDir=.\Release
 InputPath=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
 InputName=colorspace_rgb_mmx
@@ -466,7 +478,7 @@ InputName=colorspace_rgb_mmx
 !ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\xvid\clean1_skalfdct\xvidcore\src\image\x86_asm
+InputDir=\xvid\clean0\xvidcore\src\image\x86_asm
 IntDir=.\Debug
 InputPath=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
 InputName=colorspace_rgb_mmx
@@ -486,7 +498,7 @@ SOURCE=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\xvid\clean1_skalfdct\xvidcore\src\image\x86_asm
+InputDir=\xvid\clean0\xvidcore\src\image\x86_asm
 IntDir=.\Release
 InputPath=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
 InputName=colorspace_yuv_mmx
@@ -499,7 +511,7 @@ InputName=colorspace_yuv_mmx
 !ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\xvid\clean1_skalfdct\xvidcore\src\image\x86_asm
+InputDir=\xvid\clean0\xvidcore\src\image\x86_asm
 IntDir=.\Debug
 InputPath=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
 InputName=colorspace_yuv_mmx
@@ -519,7 +531,7 @@ SOURCE=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\xvid\clean1_skalfdct\xvidcore\src\image\x86_asm
+InputDir=\xvid\clean0\xvidcore\src\image\x86_asm
 IntDir=.\Release
 InputPath=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
 InputName=colorspace_yuyv_mmx
@@ -532,7 +544,7 @@ InputName=colorspace_yuyv_mmx
 !ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\xvid\clean1_skalfdct\xvidcore\src\image\x86_asm
+InputDir=\xvid\clean0\xvidcore\src\image\x86_asm
 IntDir=.\Debug
 InputPath=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
 InputName=colorspace_yuyv_mmx

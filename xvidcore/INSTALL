@@ -1,0 +1,46 @@
+INSTALLATION
+
+there are two ways to build libxvidcore: using a makefile, or a microsoft 
+visual studio workspace file.
+
+
+MAKEFILE
+
+to build libxvidcore.[a,so], cd xvidcore/build/generic and use:
+% make -f <Makefile.xxx>
+
+to install the compiled libxvidcore.[a,so] to the appropriate (platform
+specifc) library directory use:
+% make -f <Makefile.xxx> install
+
+filename                    platform            arch
+---------------------------------------------------------------------
+Makefile.beos				beos				x86
+Makefile.cygwin				cygwin				x86
+Makefile.dj					djgpp or mingw		x86
+Makefile.vc					microft visual c	x86
+Makefile.linux				gnu/linux			(generic)
+Makefile.linuxx86			gnu/linux			x86
+Makefile.ia64				gnu/linux			ia64
+Makefile.linuxppc			gnu/linux			powerpc
+Makefile.linuxppc_altivec	gnu/linux			powerpc+altivec
+Makefile.freebsd			freebsd				(generic)
+Makefile.sparc				sun solaris			sun sparc		
+Makefile.irix64				sgi irix64			~mips r10,12k
+Makefile.generic			generic makefile for unsupported platforms/archs
+
+notes: 
+* Makefile.inc specifies source code paths, and is not considered a Makefile.
+* to build Makefile.vc, first run vc98/bin/vcvars32.bat and then use:
+  % nmake -f Makefile.vc
+
+
+
+MICROSOFT VISUAL STUDIO
+
+to build xvidcore you need microsoft visual studio, the visual studio
+service pack #5 and the visual studio processor pack. 
+
+open the xvidcore/build/win32/xvidcore.dsw workspace file and hit f7 (build).
+the compiled library is written to xvidcore/build/win32/bin/libxvidcore.lib
+
