@@ -1960,34 +1960,48 @@ MEanalyzeMB (	const uint8_t * const pRef,
 
 	int i = 255, mask;
 	VECTOR pmv[3];
-
 	*(Data->iMinSAD) = MV_MAX_ERROR;
-	Data->predMV = get_pmv2(pMBs, pParam->mb_width, 0, x, y, 0);
+
+	//median is only used as prediction. it doesn't have to be real
+	if (x == 1 && y == 1) Data->predMV.x = Data->predMV.y = 0;
+	else
+		if (x == 1) //left macroblock does not have any vector now
+			Data->predMV = (pMB - pParam->mb_width)->mvs[0]; // top instead of median
+		else if (y == 1) // top macroblock don't have it's vector 
+			Data->predMV = (pMB - 1)->mvs[0]; // left instead of median
+			else Data->predMV = get_pmv2(pMBs, pParam->mb_width, 0, x, y, 0); //else median
+
 	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
 				pParam->width, pParam->height, Data->iFcode, pParam->m_quarterpel);
 
 	Data->Cur = pCur + (x + y * pParam->edged_width) * 16;
 	Data->Ref = pRef + (x + y * pParam->edged_width) * 16;
 	
-	CheckCandidate = CheckCandidate16no4vI;
-
 	pmv[1].x = EVEN(pMB->mvs[0].x);
 	pmv[1].y = EVEN(pMB->mvs[0].y);
-	pmv[0].x = EVEN(Data->predMV.x);
-	pmv[0].y = EVEN(Data->predMV.y);
-	pmv[2].x = pmv[2].y = 0;
+	pmv[2].x = EVEN(Data->predMV.x);
+	pmv[2].y = EVEN(Data->predMV.y);
+	pmv[0].x = pmv[0].y = 0;
 
-	CheckCandidate16no4vI(pmv[0].x, pmv[0].y, 255, &i, Data);
+	(*CheckCandidate)(0, 0, 255, &i, Data);
+
+//early skip for 0,0
+	if (*Data->iMinSAD < MAX_SAD00_FOR_SKIP * 4) {
+		pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = Data->currentMV[0];
+		pMB->mode = MODE_NOT_CODED;
+		return 0;
+	}
+
 	if (!(mask = make_mask(pmv, 1)))
-		CheckCandidate16no4vI(pmv[1].x, pmv[1].y, mask, &i, Data);
+		(*CheckCandidate)(pmv[1].x, pmv[1].y, mask, &i, Data);
 	if (!(mask = make_mask(pmv, 2)))
-		CheckCandidate16no4vI(0, 0, mask, &i, Data);
+		(*CheckCandidate)(pmv[2].x, pmv[2].y, mask, &i, Data);
 
-	DiamondSearch(Data->currentMV->x, Data->currentMV->y, Data, i);
+	if (*Data->iMinSAD > MAX_SAD00_FOR_SKIP * 4) // diamond only if needed
+		DiamondSearch(Data->currentMV->x, Data->currentMV->y, Data, i);
 
-	pMB->mvs[0] = *Data->currentMV;
+	pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = Data->currentMV[0];
 	pMB->mode = MODE_INTER;
-
 	return *(Data->iMinSAD);
 }
 
@@ -2011,6 +2025,7 @@ MEanalysis(	const IMAGE * const pRef,
 	Data.currentMV = &currentMV;
 	Data.iMinSAD = &iMinSAD;
 	Data.iFcode = iFcode;
+	CheckCandidate = CheckCandidate16no4vI;
 
 	if (sadInit) (*sadInit) ();
 
