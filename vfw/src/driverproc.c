@@ -24,7 +24,7 @@
  *	History:
  *
  *	31.08.2002	Configure() export
- *	01.12.2001	inital version; (c)2001 peter ross <suxen_drol@hotmail.com>
+ *	01.12.2001	inital version; (c)2001 peter ross <pross@xvid.org>
  *
  *************************************************************************/
 
