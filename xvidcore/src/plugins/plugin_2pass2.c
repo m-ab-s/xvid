@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.36 2004-01-22 20:54:31 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.37 2004-01-31 14:51:56 syskin Exp $
  *
  *****************************************************************************/
 
@@ -34,6 +34,10 @@
 
 /* forces second pass not to be bigger than first */
 #undef PASS_SMALLER
+
+/* automtically alters overflow controls (strength and improvement/degradation) 
+	to fight most common problems without user's knowladge */
+#define SMART_OVERFLOW_SETTING
 
 #include <stdio.h>
 #include <math.h>
@@ -208,6 +212,8 @@ typedef struct
 	 * ToDo: description */
 	double fq_error;
 
+	int min_quant; /* internal minimal quant, prevents wrong quants from being used */
+
 	/*----------------------------------
 	 * Debug
 	 *--------------------------------*/
@@ -311,6 +317,7 @@ rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t **handle)
 	for (i=0; i<3; i++) rc->last_quant[i] = 0;
 
 	rc->fq_error = 0;
+	rc->min_quant = 1;
 
 	/* Count frames (and intra frames) in the stats file, store the result into
 	 * the rc structure */
@@ -706,6 +713,8 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	} else if (data->quant > data->max_quant[s->type-1]) {
 		data->quant = data->max_quant[s->type-1];
 	}
+
+	if (data->quant < rc->min_quant) data->quant = rc->min_quant;
 
 	/* To avoid big quality jumps from frame to frame, we apply a "security"
 	 * rule that makes |last_quant - new_quant| <= 2. This rule only applies
@@ -1118,6 +1127,20 @@ first_pass_scale_curve_internal(rc_2pass2_t *rc)
 
 	/* Let's compute a linear scaler in order to perform curve scaling */
 	scaler = (double)(target - total_invariant) / (double)(rc->tot_weighted);
+
+#ifdef SMART_OVERFLOW_SETTING
+	if (scaler > 0.9) {
+		rc->param.max_overflow_degradation *= 5;
+		rc->param.max_overflow_improvement *= 5;
+		rc->param.overflow_control_strength *= 3;
+	} else if (scaler > 0.6) {
+		rc->param.max_overflow_degradation *= 2;
+		rc->param.max_overflow_improvement *= 2;
+		rc->param.overflow_control_strength *= 2;
+	} else {
+		rc->min_quant = 2;
+	}
+#endif
 
 	/* Compute min frame lengths (for each frame type) according to the number
 	 * of MBs. We sum all block type counters of frame 0, this gives us the
