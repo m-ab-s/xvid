@@ -23,6 +23,7 @@
  *
  *	History:
  *
+ *	07.04.2002	added max bitrate constraint, overflow controls (foxer)
  *	31.03.2002	inital version;
  *
  *************************************************************************/
@@ -700,6 +701,7 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 	int bytes1, bytes2;
 	int overflow;
 	int credits_pos;
+	int capped_to_max_framesize = 0;
 
 	if (codec->framenum == 0)
 	{
@@ -930,17 +932,24 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 	}
 
 	// Foxer: make sure overflow doesn't run away
-	if (overflow > bytes2 * 6 / 10)
+	if (overflow > bytes2 * codec->config.twopass_max_overflow_improvement / 100)
 	{
-		bytes2 += (overflow <= bytes2) ? bytes2 * 6 / 10 : overflow * 6 / 10;
+		bytes2 += (overflow <= bytes2) ? bytes2 * codec->config.twopass_max_overflow_improvement / 100 :
+			overflow * codec->config.twopass_max_overflow_improvement / 100;
 	}
-	else if (overflow < bytes2 * -6 / 10)
+	else if (overflow < bytes2 * codec->config.twopass_max_overflow_degradation / -100)
 	{
-		bytes2 += bytes2 * -6 / 10;
+		bytes2 += bytes2 * codec->config.twopass_max_overflow_degradation / -100;
 	}
 	else
 	{
 		bytes2 += overflow;
+	}
+
+	if (bytes2 > twopass->max_framesize)
+	{
+		capped_to_max_framesize = 1;
+		bytes2 = twopass->max_framesize;
 	}
 
 	if (bytes2 < 1) 
@@ -1006,7 +1015,7 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 		}
 
 		// subsequent frame quants can only be +- 2
-		if (last_quant)
+		if (last_quant && capped_to_max_framesize == 0)
 		{
 			if (frame->quant > last_quant + 2)
 			{
@@ -1021,7 +1030,8 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 		}
 	}
 
-	last_quant = frame->quant;
+	if (capped_to_max_framesize == 0)
+		last_quant = frame->quant;
 
 	if (codec->config.quant_type == QUANT_MODE_MOD)
 	{

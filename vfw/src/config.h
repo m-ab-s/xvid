@@ -78,6 +78,7 @@ typedef struct
 	int quant_type;
 	int fourcc_used;
 	int max_key_interval;
+	int min_key_interval;
 	int lum_masking;
 	int interlacing;
 
@@ -90,7 +91,6 @@ typedef struct
 
 	int desired_size;
 	int keyframe_boost;
-	int min_key_interval;
 	int discard1pass;
 	int dummy2pass;
 	int curve_compression_high;
@@ -104,6 +104,9 @@ typedef struct
 	int alt_curve_high_dist;
 	int alt_curve_low_dist;
 	int alt_curve_min_rel_qual;
+	int twopass_max_bitrate;
+	int twopass_max_overflow_improvement;
+	int twopass_max_overflow_degradation;
 	int bitrate_payback_delay;
 	int bitrate_payback_method;
 	int hinted_me;
