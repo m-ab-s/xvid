@@ -214,9 +214,7 @@ MBMotionCompensation(MACROBLOCK * const mb,
 		dx = (dx >> 1) + roundtab_79[dx & 0x3];
 		dy = (dy >> 1) + roundtab_79[dy & 0x3];
 
-		/* uv-block-based compensation
-			XXX: rrv doesnt work with 16x16 block-based intepolation.
-			we need to use 18x18-block interpolation */
+		/* uv-block-based compensation */
 		if (reduced_resolution)
 		{
 			const stride = edged_width/2;
@@ -224,7 +222,6 @@ MBMotionCompensation(MACROBLOCK * const mb,
  			
 			current = cur->u + 16*j*stride + 16*i;
 			reference = refv->u + 16*j*stride + 16*i;
-			//interpolate16x16_switch(refv->u, ref->u, 16*i, 16*j, dx, dy, stride, rounding);
 			interpolate18x18_switch(refv->u, ref->u, 16*i, 16*j, dx, dy, stride, rounding);
 			filter_18x18_to_8x8(dct_codes + 4*64, current, stride);
 			filter_diff_18x18_to_8x8(dct_codes + 4*64, reference, stride);
@@ -232,7 +229,6 @@ MBMotionCompensation(MACROBLOCK * const mb,
 
 			current = cur->v + 16*j*stride + 16*i;
 			reference = refv->v + 16*j*stride + 16*i;
-			//interpolate16x16_switch(refv->v, ref->v, 16*i, 16*j, dx, dy, stride, rounding);
 			interpolate18x18_switch(refv->v, ref->v, 16*i, 16*j, dx, dy, stride, rounding);
 			filter_18x18_to_8x8(dct_codes + 5*64, current, stride);
 			filter_diff_18x18_to_8x8(dct_codes + 5*64, reference, stride);
@@ -252,21 +248,21 @@ MBMotionCompensation(MACROBLOCK * const mb,
 		}
 
 	} else {					// mode == MODE_INTER4V
-		int i;
+		int k;
 		int32_t sum, dx, dy;
 		VECTOR mvs[4];
 
 		if(quarterpel)
-			for (i = 0; i < 4; i++)	mvs[i] = mb->qmvs[i];
+			for (k = 0; k < 4; k++)	mvs[k] = mb->qmvs[k];
 		else
-			for (i = 0; i < 4; i++)	mvs[i] = mb->mvs[i];
+			for (k = 0; k < 4; k++)	mvs[k] = mb->mvs[k];
 
 		if (reduced_resolution)
 		{
-			for (i = 0; i < 4; i++)
+			for (k = 0; k < 4; k++)
 			{
-				mvs[i].x = RRV_MV_SCALEUP(mvs[i].x);
-				mvs[i].y = RRV_MV_SCALEUP(mvs[i].y);
+				mvs[k].x = RRV_MV_SCALEUP(mvs[k].x);
+				mvs[k].y = RRV_MV_SCALEUP(mvs[k].y);
 			}
 		}
 
@@ -298,9 +294,7 @@ MBMotionCompensation(MACROBLOCK * const mb,
 		dy = (sum >> 3) + roundtab_76[sum & 0xf];
 
 
-		/* uv-block-based compensation
-			XXX: rrv doesnt work with 16x16 block-based intepolation.
-			we need to use 18x18-block interpolation */
+		/* uv-block-based compensation */
 		if (reduced_resolution)
 		{
 			const stride = edged_width/2;
@@ -308,14 +302,14 @@ MBMotionCompensation(MACROBLOCK * const mb,
  			
 			current = cur->u + 16*j*stride + 16*i;
 			reference = refv->u + 16*j*stride + 16*i;
-			interpolate16x16_switch(refv->u, ref->u, 16*i, 16*j, dx, dy, stride, rounding);
+			interpolate18x18_switch(refv->u, ref->u, 16*i, 16*j, dx, dy, stride, rounding);
 			filter_18x18_to_8x8(dct_codes + 4*64, current, stride);
 			filter_diff_18x18_to_8x8(dct_codes + 4*64, reference, stride);
 			transfer16x16_copy(current, reference, stride);
 
 			current = cur->v + 16*j*stride + 16*i;
 			reference = refv->v + 16*j*stride + 16*i;
-			interpolate16x16_switch(refv->v, ref->v, 16*i, 16*j, dx, dy, stride, rounding);
+			interpolate18x18_switch(refv->v, ref->v, 16*i, 16*j, dx, dy, stride, rounding);
 			filter_18x18_to_8x8(dct_codes + 5*64, current, stride);
 			filter_diff_18x18_to_8x8(dct_codes + 5*64, reference, stride);
 			transfer16x16_copy(current, reference, stride);
