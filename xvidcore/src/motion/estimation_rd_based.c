@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_rd_based.c,v 1.1.2.7 2003-10-07 13:02:35 edgomez Exp $
+ * $Id: estimation_rd_based.c,v 1.1.2.8 2003-10-11 16:36:10 syskin Exp $
  *
  ****************************************************************************/
 
@@ -87,47 +87,84 @@ Block_CalcBits(	int16_t * const coeff,
 }
 
 static __inline unsigned int
-Block_CalcBitsIntra(int16_t * const coeff,
-					int16_t * const data,
-					int16_t * const dqcoeff,
-					const uint32_t quant, const int quant_type,
-					uint32_t * cbp,
-					const int block,
-					int * dcpred,
-					const uint16_t * scan_table)
+Block_CalcBitsIntra(MACROBLOCK * pMB,
+					const unsigned int x,
+					const unsigned int y,
+					const unsigned int mb_width,
+					const uint32_t block,
+					int16_t coeff[64],
+					int16_t qcoeff[64],
+					int16_t dqcoeff[64],
+					int16_t predictors[8],
+					const uint32_t quant,
+					const int quant_type,
+					unsigned int bits[2],
+					unsigned int cbp[2])
 {
-	int bits, i;
-	int distortion = 0;
-	uint32_t iDcScaler = get_dc_scaler(quant, block < 4);
-	int b_dc;
+	int direction;
+	int16_t *pCurrent;
+	unsigned int i, coded;
+	unsigned int distortion = 0;
+	const uint32_t iDcScaler = get_dc_scaler(quant, block < 4);
 
-	fdct(data);
-	data[0] -= 1024;
+	fdct(coeff);
 
-	if (quant_type) quant_h263_intra(coeff, data, quant, iDcScaler);
-	else quant_mpeg_intra(coeff, data, quant, iDcScaler);
-
-	b_dc = coeff[0];
-	if (block < 4) {
-		coeff[0] -= *dcpred;
-		*dcpred = b_dc;
+	if (quant_type) {
+		quant_h263_intra(qcoeff, coeff, quant, iDcScaler);
+		dequant_h263_intra(dqcoeff, qcoeff, quant, iDcScaler);
+	} else {
+		quant_mpeg_intra(qcoeff, coeff, quant, iDcScaler);
+		dequant_mpeg_intra(dqcoeff, qcoeff, quant, iDcScaler);
 	}
 
-	bits = BITS_MULT*CodeCoeffIntra_CalcBits(coeff, scan_table);
-	if (bits != 0) *cbp |= 1 << (5 - block);
+	predict_acdc(pMB-(x+mb_width*y), x, y, mb_width, block, qcoeff,
+				quant, iDcScaler, predictors, 0);
+	
+	direction = pMB->acpred_directions[block];
+	pCurrent = pMB->pred_values[block];
 
-	if (block < 4) bits += BITS_MULT*dcy_tab[coeff[0] + 255].len;
-	else bits += BITS_MULT*dcc_tab[coeff[0] + 255].len;
+	/* store current coeffs to pred_values[] for future prediction */
+	pCurrent[0] = qcoeff[0] * iDcScaler;
+	for (i = 1; i < 8; i++) {
+		pCurrent[i] = qcoeff[i];
+		pCurrent[i + 7] = qcoeff[i * 8];
+	}
 
-	coeff[0] = b_dc;
-	if (quant_type) dequant_h263_intra(dqcoeff, coeff, quant, iDcScaler);
-	else dequant_mpeg_intra(dqcoeff, coeff, quant, iDcScaler);
+	/* dc prediction */
+	qcoeff[0] = qcoeff[0] - predictors[0];
+
+	if (block < 4) bits[1] = bits[0] = dcy_tab[qcoeff[0] + 255].len;
+	else bits[1] = bits[0] = dcc_tab[qcoeff[0] + 255].len;
+
+	/* calc cost before ac prediction */
+	bits[0] += coded = CodeCoeffIntra_CalcBits(qcoeff, scan_tables[0]);
+	if (coded > 0) cbp[0] |= 1 << (5 - block);
+
+	/* apply ac prediction & calc cost*/
+	if (direction == 1) {
+		for (i = 1; i < 8; i++) {
+			qcoeff[i] -= predictors[i];
+			predictors[i] = qcoeff[i];
+		}
+	} else {						/* acpred_direction == 2 */
+		for (i = 1; i < 8; i++) {
+			qcoeff[i*8] -= predictors[i];
+			predictors[i] = qcoeff[i*8];
+		}
+	}
+
+	bits[1] += coded = CodeCoeffIntra_CalcBits(qcoeff, scan_tables[direction]);
+	if (coded > 0) cbp[1] |= 1 << (5 - block);
 
 	for (i = 0; i < 64; i++)
-		distortion += (data[i] - dqcoeff[i])*(data[i] - dqcoeff[i]);
+		distortion += (coeff[i] - dqcoeff[i])*(coeff[i] - dqcoeff[i]);
 
-	return bits + (LAMBDA*distortion)/(quant*quant);
+
+	return (LAMBDA*distortion)/(quant*quant);
+
 }
+
+
 
 static void
 CheckCandidateRD16(const int x, const int y, const SearchData * const data, const unsigned int Direction)
@@ -438,36 +475,60 @@ findRD_inter4v(const SearchData * const Data,
 }
 
 static int
-findRD_intra(const SearchData * const Data)
+findRD_intra(const SearchData * const Data, MACROBLOCK * pMB,
+			 const int x, const int y, const int mb_width)
 {
-	int bits = BITS_MULT*1; /* this one is ac/dc prediction flag bit */
-	int cbp = 0, i, dc = 0;
-	int16_t *in = Data->dctSpace, * coeff = Data->dctSpace + 64;
+	int cbp[2] = {0, 0}, bits[2], i;
+	int bits1 = BITS_MULT*1, bits2 = BITS_MULT*1; /* this one is ac/dc prediction flag bit */
+	int distortion = 0;
+
+	int16_t *in = Data->dctSpace, * coeff = Data->dctSpace + 64, * dqcoeff = Data->dctSpace + 128;
+	const uint32_t iQuant = Data->iQuant;
+	int16_t predictors[6][8];
 
 	for(i = 0; i < 4; i++) {
 		int s = 8*((i&1) + (i>>1)*Data->iEdgedWidth);
 		transfer_8to16copy(in, Data->Cur + s, Data->iEdgedWidth);
-		bits += Block_CalcBitsIntra(coeff, in, Data->dctSpace + 128, Data->iQuant, Data->quant_type, &cbp, i, &dc, Data->scan_table);
+		
 
-		if (bits >= Data->iMinSAD[0]) return bits;
+		distortion = Block_CalcBitsIntra(pMB, x, y, mb_width, i, in, coeff, dqcoeff,
+								predictors[i], iQuant, Data->quant_type, bits, cbp);
+		bits1 += distortion + BITS_MULT * bits[0];
+		bits2 += distortion + BITS_MULT * bits[1];
+
+		if (bits1 >= Data->iMinSAD[0] && bits2 >= Data->iMinSAD[0]) 
+			return bits1;
 	}
 
-	bits += BITS_MULT*xvid_cbpy_tab[cbp>>2].len;
+	bits1 += BITS_MULT*xvid_cbpy_tab[cbp[0]>>2].len;
+	bits2 += BITS_MULT*xvid_cbpy_tab[cbp[1]>>2].len;
 
 	/*chroma U */
 	transfer_8to16copy(in, Data->CurU, Data->iEdgedWidth/2);
-	bits += Block_CalcBitsIntra(coeff, in, Data->dctSpace + 128, Data->iQuant, Data->quant_type, &cbp, 4, &dc, Data->scan_table);
+	distortion = Block_CalcBitsIntra(pMB, x, y, mb_width, 4, in, coeff, dqcoeff,
+									predictors[4], iQuant, Data->quant_type, bits, cbp);
+	bits1 += distortion + BITS_MULT * bits[0];
+	bits2 += distortion + BITS_MULT * bits[1];
 
-	if (bits >= Data->iMinSAD[0]) return bits;
+	if (bits1 >= Data->iMinSAD[0] && bits2 >= Data->iMinSAD[0]) 
+		return bits1;
 
 	/* chroma V */
 	transfer_8to16copy(in, Data->CurV, Data->iEdgedWidth/2);
-	bits += Block_CalcBitsIntra(coeff, in, Data->dctSpace + 128, Data->iQuant, Data->quant_type, &cbp, 5, &dc, Data->scan_table);
+	distortion = Block_CalcBitsIntra(pMB, x, y, mb_width, 5, in, coeff, dqcoeff,
+									predictors[5], iQuant, Data->quant_type, bits, cbp);
 
-	bits += BITS_MULT*mcbpc_inter_tab[(MODE_INTRA & 7) | ((cbp & 3) << 3)].len;
+	bits1 += distortion + BITS_MULT * bits[0];
+	bits2 += distortion + BITS_MULT * bits[1];
 
-	return bits;
+	bits1 += BITS_MULT*mcbpc_inter_tab[(MODE_INTRA & 7) | ((cbp[0] & 3) << 3)].len;
+	bits2 += BITS_MULT*mcbpc_inter_tab[(MODE_INTRA & 7) | ((cbp[1] & 3) << 3)].len;
+
+	*Data->cbp = bits1 <= bits2 ? cbp[0] : cbp[1];
+
+	return MIN(bits1, bits2);
 }
+
 
 static int
 findRD_gmc(const SearchData * const Data, const IMAGE * const vGMC, const int x, const int y)
@@ -561,10 +622,11 @@ xvid_me_ModeDecision_RD(SearchData * const Data,
 		}
 	}
 
-	intra_rd = findRD_intra(Data);
+	intra_rd = findRD_intra(Data, pMB, x, y, pParam->mb_width);
 	if (intra_rd < min_rd) {
 		*Data->iMinSAD = min_rd = intra_rd;
 		mode = MODE_INTRA;
+		cbp = *Data->cbp;
 	}
 
 	pMB->sad16 = pMB->sad8[0] = pMB->sad8[1] = pMB->sad8[2] = pMB->sad8[3] = 0;
@@ -819,7 +881,7 @@ xvid_me_ModeDecision_Fast(SearchData * const Data,
 			}
 		}
 
-		intra_rd = findRD_intra(Data);
+		intra_rd = findRD_intra(Data, pMB, x, y, pParam->mb_width);
 		if (intra_rd < min_rd) {
 			*Data->iMinSAD = min_rd = intra_rd;
 			mode = MODE_INTRA;
