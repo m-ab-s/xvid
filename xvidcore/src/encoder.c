@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.28 2002-12-11 10:47:43 syskin Exp $
+ *  $Id: encoder.c,v 1.76.2.29 2002-12-12 12:42:31 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -646,6 +646,16 @@ set_timecodes(FRAMEINFO* pCur,FRAMEINFO *pRef, int32_t time_base)
 
 
 
+/* convert pFrame->intra to coding_type */
+static int intra2coding_type(int intra)
+{
+	if (intra < 0)		return -1;
+	if (intra == 1)		return I_VOP;
+	if (intra == 2)		return B_VOP;
+	
+	return P_VOP;
+}
+
 
 
 /*****************************************************************************
@@ -855,6 +865,7 @@ bvop_loop:
 	// only inc frame num, adapt quant, etc. if we havent seen it before
 	if (pEnc->bframenum_dx50bvop < 0 )
 	{
+		mode = intra2coding_type(pFrame->intra);
 		if (pFrame->quant == 0)
 			pEnc->current->quant = RateControlGetQ(&pEnc->rate_control, 0);
 		else
@@ -928,14 +939,19 @@ bvop_loop:
 	 * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
 	pEnc->iFrameNum++;
 
-	if (pEnc->iFrameNum == 0 || pFrame->intra == 1 || pEnc->bframenum_dx50bvop >= 0 ||
-		(pFrame->intra < 0 && pEnc->mbParam.iMaxKeyInterval > 0 &&
-		 pEnc->iFrameNum >= pEnc->mbParam.iMaxKeyInterval)
-		|| 2 == (mode = MEanalysis(&pEnc->reference->image, pEnc->current,
-									&pEnc->mbParam, pEnc->mbParam.iMaxKeyInterval,
-									(pFrame->intra < 0) ? pEnc->iFrameNum : 0,
-									bframes_count++))) {
+	if (pEnc->iFrameNum == 0 || pEnc->bframenum_dx50bvop >= 0 ||
+		(mode < 0 && pEnc->mbParam.iMaxKeyInterval > 0 && 
+			pEnc->iFrameNum >= pEnc->mbParam.iMaxKeyInterval))
+	{
+		mode = I_VOP;
+	}else{
+		mode = MEanalysis(&pEnc->reference->image, pEnc->current,
+					&pEnc->mbParam, pEnc->mbParam.iMaxKeyInterval,
+					(mode < 0) ? pEnc->iFrameNum : 0,
+					bframes_count++);
+	}
 
+	if (mode == I_VOP) {
 		/*
 		 * This will be coded as an Intra Frame
 		 */
@@ -999,8 +1015,7 @@ bvop_loop:
 		 * NB : sequences like "IIBB" decode fine with msfdam but,
 		 *      go screwy with divx 5.00
 		 */
-	} else if (pEnc->bframenum_tail >= pEnc->mbParam.max_bframes || mode != 0) {
-// 	} else if (pFrame->intra == 0 || pEnc->bframenum_tail >= pEnc->mbParam.max_bframes || mode != 0) { 
+	} else if (mode == P_VOP || pEnc->bframenum_tail >= pEnc->mbParam.max_bframes) {
 		/*
 		 * This will be coded as a Predicted Frame
 		 */
@@ -1024,7 +1039,7 @@ bvop_loop:
 			goto ipvop_loop;
 		}
 
-	} else {
+	} else {	/* mode == B_VOP */
 		/*
 		 * This will be coded as a Bidirectional Frame
 		 */

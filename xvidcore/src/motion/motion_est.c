@@ -2216,17 +2216,16 @@ MEanalysis(	const IMAGE * const pRef,
 							  pParam->edged_width);
 				if (dev + IntraThresh < sad) {
 					pMB->mode = MODE_INTRA;
-					if (++intra > (pParam->mb_height-2)*(pParam->mb_width-2)/2) return 2;  // I frame
+					if (++intra > (pParam->mb_height-2)*(pParam->mb_width-2)/2) return I_VOP;
 				}
 			}
 			sSAD += sad;
 		}
 	}
 	sSAD /= (pParam->mb_height-2)*(pParam->mb_width-2);
-	if (sSAD > InterThresh ) return 1; //P frame
+	if (sSAD > InterThresh ) return P_VOP;
 	emms();
-	return 0; // B frame
-
+	return B_VOP;
 }
 
 static void
