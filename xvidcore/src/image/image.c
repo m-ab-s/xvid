@@ -938,6 +938,16 @@ image_psnr(IMAGE * orig_image,
 	return psnr_y;
 }
 
+
+float sse_to_PSNR(long sse, int pixels)
+{
+        if (sse==0)
+                return 99.99;
+
+        return 48.131 - 10*log10((float)sse/(float)(pixels));   // log10(255*255)=4.8131
+
+}
+
 long plane_sse(uint8_t * orig,
 		   uint8_t * recon,
 		   uint16_t stride,

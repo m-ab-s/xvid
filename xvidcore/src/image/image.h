@@ -55,6 +55,9 @@ float image_psnr(IMAGE * orig_image,
 				 uint16_t width,
 				 uint16_t height);
 
+
+float sse_to_PSNR(long sse, int pixels);
+
 long plane_sse(uint8_t * orig,
 		   uint8_t * recon,
 		   uint16_t stride,
