@@ -1200,16 +1200,16 @@ static void adv_download(HWND hDlg, int idd, CONFIG * config)
 		break;
 
 	case IDD_BITRATE :
-		config->container_type = config->profile = SendDlgItemMessage(hDlg, IDC_BITRATE_CFORMAT, CB_GETCURSEL, 0, 0);
+		config->container_type = SendDlgItemMessage(hDlg, IDC_BITRATE_CFORMAT, CB_GETCURSEL, 0, 0);
 		config->target_size = config_get_uint(hDlg, IDC_BITRATE_TSIZE, config->target_size);
 		config->subtitle_size = config_get_uint(hDlg, IDC_BITRATE_SSIZE, config->subtitle_size);
 
 		config->hours = config_get_uint(hDlg, IDC_BITRATE_HOURS, config->hours);
 		config->minutes = config_get_uint(hDlg, IDC_BITRATE_MINUTES, config->minutes);
 		config->seconds = config_get_uint(hDlg, IDC_BITRATE_SECONDS, config->seconds);
-		config->fps = config->profile = SendDlgItemMessage(hDlg, IDC_BITRATE_FPS, CB_GETCURSEL, 0, 0);
+		config->fps = SendDlgItemMessage(hDlg, IDC_BITRATE_FPS, CB_GETCURSEL, 0, 0);
 
-		config->audio_type = config->profile = SendDlgItemMessage(hDlg, IDC_BITRATE_AFORMAT, CB_GETCURSEL, 0, 0);
+		config->audio_type = SendDlgItemMessage(hDlg, IDC_BITRATE_AFORMAT, CB_GETCURSEL, 0, 0);
 		config->audio_mode = IsDlgChecked(hDlg, IDC_BITRATE_AMODE_SIZE) ? 1 : 0 ;
 		config->audio_rate = config_get_uint(hDlg, IDC_BITRATE_ARATE, config->audio_rate);
 		config->audio_size = config_get_uint(hDlg, IDC_BITRATE_ASIZE, config->audio_size);
