@@ -70,7 +70,7 @@ MBFIELDTEST_PTR MBFieldTest;
 #define MIN(X, Y) ((X)<(Y)?(X):(Y))
 #define MAX(X, Y) ((X)>(Y)?(X):(Y))
 
-#define TOOSMALL_LIMIT 	2	/* skip blocks having a coefficient sum below this value */
+#define TOOSMALL_LIMIT 	1	/* skip blocks having a coefficient sum below this value */
 
 /* this isnt pretty, but its better than 20 ifdefs */
 
