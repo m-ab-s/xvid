@@ -49,6 +49,11 @@ int codec_2pass_init(CODEC* codec)
 	double total2 = 0.0;
 	double dbytes, dbytes2;
 
+	/* ensure free() is called safely */
+	codec->twopass.hintstream = NULL;
+	twopass->nns1_array = NULL;
+	twopass->nns2_array = NULL;
+
 	if (codec->config.hinted_me)
 	{
 		codec->twopass.hintstream = malloc(100000);
