@@ -218,7 +218,11 @@ LRESULT compress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * 
 
 LRESULT compress_get_size(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiOutput)
 {
-	return lpbiOutput->bmiHeader.biWidth * lpbiOutput->bmiHeader.biHeight * 3;
+	return
+#ifdef BFRAMES
+	 2 *
+#endif
+	lpbiOutput->bmiHeader.biWidth * lpbiOutput->bmiHeader.biHeight * 3;
 }
 
 
@@ -288,6 +292,12 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	param.min_quantizer = codec->config.min_pquant;
 	param.max_quantizer = codec->config.max_pquant;
 	param.max_key_interval = codec->config.max_key_interval;
+
+#ifdef BFRAMES
+    param.packed = codec->config.packed;
+	param.max_bframes = codec->config.max_bframes;
+	param.bquant_ratio = codec->config.bquant_ratio;
+#endif
 
 	switch(xvid_encore(0, XVID_ENC_CREATE, &param, NULL)) 
 	{
@@ -496,6 +506,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		frame.intra = 0;
 	}
 
+	OutputDebugString(" ");
 	switch (xvid_encore(codec->ehandle, XVID_ENC_ENCODE, &frame, &stats)) 
 	{
 	case XVID_ERR_FAIL :	
@@ -533,7 +544,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		if (codec->twopass.hints == INVALID_HANDLE_VALUE)
 		{
 			codec->twopass.hints = CreateFile(codec->config.hintfile, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
-			if (codec->twopass.hints == INVALID_HANDLE_VALUE)
+			if (codec->twopass.hints	== INVALID_HANDLE_VALUE)
 			{
 				DEBUGERR("couldn't create hints file");
 				return ICERR_ERROR;

@@ -88,6 +88,11 @@ typedef struct
 	int min_key_interval;
 	int lum_masking;
 	int interlacing;
+#ifdef BFRAMES
+	int max_bframes;
+	int bquant_ratio;
+	int packed;
+#endif
 
 	int min_iquant;
 	int max_iquant;
@@ -162,7 +167,8 @@ typedef struct REG_STR
 void config_reg_get(CONFIG *);
 void config_reg_set(CONFIG *);
 void config_reg_default(CONFIG *);
-int config_get_int(HWND, UINT, int);
+int config_get_int(HWND, INT, int);
+int config_get_uint(HWND, UINT, int);
 void main_download(HWND, CONFIG *);
 void main_slider(HWND, CONFIG *);
 void main_value(HWND, CONFIG *);

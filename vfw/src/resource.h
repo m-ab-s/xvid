@@ -213,14 +213,20 @@
 #define IDC_MINQUAL                     1202
 #define IDC_INTERLACING                 1203
 #define IDC_OVERDEG                     1204
-#define IDC_HINTFILE                    1205
-#define IDC_HINT_BROWSE                 1206
-#define IDC_HINTEDME                    1207
-#define IDC_OVERIMP                     1208
-#define IDC_MAXBITRATE                  1209
-#define IDC_CBR_REACTIONDELAY           1210
-#define IDC_CBR_AVERAGINGPERIOD         1211
-#define IDC_CBR_BUFFER                  1212
+#define IDC_MAXBFRAMES                  1205
+#define IDC_HINTFILE                    1206
+#define IDC_BQUANTRATIO                 1207
+#define IDC_HINT_BROWSE                 1208
+#define IDC_HINTEDME                    1209
+#define IDC_OVERIMP                     1210
+#define IDC_MAXBITRATE                  1211
+#define IDC_CBR_REACTIONDELAY           1212
+#define IDC_CBR_AVERAGINGPERIOD         1213
+#define IDC_CBR_BUFFER                  1214
+#define IDC_PACKED                      1215
+#define IDC_BSTATIC1                    1216
+#define IDC_BSTATIC2                    1217
+#define IDC_BSTATIC3                    1218
 
 // Next default values for new objects
 // 
@@ -228,7 +234,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1204
+#define _APS_NEXT_CONTROL_VALUE         1219
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
