@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.17 2003-10-16 12:16:00 syskin Exp $
+ * $Id: decoder.c,v 1.49.2.18 2003-10-22 09:47:52 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -373,7 +373,8 @@ decoder_mb_decode(DECODER * dec,
 	DECLARE_ALIGNED_MATRIX(block, 1, 64, int16_t, CACHE_LINE);
 	DECLARE_ALIGNED_MATRIX(data, 6, 64, int16_t, CACHE_LINE);
 
-	int stride = dec->edged_width, next_block = stride * (reduced_resolution ? 16 : 8);
+	int stride = dec->edged_width;
+	int next_block = stride * (reduced_resolution ? 16 : 8);
 	const int stride2 = stride/2;
 	int i;
 	const uint32_t iQuant = pMB->quant;
@@ -450,7 +451,6 @@ decoder_mbinter(DECODER * dec,
 {
 	uint32_t stride = dec->edged_width;
 	uint32_t stride2 = stride / 2;
-	uint32_t next_block = stride * (reduced_resolution ? 16 : 8);
 	uint32_t i;
 
 	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
@@ -963,7 +963,6 @@ decoder_bf_interpolate_mbinter(DECODER * dec,
 {
 	uint32_t stride = dec->edged_width;
 	uint32_t stride2 = stride / 2;
-	uint32_t next_block = stride * 8;
 	int uv_dx, uv_dy;
 	int b_uv_dx, b_uv_dy;
 	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
