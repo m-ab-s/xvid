@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: status.c,v 1.1.2.5 2004-01-23 13:27:59 edgomez Exp $
+ * $Id: status.c,v 1.1.2.6 2004-02-16 03:29:02 syskin Exp $
  *
  *****************************************************************************/
 
@@ -363,11 +363,11 @@ status_debugoutput(status_t *s, int type, int length, int quant)
 void status_update(status_t *s, int type, int length, int quant)
 {
 	s->count[0]++;
-	s->count[type]++;
 
 	status_debugoutput(s, type, length, quant);
 
-	if (type == 4) type = 2; /* XVID_TYPE_SVOP to XVID_TYPE_PVOP */
+	if (type == XVID_TYPE_SVOP) type = XVID_TYPE_PVOP;
+	s->count[type]++;
 
 	if (s->min_quant[0]==0 || quant<s->min_quant[0]) s->min_quant[0] = quant;
 	if (s->max_quant[0]==0 || quant>s->max_quant[0]) s->max_quant[0] = quant;
