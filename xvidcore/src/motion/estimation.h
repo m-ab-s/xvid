@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation.h,v 1.1.2.2 2003-09-30 18:20:31 edgomez Exp $
+ * $Id: estimation.h,v 1.1.2.3 2003-10-03 12:41:02 syskin Exp $
  *
  ****************************************************************************/
 
@@ -77,7 +77,6 @@ typedef struct
 	VECTOR predMV;
 	VECTOR * currentMV;
 	VECTOR * currentQMV;
-	VECTOR * currentMV2;
 	VECTOR * currentQMV2;
 	int32_t * iMinSAD;
 	int32_t * iMinSAD2;
