@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.c,v 1.39.2.16 2003-08-26 14:07:11 edgomez Exp $
+ * $Id: bitstream.c,v 1.39.2.17 2003-09-10 19:28:40 chl Exp $
  *
  ****************************************************************************/
 
@@ -1173,7 +1173,7 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 
     if (pParam->fincr>0) {
 	    BitstreamPutBit(bs, 1);		/* fixed_vop_rate = 1 */
-	    BitstreamPutBits(bs, pParam->fincr, log2bin(pParam->fbase));	/* fixed_vop_time_increment */
+	    BitstreamPutBits(bs, pParam->fincr, log2bin(pParam->fbase-1));	/* fixed_vop_time_increment */
     }else{
         BitstreamPutBit(bs, 0);		/* fixed_vop_rate = 0 */
     }
@@ -1293,7 +1293,7 @@ BitstreamWriteVopHeader(
 
 	/* time_increment: value=nth_of_sec, nbits = log2(resolution) */
 
-	BitstreamPutBits(bs, frame->ticks, log2bin(pParam->fbase));
+	BitstreamPutBits(bs, frame->ticks, log2bin(pParam->fbase-1));
 #if 0
 	DPRINTF("[%i:%i] %c",
 			frame->seconds, frame->ticks,
