@@ -56,8 +56,8 @@
 int pmvfast_presets[7] = {
 	0, PMV_QUICKSTOP16, PMV_EARLYSTOP16, PMV_EARLYSTOP16 | PMV_EARLYSTOP8,
 	PMV_EARLYSTOP16 | PMV_HALFPELREFINE16 | PMV_EARLYSTOP8 | PMV_HALFPELDIAMOND8,
-	PMV_EARLYSTOP16 | PMV_HALFPELREFINE16 | PMV_EARLYSTOP8 | PMV_HALFPELDIAMOND8,
-	PMV_EARLYSTOP16 | PMV_HALFPELREFINE16 | PMV_EXTSEARCH16 |
+	PMV_EARLYSTOP16 | PMV_HALFPELREFINE16 | PMV_EARLYSTOP8 | PMV_HALFPELDIAMOND8 |
+	PMV_ADVANCEDDIAMOND16, PMV_EARLYSTOP16 | PMV_HALFPELREFINE16 | PMV_EXTSEARCH16 |
 	PMV_EARLYSTOP8 | PMV_HALFPELREFINE8 | PMV_HALFPELDIAMOND8 | PMV_USESQUARES16
 };
 
@@ -387,6 +387,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	frame.general |= XVID_HALFPEL;
 //	frame.general |= XVID_ME_EPZS;
 
+
 	if (codec->config.motion_search > 4)
 		frame.general |= XVID_INTER4V;
 
@@ -396,9 +397,14 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	if (codec->config.interlacing)
 		frame.general |= XVID_INTERLACING;
 
+
+
 // added by koepi for credits greyscale
+
 	check_greyscale_mode(&codec->config, &frame, codec->framenum);
+
 // end of koepi's addition
+
 
 // fix 1pass modes/hinted MV by koepi
 	if (codec->config.hinted_me && (codec->config.mode == DLG_MODE_CBR || codec->config.mode == DLG_MODE_VBR_QUAL || codec->config.mode == DLG_MODE_VBR_QUANT))
@@ -740,8 +746,11 @@ int codec_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 		if (codec_is_in_credits(&codec->config, codec->framenum))
 		{
 // added by koepi for credits greyscale
+
 			check_greyscale_mode(&codec->config, frame, codec->framenum);
+
 // end of koepi's addition
+
 			switch (codec->config.credits_mode)
 			{
 			case CREDITS_MODE_RATE :
@@ -760,8 +769,11 @@ int codec_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 		else
 		{
 // added by koepi for credits greyscale
+
 			check_greyscale_mode(&codec->config, frame, codec->framenum);
+
 // end of koepi's addition
+
 			frame->quant = codec_get_vbr_quant(&codec->config, codec->config.quality);
 		}
 		return ICERR_OK;
@@ -770,8 +782,11 @@ int codec_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 		if (codec_is_in_credits(&codec->config, codec->framenum))
 		{
 // added by koepi for credits greyscale
+
 			check_greyscale_mode(&codec->config, frame, codec->framenum);
+
 // end of koepi's addition
+
 			switch (codec->config.credits_mode)
 			{
 			case CREDITS_MODE_RATE :
@@ -792,16 +807,22 @@ int codec_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 		else
 		{
 // added by koepi for credits greyscale
+
 			check_greyscale_mode(&codec->config, frame, codec->framenum);
+
 // end of koepi's addition
+
 			frame->quant = codec->config.quant;
 		}
 		return ICERR_OK;
 
 	case DLG_MODE_2PASS_1 :
 // added by koepi for credits greyscale
+
 		check_greyscale_mode(&codec->config, frame, codec->framenum);
+
 // end of koepi's addition
+
 		if (codec->config.credits_mode == CREDITS_MODE_QUANT)
 		{
 			if (codec_is_in_credits(&codec->config, codec->framenum))
@@ -893,28 +914,54 @@ int codec_get_vbr_quant(CONFIG* config, int quality)
 }
 
 // added by koepi for credits greyscale
+
 int check_greyscale_mode(CONFIG* config, XVID_ENC_FRAME* frame, int framenum)
+
 {
+
 	if ((codec_is_in_credits(config, framenum)) && (config->mode!=DLG_MODE_CBR))
+
 	{
+
 		if (config->credits_greyscale)
+
 		{
+
 			if ((frame->general && XVID_GREYSCALE))  // use only if not already in greyscale
+
 				frame->general |= XVID_GREYSCALE;
+
 		} else {
+
 			if (!(frame->general && XVID_GREYSCALE))  // if movie is in greyscale, switch back
+
 				frame->general |= XVID_GREYSCALE;
+
 		}
+
 	} else {
+
 		if (config->greyscale)
+
 		{
+
 			if ((frame->general && XVID_GREYSCALE))  // use only if not already in greyscale
+
 				frame->general |= XVID_GREYSCALE;
+
 		} else {
+
 			if (!(frame->general && XVID_GREYSCALE))  // if credits is in greyscale, switch back
+
 				frame->general |= XVID_GREYSCALE;
+
 		}
+
 	}
+
 	return 0;
+
 }
+
 // end of koepi's addition
+
