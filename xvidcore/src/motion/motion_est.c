@@ -2185,7 +2185,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 						MODE_BACKWARD, &Data);
 
 			// interpolate search comes last, because it uses data from forward and backward as prediction
-/*
+
 			SearchInterpolate(f_ref->y, f_refH->y, f_refV->y, f_refHV->y,
 						b_ref->y, b_refH->y, b_refV->y, b_refHV->y,
 						&frame->image,
@@ -2196,7 +2196,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 						&f_predMV, &b_predMV,
 						pMB, &best_sad,
 						&Data);
-*/
+
 			switch (pMB->mode) {
 				case MODE_FORWARD:
 					f_count++;
