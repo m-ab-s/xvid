@@ -23,6 +23,9 @@
  *
  *	History:
  *
+ *	24.03.2002	daniel smith <danielsmith@astroboymail.com>
+ *				added Foxer's new CBR engine
+ *				- cbr_buffer is being used as reaction delay (quick hack)
  *	23.03.2002	daniel smith <danielsmith@astroboymail.com>
  *				added load defaults button
  *				merged foxer's alternative 2-pass code (2-pass alt tab)
@@ -64,7 +67,7 @@ REG_INT const reg_ints[] = {
 	{"bitrate",					&reg.bitrate,					900000},
 	{"quality",					&reg.quality,					85},
 	{"quant",					&reg.quant,						5},
-	{"rc_buffersize",			&reg.rc_buffersize,				2048000},
+	{"rc_buffersize",			&reg.rc_buffersize,				16},
 
 	{"motion_search",			&reg.motion_search,				5},
 	{"quant_type",				&reg.quant_type,				0},
