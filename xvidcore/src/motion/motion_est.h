@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion_est.h,v 1.1.2.13 2003-01-11 14:59:24 chl Exp $
+ *  $Id: motion_est.h,v 1.1.2.14 2003-01-24 11:44:24 syskin Exp $
  *
  ***************************************************************************/
 
@@ -137,6 +137,9 @@ typedef struct
 	const uint8_t * bRefH;
 	const uint8_t * bRefV;
 	const uint8_t * bRefHV;
+	const uint8_t * b_RefCU;
+	const uint8_t * b_RefCV;
+
 	VECTOR bpredMV;
 	uint32_t bFcode;
 // fields for direct mode
