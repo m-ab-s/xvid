@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: driverproc.c,v 1.2.2.2 2004-04-02 23:59:24 edgomez Exp $
+ * $Id: driverproc.c,v 1.2.2.3 2004-05-26 05:22:38 syskin Exp $
  *
  ****************************************************************************/
 
@@ -293,7 +293,10 @@ BOOL WINAPI DllMain(
         return ICERR_UNSUPPORTED;
 
 	default:
-		return DefDriverProc(dwDriverId, hDriver, uMsg, lParam1, lParam2);
+		if (uMsg < DRV_USER)
+			return DefDriverProc(dwDriverId, hDriver, uMsg, lParam1, lParam2);
+		else 
+			return ICERR_UNSUPPORTED;
 	}
 }
 
