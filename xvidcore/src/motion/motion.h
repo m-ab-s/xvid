@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion.h,v 1.13.2.5 2002-11-02 15:52:31 chl Exp $
+ *  $Id: motion.h,v 1.13.2.6 2002-11-12 14:46:03 syskin Exp $
  *
  ***************************************************************************/
 
@@ -141,7 +141,7 @@ void MotionEstimationBVOP(MBParam * const pParam,
 						  const IMAGE * const f_refV,
 						  const IMAGE * const f_refHV,
 						  // backward (future) reference
-						  const MACROBLOCK * const b_mbs,
+						  const FRAMEINFO * const b_reference,
 						  const IMAGE * const b_ref,
 						  const IMAGE * const b_refH,
 						  const IMAGE * const b_refV,
@@ -172,10 +172,11 @@ MotionEstimationHinted(	MBParam * const pParam,
 
 int
 MEanalysis(	const IMAGE * const pRef,	
-			const IMAGE * const pCurrent,
+			FRAMEINFO * const Current,
 			MBParam * const pParam,
-			MACROBLOCK * const pMBs,
-			const uint32_t iFcode);
+			int maxIntra,
+			int intraCount,
+			int bCount);
 
 int
 FindFcode(	const MBParam * const pParam,

@@ -1615,7 +1615,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 					 const IMAGE * const f_refV,
 					 const IMAGE * const f_refHV,
 					 // backward (future) reference
-					 const MACROBLOCK * const b_mbs,
+					 const FRAMEINFO * const b_reference,
 					 const IMAGE * const b_ref,
 					 const IMAGE * const b_refH,
 					 const IMAGE * const b_refV,
@@ -1625,6 +1625,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 	int32_t best_sad, skip_sad;
 	int f_count = 0, b_count = 0, i_count = 0, d_count = 0, n_count = 0;
 	static const VECTOR zeroMV={0,0};
+	const MACROBLOCK * const b_mbs = b_reference->mbs;
 
 	VECTOR f_predMV, b_predMV;	/* there is no prediction for direct mode*/
 
@@ -1652,10 +1653,11 @@ MotionEstimationBVOP(MBParam * const pParam,
 			const MACROBLOCK * const b_mb = b_mbs + i + j * pParam->mb_width;
 
 /* special case, if collocated block is SKIPed in P-VOP: encoding is forward (0,0), cpb=0 without further ado */
-			if (b_mb->mode == MODE_NOT_CODED) {
-				pMB->mode = MODE_NOT_CODED;
-				continue;
-			}
+			if (b_reference->coding_type != S_VOP)
+				if (b_mb->mode == MODE_NOT_CODED) {
+					pMB->mode = MODE_NOT_CODED;
+					continue;
+				}
 
 			Data.Cur = frame->image.y + (j * Data.iEdgedWidth + i) * 16;
 			pMB->quant = frame->quant;
@@ -2008,15 +2010,20 @@ MEanalyzeMB (	const uint8_t * const pRef,
 #define INTRA_THRESH	1350
 #define INTER_THRESH	900
 
+
 int
 MEanalysis(	const IMAGE * const pRef,	
-			const IMAGE * const pCurrent,
+			FRAMEINFO * const Current,
 			MBParam * const pParam,
-			MACROBLOCK * const pMBs,
-			const uint32_t iFcode)
+			int maxIntra, //maximum number if non-I frames
+			int intraCount, //number of non-I frames after last I frame; 0 if we force P/B frame
+			int bCount) // number if B frames in a row
 {
 	uint32_t x, y, intra = 0;
 	int sSAD = 0;
+	MACROBLOCK * const pMBs = Current->mbs;
+	const IMAGE * const pCurrent = &Current->image;
+	int IntraThresh = INTRA_THRESH, InterThresh = INTER_THRESH;
 
 	VECTOR currentMV;
 	int32_t iMinSAD;
@@ -2024,8 +2031,18 @@ MEanalysis(	const IMAGE * const pRef,
 	Data.iEdgedWidth = pParam->edged_width;
 	Data.currentMV = &currentMV;
 	Data.iMinSAD = &iMinSAD;
-	Data.iFcode = iFcode;
+	Data.iFcode = Current->fcode;
 	CheckCandidate = CheckCandidate16no4vI;
+
+	if (intraCount < 12) // we're right after an I frame
+		IntraThresh += 4 * (intraCount - 12) * (intraCount - 12);
+	else
+		if ( 5*(maxIntra - intraCount) < maxIntra) // we're close to maximum. 2 sec when max is 10 sec
+			IntraThresh -= (IntraThresh * (maxIntra - 5*(maxIntra - intraCount)))/maxIntra;
+
+
+	InterThresh += 300 * (1 - bCount);
+	if (InterThresh < 200) InterThresh = 200;
 
 	if (sadInit) (*sadInit) ();
 
@@ -2037,17 +2054,19 @@ MEanalysis(	const IMAGE * const pRef,
 			sad = MEanalyzeMB(pRef->y, pCurrent->y, x, y,
 								pParam, pMBs, pMB, &Data);
 			
-			if (sad > INTRA_THRESH) {
+			if (sad > IntraThresh) {
 				dev = dev16(pCurrent->y + (x + y * pParam->edged_width) * 16,
 							  pParam->edged_width);
-				if (dev + INTRA_THRESH < sad) { intra++; pMB->mode = MODE_INTRA; }
-				if (intra > (pParam->mb_height-2)*(pParam->mb_width-2)/2) return 2;  // I frame
+				if (dev + IntraThresh < sad) {
+					pMB->mode = MODE_INTRA;
+					if (++intra > (pParam->mb_height-2)*(pParam->mb_width-2)/2) return 2;  // I frame
 				}
+			}
 			sSAD += sad;
 		}
 	}
 	sSAD /= (pParam->mb_height-2)*(pParam->mb_width-2);
-	if (sSAD > INTER_THRESH ) return 1; //P frame
+	if (sSAD > InterThresh ) return 1; //P frame
 	emms();
 	return 0; // B frame
 
