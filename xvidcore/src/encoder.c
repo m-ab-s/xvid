@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.4 2002-09-28 13:01:02 chl Exp $
+ *  $Id: encoder.c,v 1.76.2.5 2002-09-29 15:53:42 chl Exp $
  *
  ****************************************************************************/
 
@@ -411,6 +411,7 @@ encoder_create(XVID_ENC_PARAM * pParam)
 	pEnc->queue_size = 0;
 
 	pEnc->mbParam.m_stamp = 0;
+;
 	pEnc->m_framenum = 0;
 
 	pParam->handle = (void *) pEnc;
@@ -600,8 +601,8 @@ encoder_destroy(Encoder * pEnc)
 
 static __inline void inc_frame_num(Encoder * pEnc)
 {
+	pEnc->current->stamp = pEnc->mbParam.m_stamp;	// first frame is zero
 	pEnc->mbParam.m_stamp += pEnc->mbParam.fincr;
-	pEnc->current->stamp = pEnc->mbParam.m_stamp;
 }
 
 
@@ -637,7 +638,7 @@ set_timecodes(FRAMEINFO* pCur,FRAMEINFO *pRef, int32_t time_base)
 		pCur->ticks = (int32_t)pCur->stamp % time_base;
 		pCur->seconds =  ((int32_t)pCur->stamp / time_base)	- ((int32_t)pRef->stamp / time_base) ;
 		
-/*		HEAVY DEBUG OUTPUT	remove when timecodes prove to be stable 
+		//HEAVY DEBUG OUTPUT	remove when timecodes prove to be stable 
 
 		fprintf(stderr,"WriteVop:   %d - %d \n",
 			((int32_t)pCur->stamp / time_base), ((int32_t)pRef->stamp / time_base));
@@ -646,7 +647,7 @@ set_timecodes(FRAMEINFO* pCur,FRAMEINFO *pRef, int32_t time_base)
 		fprintf(stderr,"set_timecodes: VOP %1d   seconds=%d   ticks=%d   (ref-sec=%d  ref-tick=%d)\n",
 			pCur->coding_type, pCur->seconds, pCur->ticks, pRef->seconds, pRef->ticks);
 
-*/
+
 }
 
 
@@ -1542,12 +1543,9 @@ FrameCodeI(Encoder * pEnc,
 	pEnc->sStat.iMvCount = 0;
 	pEnc->mbParam.m_fcode = 2;
 
-//	pEnc->time_pp = ((int32_t)(pEnc->current->stamp - pEnc->reference->stamp));
-
 	if (pEnc->current->global_flags & XVID_HINTEDME_GET) {
 		HintedMEGet(pEnc, 1);
 	}
-//	pEnc->last_pframe = (int32_t)pEnc->mbParam.m_stamp;
 
 	return 1;					// intra
 }
@@ -1794,9 +1792,6 @@ FrameCodeP(Encoder * pEnc,
 
 	*pBits = BitstreamPos(bs) - *pBits;
 
-//	pEnc->time_pp = ((int32_t)(pEnc->current->stamp - pEnc->reference->stamp));
-//	pEnc->last_pframe = (int32_t)pEnc->mbParam.m_stamp;
-
 	return 0;					// inter
 }
 
@@ -1849,7 +1844,7 @@ FrameCodeB(Encoder * pEnc,
 	start_timer();
 
 	MotionEstimationBVOP(&pEnc->mbParam, frame, 
-		((int32_t)(frame->stamp - pEnc->reference->stamp)),				// time_bp 
+		((int32_t)(pEnc->current->stamp - frame->stamp)),				// time_bp 
 		((int32_t)(pEnc->current->stamp - pEnc->reference->stamp)), 	// time_pp
 			pEnc->reference->mbs, f_ref,
 						 &pEnc->f_refh, &pEnc->f_refv, &pEnc->f_refhv,

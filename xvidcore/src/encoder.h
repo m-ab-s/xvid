@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.18.2.1 2002-09-28 13:01:15 chl Exp $
+ *  $Id: encoder.h,v 1.18.2.2 2002-09-29 15:53:42 chl Exp $
  *
  ****************************************************************************/
 
@@ -130,7 +130,7 @@ typedef struct
 
 	uint32_t seconds;
 	uint32_t ticks;
-	uint64_t stamp;
+	int64_t stamp;
 
 	IMAGE image;
 
