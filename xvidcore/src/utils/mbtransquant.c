@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbtransquant.c,v 1.23.2.2 2004-05-26 05:46:20 syskin Exp $
+ * $Id: mbtransquant.c,v 1.23.2.3 2004-12-19 12:04:27 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -217,7 +217,7 @@ MBQuantInter(const MBParam * pParam,
 
 		sum = quant[mpeg](&qcoeff[i*64], &data[i*64], pMB->quant, pParam->mpeg_quant_matrices);
 
-		if(sum && (frame->vop_flags & XVID_VOP_TRELLISQUANT)) {
+		if(sum && (pMB->quant > 2) && (frame->vop_flags & XVID_VOP_TRELLISQUANT)) {
 			const uint16_t *matrix;
 			const static uint16_t h263matrix[] =
 				{
