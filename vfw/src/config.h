@@ -68,10 +68,15 @@ HWND hTooltip;
 
 typedef struct
 {
-	int mode;
+/********** ATTENTION **********/
+	int mode;					// Vidomi directly accesses these vars
+	int rc_bitrate;				//
+	int desired_size;			// please try to avoid modifications here
+	char stats1[MAX_PATH];		//
+/*******************************/
+
 	int quality;
 	int	quant;
-	int rc_bitrate;
 	int rc_reaction_delay_factor;
 	int rc_averaging_period;
 	int rc_buffer;
@@ -91,7 +96,6 @@ typedef struct
 	BYTE qmatrix_intra[64];
 	BYTE qmatrix_inter[64];
 
-	int desired_size;
 	int keyframe_boost;
 	int discard1pass;
 	int dummy2pass;
@@ -113,7 +117,6 @@ typedef struct
 	int bitrate_payback_method;
 	int hinted_me;
 	char hintfile[MAX_PATH];
-	char stats1[MAX_PATH];
 	char stats2[MAX_PATH];
 
 	int credits_start;
