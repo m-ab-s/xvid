@@ -23,6 +23,8 @@
  *
  *	History:
  *
+ *	04.04.2002	interlacing support
+ *				hinted ME support
  *	24.03.2002	daniel smith <danielsmith@astroboymail.com>
  *				added Foxer's new CBR engine
  *				- cbr_buffer is being used as reaction delay (quick hack)
@@ -74,6 +76,7 @@ REG_INT const reg_ints[] = {
 	{"fourcc_used",				&reg.fourcc_used,				0},
 	{"max_key_interval",		&reg.max_key_interval,			300},
 	{"lum_masking",				&reg.lum_masking,				0},
+	{"interlacing",				&reg.interlacing,				0},
 
 	{"min_iquant",				&reg.min_iquant,				1},
 	{"max_iquant",				&reg.max_iquant,				31},
@@ -98,6 +101,7 @@ REG_INT const reg_ints[] = {
 	{"alt_curve_min_rel_qual",	&reg.alt_curve_min_rel_qual,	50},
 	{"bitrate_payback_delay",	&reg.bitrate_payback_delay,		240},
 	{"bitrate_payback_method",	&reg.bitrate_payback_method,	0},
+	{"hinted_me",				&reg.hinted_me,					0},
 
 	{"credits_start",			&reg.credits_start,				0},
 	{"credits_start_begin",		&reg.credits_start_begin,		0},
@@ -115,6 +119,7 @@ REG_INT const reg_ints[] = {
 };
 
 REG_STR const reg_strs[] = {
+	{"hintfile",				reg.hintfile,					CONFIG_HINTFILE},
 	{"stats1",					reg.stats1,						CONFIG_2PASS_1_FILE},
 	{"stats2",					reg.stats2,						CONFIG_2PASS_2_FILE}
 //	{"build",					reg.build,						XVID_BUILD}
@@ -508,6 +513,9 @@ void adv_mode(HWND hDlg, int mode)
 	int i;
 
 	// first perform checkbox-based enable/disable
+	CONTROLDLG(IDC_HINTFILE,			ISDLGSET(IDC_HINTEDME));
+	CONTROLDLG(IDC_HINT_BROWSE,			ISDLGSET(IDC_HINTEDME));
+
 	CONTROLDLG(IDC_USEAUTO,				ISDLGSET(IDC_USEALT));
 	CONTROLDLG(IDC_AUTOSTR,				ISDLGSET(IDC_USEALT) && ISDLGSET(IDC_USEAUTO));
 	CONTROLDLG(IDC_USEAUTOBONUS,		ISDLGSET(IDC_USEALT));
@@ -556,6 +564,7 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 		SendDlgItemMessage(hDlg, IDC_FOURCC, CB_SETCURSEL, config->fourcc_used, 0);
 		SetDlgItemInt(hDlg, IDC_MAXKEY, config->max_key_interval, FALSE);
 		CheckDlgButton(hDlg, IDC_LUMMASK, config->lum_masking ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg, IDC_INTERLACING, config->interlacing ? BST_CHECKED : BST_UNCHECKED);
 		break;
 
 	case DLG_QUANT :
@@ -577,6 +586,8 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 		CheckDlgButton(hDlg, IDC_PAYBACKBIAS, (config->bitrate_payback_method == 0));
 		CheckDlgButton(hDlg, IDC_PAYBACKPROP, (config->bitrate_payback_method == 1));
 
+		CheckDlgButton(hDlg, IDC_HINTEDME, config->hinted_me ? BST_CHECKED : BST_UNCHECKED);
+		SetDlgItemText(hDlg, IDC_HINTFILE, config->hintfile);
 		SetDlgItemText(hDlg, IDC_STATS1, config->stats1);
 		SetDlgItemText(hDlg, IDC_STATS2, config->stats2);
 		break;
@@ -655,6 +666,7 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 		config->fourcc_used = SendDlgItemMessage(hDlg, IDC_FOURCC, CB_GETCURSEL, 0, 0);
 		config->max_key_interval = config_get_int(hDlg, IDC_MAXKEY, config->max_key_interval);
 		config->lum_masking = ISDLGSET(IDC_LUMMASK);
+		config->interlacing = ISDLGSET(IDC_INTERLACING);
 		break;
 
 	case DLG_QUANT :
@@ -678,7 +690,12 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 		config->curve_compression_low = GetDlgItemInt(hDlg, IDC_CURVECOMPL, NULL, FALSE);
 		config->bitrate_payback_delay = config_get_int(hDlg, IDC_PAYBACK, config->bitrate_payback_delay);
 		config->bitrate_payback_method = ISDLGSET(IDC_PAYBACKPROP);
+		config->hinted_me = ISDLGSET(IDC_HINTEDME);
 
+		if (GetDlgItemText(hDlg, IDC_HINTFILE, config->hintfile, MAX_PATH) == 0)
+		{
+			lstrcpy(config->hintfile, CONFIG_HINTFILE);
+		}
 		if (GetDlgItemText(hDlg, IDC_STATS1, config->stats1, MAX_PATH) == 0)
 		{
 			lstrcpy(config->stats1, CONFIG_2PASS_1_FILE);
@@ -990,6 +1007,7 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 			switch (LOWORD(wParam))
 			{
+			case IDC_HINTEDME :
 			case IDC_USEALT :
 			case IDC_USEAUTO :
 			case IDC_USEAUTOBONUS :
@@ -1004,7 +1022,7 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				break;
 			}
 		}
-		if ((LOWORD(wParam) == IDC_STATS1_BROWSE || LOWORD(wParam) == IDC_STATS2_BROWSE) && HIWORD(wParam) == BN_CLICKED)
+		if ((LOWORD(wParam) == IDC_HINT_BROWSE || LOWORD(wParam) == IDC_STATS1_BROWSE || LOWORD(wParam) == IDC_STATS2_BROWSE) && HIWORD(wParam) == BN_CLICKED)
 		{
 			OPENFILENAME ofn;
 			char tmp[MAX_PATH];
@@ -1021,8 +1039,15 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			ofn.nMaxFile = MAX_PATH;
 			ofn.Flags = OFN_PATHMUSTEXIST;
 
-			// display save box for stats1 using 1st-pass
-			if (LOWORD(wParam) == IDC_STATS1_BROWSE && 
+			if (LOWORD(wParam) == IDC_HINT_BROWSE)
+			{
+				ofn.lpstrFilter = "motion hints (*.mvh)\0*.mvh\0All files (*.*)\0*.*\0\0";
+				if (GetOpenFileName(&ofn))
+				{
+					SetDlgItemText(hDlg, IDC_HINTFILE, tmp);
+				}
+			}
+			else if (LOWORD(wParam) == IDC_STATS1_BROWSE && 
 				psi->config->mode == DLG_MODE_2PASS_1)
 			{
 				ofn.Flags |= OFN_OVERWRITEPROMPT;

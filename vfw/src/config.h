@@ -26,6 +26,7 @@ HWND hTooltip;
 #define XVID_WEBSITE	"http://www.xvid.org"
 
 /* constants */
+#define CONFIG_HINTFILE		"\\hintfile.mvh"
 #define CONFIG_2PASS_1_FILE "\\video.stats"
 #define CONFIG_2PASS_2_FILE "\\videogk.stats"
 
@@ -78,6 +79,7 @@ typedef struct
 	int fourcc_used;
 	int max_key_interval;
 	int lum_masking;
+	int interlacing;
 
 	int min_iquant;
 	int max_iquant;
@@ -104,6 +106,8 @@ typedef struct
 	int alt_curve_min_rel_qual;
 	int bitrate_payback_delay;
 	int bitrate_payback_method;
+	int hinted_me;
+	char hintfile[MAX_PATH];
 	char stats1[MAX_PATH];
 	char stats2[MAX_PATH];
 

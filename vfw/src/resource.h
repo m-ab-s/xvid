@@ -213,6 +213,10 @@
 #define IDC_ALTCURVEHIGH                1199
 #define IDC_ALTCURVELOW                 1201
 #define IDC_MINQUAL                     1202
+#define IDC_INTERLACING                 1203
+#define IDC_HINTEDME                    1204
+#define IDC_HINTFILE                    1205
+#define IDC_HINT_BROWSE                 1206
 
 // Next default values for new objects
 // 
