@@ -718,13 +718,11 @@ SearchP(const uint8_t * const pRef,
 		Data->max_dx = EVEN(Data->max_dx);
 		Data->min_dy = EVEN(Data->min_dy);
 		Data->max_dy = EVEN(Data->max_dy); }
-
-	for(i = 0;  i < 5; i++) Data->iMinSAD[i] = 256*4096;
+	
+	if (pMB->dquant != NO_CHANGE) inter4v = 0;
 
 	if (inter4v) CheckCandidate = CheckCandidate16;
 	else CheckCandidate = CheckCandidate16no4v;
-
-	(*CheckCandidate)(Data->predMV.x, Data->predMV.y, 0, &iDirection, Data);
 
 	for(i = 0;  i < 5; i++) Data->currentMV[i].x = Data->currentMV[i].y = 0;
 
@@ -735,22 +733,24 @@ SearchP(const uint8_t * const pRef,
 	Data->iMinSAD[3] = pMB->sad8[2];
 	Data->iMinSAD[4] = pMB->sad8[3];
 
-	if (pMB->dquant != NO_CHANGE) inter4v = 0;
-
 	if ((x == 0) && (y == 0)) threshA = 512;
 	else {
-		threshA = Data->temp[0] + 20;
+		threshA = Data->temp[0]; // that's when we keep this SAD atm
 		if (threshA < 512) threshA = 512;
 		if (threshA > 1024) threshA = 1024; }
 
 	PreparePredictionsP(pmv, x, y, pParam->mb_width, pParam->mb_height,
 					prevMBs + x + y * pParam->mb_width);
 
+	if (inter4v) CheckCandidate = CheckCandidate16;
+	else CheckCandidate = CheckCandidate16no4v;
+
+
 /* main loop. checking all predictions */
 
 	for (i = 1; i < 7; i++) {
 		if (!(mask = make_mask(pmv, i)) ) continue;
-		CheckCandidate16(pmv[i].x, pmv[i].y, mask, &iDirection, Data);
+		(*CheckCandidate)(pmv[i].x, pmv[i].y, mask, &iDirection, Data);
 		if (Data->iMinSAD[0] <= threshA) break;
 	}
 
@@ -1467,12 +1467,12 @@ SearchPhinted (	const uint8_t * const pRef,
 				const MACROBLOCK * const pMBs,
 				int inter4v,
 				MACROBLOCK * const pMB,
-				SearchData * Data)
+				SearchData * const Data)
 {
 
 	const int32_t iEdgedWidth = pParam->edged_width;
  
-	int i;
+	int i, t;
 	MainSearchFunc * MainSearchPtr;
 
 	Data->predMV = get_pmv2(pMBs, pParam->mb_width, 0, x, y, 0);
@@ -1485,7 +1485,7 @@ SearchPhinted (	const uint8_t * const pRef,
 	Data->RefV = pRefV + (x + iEdgedWidth*y) * 16;
 	Data->RefHV = pRefHV + (x + iEdgedWidth*y) * 16;
 	Data->iQuant = iQuant;
-	
+
 	if (!(MotionFlags & PMV_HALFPEL16)) {
 		Data->min_dx = EVEN(Data->min_dx);
 		Data->max_dx = EVEN(Data->max_dx);
@@ -1509,14 +1509,14 @@ SearchPhinted (	const uint8_t * const pRef,
 	if (pMB->mvs[0].y > Data->max_dy) pMB->mvs[0].y = Data->max_dy;
 	if (pMB->mvs[0].y < Data->min_dy) pMB->mvs[0].y = Data->min_dy;
 
-	(*CheckCandidate)(pMB->mvs[0].x, pMB->mvs[0].y, 0, &i, Data);
+	(*CheckCandidate)(pMB->mvs[0].x, pMB->mvs[0].y, 0, &t, Data);
 
 	if (pMB->mode == MODE_INTER4V)
 		for (i = 1; i < 4; i++) { // all four vectors will be used as four predictions for 16x16 search
 			pMB->mvs[i].x = EVEN(pMB->mvs[i].x);
 			pMB->mvs[i].y = EVEN(pMB->mvs[i].y);
 			if (!(make_mask(pMB->mvs, i))) 
-				(*CheckCandidate)(pMB->mvs[i].x, pMB->mvs[i].y, 0, &i, Data);
+				(*CheckCandidate)(pMB->mvs[i].x, pMB->mvs[i].y, 0, &t, Data);
 		}
 
 	if (MotionFlags & PMV_USESQUARES16)
