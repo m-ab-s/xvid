@@ -23,6 +23,7 @@
  *
  *	History:
  *
+ *	31.08.2002	Configure() export
  *	01.12.2001	inital version; (c)2001 peter ross <suxen_drol@hotmail.com>
  *
  *************************************************************************/
@@ -35,7 +36,7 @@
 #include "resource.h"
 
 
-BOOL APIENTRY DllMain(
+BOOL WINAPI DllMain(
 	HANDLE hModule, 
 	DWORD  ul_reason_for_call, 
 	LPVOID lpReserved)
@@ -46,7 +47,7 @@ BOOL APIENTRY DllMain(
 
 
 
-__declspec(dllexport) LRESULT WINAPI DriverProc(
+/* __declspec(dllexport) */ LRESULT WINAPI DriverProc(
 	DWORD dwDriverId, 
 	HDRVR hDriver, 
 	UINT uMsg, 
@@ -271,5 +272,18 @@ __declspec(dllexport) LRESULT WINAPI DriverProc(
 
 	default:
 		return DefDriverProc(dwDriverId, hDriver, uMsg, lParam1, lParam2);
+	}
+}
+
+
+void WINAPI Configure(HWND hwnd, HINSTANCE hinst, LPTSTR lpCmdLine, int nCmdShow)
+{
+	DWORD dwDriverId;
+
+	dwDriverId = DriverProc(0, 0, DRV_OPEN, 0, 0);
+	if (dwDriverId != (DWORD)NULL)
+	{
+		DriverProc(dwDriverId, 0, ICM_CONFIGURE, 0, 0);
+		DriverProc(dwDriverId, 0, DRV_CLOSE, 0, 0);
 	}
 }

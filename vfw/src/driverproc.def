@@ -1,7 +1,8 @@
 EXPORTS
 	DriverProc
-	decore
-	encore
+	Configure
 	xvid_init
 	xvid_decore
 	xvid_encore
+	decore
+	encore
