@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_pvop.c,v 1.1.2.5 2003-10-28 23:47:29 Isibaar Exp $
+ * $Id: estimation_pvop.c,v 1.1.2.6 2003-10-29 12:41:41 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1013,8 +1013,7 @@ MotionEstimation(MBParam * const pParam,
 								 	  MAX((&pMBs[x + (y-1) * pParam->mb_width])->sad16,
 									  MAX((&pMBs[(x+1) + (y-1) * pParam->mb_width])->sad16,
 									  prevMB->sad16)));
-					}
-					else {
+					} else {
 						stat_thresh = MIN((&pMBs[(x-1) + y * pParam->mb_width])->sad16,
 								 	  MIN((&pMBs[x + (y-1) * pParam->mb_width])->sad16,
 									  MIN((&pMBs[(x+1) + (y-1) * pParam->mb_width])->sad16,

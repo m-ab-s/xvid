@@ -336,6 +336,37 @@ InputName=fdct_xmm
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\dct\x86_asm\fdct_sse2_skal.asm
+
+!IF  "$(CFG)" == "libxvidcore - Win32 Release"
+
+# Begin Custom Build - Assembling $(InputPath)
+IntDir=.\Release
+InputPath=..\..\src\dct\x86_asm\fdct_sse2_skal.asm
+InputName=fdct_xmm
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
+
+# Begin Custom Build - Assembling $(InputPath)
+IntDir=.\Debug
+InputPath=..\..\src\dct\x86_asm\fdct_sse2_skal.asm
+InputName=fdct_xmm
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\dct\x86_asm\idct_3dne.asm
 
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
