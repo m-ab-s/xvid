@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.2.2.2 2004-04-14 03:22:38 syskin Exp $
+ * $Id: CXvidDecoder.cpp,v 1.2.2.3 2004-11-24 22:14:11 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -533,19 +533,24 @@ if ( USE_RG565 )
 
 
 /* (internal function) change colorspace */
+#define CALC_BI_STRIDE(width,bitcount)  ((((width * bitcount) + 31) & ~31) >> 3)
 
 HRESULT CXvidDecoder::ChangeColorspace(GUID subtype, GUID formattype, void * format)
 {
+	DWORD biWidth;
+
 	if (formattype == FORMAT_VideoInfo)
 	{
 		VIDEOINFOHEADER * vih = (VIDEOINFOHEADER * )format;
-		m_frame.output.stride[0] = (((vih->bmiHeader.biWidth * vih->bmiHeader.biBitCount) + 31) & ~31) >> 3;
+		biWidth = vih->bmiHeader.biWidth;
+		m_frame.output.stride[0] = CALC_BI_STRIDE(vih->bmiHeader.biWidth, vih->bmiHeader.biBitCount);
 		rgb_flip = (vih->bmiHeader.biHeight < 0 ? 0 : XVID_CSP_VFLIP);
 	}
 	else if (formattype == FORMAT_VideoInfo2)
 	{
 		VIDEOINFOHEADER2 * vih2 = (VIDEOINFOHEADER2 * )format;
-		m_frame.output.stride[0] = (((vih2->bmiHeader.biWidth * vih2->bmiHeader.biBitCount) + 31) & ~31) >> 3;
+		biWidth = vih2->bmiHeader.biWidth;
+		m_frame.output.stride[0] = CALC_BI_STRIDE(vih2->bmiHeader.biWidth, vih2->bmiHeader.biBitCount);
 		rgb_flip = (vih2->bmiHeader.biHeight < 0 ? 0 : XVID_CSP_VFLIP);
 	}
 	else
@@ -558,14 +563,14 @@ HRESULT CXvidDecoder::ChangeColorspace(GUID subtype, GUID formattype, void * for
 		DPRINTF("IYUV");
 		rgb_flip = 0;
 		m_frame.output.csp = XVID_CSP_I420;
-		m_frame.output.stride[0] = (m_frame.output.stride[0] * 2) / 3;	/* planar format fix */
+		m_frame.output.stride[0] = CALC_BI_STRIDE(biWidth, 8);	/* planar format fix */
 	}
 	else if (subtype == MEDIASUBTYPE_YV12)
 	{
 		DPRINTF("YV12");
 		rgb_flip = 0;
 		m_frame.output.csp = XVID_CSP_YV12;
-		m_frame.output.stride[0] = (m_frame.output.stride[0] * 2) / 3;	/* planar format fix */
+		m_frame.output.stride[0] = CALC_BI_STRIDE(biWidth, 8);	/* planar format fix */
 	}
 	else if (subtype == MEDIASUBTYPE_YUY2)
 	{
