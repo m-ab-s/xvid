@@ -6,7 +6,7 @@
 # Modified by : Edouard Gomez <ed.gomez at free.fr>
 #               Peter Ross <pross@xvid.org>
 #
-# $Id: Makefile.cygwin,v 1.1.2.2 2003-10-04 00:38:49 edgomez Exp $
+# $Id: Makefile.cygwin,v 1.1.2.3 2003-10-15 13:55:09 edgomez Exp $
 ##############################################################################
 
 include Makefile.inc
@@ -15,9 +15,7 @@ LOCAL_XVID_SRCTREE=../../src
 LOCAL_XVID_BUILDTREE=../../build/generic/=build
 
 RM = rm -rf
-
-# CC = gcc-2
-# CC = gcc-3.1
+WINDRES=windres
 
 # Constants which should not be modified
 # The `mingw-runtime` package is required when building with -mno-cygwin
@@ -29,23 +27,13 @@ CFLAGS += -mno-cygwin
 # Optional Compiler options
 ##############################################################################
 
-  # Warning level options
-      # Shows all warnings
-  CFLAGS += -Wall
-
-  # General Optimization options
-      # Optimize code for size (implies -O2)
-  CFLAGS += -Os
-      # Unroll loops code, this might speed up loops
-  CFLAGS += -funroll-loops
-      # Generates FPU math code
-  CFLAGS += -ffast-math
-      # ??? (man gcc)
-  CFLAGS += -fstrict-aliasing
-      # Omit the x86 push ebp; mov ebp, esp function
-      # header and its corresponding function tailer
-  CFLAGS += -fomit-frame-pointer
-
+CFLAGS += -Wall
+CFLAGS += -O1
+CFLAGS += -fstrength-reduce
+CFLAGS += -finline-functions
+CFLAGS += -fgcse
+CFLAGS += -freduce-all-givs
+CFLAGS += -ffast-math
 
 ##############################################################################
 # Rules
@@ -54,7 +42,7 @@ CFLAGS += -mno-cygwin
 all: $(LIBSO)
 
 %.res.o: %.rc 
-	windres --include-dir=$(SRCDIR) -o $@ $<
+	$(WINDRES) --include-dir=$(SRCDIR) -o $@ $<
 
 $(LIBSO): $(SRC:.c=.o) $(SRC_RES:.rc=.res.o)
 	$(CC) $(CFLAGS) -shared -Wl,-dll,--out-implib,$@.a,--enable-stdcall-fixup \
@@ -63,7 +51,7 @@ $(LIBSO): $(SRC:.c=.o) $(SRC_RES:.rc=.res.o)
 
 clean:
 	$(RM) $(SRC:.c=.o) $(SRC_RES:.rc=.res.o)
-	$(RM) $(LIBSO)
+	$(RM) $(LIBSO) $(LIBSO).a
 
 install:
 	rundll32.exe setupapi,InstallHinfSection DefaultInstall 132 ./xvid.inf

@@ -224,7 +224,7 @@ case "$target_os" in
 	SHARED_EXTENSION="so"
 	OBJECT_EXTENSION="o"
 	;;
-     [[cC]][[yY]][[gG]][[wW]][[iI]][[nN]]|mingw32|mks)
+     [[cC]][[yY]][[gG]][[wW]][[iI]][[nN]]*|mingw32*|mks*)
 	AC_MSG_RESULT([.dll .a .obj])
 	STATIC_EXTENSION="a"
 	SHARED_EXTENSION="dll"
@@ -268,7 +268,7 @@ case "$target_os" in
 	SPECIFIC_LDFLAGS="-Wl,-soname,libxvidcore.\$(SHARED_EXTENSION).\$(API_MAJOR) -shared -lc -lm"
 	SPECIFIC_CFLAGS="-fPIC"
 	;;
-     [[cC]][[yY]][[gG]][[wW]][[iI]][[nN]]|mingw32|mks)
+     [[cC]][[yY]][[gG]][[wW]][[iI]][[nN]]*|mingw32*|mks*)
 	AC_MSG_RESULT([ok])
 	STATIC_LIB="libxvidcore.\$(STATIC_EXTENSION)"
 	SHARED_LIB="libxvidcore.\$(SHARED_EXTENSION)"
@@ -360,7 +360,7 @@ if test "$ARCHITECTURE" = "IA32" ; then
                   NASM_FORMAT="elf"
 		  PREFIX=""
                   ;;
-              [[cC]][[yY]][[gG]][[wW]][[iI]][[nN]]|mingw32|mks)
+              [[cC]][[yY]][[gG]][[wW]][[iI]][[nN]]*|mingw32*|mks*)
                   AC_MSG_RESULT([win32])
                   NASM_FORMAT="win32"
 		  PREFIX="-DPREFIX"
