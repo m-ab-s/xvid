@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.47 2003-12-05 14:44:35 edgomez Exp $
+ * $Id: xvid.h,v 1.27.2.48 2003-12-06 10:35:23 chl Exp $
  *
  ****************************************************************************/
 
@@ -277,7 +277,7 @@ typedef struct
 			int general;        /* [out] flags */
 			int width;          /* [out] width */
 			int height;         /* [out] height */
-			int par;            /* [out] picture aspect ratio (refer to XVID_PAR_xxx above) */
+			int par;            /* [out] pixel aspect ratio (refer to XVID_PAR_xxx above) */
 			int par_width;      /* [out] aspect ratio width */
 			int par_height;     /* [out] aspect ratio height */
 		} vol;
@@ -620,7 +620,7 @@ typedef struct {
 	unsigned char *quant_intra_matrix; /* [in:opt] custom intra qmatrix */
 	unsigned char *quant_inter_matrix; /* [in:opt] custom inter qmatrix */
 
-	int par;                           /* [in:opt] picture aspect ratio (refer to XVID_PAR_xxx above) */
+	int par;                           /* [in:opt] pixel aspect ratio (refer to XVID_PAR_xxx above) */
 	int par_width;                     /* [in:opt] aspect ratio width */
 	int par_height;                    /* [in:opt] aspect ratio height */
 	/* ---------------------------------------------- */
