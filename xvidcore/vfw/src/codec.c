@@ -310,7 +310,7 @@ static int init_dll()
 	m_hdll = LoadLibrary(XVID_DLL_NAME);
 	if (m_hdll == NULL) {
 		DPRINTF("dll load failed");
-		MessageBox(0, XVID_DLL_NAME " not found","Error", 0);
+		MessageBox(0, XVID_DLL_NAME " not found!","Error!", MB_ICONEXCLAMATION|MB_OK);
 		return XVID_ERR_FAIL;
 	}
 
@@ -346,6 +346,40 @@ static int init_dll()
 	return 0;
 }
 
+void
+sort_zones(zone_t * zones, int zone_num, int * sel);
+
+static void
+prepare_cquant_zones(CONFIG * config) {
+	
+	int i = 0;
+	if (config->num_zones == 0 || config->zones[0].frame != 0) {
+		/* first zone does not start at frame 0 or doesn't exist */
+
+		if (config->num_zones >= MAX_ZONES) config->num_zones--; /* we scrifice last zone */
+
+		config->zones[config->num_zones].frame = 0;
+		config->zones[config->num_zones].mode = RC_ZONE_QUANT;
+		config->zones[config->num_zones].weight = 100;
+		config->zones[config->num_zones].quant = config->desired_quant;
+		config->zones[config->num_zones].type = XVID_TYPE_AUTO;
+		config->zones[config->num_zones].greyscale = 0;
+		config->zones[config->num_zones].chroma_opt = 0;
+		config->zones[config->num_zones].bvop_threshold = 0;
+		config->num_zones++;
+
+		sort_zones(config->zones, config->num_zones, &i);
+	}
+
+	/* step 2: let's change all weight zones into quant zones */
+	
+	for(i = 0; i < config->num_zones; i++)
+		if (config->zones[i].mode == RC_ZONE_WEIGHT) {
+			config->zones[i].mode = RC_ZONE_QUANT;
+			config->zones[i].quant = (100*config->desired_quant) / config->zones[i].weight;
+		}
+}
+
 
 LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiOutput)
 {
@@ -356,6 +390,10 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	xvid_plugin_2pass1_t pass1;
 	xvid_plugin_2pass2_t pass2;
 	int i;
+	HANDLE hFile;
+
+	CONFIG tmpCfg; /* if we want to alter config to suit our needs, it shouldn't be visible to user later */
+	memcpy(&tmpCfg, &codec->config, sizeof(CONFIG));
 
 	if (init_dll() != 0) return ICERR_ERROR;
 	/* destroy previously created codec */
@@ -373,21 +411,6 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	memset(&create, 0, sizeof(create));
 	create.version = XVID_VERSION;
 
-	/* zones */
-	create.zones = malloc(sizeof(xvid_enc_zone_t) * codec->config.num_zones);
-	create.num_zones = codec->config.num_zones;
-	for (i=0; i < create.num_zones; i++) {
-		create.zones[i].frame = codec->config.zones[i].frame;
-		if (codec->config.zones[i].mode == RC_ZONE_QUANT) {
-			create.zones[i].mode = XVID_ZONE_QUANT;
-			create.zones[i].increment = codec->config.zones[i].quant;
-		}else{
-			create.zones[i].mode = XVID_ZONE_WEIGHT;
-			create.zones[i].increment = codec->config.zones[i].weight;
-		}
-		create.zones[i].base = 100;
-	}
-
 	/* plugins */
 	create.plugins = plugins;
 	switch (codec->config.mode) 
@@ -402,6 +425,8 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 		plugins[create.num_plugins].func = xvid_plugin_single_func;
 		plugins[create.num_plugins].param = &single;
 		create.num_plugins++;
+		if (!codec->config.use_2pass_bitrate) /* constant-quant mode */
+			prepare_cquant_zones(&tmpCfg);
 		break;
 
 	case RC_MODE_2PASS1 :
@@ -419,10 +444,20 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 		pass2.version = XVID_VERSION;
 		if (codec->config.use_2pass_bitrate) {
 			pass2.bitrate = codec->config.bitrate * CONFIG_KBPS;
-		}else{
+		} else {
 			pass2.bitrate = -codec->config.desired_size;	/* kilobytes */
 		}
 		pass2.filename = codec->config.stats;
+
+		hFile = CreateFile(pass2.filename, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);	
+		if (hFile == INVALID_HANDLE_VALUE)
+		{
+			MessageBox(0, "Statsfile not found!","Error!", MB_ICONEXCLAMATION|MB_OK);
+			return XVID_ERR_FAIL;
+		} else
+		{
+			CloseHandle(hFile);
+		}
 
 		pass2.keyframe_boost = codec->config.keyframe_boost;   /* keyframe boost percentage: [0..100...]; */
 		pass2.curve_compression_high = codec->config.curve_compression_high;
@@ -446,6 +481,22 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 		break;
 	}
 
+	/* zones  - copy from tmpCfg in case we automatically altered them above */
+	create.zones = malloc(sizeof(xvid_enc_zone_t) * tmpCfg.num_zones);
+	create.num_zones = tmpCfg.num_zones;
+	for (i=0; i < create.num_zones; i++) {
+		create.zones[i].frame = tmpCfg.zones[i].frame;
+		if (tmpCfg.zones[i].mode == RC_ZONE_QUANT) {
+			create.zones[i].mode = XVID_ZONE_QUANT;
+			create.zones[i].increment = tmpCfg.zones[i].quant;
+		}else{
+			create.zones[i].mode = XVID_ZONE_WEIGHT;
+			create.zones[i].increment = tmpCfg.zones[i].weight;
+		}
+		create.zones[i].base = 100;
+	}
+
+	/* lumimasking plugin */
   	if ((profiles[codec->config.profile].flags & PROFILE_ADAPTQUANT) && codec->config.lum_masking) {
 		plugins[create.num_plugins].func = xvid_plugin_lumimasking_func;
 		plugins[create.num_plugins].param = NULL;
@@ -877,7 +928,7 @@ LRESULT decompress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpb
 
 	switch(xvid_decore_func(0, XVID_DEC_CREATE, &create, NULL)) 
 	{
-	case XVID_ERR_FAIL :	
+	case XVID_ERR_FAIL :
 		return ICERR_ERROR;
 
 	case XVID_ERR_MEMORY :

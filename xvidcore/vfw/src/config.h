@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: config.h,v 1.1.2.18 2004-01-23 11:17:24 edgomez Exp $
+ * $Id: config.h,v 1.1.2.19 2004-01-24 13:36:00 syskin Exp $
  *
  ****************************************************************************/
 #ifndef _CONFIG_H_
@@ -43,6 +43,7 @@ extern HINSTANCE g_hInst;
 /* min/max bitrate when not specified by profile */
 #define DEFAULT_MIN_KBPS    16
 #define DEFAULT_MAX_KBPS    10000
+#define DEFAULT_QUANT		400
 
 /* registry stuff */
 #define XVID_REG_KEY	HKEY_CURRENT_USER
@@ -104,6 +105,7 @@ typedef struct
 	char stats[MAX_PATH];		
 /*******************************/
     int use_2pass_bitrate;        /* use bitrate for 2pass2 (instead of desired size) */
+	int desired_quant;			/* for one-pass constant quant */
 
     /* profile  */
     char profile_name[MAX_PATH];

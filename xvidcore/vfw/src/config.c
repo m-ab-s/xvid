@@ -78,6 +78,7 @@ static void zones_update(HWND hDlg, CONFIG * config);
 HINSTANCE g_hInst;
 HWND g_hTooltip;
 
+static int g_use_bitrate = 1;
 int pp_dy, pp_duv, pp_dr, pp_fe; /* decoder options */
 
 /* enumerates child windows, assigns tooltips */
@@ -156,7 +157,8 @@ static const REG_INT reg_ints[] = {
 	{"mode",					&reg.mode,						RC_MODE_1PASS},
 	{"bitrate",					&reg.bitrate,					700},
 	{"desired_size",			&reg.desired_size,				570000},
-	{"use_2pass_bitrate",	   &reg.use_2pass_bitrate,		 0},
+	{"use_2pass_bitrate",		&reg.use_2pass_bitrate,			0},
+	{"desired_quant",			&reg.desired_quant,				DEFAULT_QUANT}, /* 100-base float */
 
 	/* profile */
 	{"quant_type",				&reg.quant_type,				0},
@@ -181,7 +183,7 @@ static const REG_INT reg_ints[] = {
 	{"ar_y",					&reg.ar_y,						3},
 
 	/* zones */
-	{"num_zones",			   &reg.num_zones,				 1},
+	{"num_zones",				&reg.num_zones,					1},
 
 	/* single pass */
 	{"rc_reaction_delay_factor",&reg.rc_reaction_delay_factor,	16},
@@ -192,7 +194,7 @@ static const REG_INT reg_ints[] = {
 	{"discard1pass",			&reg.discard1pass,				1},
 
 	/* 2pass2 */
-	{"keyframe_boost",			&reg.keyframe_boost,			0},
+	{"keyframe_boost",			&reg.keyframe_boost,			10},
 	{"kfreduction",				&reg.kfreduction,				20},
 	{"kfthreshold",				&reg.kfthreshold,				1},
 	{"curve_compression_high",	&reg.curve_compression_high,	0},
@@ -217,13 +219,13 @@ static const REG_INT reg_ints[] = {
 	{"max_pquant",				&reg.max_pquant,				31},
 	{"min_bquant",				&reg.min_bquant,				2},
 	{"max_bquant",				&reg.max_bquant,				31},
-	{"trellis_quant",		   &reg.trellis_quant,			 0},
+	{"trellis_quant",			&reg.trellis_quant,				0},
 
 	/* debug */
 	{"fourcc_used",				&reg.fourcc_used,				0},
 	{"debug",					&reg.debug,						0x0},
 	{"vop_debug",				&reg.vop_debug,					0},
-	{"display_status",		  &reg.display_status,			1},
+	{"display_status",			&reg.display_status,			1},
 	
 	/* decoder, shared with dshow */
 	{"Deblock_Y",				&pp_dy,							0},
@@ -234,20 +236,20 @@ static const REG_INT reg_ints[] = {
 };
 
 static const REG_STR reg_strs[] = {
-	{"profile",					reg.profile_name,				"(unrestricted)"},
+	{"profile",					reg.profile_name,				"AS @ L5"},
 	{"stats",					reg.stats,						CONFIG_2PASS_FILE},
 };
 
 
 zone_t stmp;
 static const REG_INT reg_zone[] = {
-	{"zone%i_frame",			&stmp.frame,					 0},
-	{"zone%i_mode",			 &stmp.mode,					  RC_ZONE_WEIGHT},
-	{"zone%i_weight",		   &stmp.weight,					100},	  /* 100-base float */
-	{"zone%i_quant",			&stmp.quant,					 500},	  /* 100-base float */
-	{"zone%i_type",			 &stmp.type,					  XVID_TYPE_AUTO},
-	{"zone%i_greyscale",		&stmp.greyscale,				 0},
-	{"zone%i_chroma_opt",	   &stmp.chroma_opt,				0},
+	{"zone%i_frame",			&stmp.frame,					0},
+	{"zone%i_mode",				&stmp.mode,						RC_ZONE_WEIGHT},
+	{"zone%i_weight",			&stmp.weight,					100},	  /* 100-base float */
+	{"zone%i_quant",			&stmp.quant,					500},	  /* 100-base float */
+	{"zone%i_type",				&stmp.type,						XVID_TYPE_AUTO},
+	{"zone%i_greyscale",		&stmp.greyscale,				0},
+	{"zone%i_chroma_opt",		&stmp.chroma_opt,				0},
 	{"zone%i_bvop_threshold",   &stmp.bvop_threshold,			0},
 };
 
@@ -1148,7 +1150,7 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				ofn.lStructSize = sizeof(OPENFILENAME);
 
 				ofn.hwndOwner = hDlg;
-				ofn.lpstrFilter = "bitrate curve (*.stats)\0*.stats\0All files (*.*)\0*.*\0\0";
+				ofn.lpstrFilter = "bitrate curve (*.pass)\0*.pass\0All files (*.*)\0*.*\0\0";
 				ofn.lpstrFile = tmp;
 				ofn.nMaxFile = MAX_PATH;
 				ofn.Flags = OFN_PATHMUSTEXIST;
@@ -1357,19 +1359,19 @@ void main_insert_zone(HWND hDlg, zone_t * s, int i, BOOL insert)
 	ListView_SetItemText(hDlg, i, 2, tmp);
 }
 
-static int g_use_bitrate = 1;
-
 void main_mode(HWND hDlg, CONFIG * config)
 {
 	const int profile = SendDlgItemMessage(hDlg, IDC_PROFILE, CB_GETCURSEL, 0, 0);
 	const int rc_mode = SendDlgItemMessage(hDlg, IDC_MODE, CB_GETCURSEL, 0, 0);
 	/* enable target rate/size control only for 1pass and 2pass  modes*/
 	const int target_en = rc_mode==RC_MODE_1PASS || rc_mode==RC_MODE_2PASS2;
+	const int target_en_slider = rc_mode==RC_MODE_1PASS || 
+		(rc_mode==RC_MODE_2PASS2 && config->use_2pass_bitrate);
  
 	char buf[16];
 	int max;
 
-	g_use_bitrate = rc_mode==RC_MODE_1PASS || config->use_2pass_bitrate;
+	g_use_bitrate = config->use_2pass_bitrate;
 
 	if (g_use_bitrate) {
 		SetDlgItemText(hDlg, IDC_BITRATE_S, "Target bitrate (kbps):");
@@ -1386,16 +1388,24 @@ void main_mode(HWND hDlg, CONFIG * config)
 		SendDlgItemMessage(hDlg, IDC_SLIDER, TBM_SETPOS, TRUE,
 						config_get_uint(hDlg, IDC_BITRATE, DEFAULT_MIN_KBPS) );
 
-	}else{
+	} else if (rc_mode==RC_MODE_2PASS2) {
 		SetDlgItemText(hDlg, IDC_BITRATE_S, "Target size (kbytes):");
+	} else if (rc_mode==RC_MODE_1PASS) {
+		SetDlgItemText(hDlg, IDC_BITRATE_S, "Target quantizer:");
+  		SendDlgItemMessage(hDlg, IDC_SLIDER, TBM_SETRANGE, TRUE, MAKELONG(100, 3100));
+		SendDlgItemMessage(hDlg, IDC_SLIDER, TBM_SETPOS, TRUE,
+							get_dlgitem_float(hDlg, IDC_BITRATE, DEFAULT_QUANT ));
+		SetDlgItemText(hDlg, IDC_BITRATE_MIN, "1 (maximum quality)");
+		SetDlgItemText(hDlg, IDC_BITRATE_MAX, "(smallest file) 31");
+
 	}
 
 	EnableDlgWindow(hDlg, IDC_BITRATE_S, target_en);
 	EnableDlgWindow(hDlg, IDC_BITRATE, target_en);
 
-	EnableDlgWindow(hDlg, IDC_BITRATE_MIN, target_en && g_use_bitrate);
-	EnableDlgWindow(hDlg, IDC_BITRATE_MAX, target_en && g_use_bitrate);
-	EnableDlgWindow(hDlg, IDC_SLIDER, target_en && g_use_bitrate);
+	EnableDlgWindow(hDlg, IDC_BITRATE_MIN, target_en_slider);
+	EnableDlgWindow(hDlg, IDC_BITRATE_MAX, target_en_slider);
+	EnableDlgWindow(hDlg, IDC_SLIDER, target_en_slider);
 }
 
 
@@ -1406,10 +1416,14 @@ void main_upload(HWND hDlg, CONFIG * config)
 	SendDlgItemMessage(hDlg, IDC_PROFILE, CB_SETCURSEL, config->profile, 0);
 	SendDlgItemMessage(hDlg, IDC_MODE, CB_SETCURSEL, config->mode, 0);
 
+	g_use_bitrate = config->use_2pass_bitrate;
+
 	if (g_use_bitrate) {
 		SetDlgItemInt(hDlg, IDC_BITRATE, config->bitrate, FALSE);
-	}else{
+	} else if (config->mode == RC_MODE_2PASS2) {
 		SetDlgItemInt(hDlg, IDC_BITRATE, config->desired_size, FALSE);
+	} else if (config->mode == RC_MODE_1PASS) {
+		set_dlgitem_float(hDlg, IDC_BITRATE, config->desired_quant);
 	}
 
 	zones_update(hDlg, config);}
@@ -1423,8 +1437,10 @@ void main_download(HWND hDlg, CONFIG * config)
 
 	if (g_use_bitrate) {
 		config->bitrate = config_get_uint(hDlg, IDC_BITRATE, config->bitrate);
-	}else{
+	} else if (config->mode == RC_MODE_2PASS2) {
 		config->desired_size = config_get_uint(hDlg, IDC_BITRATE, config->desired_size);
+	} else if (config->mode == RC_MODE_1PASS) {
+		config->desired_quant = get_dlgitem_float(hDlg, IDC_BITRATE, config->desired_quant);
 	}
 }
 
@@ -1652,6 +1668,7 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 			case IDC_DEFAULTS :
 				config_reg_default(config);
+				main_mode(hDlg, config);
 				main_upload(hDlg, config);
 				break;
 
@@ -1666,10 +1683,19 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				EndDialog(hDlg, IDCANCEL);
 				break;
 			}
-		}else if (HIWORD(wParam) == LBN_SELCHANGE &&
+		} else if (HIWORD(wParam) == LBN_SELCHANGE &&
 			(LOWORD(wParam)==IDC_PROFILE || LOWORD(wParam)==IDC_MODE)) {
 
-			main_download(hDlg, config);
+			config->mode = SendDlgItemMessage(hDlg, IDC_MODE, CB_GETCURSEL, 0, 0);
+			config->profile = SendDlgItemMessage(hDlg, IDC_PROFILE, CB_GETCURSEL, 0, 0);
+
+			if (!g_use_bitrate) {
+				if (config->mode == RC_MODE_1PASS)
+					set_dlgitem_float(hDlg, IDC_BITRATE, config->desired_quant);
+				else if (config->mode == RC_MODE_2PASS2)
+					SetDlgItemInt(hDlg, IDC_BITRATE, config->desired_size, FALSE);
+			}
+
 			main_mode(hDlg, config);
 			main_upload(hDlg, config);
 
@@ -1678,7 +1704,11 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (g_use_bitrate) {
 				SendDlgItemMessage(hDlg, IDC_SLIDER, TBM_SETPOS, TRUE,
 						config_get_uint(hDlg, IDC_BITRATE, DEFAULT_MIN_KBPS) );
+			} else if (config->mode == RC_MODE_1PASS) {
+				SendDlgItemMessage(hDlg, IDC_SLIDER, TBM_SETPOS, TRUE,
+						get_dlgitem_float(hDlg, IDC_BITRATE, DEFAULT_QUANT) );
 			}
+			main_download(hDlg, config);
 
 		}else {
 			return 0;
@@ -1687,7 +1717,12 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	case WM_HSCROLL :
 		if((HWND)lParam == GetDlgItem(hDlg, IDC_SLIDER)) {
-			SetDlgItemInt(hDlg, IDC_BITRATE, SendMessage((HWND)lParam, TBM_GETPOS, 0, 0), FALSE);
+			if (config->mode == RC_MODE_2PASS2)
+				SetDlgItemInt(hDlg, IDC_BITRATE, SendMessage((HWND)lParam, TBM_GETPOS, 0, 0), FALSE);
+			else
+				set_dlgitem_float(hDlg, IDC_BITRATE, SendMessage((HWND)lParam, TBM_GETPOS, 0, 0));
+
+			main_download(hDlg, config);
 			break;
 		}
 		return 0;
@@ -1784,7 +1819,7 @@ BOOL CALLBACK about_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return 1;
 }
 
-static void
+void
 sort_zones(zone_t * zones, int zone_num, int * sel)
 {
 	int i, j;
