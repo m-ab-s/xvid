@@ -25,7 +25,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.14 2003-05-29 10:36:41 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.15 2003-05-29 11:37:20 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -47,17 +47,6 @@
 #define DEFAULT_CURVE_COMPRESSION_LOW 0
 #define DEFAULT_MAX_OVERFLOW_IMPROVEMENT 60
 #define DEFAULT_MAX_OVERFLOW_DEGRADATION 60
-
-/* Alt curve settings */
-#define DEFAULT_USE_ALT_CURVE 0
-#define DEFAULT_ALT_CURVE_HIGH_DIST 500
-#define DEFAULT_ALT_CURVE_LOW_DIST 90
-#define DEFAULT_ALT_CURVE_USE_AUTO 1
-#define DEFAULT_ALT_CURVE_AUTO_STR 30
-#define DEFAULT_ALT_CURVE_TYPE XVID_CURVE_LINEAR
-#define DEFAULT_ALT_CURVE_MIN_REL_QUAL 50
-#define DEFAULT_ALT_CURVE_USE_AUTO_BONUS_BIAS 1
-#define DEFAULT_ALT_CURVE_BONUS_BIAS 50
 
 /* Keyframe settings */
 #define DEFAULT_KFTRESHOLD 10
@@ -88,41 +77,40 @@ typedef struct
 
     /* constant statistical data */
 	int num_frames;
-    int num_keyframes;
-    uint64_t target;	/* target filesize */
-	
-    int count[3];   /* count of each frame types */
-    uint64_t tot_length[3];  /* total length of each frame types */
-    double avg_length[3];   /* avg */
-    int min_length[3];  /* min frame length of each frame types */
-    uint64_t tot_scaled_length[3];  /* total scaled length of each frame type */
-    int max_length;     /* max frame size */
+	int num_keyframes;
+	uint64_t target;	/* target filesize */
 
-    /* zone statistical data */
-    double avg_weight;  /* average weight */
-    int64_t tot_quant;   /* total length used by XVID_ZONE_QUANT zones */
+	int count[3];   /* count of each frame types */
+	uint64_t tot_length[3];  /* total length of each frame types */
+	double avg_length[3];   /* avg */
+	int min_length[3];  /* min frame length of each frame types */
+	uint64_t tot_scaled_length[3];  /* total scaled length of each frame type */
+	int max_length;     /* max frame size */
+
+	/* zone statistical data */
+	double avg_weight;  /* average weight */
+	int64_t tot_quant;   /* total length used by XVID_ZONE_QUANT zones */
 
 
-    double curve_comp_scale;
-    double movie_curve;
+	double curve_comp_scale;
+	double movie_curve;
 
-    /* dynamic */
+	/* dynamic */
 
-    int * keyframe_locations;
-    stat_t * stats;
-    
-    double pquant_error[32];
-    double bquant_error[32];
-    int quant_count[32];
-    int last_quant[3];
+	int * keyframe_locations;
+	stat_t * stats;
 
-    double curve_comp_error;
-    int overflow;
-    int KFoverflow;
-    int KFoverflow_partial;
-    int KF_idx;
+	double quant_error[3][32];
+	int quant_count[32];
+	int last_quant[3];
 
-    double fq_error;
+	double curve_comp_error;
+	int overflow;
+	int KFoverflow;
+	int KFoverflow_partial;
+	int KF_idx;
+
+	double fq_error;
 } rc_2pass2_t;
 
 
@@ -190,6 +178,9 @@ rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t **handle)
 
     rc->param = *param;
 
+	/*
+	 * Initialize all defaults
+	 */
 #define _INIT(a, b) if((a) <= 0) (a) = (b)
     /* Let's set our defaults if needed */
 	_INIT(rc->param.keyframe_boost, DEFAULT_KEYFRAME_BOOST);
@@ -206,12 +197,26 @@ rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t **handle)
     _INIT(rc->param.min_key_interval, DEFAULT_MIN_KEY_INTERVAL);
 #undef _INIT
 
+	/* Initialize some stuff to zero */
+	for(i=0; i<32; i++) rc->quant_count[i] = 0;
+
+	for(i=0; i<3; i++) {
+		int j;
+		for (j=0; j<32; j++)
+			rc->quant_error[i][j] = 0;
+	}
+
+	for (i=0; i<3; i++)
+		rc->last_quant[i] = 0;
+
+	rc->fq_error = 0;
+
 	/* Count frames in the stats file */
-    if (!det_stats_length(rc, param->filename)) {
-        DPRINTF(XVID_DEBUG_RC,"fopen %s failed\n", param->filename);
-        free(rc);
-        return XVID_ERR_FAIL;
-    }
+	if (!det_stats_length(rc, param->filename)) {
+		DPRINTF(XVID_DEBUG_RC,"ERROR: fopen %s failed\n", param->filename);
+		free(rc);
+		return XVID_ERR_FAIL;
+	}
 
     /* Allocate the stats' memory */
 	if ((rc->stats = malloc(rc->num_frames * sizeof(stat_t))) == NULL) {
@@ -223,65 +228,82 @@ rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t **handle)
 	 * Allocate keyframes location's memory
 	 * PS: see comment in pre_process0 for the +1 location requirement
 	 */
-    if ((rc->keyframe_locations = malloc((rc->num_keyframes + 1) * sizeof(int))) == NULL) {
-        free(rc->stats);
-        free(rc);
-        return XVID_ERR_MEMORY;
-    }
+	rc->keyframe_locations = malloc((rc->num_keyframes + 1) * sizeof(int));
+	if (rc->keyframe_locations == NULL) {
+		free(rc->stats);
+		free(rc);
+		return XVID_ERR_MEMORY;
+	}
 
-    if (!load_stats(rc, param->filename)) {
-        DPRINTF(XVID_DEBUG_RC,"fopen %s failed\n", param->filename);
-        free(rc->keyframe_locations);
-        free(rc->stats);
-        free(rc);
-        return XVID_ERR_FAIL;
-    }
+	if (!load_stats(rc, param->filename)) {
+		DPRINTF(XVID_DEBUG_RC,"ERROR: fopen %s failed\n", param->filename);
+		free(rc->keyframe_locations);
+		free(rc->stats);
+		free(rc);
+		return XVID_ERR_FAIL;
+	}
 
-    /* pre-process our stats */
-
+	/* Compute the target filesize */
 	if (rc->num_frames  < create->fbase/create->fincr) {
-		rc->target = rc->param.bitrate / 8;	/* one second */
+		/* Source sequence is less than 1s long, we do as if it was 1s long */
+		rc->target = rc->param.bitrate / 8;
 	} else {
+		/* Target filesize = bitrate/8 * numframes / framerate */
 		rc->target = 
-			((uint64_t)rc->param.bitrate * (uint64_t)rc->num_frames * (uint64_t)create->fincr) / \
+			((uint64_t)rc->param.bitrate * (uint64_t)rc->num_frames * \
+			 (uint64_t)create->fincr) / \
 			((uint64_t)create->fbase * 8);
 	}
 
-    DPRINTF(XVID_DEBUG_RC, "Number of frames: %d\n", rc->num_frames);
-	DPRINTF(XVID_DEBUG_RC, "Frame rate: %d/%d\n", create->fbase, create->fincr);
+	DPRINTF(XVID_DEBUG_RC, "Frame rate: %d/%d (%ffps)\n",
+			create->fbase, create->fincr,
+			(double)create->fbase/(double)create->fincr);
+	DPRINTF(XVID_DEBUG_RC, "Number of frames: %d\n", rc->num_frames);
 	DPRINTF(XVID_DEBUG_RC, "Target bitrate: %ld\n", rc->param.bitrate);
 	DPRINTF(XVID_DEBUG_RC, "Target filesize: %lld\n", rc->target);
 
-	/* Compensate the mean frame overhead caused by the container */
+	/* Compensate the average frame overhead caused by the container */
 	rc->target -= rc->num_frames*rc->param.container_frame_overhead;
 	DPRINTF(XVID_DEBUG_RC, "Container Frame overhead: %d\n", rc->param.container_frame_overhead);
 	DPRINTF(XVID_DEBUG_RC, "Target filesize (after container compensation): %lld\n", rc->target);
 
+	/* 
+	 * First data pre processing:
+	 *  - finds the minimum frame length for each frame type during 1st pass.
+	 *     rc->min_size[]
+	 *  - determines the maximum frame length observed (no frame type distinction).
+	 *     rc->max_size
+	 *  - count how many times each frame type has been used.
+	 *     rc->count[]
+	 *  - total bytes used per frame type
+	 *     rc->total[]
+	 *  - store keyframe location
+	 *     rc->keyframe_locations[]
+	 */
 	pre_process0(rc);
 
+	/*
+	 * When bitrate is not given it means it has been scaled by an external
+	 * application
+	 */
 	if (rc->param.bitrate) {
-        zone_process(rc, create);
+		/* Apply zone settings */
+		zone_process(rc, create);
+		/* Perform curve scaling */
 		internal_scale(rc);
-    }else{
-        /* external scaler: ignore zone */
-        for (i=0;i<rc->num_frames;i++) {
-            rc->stats[i].zone_mode = XVID_ZONE_WEIGHT;
-            rc->stats[i].weight = 1.0;
-        }
-        rc->avg_weight = 1.0;
-        rc->tot_quant = 0;
-    }
+	} else {
+		/* External scaling -- zones are ignored */
+		for (i=0;i<rc->num_frames;i++) {
+			rc->stats[i].zone_mode = XVID_ZONE_WEIGHT;
+			rc->stats[i].weight = 1.0;
+		}
+		rc->avg_weight = 1.0;
+		rc->tot_quant = 0;
+	}
+
 	pre_process1(rc);
 
-    for (i=0; i<32;i++) {
-        rc->pquant_error[i] = 0;
-        rc->bquant_error[i] = 0;
-        rc->quant_count[i] = 0;
-    }
-
-    rc->fq_error = 0;
-    
-    *handle = rc;
+	*handle = rc;
 	return(0);
 }
 
@@ -303,12 +325,13 @@ rc_2pass2_destroy(rc_2pass2_t * rc, xvid_plg_destroy_t * destroy)
 static int
 rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 {
-    stat_t * s = &rc->stats[data->frame_num];
-    int overflow;
-    int desired;
-    double dbytes;
-    double curve_temp;
-    int capped_to_max_framesize = 0;
+	stat_t * s = &rc->stats[data->frame_num];
+	int overflow;
+	int desired;
+	double dbytes;
+	double curve_temp;
+	double scaled_quant;
+	int capped_to_max_framesize = 0;
 
 	/*
 	 * This function is quite long but easy to understand. In order to simplify
@@ -321,7 +344,6 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 
 	/* Second case: We are in a Quant zone */
 	if (s->zone_mode == XVID_ZONE_QUANT) {
-
 		rc->fq_error += s->weight;
 		data->quant = (int)rc->fq_error;
 		rc->fq_error -= data->quant;
@@ -329,7 +351,6 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 		s->desired_length = s->length;
 
 		return(0);
-
 	}
 
 	/* Third case: insufficent stats data */
@@ -374,7 +395,7 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	 * scaled curve "paying back" past errors in curve previsions.
 	 */
 	if (rc->param.payback_method == XVID_PAYBACK_BIAS) {
-		desired =(int)(rc->curve_comp_error / rc->param.bitrate_payback_delay);
+		desired = (int)(rc->curve_comp_error / rc->param.bitrate_payback_delay);
 	} else {
 		desired = (int)(rc->curve_comp_error * dbytes /
 						rc->avg_length[XVID_TYPE_PVOP-1] / rc->param.bitrate_payback_delay);
@@ -385,12 +406,6 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	}
 
 	rc->curve_comp_error -= desired;
-
-	/*
-	 * Alt curve treatment is not that hard to understand though the formulas
-	 * seem to be huge. Alt treatment is basically a way to soft/harden the
-	 * curve flux applying sine/linear/cosine ratios
-	 */
 
 	/* XXX: warning */
 	curve_temp = 0;
@@ -447,9 +462,11 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 
 	s->desired_length = desired;
 
-   	        
-	/* if this keyframe is too close to the next, reduce it's byte allotment
-	   XXX: why do we do this after setting the desired length  */
+
+	/*
+	 * if this keyframe is too close to the next, reduce it's byte allotment
+	 * XXX: why do we do this after setting the desired length ?
+	 */
 
 	if (s->type == XVID_TYPE_IVOP) {
 		int KFdistance = rc->keyframe_locations[rc->KF_idx] - rc->keyframe_locations[rc->KF_idx - 1];
@@ -509,7 +526,13 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	 * Don't laugh at this very 'simple' quant<->filesize relationship, it
 	 * proves to be acurate enough for our algorithm
 	 */
-	data->quant = s->quant*s->length/desired;
+	scaled_quant = (double)s->quant*(double)s->length/(double)desired;
+
+	/*
+	 * Quantizer has been scaled using floating point operations/results, we
+	 * must cast it to integer
+	 */
+	data->quant = (int)scaled_quant;
 
 	/* Let's clip the computed quantizer, if needed */
 	if (data->quant < 1) {
@@ -519,27 +542,20 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	} else if (s->type != XVID_TYPE_IVOP) {
 
 		/*
-		 * The frame quantizer has not been clipped, this appear to be a good
-		 * computed quantizer, however past frames give us some info about how
-		 * this quantizer performs against the algo prevision. Let's use this
-		 * prevision to increase the quantizer when we observe a too big
-		 * accumulated error
+		 * The frame quantizer has not been clipped, this appears to be a good
+		 * computed quantizer, do not loose quantizer decimal part that we
+		 * accumulate for later reuse when its sum represents a complete unit.
 		 */
-		if (s->type == XVID_TYPE_BVOP) {
-			rc->bquant_error[data->quant] += ((double)(s->quant * s->length) / desired) - data->quant;
+		rc->quant_error[s->type-1][data->quant] += scaled_quant - (double)data->quant;
 
-			if (rc->bquant_error[data->quant] >= 1.0) {
-				rc->bquant_error[data->quant] -= 1.0;
-				data->quant++;
-			}
-		} else {
-			rc->pquant_error[data->quant] += ((double)(s->quant * s->length) / desired) - data->quant;
-
-			if (rc->pquant_error[data->quant] >= 1.0) {
-				rc->pquant_error[data->quant] -= 1.0;
-				data->quant++;
-			}
+		if (rc->quant_error[s->type-1][data->quant] >= 1.0) {
+			rc->quant_error[s->type-1][data->quant] -= 1.0;
+			data->quant++;
+		} else if (rc->quant_error[s->type-1][data->quant] <= -1.0) {
+			rc->quant_error[s->type-1][data->quant] += 1.0;
+			data->quant--;
 		}
+
 	}
 
 	/*
@@ -622,13 +638,14 @@ rc_2pass2_after(rc_2pass2_t * rc, xvid_plg_data_t * data)
         rc->KFoverflow -= rc->KFoverflow_partial;
     }
 
-	DPRINTF(XVID_DEBUG_RC, "[%i] type:%c quant:%i stats1:%i scaled:%i actual:%i overflow:%i\n",
+	DPRINTF(XVID_DEBUG_RC, "[%i] type:%c quant:%i stats1:%i scaled:%i actual:%i desired:%d overflow:%i\n",
 			data->frame_num,
 			frame_type[data->type-1],
 			data->quant,
 			s->length,
 			s->scaled_length,
 			data->length,
+			s->desired_length,
 			rc->overflow);
 
     return(0);
@@ -739,34 +756,42 @@ pre_process0(rc_2pass2_t * rc)
 {
     int i,j;
 
-    for (i=0; i<3; i++) {
-        rc->count[i]=0;
-        rc->tot_length[i] = 0;
-        rc->last_quant[i] = 0;
+	/*
+	 * *rc fields initialization
+	 * NB: INT_MAX and INT_MIN are used in order to be immediately replaced
+	 *     with real values of the 1pass
+	 */
+	 for (i=0; i<3; i++) {
+		rc->count[i]=0;
+		rc->tot_length[i] = 0;
 		rc->min_length[i] = INT_MAX;
     }
 
 	rc->max_length = INT_MIN;
 
-    for (i=j=0; i<rc->num_frames; i++) {
-        stat_t * s = &rc->stats[i];
+	/*
+	 * Loop through all frames and find/compute all the stuff this function
+	 * is supposed to do
+	 */
+	for (i=j=0; i<rc->num_frames; i++) {
+		stat_t * s = &rc->stats[i];
 
-        rc->count[s->type-1]++;
-        rc->tot_length[s->type-1] += s->length;
-       
-        if (s->length < rc->min_length[s->type-1]) {
-            rc->min_length[s->type-1] = s->length;
-        }
+		rc->count[s->type-1]++;
+		rc->tot_length[s->type-1] += s->length;
 
-        if (s->length > rc->max_length) {
-            rc->max_length = s->length;
-        }
+		if (s->length < rc->min_length[s->type-1]) {
+			rc->min_length[s->type-1] = s->length;
+		}
 
-        if (s->type == XVID_TYPE_IVOP) {
-            rc->keyframe_locations[j] = i;
-            j++;
-        }
-    }
+		if (s->length > rc->max_length) {
+			rc->max_length = s->length;
+		}
+
+		if (s->type == XVID_TYPE_IVOP) {
+			rc->keyframe_locations[j] = i;
+			j++;
+		}
+	}
 
 	/*
 	 * Nota Bene:
@@ -887,7 +912,7 @@ internal_scale(rc_2pass2_t *rc)
 			continue;
 		}
 
-		/* Compute teh scaled length */
+		/* Compute the scaled length */
 		len = (int)((double)s->length * scaler * s->weight / rc->avg_weight);
 
 		/* Compare with the computed minimum */
@@ -923,7 +948,6 @@ internal_scale(rc_2pass2_t *rc)
 		if (s->scaled_length == 0)
 			s->scaled_length = (int)((double)s->length * scaler * s->weight / rc->avg_weight);
 	}
-
 }
 
 static void
