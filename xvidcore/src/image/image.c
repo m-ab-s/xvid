@@ -677,14 +677,14 @@ image_input(IMAGE * image,
 
 	case XVID_CSP_I420:
 		yv12_to_yv12(image->y, image->u, image->v, edged_width, edged_width2,
-			src, src + width*height, src + width*height + width2*height2,
-			width, width2, width, height, (csp & XVID_CSP_VFLIP));
+			src, src + src_stride*height, src + src_stride*height + (src_stride/2)*height2,
+			src_stride, src_stride/2, width, height, (csp & XVID_CSP_VFLIP));
 		break
 			;
 	case XVID_CSP_YV12:		/* u/v swapped */
 		yv12_to_yv12(image->y, image->v, image->u, edged_width, edged_width2,
-			src, src + width*height, src + width*height + width2*height2,
-			width, width2, width, height, (csp & XVID_CSP_VFLIP));
+			src, src + src_stride*height, src + src_stride*height + (src_stride/2)*height2,
+			src_stride, src_stride/2, width, height, (csp & XVID_CSP_VFLIP));
 		break;
 
 	case XVID_CSP_USER:
@@ -765,7 +765,6 @@ image_output(IMAGE * image,
 			 int interlacing)
 {
 	const int edged_width2 = edged_width/2;
-	int width2 = width/2;
 	int height2 = height/2;
 
 /*
@@ -874,15 +873,15 @@ image_output(IMAGE * image,
 		return 0;
 
 	case XVID_CSP_I420:
-		yv12_to_yv12(dst, dst + width*height, dst + width*height + width2*height2,
-			width, width2,
+		yv12_to_yv12(dst, dst + dst_stride*height, dst + dst_stride*height + (dst_stride/2)*height2,
+			dst_stride, dst_stride/2,
 			image->y, image->u, image->v, edged_width, edged_width2,
 			width, height, (csp & XVID_CSP_VFLIP));
 		return 0;
 
 	case XVID_CSP_YV12:		// u,v swapped
-		yv12_to_yv12(dst, dst + width*height, dst + width*height + width2*height2,
-			width, width2,
+		yv12_to_yv12(dst, dst + dst_stride*height, dst + dst_stride*height + (dst_stride/2)*height2,
+			dst_stride, dst_stride/2,
 			image->y, image->v, image->u, edged_width, edged_width2,
 			width, height, (csp & XVID_CSP_VFLIP));
 		return 0;

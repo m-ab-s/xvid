@@ -459,11 +459,13 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	frame.motion |= pmvfast_presets[codec->config.motion_search];
 
 	frame.image = icc->lpInput;
-	// dev-api-3 
 	frame.stride = (((icc->lpbiInput->biWidth * icc->lpbiInput->biBitCount) + 31) & ~31) >> 3;
 
 	if ((frame.colorspace = get_colorspace(inhdr)) == XVID_CSP_NULL)
 		return ICERR_BADFORMAT;
+
+	if (frame.colorspace == XVID_CSP_I420 || frame.colorspace == XVID_CSP_YV12)
+		frame.stride = (frame.stride*2)/3;
 
 	frame.bitstream = icc->lpOutput;
 	frame.length = icc->lpbiOutput->biSizeImage;
@@ -736,8 +738,6 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 		frame.general |= XVID_DEC_DEBLOCKUV;
 
 	frame.image = icd->lpOutput;
-//	frame.stride = icd->lpbiOutput->biWidth;
-	// dev-api-3:
 	frame.stride = (((icd->lpbiOutput->biWidth * icd->lpbiOutput->biBitCount) + 31) & ~31) >> 3;
 
 	/* --- yv12 --- */	
@@ -751,9 +751,15 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 		convert.input.colorspace = get_colorspace(icd->lpbiInput);
 		convert.input.y = icd->lpInput;
 		convert.input.y_stride = (((icd->lpbiInput->biWidth *icd->lpbiInput->biBitCount) + 31) & ~31) >> 3;  
+		if (convert.input.colorspace == XVID_CSP_I420 || convert.input.colorspace == XVID_CSP_YV12)
+			convert.input.y_stride = (convert.input.y_stride*2)/3;
+
 		convert.output.colorspace = get_colorspace(icd->lpbiOutput);
 		convert.output.y = icd->lpOutput;
 		convert.output.y_stride = (((icd->lpbiOutput->biWidth *icd->lpbiOutput->biBitCount) + 31) & ~31) >> 3;
+		if (convert.output.colorspace == XVID_CSP_I420 || convert.output.colorspace == XVID_CSP_YV12)
+			convert.output.y_stride = (convert.output.y_stride*2)/3;
+
 		convert.width = icd->lpbiInput->biWidth;
 		convert.height = icd->lpbiInput->biHeight;
 		convert.interlacing = 0;
@@ -779,6 +785,9 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 	{
 		frame.colorspace = XVID_CSP_NULL;
 	}
+
+	if (frame.colorspace == XVID_CSP_I420 || frame.colorspace == XVID_CSP_YV12)
+		frame.stride = (frame.stride*2)/3;
 
 	switch (xvid_decore(codec->dhandle, XVID_DEC_DECODE, &frame, NULL)) 
 	{
