@@ -137,7 +137,7 @@ static uint8_t *
 Interpolate8x8qpel(const int x, const int y, const int block, const int dir, const SearchData * const data)
 {
 // create or find a qpel-precision reference picture; return pointer to it
-	uint8_t * Reference = (uint8_t *)data->RefQ;
+	uint8_t * Reference = (uint8_t *)data->RefQ + 16*dir;
 	const int32_t iEdgedWidth = data->iEdgedWidth;
 	const uint32_t rounding = data->rounding;
 	const int halfpel_x = x/2;
@@ -182,7 +182,7 @@ static uint8_t *
 Interpolate16x16qpel(const int x, const int y, const int dir, const SearchData * const data)
 {
 // create or find a qpel-precision reference picture; return pointer to it
-	uint8_t * Reference = (uint8_t *)data->RefQ;
+	uint8_t * Reference = (uint8_t *)data->RefQ + 16*dir;
 	const int32_t iEdgedWidth = data->iEdgedWidth;
 	const uint32_t rounding = data->rounding;
 	const int halfpel_x = x/2;
