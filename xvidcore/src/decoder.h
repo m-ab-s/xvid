@@ -33,7 +33,7 @@
  *
  *  - 13.06.2002 Added legal header - Cosmetic
  *
- *  $Id: decoder.h,v 1.10.2.1 2002-11-07 10:28:15 suxen_drol Exp $
+ *  $Id: decoder.h,v 1.10.2.2 2002-11-12 15:53:47 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -102,6 +102,7 @@ typedef struct
 
 	// for B-frame
 	int32_t frames;				// total frame number
+	int32_t packed_mode;		// bframes packed bitstream? (1 = yes)
 	int8_t scalability;
 	VECTOR p_fmv, p_bmv;		// pred forward & backward motion vector
 	MACROBLOCK *last_mbs;		// last MB

@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.10 2002-11-11 15:49:29 Isibaar Exp $
+ *  $Id: decoder.c,v 1.37.2.11 2002-11-12 15:53:36 Isibaar Exp $
  *
  *************************************************************************/
 
@@ -1482,6 +1482,7 @@ decoder_decode(DECODER * dec,
 		return XVID_ERR_OK;
 	}
 
+start:
 	// add by chenm001 <chenm001@163.com>
 	// for support B-frame to reference last 2 frame
 	dec->frames++;
@@ -1565,24 +1566,18 @@ xxx:
 		return XVID_ERR_FAIL;
 	}
 
-#ifdef BFRAMES_DEC_DEBUG
-	if (frame->length != BitstreamPos(&bs) / 8){
-		DEBUG2("InLen/UseLen",frame->length, BitstreamPos(&bs) / 8);
-	}
-#endif
-	frame->length = BitstreamPos(&bs) / 8;
-
+	BitstreamByteAlign(&bs);
 
 #ifdef BFRAMES_DEC
 	// test if no B_VOP
-	if (dec->low_delay || dec->frames == 0) {
+	if (dec->low_delay || dec->frames == 0 || ((dec->packed_mode) && !(frame->length > BitstreamPos(&bs) / 8))) {
 #endif
 		image_output(&dec->cur, dec->width, dec->height, dec->edged_width,
 					 frame->image, frame->stride, frame->colorspace, dec->interlacing);
 
 #ifdef BFRAMES_DEC
 	} else {
-		if (dec->frames >= 1) {
+		if (dec->frames >= 1 && !(dec->packed_mode)) {
 			start_timer();
 			if ((vop_type == I_VOP || vop_type == P_VOP || vop_type == S_VOP)) {
 				image_output(&dec->refn[0], dec->width, dec->height,
@@ -1613,6 +1608,11 @@ xxx:
                 if (vop_type == P_VOP)
 			mb_swap(&dec->mbs, &dec->last_mbs);
 	}
+
+	if (frame->length > BitstreamPos(&bs) / 8)	// multiple vops packed together
+		goto start;
+
+	frame->length = BitstreamPos(&bs) / 8;
 
 	if (stats)
 	{

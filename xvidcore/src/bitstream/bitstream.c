@@ -66,6 +66,7 @@
   ******************************************************************************/
 
 
+#include <string.h>
 #include "bitstream.h"
 #include "zigzag.h"
 #include "../quant/quant_matrix.h"
@@ -847,11 +848,29 @@ BitstreamReadHeaders(Bitstream * bs,
 			return coding_type;
 
 		} else if (start_code == USERDATA_START_CODE) {
-
-			DPRINTF(DPRINTF_STARTCODE, "<user_data>");
+			char tmp[256];
+		    int i;
 
 			BitstreamSkip(bs, 32);	// user_data_start_code
 
+			tmp[0] = BitstreamShowBits(bs, 8);
+    
+			for(i = 1; i < 256; i++){
+				tmp[i] = (BitstreamShowBits(bs, 16) & 0xFF);
+				
+				if(tmp[i] == 0) 
+					break;
+				
+				BitstreamSkip(bs, 8);
+			}
+
+			DPRINTF(DPRINTF_STARTCODE, "<user_data>: %s\n", tmp);
+
+			if(strncmp(tmp, "DivX501b481p", 12) == 0) {
+				dec->packed_mode = 1;
+				DPRINTF(DPRINTF_STARTCODE, "packed_mode = %d\n", dec->packed_mode);
+
+			}
 		} else					// start_code == ?
 		{
 			if (BitstreamShowBits(bs, 24) == 0x000001) {
