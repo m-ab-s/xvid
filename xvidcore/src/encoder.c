@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.40 2003-08-26 14:07:11 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.41 2003-09-29 00:30:31 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -389,15 +389,12 @@ enc_create(xvid_enc_create_t * create)
 		image_null(&pEnc->queue[n].image);
 
 		
-	for (n = 0; n < pEnc->mbParam.max_bframes+1; n++)
-	{
+	for (n = 0; n < pEnc->mbParam.max_bframes+1; n++) {
 		if (image_create
 			(&pEnc->queue[n].image, pEnc->mbParam.edged_width,
 			 pEnc->mbParam.edged_height) < 0)
 			goto xvid_err_memory5;
-
 	}
-
 
 	/* timestamp stuff */
 
@@ -423,15 +420,12 @@ enc_create(xvid_enc_create_t * create)
 
   xvid_err_memory5:
 
-	if (pEnc->mbParam.max_bframes > 0) {
-        int i;
-
-		for (i = 0; i < pEnc->mbParam.max_bframes+1; i++) {
-			image_destroy(&pEnc->queue[i].image, pEnc->mbParam.edged_width,
+	for (n = 0; n < pEnc->mbParam.max_bframes+1; n++) {
+			image_destroy(&pEnc->queue[n].image, pEnc->mbParam.edged_width,
 						  pEnc->mbParam.edged_height);
 		}
-		xvid_free(pEnc->queue);
-	}
+
+	xvid_free(pEnc->queue);
 
   xvid_err_memory4:
 
@@ -445,11 +439,8 @@ enc_create(xvid_enc_create_t * create)
 
 			image_destroy(&pEnc->bframes[i]->image, pEnc->mbParam.edged_width,
 						  pEnc->mbParam.edged_height);
-	
 			xvid_free(pEnc->bframes[i]->mbs);
-	
 			xvid_free(pEnc->bframes[i]);
-
 		}	
 
 		xvid_free(pEnc->bframes);
@@ -538,16 +529,12 @@ enc_destroy(Encoder * pEnc)
 	int i;
 	
 	/* B Frames specific */
-	if (pEnc->mbParam.max_bframes > 0) {
-
-		for (i = 0; i < pEnc->mbParam.max_bframes+1; i++) {
-		
-			image_destroy(&pEnc->queue[i].image, pEnc->mbParam.edged_width,
+	for (i = 0; i < pEnc->mbParam.max_bframes+1; i++) {
+		image_destroy(&pEnc->queue[i].image, pEnc->mbParam.edged_width,
 					  pEnc->mbParam.edged_height);
-		}
-		xvid_free(pEnc->queue);
 	}
 
+	xvid_free(pEnc->queue);
 
 	if (pEnc->mbParam.max_bframes > 0) {
 
@@ -558,9 +545,7 @@ enc_destroy(Encoder * pEnc)
 
 			image_destroy(&pEnc->bframes[i]->image, pEnc->mbParam.edged_width,
 					  pEnc->mbParam.edged_height);
-
 			xvid_free(pEnc->bframes[i]->mbs);
-
 			xvid_free(pEnc->bframes[i]);
 		}
 

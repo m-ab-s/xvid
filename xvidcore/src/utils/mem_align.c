@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mem_align.c,v 1.15.2.2 2003-06-09 13:55:38 edgomez Exp $
+ * $Id: mem_align.c,v 1.15.2.3 2003-09-29 00:30:31 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -56,21 +56,16 @@ xvid_malloc(size_t size,
 		if ((mem_ptr = (uint8_t *) malloc(size + 1)) != NULL) {
 
 			/* Store (mem_ptr - "real allocated memory") in *(mem_ptr-1) */
-			*mem_ptr = 1;
+			*mem_ptr = (uint8_t)1;
 
 			/* Return the mem_ptr pointer */
-			return (void *)(mem_ptr+1);
-
+			return ((void *)(mem_ptr+1));
 		}
-
 	} else {
 		uint8_t *tmp;
 
-		/*
-		 * Allocate the required size memory + alignment so we
-		 * can realign the data if necessary
-		 */
-
+		/* Allocate the required size memory + alignment so we
+		 * can realign the data if necessary */
 		if ((tmp = (uint8_t *) malloc(size + alignment)) != NULL) {
 
 			/* Align the tmp pointer */
@@ -78,30 +73,24 @@ xvid_malloc(size_t size,
 				(uint8_t *) ((ptr_t) (tmp + alignment - 1) &
 							 (~(ptr_t) (alignment - 1)));
 
-			/*
-			 * Special case where malloc have already satisfied the alignment
+			/* Special case where malloc have already satisfied the alignment
 			 * We must add alignment to mem_ptr because we must store
 			 * (mem_ptr - tmp) in *(mem_ptr-1)
 			 * If we do not add alignment to mem_ptr then *(mem_ptr-1) points
-			 * to a forbidden memory space
-			 */
+			 * to a forbidden memory space */
 			if (mem_ptr == tmp)
 				mem_ptr += alignment;
 
-			/*
-			 * (mem_ptr - tmp) is stored in *(mem_ptr-1) so we are able to retrieve
-			 * the real malloc block allocated and free it in xvid_free
-			 */
+			/* (mem_ptr - tmp) is stored in *(mem_ptr-1) so we are able to retrieve
+			 * the real malloc block allocated and free it in xvid_free */
 			*(mem_ptr - 1) = (uint8_t) (mem_ptr - tmp);
 
 			/* Return the aligned pointer */
-			return (void *) mem_ptr;
-
+			return ((void *)mem_ptr);
 		}
 	}
 
-	return NULL;
-
+	return(NULL);
 }
 
 /*****************************************************************************
@@ -118,8 +107,18 @@ void
 xvid_free(void *mem_ptr)
 {
 
-	/* *(mem_ptr - 1) give us the offset to the real malloc block */
-	if (mem_ptr)
-		free((uint8_t *) mem_ptr - *((uint8_t *) mem_ptr - 1));
+	uint8_t *ptr;
 
+	if (mem_ptr == NULL)
+		return;
+
+	/* Aligned pointer */
+	ptr = mem_ptr;
+
+	/* *(ptr - 1) holds the offset to the real allocated block
+	 * we sub that offset os we free the real pointer */
+	ptr -= *(ptr - 1);
+
+	/* Free the memory */
+	free(ptr);
 }

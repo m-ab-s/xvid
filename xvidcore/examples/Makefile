@@ -2,14 +2,14 @@
 #
 # XviD examples Makefile
 #
-# $Id: Makefile,v 1.3.2.4 2003-09-28 13:21:59 edgomez Exp $
+# $Id: Makefile,v 1.3.2.5 2003-09-29 00:30:31 edgomez Exp $
 #
 #############################################################################
 
 include ../build/generic/platform.inc
 
 HDIR    = -I../src
-CFLAGS  = -O2 $(ARCHITECTURE) $(BUS) $(ENDIANNESS) $(FEATURES) $(SPECIFIC_CFLAGS)
+CFLAGS  = -g $(ARCHITECTURE) $(BUS) $(ENDIANNESS) $(FEATURES) $(SPECIFIC_CFLAGS)
 LDFLAGS = -lc -lm -lxvidcore
 
 SOURCES= xvid_encraw.c xvid_decraw.c xvid_bench.c

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: image.c,v 1.26.2.8 2003-08-25 15:01:51 edgomez Exp $
+ * $Id: image.c,v 1.26.2.9 2003-09-29 00:30:31 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -49,29 +49,31 @@ image_create(IMAGE * image,
 {
 	const uint32_t edged_width2 = edged_width / 2;
 	const uint32_t edged_height2 = edged_height / 2;
-	uint32_t i;
 
 	image->y =
 		xvid_malloc(edged_width * (edged_height + 1) + SAFETY, CACHE_LINE);
 	if (image->y == NULL) {
 		return -1;
 	}
-
-	for (i = 0; i < edged_width * edged_height + SAFETY; i++) {
-		image->y[i] = 0;
-	}
+	memset(image->y, 0, edged_width * (edged_height + 1) + SAFETY);
 
 	image->u = xvid_malloc(edged_width2 * edged_height2 + SAFETY, CACHE_LINE);
 	if (image->u == NULL) {
 		xvid_free(image->y);
+		image->y = NULL;
 		return -1;
 	}
+	memset(image->u, 0, edged_width2 * edged_height2 + SAFETY);
+
 	image->v = xvid_malloc(edged_width2 * edged_height2 + SAFETY, CACHE_LINE);
 	if (image->v == NULL) {
 		xvid_free(image->u);
+		image->u = NULL;
 		xvid_free(image->y);
+		image->y = NULL;
 		return -1;
 	}
+	memset(image->v, 0, edged_width2 * edged_height2 + SAFETY);
 
 	image->y += EDGE_SIZE * edged_width + EDGE_SIZE;
 	image->u += EDGE_SIZE2 * edged_width2 + EDGE_SIZE2;
@@ -91,12 +93,15 @@ image_destroy(IMAGE * image,
 
 	if (image->y) {
 		xvid_free(image->y - (EDGE_SIZE * edged_width + EDGE_SIZE));
+		image->y = NULL;
 	}
 	if (image->u) {
 		xvid_free(image->u - (EDGE_SIZE2 * edged_width2 + EDGE_SIZE2));
+		image->u = NULL;
 	}
 	if (image->v) {
 		xvid_free(image->v - (EDGE_SIZE2 * edged_width2 + EDGE_SIZE2));
+		image->v = NULL;
 	}
 }
 
