@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.26 2003-11-19 15:42:39 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.27 2003-11-19 15:59:41 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -220,6 +220,7 @@ xvid_plugin_2pass2(void * handle, int opt, void * param1, void * param2)
 {
 	switch(opt) {
 	case XVID_PLG_INFO :
+	case XVID_PLG_FRAME :
 		return 0;
 
 	case XVID_PLG_CREATE :
