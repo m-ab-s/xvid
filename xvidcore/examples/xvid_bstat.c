@@ -81,14 +81,13 @@
 
 int motion_presets[7] = {
 	0,                                                              // Q 0
-	PMV_EARLYSTOP16,                                                // Q 1
-	PMV_EARLYSTOP16,						// Q 2
-	PMV_EARLYSTOP16 | PMV_HALFPELREFINE16,				// Q 3
-	PMV_EARLYSTOP16 | PMV_HALFPELREFINE16,				// Q 4
-	PMV_EARLYSTOP16 | PMV_HALFPELREFINE16 | PMV_EARLYSTOP8	 	// Q 5
- 			| PMV_HALFPELREFINE8, 	
-	PMV_EARLYSTOP16 | PMV_HALFPELREFINE16 | PMV_EXTSEARCH16 	// Q 6
-			| PMV_USESQUARES8 | PMV_USESQUARES16 | PMV_EARLYSTOP8 | PMV_HALFPELREFINE8
+	0,                                                // Q 1
+	0,						// Q 2
+	PMV_HALFPELREFINE16,				// Q 3
+	PMV_HALFPELREFINE16,				// Q 4
+	PMV_HALFPELREFINE16 | PMV_HALFPELREFINE8,	 	// Q 5 	
+	PMV_HALFPELREFINE16 | PMV_EXTSEARCH16 	// Q 6
+			| PMV_USESQUARES8 | PMV_USESQUARES16 | PMV_HALFPELREFINE8
 	};
 
 int general_presets[7] = {
