@@ -404,7 +404,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		frame.general |= XVID_GMC;
 
 	if (codec->config.chromame)
-		frame.motion |= PMV_CHROMA16;
+		frame.motion |= PMV_CHROMA16 + PMV_CHROMA8;
 
 	if (codec->config.reduced_resolution) 
 		frame.general |= XVID_REDUCED;
