@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: interpolate8x8.c,v 1.10.2.3 2003-06-09 13:54:02 edgomez Exp $
+ * $Id: interpolate8x8.c,v 1.10.2.4 2003-08-07 15:42:36 chl Exp $
  *
  ****************************************************************************/
 
@@ -101,10 +101,10 @@ interpolate8x8_halfpel_h_c(uint8_t * const dst,
 						   const uint32_t stride,
 						   const uint32_t rounding)
 {
-	intptr_t j;
+	uintptr_t j;
 	
 	if (rounding)
-		for (j = 7*stride; j >= 0; j-=stride)
+		for (j = 0; j < 8*stride; j+=stride)
 		{
 				dst[j + 0] = (uint8_t)((src[j + 0] + src[j + 1] )>>1);
 				dst[j + 1] = (uint8_t)((src[j + 1] + src[j + 2] )>>1);
@@ -137,7 +137,7 @@ interpolate8x8_halfpel_v_c(uint8_t * const dst,
 						   const uint32_t stride,
 						   const uint32_t rounding)
 {
-	intptr_t j;
+	uintptr_t j;
 
 
 	if (rounding)
@@ -173,10 +173,10 @@ interpolate8x8_halfpel_hv_c(uint8_t * const dst,
 							const uint32_t stride,
 							const uint32_t rounding)
 {
-	intptr_t j;
+	uintptr_t j;
 
 	if (rounding)
-		for (j = 7*stride; j >= 0; j-=stride)
+		for (j = 0; j < 8*stride; j+=stride)
 		{
 				dst[j + 0] = (uint8_t)((src[j+0] + src[j+1] + src[j+stride+0] + src[j+stride+1] +1)>>2);
 				dst[j + 1] = (uint8_t)((src[j+1] + src[j+2] + src[j+stride+1] + src[j+stride+2] +1)>>2);
@@ -188,7 +188,7 @@ interpolate8x8_halfpel_hv_c(uint8_t * const dst,
 				dst[j + 7] = (uint8_t)((src[j+7] + src[j+8] + src[j+stride+7] + src[j+stride+8] +1)>>2);
 		}
 	else
-		for (j = 7*stride; j >= 0; j-=stride)
+		for (j = 0; j < 8*stride; j+=stride)
 		{
 				dst[j + 0] = (uint8_t)((src[j+0] + src[j+1] + src[j+stride+0] + src[j+stride+1] +2)>>2);
 				dst[j + 1] = (uint8_t)((src[j+1] + src[j+2] + src[j+stride+1] + src[j+stride+2] +2)>>2);

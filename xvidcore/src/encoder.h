@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.h,v 1.27.2.12 2003-08-02 15:08:24 edgomez Exp $
+ * $Id: encoder.h,v 1.27.2.13 2003-08-07 15:41:57 chl Exp $
  *
  ****************************************************************************/
 
@@ -59,7 +59,7 @@ typedef struct
     int plugin_flags;
 
 	/* frame rate increment & base */
-	uint32_t fincr;
+	int32_t fincr;
 	uint32_t fbase;
 
     int profile;
@@ -164,7 +164,7 @@ typedef struct
     xvid_enc_zone_t * zones;
 
     /* plugins */
-    unsigned int num_plugins;    /* note: we store plugin flags in MBPARAM */
+    int num_plugins;    /* note: we store plugin flags in MBPARAM */
     xvid_enc_plugin_t * plugins;
 
     /* dquant */

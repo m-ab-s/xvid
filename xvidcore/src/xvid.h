@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.31 2003-08-06 20:28:18 chl Exp $
+ * $Id: xvid.h,v 1.27.2.32 2003-08-07 15:42:20 chl Exp $
  *
  ****************************************************************************/
 
@@ -188,7 +188,7 @@ typedef struct {
 /* XVID_GBL_INIT param1 */
 typedef struct {
 	int version;
-	int cpu_flags; /* [in:opt] zero = autodetect cpu; XVID_CPU_FORCE|{cpu features} = force cpu features */
+	unsigned int cpu_flags; /* [in:opt] zero = autodetect cpu; XVID_CPU_FORCE|{cpu features} = force cpu features */
 	int debug;     /* [in:opt] debug level */
 } xvid_gbl_init_t;
 
@@ -198,7 +198,7 @@ typedef struct {
 	int version;
 	int actual_version; /* [out] returns the actual xvidcore version */
 	const char * build; /* [out] if !null, points to description of this xvid core build */
-	int cpu_flags;      /* [out] detected cpu features */
+	unsigned int cpu_flags;      /* [out] detected cpu features */
 	int num_threads;    /* [out] detected number of cpus/threads */
 } xvid_gbl_info_t;
 

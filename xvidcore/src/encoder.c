@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.37 2003-08-03 10:20:12 syskin Exp $
+ * $Id: encoder.c,v 1.95.2.38 2003-08-07 15:41:33 chl Exp $
  *
  ****************************************************************************/
 
@@ -115,7 +115,7 @@ int
 enc_create(xvid_enc_create_t * create)
 {
 	Encoder *pEnc;
-    int n;
+  int n;
 
 	if (XVID_VERSION_MAJOR(create->version) != 1) /* v1.x.x */
 		return XVID_ERR_VERSION;
@@ -226,8 +226,7 @@ enc_create(xvid_enc_create_t * create)
 	pEnc->mbParam.frame_drop_ratio = MAX(create->frame_drop_ratio, 0);
 
     /* max keyframe interval */
-    pEnc->mbParam.iMaxKeyInterval = create->max_key_interval <= 0 ?
-		(10 * pEnc->mbParam.fbase) / pEnc->mbParam.fincr : create->max_key_interval;
+    pEnc->mbParam.iMaxKeyInterval = create->max_key_interval <= 0 ? (10 * (int)pEnc->mbParam.fbase) / (int)pEnc->mbParam.fincr : create->max_key_interval;
 
     /* allocate working frame-image memory */
 
@@ -771,7 +770,7 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
     }
 
     /* call plugins */
-    for (i=0; i<pEnc->num_plugins;i++) {
+    for (i=0; i<(unsigned int)pEnc->num_plugins;i++) {
         emms();
         if (pEnc->plugins[i].func) {
             if (pEnc->plugins[i].func(pEnc->plugins[i].param, opt, &data, 0) < 0) {
@@ -1253,7 +1252,7 @@ repeat:
 	 * on next enc_encode call we must flush bframes
 	 * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
 
-done_flush:
+/*done_flush:*/
 
     pEnc->flush_bframes = 1;
 

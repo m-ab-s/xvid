@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.c,v 1.58.2.26 2003-08-06 09:08:37 syskin Exp $
+ * $Id: motion_est.c,v 1.58.2.27 2003-08-07 15:42:50 chl Exp $
  *
  ****************************************************************************/
 
@@ -708,13 +708,13 @@ CheckCandidateRD16(const int x, const int y, const int Direction, int * const di
 	rd += t = BITS_MULT*d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
 
 	if (data->temp[0] + t < data->iMinSAD[1]) {
-		data->iMinSAD[1] = data->temp[0] + t; current[1].x = x; current[1].y = y; data->cbp[1] = (data->cbp[1]&~32) | cbp&32; }
+		data->iMinSAD[1] = data->temp[0] + t; current[1].x = x; current[1].y = y; data->cbp[1] = (data->cbp[1]&~32) | (cbp&32); }
 	if (data->temp[1] < data->iMinSAD[2]) {
-		data->iMinSAD[2] = data->temp[1]; current[2].x = x; current[2].y = y; data->cbp[1] = (data->cbp[1]&~16) | cbp&16; }
+		data->iMinSAD[2] = data->temp[1]; current[2].x = x; current[2].y = y; data->cbp[1] = (data->cbp[1]&~16) | (cbp&16); }
 	if (data->temp[2] < data->iMinSAD[3]) {
-		data->iMinSAD[3] = data->temp[2]; current[3].x = x; current[3].y = y; data->cbp[1] = (data->cbp[1]&~8) | cbp&8; }
+		data->iMinSAD[3] = data->temp[2]; current[3].x = x; current[3].y = y; data->cbp[1] = (data->cbp[1]&~8) | (cbp&8); }
 	if (data->temp[3] < data->iMinSAD[4]) {
-		data->iMinSAD[4] = data->temp[3]; current[4].x = x; current[4].y = y; data->cbp[1] = (data->cbp[1]&~4) | cbp&4; }
+		data->iMinSAD[4] = data->temp[3]; current[4].x = x; current[4].y = y; data->cbp[1] = (data->cbp[1]&~4) | (cbp&4); }
 
 	rd += BITS_MULT*xvid_cbpy_tab[15-(cbp>>2)].len;
 
