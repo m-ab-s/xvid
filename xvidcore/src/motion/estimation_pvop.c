@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_pvop.c,v 1.1.2.12 2003-12-18 17:49:28 Isibaar Exp $
+ * $Id: estimation_pvop.c,v 1.1.2.13 2003-12-18 21:31:32 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -611,7 +611,7 @@ Search8(SearchData * const OldData,
 				get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 3,
 					pParam->width, pParam->height, Data->iFcode, 2, 0);
 
-				if((MotionFlags & XVID_ME_FASTREFINE16) && (!Data->rrv))
+				if((MotionFlags & XVID_ME_FASTREFINE8) && (!Data->rrv))
 					SubpelRefine_Fast(Data, CheckCandidate8_qpel);
 				else
 					xvid_me_SubpelRefine(Data, CheckCandidate);
