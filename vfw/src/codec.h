@@ -115,6 +115,7 @@ typedef struct
 	double alt_curve_mid_qual;
 	double alt_curve_qual_dev;
 	int overflow;
+	int quant_count[32];
 
 	NNSTATS nns1;
 	NNSTATS nns2;

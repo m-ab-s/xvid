@@ -332,6 +332,8 @@ LRESULT compress_end(CODEC * codec)
 		}
 
 		codec->ehandle = NULL;
+
+		codec_2pass_finish(codec);
 	}
 
 	return ICERR_OK;
@@ -479,7 +481,8 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		frame.intra = 1;
 	}
 	else if ((codec->keyspacing < codec->config.min_key_interval && codec->framenum) &&
-		(codec->config.mode == DLG_MODE_2PASS_1))
+		(codec->config.mode == DLG_MODE_2PASS_1 || codec->config.mode == DLG_MODE_CBR || codec->config.mode == DLG_MODE_VBR_QUANT ||
+		codec->config.mode == DLG_MODE_VBR_QUAL || codec->config.mode == DLG_MODE_NULL))
 	{
 		DEBUG("current frame forced to p-frame");
 		frame.intra = 0;
