@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.13 2002-11-20 19:52:45 Isibaar Exp $
+ *  $Id: decoder.c,v 1.37.2.14 2002-11-20 22:28:25 Isibaar Exp $
  *
  *************************************************************************/
 
@@ -1226,32 +1226,32 @@ decoder_bf_interpolate_mbinter(DECODER * dec,
 	interpolate8x8_avg2(dec->cur.y + (16 * y_pos * stride) + 16 * x_pos,
 						dec->cur.y + (16 * y_pos * stride) + 16 * x_pos,
 						dec->refn[2].y + (16 * y_pos * stride) + 16 * x_pos,
-						stride, 0, 8);
+						stride, 1, 8);
 
 	interpolate8x8_avg2(dec->cur.y + (16 * y_pos * stride) + 16 * x_pos + 8,
 						dec->cur.y + (16 * y_pos * stride) + 16 * x_pos + 8,
 						dec->refn[2].y + (16 * y_pos * stride) + 16 * x_pos + 8,
-						stride, 0, 8);
+						stride, 1, 8);
 
 	interpolate8x8_avg2(dec->cur.y + ((16 * y_pos + 8) * stride) + 16 * x_pos,
 						dec->cur.y + ((16 * y_pos + 8) * stride) + 16 * x_pos,
 						dec->refn[2].y + ((16 * y_pos + 8) * stride) + 16 * x_pos,
-						stride, 0, 8);
+						stride, 1, 8);
 
 	interpolate8x8_avg2(dec->cur.y + ((16 * y_pos + 8) * stride) + 16 * x_pos + 8,
 						dec->cur.y + ((16 * y_pos + 8) * stride) + 16 * x_pos + 8,
 						dec->refn[2].y + ((16 * y_pos + 8) * stride) + 16 * x_pos + 8,
-						stride, 0, 8);
+						stride, 1, 8);
 
 	interpolate8x8_avg2(dec->cur.u + (8 * y_pos * stride2) + 8 * x_pos,
 						dec->cur.u + (8 * y_pos * stride2) + 8 * x_pos,
 						dec->refn[2].u + (8 * y_pos * stride2) + 8 * x_pos,
-						stride2, 0, 8);
+						stride2, 1, 8);
 
 	interpolate8x8_avg2(dec->cur.v + (8 * y_pos * stride2) + 8 * x_pos,
 						dec->cur.v + (8 * y_pos * stride2) + 8 * x_pos,
 						dec->refn[2].v + (8 * y_pos * stride2) + 8 * x_pos,
-						stride2, 0, 8);
+						stride2, 1, 8);
 
 	stop_comp_timer();
 
