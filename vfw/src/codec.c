@@ -23,7 +23,13 @@
  *
  *	History:
  *
- *	... ???
+ *	16.03.2002	daniel smith <danielsmith@astroboymail.com>
+ *				changed BITMAPV4HEADER to BITMAPINFOHEADER
+ *					- prevents memcpy crash in compress_get_format()
+ *				credits are processed in external 2pass mode
+ *				motion search precision = 0 now effective in 2-pass
+ *				modulated quantization
+ *				added DX50 fourcc
  *	01.12.2001	inital version; (c)2001 peter ross <suxen_drol@hotmail.com>
  *
  *************************************************************************/
@@ -46,38 +52,40 @@ int pmvfast_presets[7] = {
 	or XVID_CSP_NULL if failure
 */
 
-int get_colorspace(BITMAPV4HEADER * hdr)
+int get_colorspace(BITMAPINFOHEADER * hdr)
 {
-	if (hdr->bV4Height < 0) 
+	if (hdr->biHeight < 0) 
 	{
 		DEBUG("colorspace: inverted input format not supported");
 		return XVID_CSP_NULL;
 	}
 	
-	switch(hdr->bV4V4Compression)
+	switch(hdr->biCompression)
 	{
 	case BI_RGB :
-		if (hdr->bV4BitCount == 16)
+		if (hdr->biBitCount == 16)
 		{
 			DEBUG("RGB16 (RGB555)");
 			return XVID_CSP_VFLIP | XVID_CSP_RGB555;
 		}
-		if (hdr->bV4BitCount == 24) 
+		if (hdr->biBitCount == 24) 
 		{
 			DEBUG("RGB24");
 			return XVID_CSP_VFLIP | XVID_CSP_RGB24;
 		}
-		if (hdr->bV4BitCount == 32) 
+		if (hdr->biBitCount == 32) 
 		{
 			DEBUG("RGB32");
 			return XVID_CSP_VFLIP | XVID_CSP_RGB32;
 		}
 
-		DEBUG1("BI_RGB unsupported", hdr->bV4BitCount);
+		DEBUG1("BI_RGB unsupported", hdr->biBitCount);
 		return XVID_CSP_NULL;
 
-	case BI_BITFIELDS :
-		if(hdr->bV4BitCount == 16 &&
+// how do these work in BITMAPINFOHEADER ???
+/*	case BI_BITFIELDS :
+		if (hdr->biBitCount == 16
+		if(hdr->biBitCount == 16 &&
 			hdr->bV4RedMask == 0x7c00 &&
 			hdr->bV4GreenMask == 0x3e0 &&
 			hdr->bV4BlueMask == 0x1f)
@@ -96,7 +104,7 @@ int get_colorspace(BITMAPV4HEADER * hdr)
 		
 		DEBUG1("BI_FIELDS unsupported", hdr->bV4BitCount);
 		return XVID_CSP_NULL;
-
+*/
 	case FOURCC_I420:
 	case FOURCC_IYUV:
 		DEBUG("IYUY");
@@ -121,7 +129,7 @@ int get_colorspace(BITMAPV4HEADER * hdr)
 		return XVID_CSP_UYVY;
 
 	}
-	DEBUGFOURCC("colorspace: unknown", hdr->bV4V4Compression);
+	DEBUGFOURCC("colorspace: unknown", hdr->biCompression);
 	return XVID_CSP_NULL;
 }
 
@@ -133,8 +141,8 @@ int get_colorspace(BITMAPV4HEADER * hdr)
 
 LRESULT compress_query(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiOutput)
 {
-	BITMAPV4HEADER * inhdr = (BITMAPV4HEADER *)&lpbiInput->bmiHeader;
-	BITMAPV4HEADER * outhdr = (BITMAPV4HEADER *)&lpbiOutput->bmiHeader;
+	BITMAPINFOHEADER * inhdr = &lpbiInput->bmiHeader;
+	BITMAPINFOHEADER * outhdr = &lpbiOutput->bmiHeader;
 
 	if (get_colorspace(inhdr) == XVID_CSP_NULL) 
 	{
@@ -145,9 +153,9 @@ LRESULT compress_query(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	{
 		return ICERR_OK;
 	}
-	
-	if (inhdr->bV4Width != outhdr->bV4Width || inhdr->bV4Height != outhdr->bV4Height ||
-		(outhdr->bV4V4Compression != FOURCC_XVID && outhdr->bV4V4Compression != FOURCC_DIVX)) 
+
+	if (inhdr->biWidth != outhdr->biWidth || inhdr->biHeight != outhdr->biHeight ||
+		(outhdr->biCompression != FOURCC_XVID && outhdr->biCompression != FOURCC_DIVX))
 	{
 		return ICERR_BADFORMAT;
 	}
@@ -158,12 +166,12 @@ LRESULT compress_query(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 
 LRESULT compress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiOutput)
 {
-	BITMAPV4HEADER * inhdr = (BITMAPV4HEADER *)&lpbiInput->bmiHeader;
-	BITMAPV4HEADER * outhdr = (BITMAPV4HEADER *)&lpbiOutput->bmiHeader;
+	BITMAPINFOHEADER * inhdr = &lpbiInput->bmiHeader;
+	BITMAPINFOHEADER * outhdr = &lpbiOutput->bmiHeader;
 
-	if (get_colorspace(inhdr) == XVID_CSP_NULL) 
+	if (get_colorspace(inhdr) == XVID_CSP_NULL)
 	{
-		return ICERR_BADFORMAT;		
+		return ICERR_BADFORMAT;
 	}
 
 	if (lpbiOutput == NULL) 
@@ -171,22 +179,26 @@ LRESULT compress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * 
 		return sizeof(BITMAPV4HEADER);
 	}
 
-	memcpy(outhdr, inhdr, sizeof(BITMAPV4HEADER));
-	outhdr->bV4Size = sizeof(BITMAPV4HEADER);
-	outhdr->bV4BitCount = 24;  // or 16
-	outhdr->bV4SizeImage = compress_get_size(codec, lpbiInput, lpbiOutput);
-	outhdr->bV4XPelsPerMeter = 0;
-	outhdr->bV4YPelsPerMeter = 0;
-	outhdr->bV4ClrUsed = 0;
-	outhdr->bV4ClrImportant = 0;
+	memcpy(outhdr, inhdr, sizeof(BITMAPINFOHEADER));
+	outhdr->biSize = sizeof(BITMAPINFOHEADER);
+	outhdr->biBitCount = 24;  // or 16
+	outhdr->biSizeImage = compress_get_size(codec, lpbiInput, lpbiOutput);
+	outhdr->biXPelsPerMeter = 0;
+	outhdr->biYPelsPerMeter = 0;
+	outhdr->biClrUsed = 0;
+	outhdr->biClrImportant = 0;
 
 	if (codec->config.fourcc_used == 0)
 	{
-		outhdr->bV4V4Compression = FOURCC_XVID;
+		outhdr->biCompression = FOURCC_XVID;
+	}
+	else if (codec->config.fourcc_used == 1)
+	{
+		outhdr->biCompression = FOURCC_DIVX;
 	}
 	else
 	{
-		outhdr->bV4V4Compression = FOURCC_DIVX;
+		outhdr->biCompression = FOURCC_DX50;
 	}
 
 	return ICERR_OK;
@@ -195,8 +207,7 @@ LRESULT compress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * 
 
 LRESULT compress_get_size(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiOutput)
 {
-	BITMAPV4HEADER * outhdr = (BITMAPV4HEADER *)&lpbiOutput->bmiHeader;
-	return outhdr->bV4Width * outhdr->bV4Height * 3;
+	return lpbiOutput->bmiHeader.biWidth * lpbiOutput->bmiHeader.biHeight * 3;
 }
 
 
@@ -211,13 +222,13 @@ LRESULT compress_frames_info(CODEC * codec, ICCOMPRESSFRAMES * icf)
 
 LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiOutput)
 {
-	BITMAPV4HEADER * inhdr = (BITMAPV4HEADER *)&lpbiInput->bmiHeader;
 	XVID_ENC_PARAM param;
 	XVID_INIT_PARAM init_param;
 
 	switch (codec->config.mode) 
 	{
 	case DLG_MODE_CBR :
+		DEBUG1("bitrate: ", codec->config.bitrate);
 		param.bitrate = codec->config.bitrate;
 		param.rc_buffersize = codec->config.rc_buffersize;
 		break;
@@ -253,15 +264,15 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	if((codec->config.cpu & XVID_CPU_FORCE) <= 0)
 		codec->config.cpu = init_param.cpu_flags;
 
-	param.width = inhdr->bV4Width;
-	param.height = inhdr->bV4Height;
+	param.width = lpbiInput->bmiHeader.biWidth;
+	param.height = lpbiInput->bmiHeader.biHeight;
 	param.fincr = codec->fincr;
 	param.fbase = codec->fbase;
 	
 	param.rc_buffersize = codec->config.rc_buffersize;
 	
-	param.min_quantizer = codec->config.min_quant;
-	param.max_quantizer = codec->config.max_quant;
+	param.min_quantizer = codec->config.min_pquant;
+	param.max_quantizer = codec->config.max_pquant;
 	param.max_key_interval = codec->config.max_key_interval;
 
 	switch(xvid_encore(0, XVID_ENC_CREATE, &param, NULL)) 
@@ -308,8 +319,8 @@ LRESULT compress_end(CODEC * codec)
 
 LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 {
-	BITMAPV4HEADER * inhdr = (BITMAPV4HEADER *)icc->lpbiInput;
-	BITMAPV4HEADER * outhdr = (BITMAPV4HEADER *)icc->lpbiOutput;
+	BITMAPINFOHEADER * inhdr = icc->lpbiInput;
+	BITMAPINFOHEADER * outhdr = icc->lpbiOutput;
 	XVID_ENC_FRAME frame;
 	XVID_ENC_STATS stats;
 	
@@ -324,49 +335,25 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 
 	frame.general = 0;
 	frame.motion = 0;
-
-	if(codec->config.motion_search == 0)
-		frame.intra = 1;
+	frame.intra = -1;
 
 	frame.general |= XVID_HALFPEL;
 
 	if(codec->config.motion_search > 3)
 		frame.general |= XVID_INTER4V;
 
-	// we actually need "default/custom" selectbox for both inter/intra
-	// this will do for now
-
-	if (codec->config.quant_type == QUANT_MODE_CUSTOM)
-	{
-		frame.general |= XVID_CUSTOM_QMATRIX; 
-		frame.quant_intra_matrix = codec->config.qmatrix_intra;
-		frame.quant_inter_matrix = codec->config.qmatrix_inter;
-	}
-	else
-	{
-		frame.quant_intra_matrix = NULL;
-		frame.quant_inter_matrix = NULL;
-	}
-
-	if(codec->config.quant_type == 0)
-		frame.general |= XVID_H263QUANT;
-	else
-		frame.general |= XVID_MPEGQUANT;
-
 	if(((codec->config.mode == DLG_MODE_2PASS_1) ? 0 : codec->config.lum_masking) == 1)
 		frame.general |= XVID_LUMIMASKING;
 
 	frame.motion = pmvfast_presets[codec->config.motion_search];
-	
+
 	frame.image = icc->lpInput;
 
-	if ((frame.colorspace = get_colorspace(inhdr)) == XVID_CSP_NULL) {
+	if ((frame.colorspace = get_colorspace(inhdr)) == XVID_CSP_NULL)
 		return ICERR_BADFORMAT;
-	}
 
 	frame.bitstream = icc->lpOutput;
 	frame.length = icc->lpbiOutput->biSizeImage;
-	frame.intra = -1;
 
 	switch (codec->config.mode) 
 	{
@@ -391,14 +378,14 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		}
 		if (codec->config.dummy2pass)
 		{
-			outhdr->bV4SizeImage = codec->twopass.bytes2;
+			outhdr->biSizeImage = codec->twopass.bytes2;
 			*icc->lpdwFlags = (codec->twopass.nns1.quant & NNSTATS_KEYFRAME) ? AVIIF_KEYFRAME : 0;
 			return ICERR_OK;
 		}
 		break;
 
 	case DLG_MODE_NULL :
-		outhdr->bV4SizeImage = 0;
+		outhdr->biSizeImage = 0;
 		*icc->lpdwFlags = AVIIF_KEYFRAME;
 		return ICERR_OK;
 
@@ -407,10 +394,36 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		return ICERR_ERROR;
 	}
 
-	// force keyframe spacing in 2-pass modes
-	if ((codec->keyspacing < codec->config.min_key_interval && codec->framenum) &&
-		(codec->config.mode == DLG_MODE_2PASS_1 || codec->config.mode == DLG_MODE_2PASS_2_INT ||
-		codec->config.mode == DLG_MODE_2PASS_2_EXT))
+	if (codec->config.quant_type == QUANT_MODE_H263)
+	{
+		frame.general |= XVID_H263QUANT;
+	}
+	else
+	{
+		frame.general |= XVID_MPEGQUANT;
+
+		// we actually need "default/custom" selectbox for both inter/intra
+		// this will do for now
+		if (codec->config.quant_type == QUANT_MODE_CUSTOM)
+		{
+			frame.general |= XVID_CUSTOM_QMATRIX; 
+			frame.quant_intra_matrix = codec->config.qmatrix_intra;
+			frame.quant_inter_matrix = codec->config.qmatrix_inter;
+		}
+		else
+		{
+			frame.quant_intra_matrix = NULL;
+			frame.quant_inter_matrix = NULL;
+		}
+	}
+
+	// force keyframe spacing in 2-pass 1st pass
+	if (codec->config.motion_search == 0)
+	{
+		frame.intra = 1;
+	}
+	else if ((codec->keyspacing < codec->config.min_key_interval && codec->framenum) &&
+		(codec->config.mode == DLG_MODE_2PASS_1))
 	{
 		DEBUG("current frame forced to p-frame");
 		frame.intra = 0;
@@ -438,14 +451,11 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		*icc->lpdwFlags = 0;
 	}
 
-	outhdr->bV4SizeImage = frame.length;
+	outhdr->biSizeImage = frame.length;
 
-	if (codec->config.mode == DLG_MODE_2PASS_1)
+	if (codec->config.mode == DLG_MODE_2PASS_1 && codec->config.discard1pass)
 	{
-		if (codec->config.discard1pass)
-		{
-			outhdr->bV4SizeImage = 0;
-		}
+		outhdr->biSizeImage = 0;
 	}
 
 	codec_2pass_update(codec, &frame, &stats);
@@ -462,15 +472,15 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 
 LRESULT decompress_query(CODEC * codec, BITMAPINFO *lpbiInput, BITMAPINFO *lpbiOutput)
 {
-	BITMAPV4HEADER * inhdr = (BITMAPV4HEADER *)&lpbiInput->bmiHeader;
-	BITMAPV4HEADER * outhdr = (BITMAPV4HEADER *)&lpbiOutput->bmiHeader;
+	BITMAPINFOHEADER * inhdr = &lpbiInput->bmiHeader;
+	BITMAPINFOHEADER * outhdr = &lpbiOutput->bmiHeader;
 
 	if (lpbiInput == NULL) 
 	{
 		return ICERR_ERROR;
 	}
 
-	if (inhdr->bV4V4Compression != FOURCC_XVID && inhdr->bV4V4Compression != FOURCC_DIVX)
+	if (inhdr->biCompression != FOURCC_XVID && inhdr->biCompression != FOURCC_DIVX)
 	{
 		return ICERR_BADFORMAT;
 	}
@@ -480,8 +490,8 @@ LRESULT decompress_query(CODEC * codec, BITMAPINFO *lpbiInput, BITMAPINFO *lpbiO
 		return ICERR_OK;
 	}
 
-	if (inhdr->bV4Width != outhdr->bV4Width ||
-		inhdr->bV4Height != outhdr->bV4Height ||
+	if (inhdr->biWidth != outhdr->biWidth ||
+		inhdr->biHeight != outhdr->biHeight ||
 		get_colorspace(outhdr) == XVID_CSP_NULL) 
 	{
 		return ICERR_BADFORMAT;
@@ -493,13 +503,13 @@ LRESULT decompress_query(CODEC * codec, BITMAPINFO *lpbiInput, BITMAPINFO *lpbiO
 
 LRESULT decompress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiOutput)
 {
-	BITMAPV4HEADER * inhdr = (BITMAPV4HEADER *)&lpbiInput->bmiHeader;
-	BITMAPV4HEADER * outhdr = (BITMAPV4HEADER *)&lpbiOutput->bmiHeader;
+	BITMAPINFOHEADER * inhdr = &lpbiInput->bmiHeader;
+	BITMAPINFOHEADER * outhdr = &lpbiOutput->bmiHeader;
 	LRESULT result;
 
 	if (lpbiOutput == NULL) 
 	{
-		return sizeof(BITMAPV4HEADER);
+		return sizeof(BITMAPINFOHEADER);
 	}
 
 	result = decompress_query(codec, lpbiInput, lpbiOutput);
@@ -508,14 +518,14 @@ LRESULT decompress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO 
 		return result;
 	}
 
-	memcpy(outhdr, inhdr, sizeof(BITMAPV4HEADER));
-	outhdr->bV4Size = sizeof(BITMAPV4HEADER);
-	outhdr->bV4V4Compression = FOURCC_YUY2;
-	outhdr->bV4SizeImage = outhdr->bV4Width * outhdr->bV4Height * outhdr->bV4BitCount;
-	outhdr->bV4XPelsPerMeter = 0;
-	outhdr->bV4YPelsPerMeter = 0;
-	outhdr->bV4ClrUsed = 0;
-	outhdr->bV4ClrImportant = 0;
+	memcpy(outhdr, inhdr, sizeof(BITMAPINFOHEADER));
+	outhdr->biSize = sizeof(BITMAPINFOHEADER);
+	outhdr->biCompression = FOURCC_YUY2;
+	outhdr->biSizeImage = outhdr->biWidth * outhdr->biHeight * outhdr->biBitCount;
+	outhdr->biXPelsPerMeter = 0;
+	outhdr->biYPelsPerMeter = 0;
+	outhdr->biClrUsed = 0;
+	outhdr->biClrImportant = 0;
 
 	return ICERR_OK;
 }
@@ -523,8 +533,6 @@ LRESULT decompress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO 
 
 LRESULT decompress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiOutput)
 {
-	BITMAPV4HEADER * inhdr = (BITMAPV4HEADER *)&lpbiInput->bmiHeader;
-	BITMAPV4HEADER * outhdr = (BITMAPV4HEADER *)&lpbiOutput->bmiHeader;
 	XVID_DEC_PARAM param;
 	XVID_INIT_PARAM init_param;
 
@@ -535,8 +543,8 @@ LRESULT decompress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpb
 		codec->config.cpu = init_param.cpu_flags;
 	}
 
-	param.width = inhdr->bV4Width;
-	param.height = inhdr->bV4Height;
+	param.width = lpbiInput->bmiHeader.biWidth;
+	param.height = lpbiInput->bmiHeader.biHeight;
 
 	switch(xvid_decore(0, XVID_DEC_CREATE, &param, NULL)) 
 	{
@@ -569,8 +577,6 @@ LRESULT decompress_end(CODEC * codec)
 
 LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 {
-	BITMAPV4HEADER * inhdr = (BITMAPV4HEADER *)icd->lpbiInput;
-	BITMAPV4HEADER * outhdr = (BITMAPV4HEADER *)icd->lpbiOutput;
 	XVID_DEC_FRAME frame;
 	
 	frame.bitstream = icd->lpInput;
@@ -581,7 +587,7 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 
 	if (~((icd->dwFlags & ICDECOMPRESS_HURRYUP) | (icd->dwFlags & ICDECOMPRESS_UPDATE)))
 	{
-		if ((frame.colorspace = get_colorspace(outhdr)) == XVID_CSP_NULL) 
+		if ((frame.colorspace = get_colorspace(icd->lpbiOutput)) == XVID_CSP_NULL) 
 		{
 			return ICERR_BADFORMAT;
 		}
@@ -1006,8 +1012,8 @@ int codec_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 			{
 			case CREDITS_MODE_RATE :
 				frame->quant =
-					codec->config.max_quant -
-					((codec->config.max_quant - codec->config.quant) * codec->config.credits_rate / 100);
+					codec->config.max_pquant -
+					((codec->config.max_pquant - codec->config.quant) * codec->config.credits_rate / 100);
 				break;
 
 			case CREDITS_MODE_QUANT :
@@ -1298,13 +1304,13 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 	}
 	else
 	{
-		if (frame->quant > codec->config.max_quant)
+		if (frame->quant > codec->config.max_pquant)
 		{
-			frame->quant = codec->config.max_quant;
+			frame->quant = codec->config.max_pquant;
 		}
-		if (frame->quant < codec->config.min_quant)
+		if (frame->quant < codec->config.min_pquant)
 		{
-			frame->quant = codec->config.min_quant;
+			frame->quant = codec->config.min_pquant;
 		}
 
 		// subsequent frame quants can only be +- 2
@@ -1325,6 +1331,12 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 
 	last_quant = frame->quant;
 
+	if (codec->config.quant_type == QUANT_MODE_MOD)
+	{
+		frame->general |= (frame->quant < 4) ? XVID_MPEGQUANT : XVID_H263QUANT;
+		frame->general &= (frame->quant < 4) ? ~XVID_H263QUANT : ~XVID_MPEGQUANT;
+	}
+
 	return ICERR_OK;
 }
 
@@ -1335,12 +1347,16 @@ int codec_2pass_update(CODEC* codec, XVID_ENC_FRAME* frame, XVID_ENC_STATS* stat
 
 	NNSTATS nns1;
 	DWORD wrote;
+	char* quant_type;
 
 	if (codec->framenum == 0)
 	{
 		total_size = 0;
 	}
-	
+
+	quant_type = (frame->general & XVID_H263QUANT) ? "H.263" :
+		(frame->general & XVID_MPEGQUANT) ? "MPEG" : "Cust";
+
 	switch (codec->config.mode)
 	{
 	case DLG_MODE_2PASS_1 :
@@ -1363,7 +1379,8 @@ int codec_2pass_update(CODEC* codec, XVID_ENC_FRAME* frame, XVID_ENC_STATS* stat
 		nns1.lum_noise[0] = nns1.lum_noise[1] = 1;
 
 		total_size += frame->length;
-		DEBUG1ST(frame->length, (int)total_size/1024, frame->intra, frame->quant, stats->kblks, stats->mblks)
+
+		DEBUG1ST(frame->length, (int)total_size/1024, frame->intra, frame->quant, quant_type, stats->kblks, stats->mblks)
 		
 		if (WriteFile(codec->twopass.stats1, &nns1, sizeof(NNSTATS), &wrote, 0) == 0 || wrote != sizeof(NNSTATS))
 		{
@@ -1375,7 +1392,7 @@ int codec_2pass_update(CODEC* codec, XVID_ENC_FRAME* frame, XVID_ENC_STATS* stat
 	case DLG_MODE_2PASS_2_INT :
 	case DLG_MODE_2PASS_2_EXT :
 		codec->twopass.overflow += codec->twopass.desired_bytes2 - frame->length;
-		DEBUG2ND(frame->quant, frame->intra, codec->twopass.bytes1, codec->twopass.desired_bytes2, frame->length, codec->twopass.overflow, codec_is_in_credits(&codec->config, codec->framenum))
+		DEBUG2ND(frame->quant, quant_type, frame->intra, codec->twopass.bytes1, codec->twopass.desired_bytes2, frame->length, codec->twopass.overflow, codec_is_in_credits(&codec->config, codec->framenum))
 		break;
 
 	default:
@@ -1388,11 +1405,6 @@ int codec_2pass_update(CODEC* codec, XVID_ENC_FRAME* frame, XVID_ENC_STATS* stat
 
 int codec_is_in_credits(CONFIG* config, int framenum)
 {
-	if (config->mode == DLG_MODE_2PASS_2_EXT)
-	{
-		return 0;
-	}
-
 	if (config->credits_start)
 	{
 		if (framenum >= config->credits_start_begin &&
@@ -1433,20 +1445,20 @@ int codec_get_vbr_quant(CONFIG* config, int quality)
 	if (!config->fquant)
 	{
 		config->fquant =
-			((float) (config->max_quant - config->min_quant) / 100) *
+			((float) (config->max_pquant - config->min_pquant) / 100) *
 			(100 - quality) +
-			(float) config->min_quant;
+			(float) config->min_pquant;
 
 		fquant_running = config->fquant;
 	}
 
-	if (fquant_running < config->min_quant)
+	if (fquant_running < config->min_pquant)
 	{
-		fquant_running = (float) config->min_quant;
+		fquant_running = (float) config->min_pquant;
 	}
-	else if(fquant_running > config->max_quant)
+	else if(fquant_running > config->max_pquant)
 	{
-		fquant_running = (float) config->max_quant;
+		fquant_running = (float) config->max_pquant;
 	}
 
 	quant = (int) fquant_running;

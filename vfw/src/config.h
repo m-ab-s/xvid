@@ -17,9 +17,11 @@ HINSTANCE hInst;
 
 /* registry stuff */
 #define XVID_REG_KEY	HKEY_CURRENT_USER
-#define XVID_REG_SUBKEY	"Software\\GNU\\XviD"
+#define XVID_REG_PARENT	"Software\\GNU"
+#define XVID_REG_CHILD	"XviD"
 #define XVID_REG_CLASS	"config"
 
+#define XVID_HELP		"Move cursor over item to view help"
 #define XVID_WEBSITE	"http://www.xvid.org"
 
 /* constants */
@@ -29,11 +31,11 @@ HINSTANCE hInst;
 /* property sheets - sheets can be reordered here */
 #define DLG_COUNT		5
 
-#define DLG_MAIN		0
-#define DLG_ADV			1
-#define DLG_DEBUG		2
-#define DLG_CPU			3
-#define DLG_ABOUT		4
+#define DLG_GLOBAL		0
+#define DLG_QUANT		1
+#define DLG_2PASS		2
+#define DLG_CREDITS		3
+#define DLG_CPU			4
 
 /* codec modes */
 #define DLG_MODE_CBR			0
@@ -48,6 +50,7 @@ HINSTANCE hInst;
 #define QUANT_MODE_H263			0
 #define QUANT_MODE_MPEG			1
 #define QUANT_MODE_CUSTOM		2
+#define QUANT_MODE_MOD			3
 
 /* credits modes */
 #define CREDITS_MODE_RATE		0
@@ -64,24 +67,32 @@ typedef struct
 	int bitrate;
 	int quality;
 	int	quant;
+	int rc_buffersize;
 
-	char stats1[MAX_PATH];
-	char stats2[MAX_PATH];
-	int discard1pass;
-	int dummy2pass;
-	int desired_size;
+	int motion_search;
+	int quant_type;
+	int fourcc_used;
+	int max_key_interval;
+	int lum_masking;
 
 	int min_iquant;
 	int max_iquant;
+	int min_pquant;
+	int max_pquant;
+	BYTE qmatrix_intra[64];
+	BYTE qmatrix_inter[64];
 
+	int desired_size;
 	int keyframe_boost;
 	int min_key_interval;
-	int bitrate_payback_delay;
-	int bitrate_payback_method;
+	int discard1pass;
+	int dummy2pass;
 	int curve_compression_high;
 	int curve_compression_low;
-
-	float fquant;
+	int bitrate_payback_delay;
+	int bitrate_payback_method;
+	char stats1[MAX_PATH];
+	char stats2[MAX_PATH];
 
 	int credits_start;
 	int credits_start_begin;
@@ -97,27 +108,18 @@ typedef struct
 	int credits_start_size;
 	int credits_end_size;
 
-	int motion_search;
-	int quant_type;
-	int max_key_interval;
-
-	int rc_buffersize;
-
-	int min_quant;
-	int max_quant;
-	int lum_masking;
-
-	int fourcc_used;
-
-	BYTE qmatrix_intra[64];
-	BYTE qmatrix_inter[64];
-
 	DWORD cpu;
 
-	BOOL save;
+	float fquant;
 
+	BOOL save;
 } CONFIG;
 
+typedef struct HELPRECT
+{
+	int item;
+	RECT rect;
+} HELPRECT;
 
 typedef struct PROPSHEETINFO
 {
@@ -128,18 +130,21 @@ typedef struct PROPSHEETINFO
 
 void config_reg_get(CONFIG *);
 void config_reg_set(CONFIG *);
-void config_mode(HWND);
-void config_upload(HWND, int, CONFIG *);
-void config_download(HWND, int, CONFIG *);
-void config_slider(HWND, CONFIG *);
-void config_value(HWND, CONFIG *);
+void config_reg_default(CONFIG *);
 int config_get_int(HWND, UINT, int);
-void credits_controls(HWND);
+void main_download(HWND, CONFIG *);
+void main_slider(HWND, CONFIG *);
+void main_value(HWND, CONFIG *);
+void adv_dialog(HWND, CONFIG *);
+void adv_mode(HWND, int);
+void adv_upload(HWND, int, CONFIG *);
+void adv_download(HWND, int, CONFIG *);
 void quant_upload(HWND, CONFIG *);
 void quant_download(HWND, CONFIG *);
-BOOL CALLBACK config_proc(HWND, UINT, WPARAM, LPARAM);
-BOOL CALLBACK credits_proc(HWND, UINT, WPARAM, LPARAM);
-BOOL CALLBACK twopass_proc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK msg_proc(int, WPARAM, LPARAM);
+BOOL CALLBACK main_proc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK adv_proc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK quantmatrix_proc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK about_proc(HWND, UINT, WPARAM, LPARAM);
 
 #endif /* _CONFIG_H_ */

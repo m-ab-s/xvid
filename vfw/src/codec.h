@@ -6,27 +6,26 @@
 #include "config.h"
 #include "xvid.h"
 
-#define DEBUG(X)
-// OutputDebugString(X)
-#define DEBUG1(X,A)
-// { char tmp[100]; wsprintf(tmp, "%s %i", (X), (A)); OutputDebugString(tmp); }
+#define DEBUG(X) OutputDebugString(X)
+#define DEBUG1(X,A) { char tmp[120]; wsprintf(tmp, "%s %i", (X), (A)); OutputDebugString(tmp); }
 #define DEBUG2(X,A,B)
-// { char tmp[100]; wsprintf(tmp, "%s %i %i", (X), (A), (B)); OutputDebugString(tmp); }
+// { char tmp[120]; wsprintf(tmp, "%s %i %i", (X), (A), (B)); OutputDebugString(tmp); }
 #define DEBUG3(X,A,B,C)
-// { char tmp[100]; wsprintf(tmp, "%s %i %i %i", (X), (A), (B), (C)); OutputDebugString(tmp); }
+// { char tmp[120]; wsprintf(tmp, "%s %i %i %i", (X), (A), (B), (C)); OutputDebugString(tmp); }
 #define DEBUG4(X,A,B,C,D)
-// { char tmp[100]; wsprintf(tmp, "%s %i %i %i %i", (X), (A), (B), (C), (D)); OutputDebugString(tmp); }
+// { char tmp[120]; wsprintf(tmp, "%s %i %i %i %i", (X), (A), (B), (C), (D)); OutputDebugString(tmp); }
 #define DEBUG5(X,A,B,C,D,E)
-// { char tmp[100]; wsprintf(tmp, "%s %i %i %i %i %i", (X), (A), (B), (C), (D), (E)); OutputDebugString(tmp); }
+// { char tmp[120]; wsprintf(tmp, "%s %i %i %i %i %i", (X), (A), (B), (C), (D), (E)); OutputDebugString(tmp); }
 #define DEBUGFOURCC(X,Y)
-// { char tmp[100]; wsprintf(tmp, "%s %c %c %c %c", (X), (Y)&0xff, ((Y)>>8)&0xff, ((Y)>>16)&0xff, ((Y)>>24)&0xff); OutputDebugString(tmp); }
+// { char tmp[120]; wsprintf(tmp, "%s %c %c %c %c", (X), (Y)&0xff, ((Y)>>8)&0xff, ((Y)>>16)&0xff, ((Y)>>24)&0xff); OutputDebugString(tmp); }
 #define DEBUG2P(X) OutputDebugString(X)
-#define DEBUG1ST(A,B,C,D,E,F) { char tmp[100]; wsprintf(tmp, "1st-pass: size:%d total-kbytes:%d %s quant:%d kblocks:%d mblocks:%d", (A), (B), (C) ? "intra" : "inter", (D), (E), (F)); OutputDebugString(tmp); }
-#define DEBUG2ND(A,B,C,D,E,F,G) { char tmp[100]; wsprintf(tmp, "2nd-pass: quant:%d %s stats1:%d scaled:%d actual:%d overflow:%d %s", (A), (B) ? "intra" : "inter", (C), (D), (E), (F), (G) ? "credits" : "movie"); OutputDebugString(tmp); }
+#define DEBUG1ST(A,B,C,D,E,F,G) { char tmp[120]; wsprintf(tmp, "1st-pass: size:%d total-kbytes:%d %s quant:%d %s kblocks:%d mblocks:%d", (A), (B), (C) ? "intra" : "inter", (D), (E), (F), (G)); OutputDebugString(tmp); }
+#define DEBUG2ND(A,B,C,D,E,F,G,H) { char tmp[120]; wsprintf(tmp, "2nd-pass: quant:%d %s %s stats1:%d scaled:%d actual:%d overflow:%d %s", (A), (B), (C) ? "intra" : "inter", (D), (E), (F), (G), (H) ? "credits" : "movie"); OutputDebugString(tmp); }
 
 
 #define FOURCC_XVID	mmioFOURCC('X','V','I','D')
 #define FOURCC_DIVX	mmioFOURCC('D','I','V','X')
+#define FOURCC_DX50 mmioFOURCC('D','X','5','0')
 //#define FOURCC_DIV3	mmioFOURCC('D','I','V','3')
 //#define FOURCC_DIV4	mmioFOURCC('D','I','V','4')
 
@@ -90,8 +89,8 @@ typedef struct
 
 typedef struct
 {
-	HANDLE * stats1;
-	HANDLE * stats2;
+	HANDLE stats1;
+	HANDLE stats2;
 
 	int bytes1;
 	int bytes2;
@@ -130,6 +129,8 @@ typedef struct
 	int dopt;		// DEC_OPT_DECODE, DEC_OPT_DECODE_MS
 } CODEC;
 
+
+int get_colorspace(BITMAPINFOHEADER *);
 
 LRESULT compress_query(CODEC *, BITMAPINFO *, BITMAPINFO *);
 LRESULT compress_get_format(CODEC *, BITMAPINFO *, BITMAPINFO *);
