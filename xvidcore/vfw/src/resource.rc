@@ -793,135 +793,56 @@ BEGIN
                     WS_EX_TRANSPARENT
 END
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
+IDD_BITRATE DIALOG DISCARDABLE  0, 0, 212, 212
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Bitrate Calculator"
+FONT 8, "MS Shell Dlg"
 BEGIN
-    IDD_RC_2PASS1, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 204
-        TOPMARGIN, 7
-    END
-
-    IDD_MOTION, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 200
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 190
-    END
-
-    IDD_MAIN, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        TOPMARGIN, 7
-    END
-
-    IDD_QUANT, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 177
-        TOPMARGIN, 7
-    END
-
-    IDD_RC_2PASS2, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 204
-        VERTGUIDE, 16
-        VERTGUIDE, 140
-        VERTGUIDE, 196
-        TOPMARGIN, 7
-    END
-
-    IDD_DEBUG, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 193
-        TOPMARGIN, 7
-    END
-
-    IDD_QUANTMATRIX, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 281
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 142
-    END
-
-    IDD_ABOUT, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 185
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 158
-    END
-
-    IDD_RC_CBR, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 179
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 136
-    END
-
-    IDD_PROFILE, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 204
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 211
-    END
-
-    IDD_ZONE, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 169
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 181
-    END
-
-    IDD_LEVEL, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 181
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 214
-    END
-
-    IDD_DEC, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 193
-        TOPMARGIN, 7
-    END
-
-    IDD_STATUS, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 318
-        TOPMARGIN, 3
-        BOTTOMMARGIN, 213
-    END
-
-    IDD_AR, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 204
-        VERTGUIDE, 28
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 209
-        HORZGUIDE, 81
-        HORZGUIDE, 136
-    END
+    COMBOBOX        IDC_BITRATE_TSIZE,95,5,75,64,CBS_DROPDOWN | WS_VSCROLL | 
+                    WS_TABSTOP
+    EDITTEXT        IDC_BITRATE_SSIZE,95,20,75,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_BITRATE_SSELECT,178,21,20,12
+    COMBOBOX        IDC_BITRATE_CFORMAT,95,45,75,64,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_BITRATE_COVERHEAD,95,60,75,12,ES_AUTOHSCROLL | 
+                    ES_READONLY
+    EDITTEXT        IDC_BITRATE_HOURS,15,100,29,11,ES_AUTOHSCROLL
+    EDITTEXT        IDC_BITRATE_MINUTES,52,100,29,11,ES_AUTOHSCROLL
+    EDITTEXT        IDC_BITRATE_SECONDS,88,100,29,11,ES_AUTOHSCROLL
+    COMBOBOX        IDC_BITRATE_FPS,124,100,71,100,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_BITRATE_VSIZE,95,120,75,12,ES_AUTOHSCROLL | 
+                    ES_READONLY
+    EDITTEXT        IDC_BITRATE_VRATE,95,135,75,12,ES_AUTOHSCROLL | 
+                    ES_READONLY
+    COMBOBOX        IDC_BITRATE_AFORMAT,95,158,75,64,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_BITRATE_ARATE,95,173,75,64,CBS_DROPDOWN | WS_VSCROLL | 
+                    WS_TABSTOP
+    EDITTEXT        IDC_BITRATE_ASIZE,95,188,75,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_BITRATE_ASELECT,178,188,20,12
+    CONTROL         "Average bitrate:",IDC_BITRATE_AMODE_RATE,"Button",
+                    BS_AUTORADIOBUTTON,15,175,66,10
+    GROUPBOX        "Video",IDC_STATIC,5,75,200,132
+    GROUPBOX        "Audio",IDC_STATIC,5,148,200,59
+    CONTROL         "Size (kbytes):",IDC_BITRATE_AMODE_SIZE,"Button",
+                    BS_AUTORADIOBUTTON,15,190,58,10
+    LTEXT           "Target size (kbytes):",IDC_STATIC,15,6,64,12,
+                    SS_CENTERIMAGE
+    LTEXT           "Format:",IDC_STATIC,15,46,24,13,SS_CENTERIMAGE
+    LTEXT           "Format:",IDC_STATIC,15,160,24,8,SS_CENTERIMAGE
+    LTEXT           "Size (kbytes):",IDC_STATIC,15,121,43,8,SS_CENTERIMAGE
+    GROUPBOX        "Container:",IDC_STATIC,5,35,200,172
+    LTEXT           "Overhead (kbytes):",IDC_STATIC,15,61,61,10,
+                    SS_CENTERIMAGE
+    LTEXT           "Average bitrate:",IDC_STATIC,15,136,51,8,SS_CENTERIMAGE
+    CTEXT           "hours",IDC_STATIC,15,90,30,8
+    CTEXT           "minutes",IDC_STATIC,52,90,30,8
+    CTEXT           "seconds",IDC_STATIC,88,90,30,8
+    CTEXT           "frames per second",IDC_STATIC,126,90,70,8
+    LTEXT           "Subtitles (kbytes):",IDC_STATIC,15,21,60,10,
+                    SS_CENTERIMAGE
 END
-#endif    // APSTUDIO_INVOKED
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1087,82 +1008,6 @@ END
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_AUS
 #pragma code_page(1252)
 #endif //_WIN32
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Dialog
-//
-
-IDD_BITRATE DIALOG DISCARDABLE  0, 0, 212, 212
-STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Bitrate Calculator"
-FONT 8, "MS Shell Dlg"
-BEGIN
-    COMBOBOX        IDC_BITRATE_TSIZE,95,5,75,64,CBS_DROPDOWN | WS_VSCROLL | 
-                    WS_TABSTOP
-    EDITTEXT        IDC_BITRATE_SSIZE,95,20,75,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_BITRATE_SSELECT,178,21,20,12
-    COMBOBOX        IDC_BITRATE_CFORMAT,95,45,75,64,CBS_DROPDOWNLIST | 
-                    WS_VSCROLL | WS_TABSTOP
-    EDITTEXT        IDC_BITRATE_COVERHEAD,95,60,75,12,ES_AUTOHSCROLL | 
-                    ES_READONLY
-    EDITTEXT        IDC_BITRATE_HOURS,15,100,29,11,ES_AUTOHSCROLL
-    EDITTEXT        IDC_BITRATE_MINUTES,55,100,29,11,ES_AUTOHSCROLL
-    EDITTEXT        IDC_BITRATE_SECONDS,95,100,29,11,ES_AUTOHSCROLL
-    COMBOBOX        IDC_BITRATE_FPS,135,100,60,64,CBS_DROPDOWNLIST | 
-                    WS_VSCROLL | WS_TABSTOP
-    EDITTEXT        IDC_BITRATE_VSIZE,95,120,75,12,ES_AUTOHSCROLL | 
-                    ES_READONLY
-    EDITTEXT        IDC_BITRATE_VRATE,95,135,75,12,ES_AUTOHSCROLL | 
-                    ES_READONLY
-    COMBOBOX        IDC_BITRATE_AFORMAT,95,158,75,64,CBS_DROPDOWNLIST | 
-                    WS_VSCROLL | WS_TABSTOP
-    COMBOBOX        IDC_BITRATE_ARATE,95,173,75,64,CBS_DROPDOWN | WS_VSCROLL | 
-                    WS_TABSTOP
-    EDITTEXT        IDC_BITRATE_ASIZE,95,188,75,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_BITRATE_ASELECT,178,188,20,12
-    CONTROL         "Average bitrate:",IDC_BITRATE_AMODE_RATE,"Button",
-                    BS_AUTORADIOBUTTON,15,175,66,10
-    GROUPBOX        "Video",IDC_STATIC,5,75,200,132
-    GROUPBOX        "Audio",IDC_STATIC,5,148,200,59
-    CONTROL         "Size (kbytes):",IDC_BITRATE_AMODE_SIZE,"Button",
-                    BS_AUTORADIOBUTTON,15,190,58,10
-    LTEXT           "Target size (kbytes):",IDC_STATIC,15,6,64,12,
-                    SS_CENTERIMAGE
-    LTEXT           "Format:",IDC_STATIC,15,46,24,13,SS_CENTERIMAGE
-    LTEXT           "Format:",IDC_STATIC,15,160,24,8,SS_CENTERIMAGE
-    LTEXT           "Size (kbytes):",IDC_STATIC,15,121,43,8,SS_CENTERIMAGE
-    GROUPBOX        "Container:",IDC_STATIC,5,35,200,172
-    LTEXT           "Overhead (kbytes):",IDC_STATIC,15,61,61,10,
-                    SS_CENTERIMAGE
-    LTEXT           "Average bitrate:",IDC_STATIC,15,136,51,8,SS_CENTERIMAGE
-    CTEXT           "hours",IDC_STATIC,15,90,30,8
-    CTEXT           "minutes",IDC_STATIC,55,90,30,8
-    CTEXT           "seconds",IDC_STATIC,95,90,30,8
-    CTEXT           "fps",IDC_STATIC,145,90,40,8
-    LTEXT           "Subtitles (kbytes):",IDC_STATIC,15,21,60,10,
-                    SS_CENTERIMAGE
-END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
-BEGIN
-    IDD_BITRATE, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 205
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 205
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
