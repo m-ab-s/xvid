@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.61 2003-12-27 10:50:50 edgomez Exp $
+ * $Id: xvid.h,v 1.27.2.62 2004-01-07 13:51:02 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -645,11 +645,11 @@ extern int xvid_encore(void *handle, int opt, void *param1, void *param2);
 #define XVID_ME_EXTSEARCH8            (1<<11) /* use diamond/square for extended 8x8 search */
 #define XVID_ME_CHROMA_PVOP           (1<<12) /* also use chroma for P_VOP/S_VOP ME */
 #define XVID_ME_CHROMA_BVOP           (1<<13) /* also use chroma for B_VOP ME */
-#define XVID_ME_FASTREFINE16		  (1<<25) /* use low-complexity refinement functions */
+#define XVID_ME_FASTREFINE16          (1<<25) /* use low-complexity refinement functions */
 #define XVID_ME_FASTREFINE8           (1<<29) /* low-complexity 8x8 sub-block refinement */
 
 /* Rate Distortion based flags
- * Valid when XVID_VOP_MODEDECISION_BITS is enabled */
+ * Valid when XVID_VOP_MODEDECISION_RD is enabled */
 #define XVID_ME_HALFPELREFINE16_RD    (1<<14) /* perform RD-based halfpel refinement */
 #define XVID_ME_HALFPELREFINE8_RD     (1<<15) /* perform RD-based halfpel refinement for 8x8 mode */
 #define XVID_ME_QUARTERPELREFINE16_RD (1<<16) /* perform RD-based qpel refinement */
