@@ -28,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.27 2003-02-09 06:33:51 suxen_drol Exp $
+*  $Id: xvid.h,v 1.17.2.28 2003-02-12 12:03:30 syskin Exp $
 *
 *****************************************************************************/
 
@@ -287,7 +287,7 @@ extern "C" {
 #define XVID_ME_EPZS			0x00100000
 
 #define XVID_GREYSCALE			0x01000000	/* enable greyscale only mode (even for */
-#define XVID_GRAYSCALE			0x01000000  /* color input material chroma is ignored) */
+											/* color input material chroma is ignored) */
 
 #define XVID_GMC				0x10000000
 #define XVID_GMC_TRANSLATIONAL	0x20000000
@@ -297,33 +297,41 @@ extern "C" {
 
 #define XVID_EXTRASTATS			0x00000200  /* generate extra statistics */
 
+#define XVID_MODEDECISION_DCT	0x00400000	/* enable DCT-ME and use it for mode decision */
+
 
 /* Flags for XVID_ENC_FRAME.motion */
-#define PMV_ADVANCEDDIAMOND8	0x00004000
-#define PMV_ADVANCEDDIAMOND16   0x00008000
 
-#define PMV_HALFPELDIAMOND16 	0x00010000
-#define PMV_HALFPELREFINE16 	0x00020000
-#define PMV_QUARTERPELREFINE16	0x00040000
-#define PMV_EXTSEARCH16 		0x00080000	/* extend PMV by more searches */
-
-#define PMV_CHROMA16			0x00100000	/* also use chroma for MB-ME */
-#define PMV_UNRESTRICTED16   	0x00200000	/* unrestricted ME, not implemented */
-#define PMV_OVERLAPPING16   	0x00400000	/* overlapping ME, not implemented */
+#define PMV_ADVANCEDDIAMOND16   0x00008000	/* use advdiamonds instead of diamonds as search pattern */
 #define PMV_USESQUARES16		0x00800000	/* use squares instead of diamonds as search pattern */
 
-#define PMV_HALFPELDIAMOND8 	0x01000000
+#define PMV_HALFPELREFINE16 	0x00020000
 #define PMV_HALFPELREFINE8 		0x02000000
+
+#define PMV_QUARTERPELREFINE16	0x00040000
 #define PMV_QUARTERPELREFINE8	0x04000000
-#define PMV_EXTSEARCH8 			0x08000000	/* extend PMV by more searches */
 
-#define PMV_CHROMA8				0x10000000	/* also use chroma for B-ME */
-#define PMV_UNRESTRICTED8   	0x20000000	/* unrestricted ME, not implemented */
-#define PMV_OVERLAPPING8   		0x40000000	/* overlapping ME, not implemented */
-#define PMV_USESQUARES8			0x80000000
+#define PMV_EXTSEARCH16 		0x00080000	/* extend PMV by more searches */
+
+#define PMV_EXTSEARCH8 			0x08000000	/* use diamond/square for extended 8x8 search */
+#define PMV_ADVANCEDDIAMOND8	0x00004000	/* use advdiamond for PMV_EXTSEARCH8 */
+#define PMV_USESQUARES8			0x80000000	/* use square for PMV_EXTSEARCH8 */
+
+#define PMV_CHROMA16			0x00100000	/* also use chroma for P_VOP/S_VOP ME */
+#define PMV_CHROMA8				0x10000000	/* also use chroma for B_VOP ME */
+
+/* Motion search using DCT. use XVID_MODEDECISION_DCT to enable */
+#define HALFPELREFINE16_DCT		0x00000100	/* perform DCT-based halfpel refinement */
+#define HALFPELREFINE8_DCT		0x00000200	/* perform DCT-based halfpel refinement for 8x8 mode */
+#define QUARTERPELREFINE16_DCT	0x00000400	/* perform DCT-based qpel refinement */
+#define QUARTERPELREFINE8_DCT	0x00000800	/* perform DCT-based qpel refinement for 8x8 mode */
+
+#define EXTSEARCH_DCT			0x00001000	/* perform DCT-based search using square pattern */
+											/* enable PMV_EXTSEARCH8 to do this in 8x8 search as well */
+#define CHECKPREDICTION_DCT		0x00002000	/* always check vector equal to prediction */
 
 
-/* note: old and deprecated */
+/* note: old and deprecated - or never implemented */
 
 /* only for compatability with old encoders */
 
@@ -332,7 +340,15 @@ extern "C" {
 #define PMV_QUICKSTOP16	   		0x00	
 #define PMV_QUICKSTOP8	   		0x00	
 
-#define XVID_ME_COLOUR			0x00	/* this has been converted to PMV_COLOUR[16/8] */
+#define PMV_HALFPELDIAMOND16 	0x00
+#define PMV_HALFPELDIAMOND8 	0x00
+
+#define PMV_UNRESTRICTED16   	0x00200000	/* unrestricted ME, not implemented */
+#define PMV_OVERLAPPING16   	0x00400000	/* overlapping ME, not implemented */
+#define PMV_UNRESTRICTED8   	0x20000000	/* unrestricted ME, not implemented */
+#define PMV_OVERLAPPING8   		0x40000000	/* overlapping ME, not implemented */
+
+#define XVID_ME_COLOUR			0x00	/* this has been converted to PMV_CHROMA[16/8] */
 
 
 /*****************************************************************************
