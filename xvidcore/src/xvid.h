@@ -28,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.26 2003-01-25 22:44:50 chl Exp $
+*  $Id: xvid.h,v 1.17.2.27 2003-02-09 06:33:51 suxen_drol Exp $
 *
 *****************************************************************************/
 
@@ -293,6 +293,7 @@ extern "C" {
 #define XVID_GMC_TRANSLATIONAL	0x20000000
 
 #define XVID_REDUCED			0x04000000	/* reduced resolution vop */
+#define XVID_HQACPRED			0x08000000	/* 20030209: high quality ac prediction */
 
 #define XVID_EXTRASTATS			0x00000200  /* generate extra statistics */
 

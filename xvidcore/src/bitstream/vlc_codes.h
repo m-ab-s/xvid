@@ -2,7 +2,6 @@
 #define _VLC_CODES_H_
 
 #include "../portab.h"
-#include "mbcoding.h"
 
 #define VLC_ERROR	(-1)
 

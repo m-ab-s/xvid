@@ -55,6 +55,8 @@
 #include "mbprediction.h"
 #include "../utils/mbfunctions.h"
 #include "../bitstream/cbp.h"
+#include "../bitstream/mbcoding.h"
+#include "../bitstream/zigzag.h"
 
 
 static int __inline
@@ -281,16 +283,14 @@ add_acdc(MACROBLOCK * pMB,
 
 /* encoder: subtract predictors from qcoeff[] and calculate S1/S2
 
-todo: perform [-127,127] clamping after prediction
-clamping must adjust the coeffs, so dequant is done correctly
-				   
-S1/S2 are used  to determine if its worth predicting for AC
+returns sum of coeefficients *saved* if prediction is enabled
+
 S1 = sum of all (qcoeff - prediction)
 S2 = sum of all qcoeff
 */
 
-uint32_t
-calc_acdc(MACROBLOCK * pMB,
+int
+calc_acdc_coeff(MACROBLOCK * pMB,
 		  uint32_t block,
 		  int16_t qcoeff[64],
 		  uint32_t iDcScaler,
@@ -298,7 +298,7 @@ calc_acdc(MACROBLOCK * pMB,
 {
 	int16_t *pCurrent = pMB->pred_values[block];
 	uint32_t i;
-	uint32_t S1 = 0, S2 = 0;
+	int S1 = 0, S2 = 0;
 
 
 	/* store current coeffs to pred_values[] for future prediction */
@@ -342,6 +342,73 @@ calc_acdc(MACROBLOCK * pMB,
 }
 
 
+
+/* returns the bits *saved* if prediction is enabled */
+
+int
+calc_acdc_bits(MACROBLOCK * pMB,
+		  uint32_t block,
+		  int16_t qcoeff[64],
+		  uint32_t iDcScaler,
+		  int16_t predictors[8])
+{
+	const int direction = pMB->acpred_directions[block];
+	int16_t *pCurrent = pMB->pred_values[block];
+	int16_t tmp[8];
+	unsigned int i;
+	int Z1, Z2;
+
+	/* store current coeffs to pred_values[] for future prediction */
+	pCurrent[0] = qcoeff[0] * iDcScaler;
+	for (i = 1; i < 8; i++) {
+		pCurrent[i] = qcoeff[i];
+		pCurrent[i + 7] = qcoeff[i * 8];
+	}
+
+
+	/* dc prediction */
+	qcoeff[0] = qcoeff[0] - predictors[0];
+
+	/* calc cost before ac prediction */
+#ifdef BIGLUT
+	Z2 = CodeCoeff_CalcBits(qcoeff, intra_table, scan_tables[0], 1);
+#else
+	Z2 = CodeCoeffIntra_CalcBits(qcoeff, scan_tables[0]);
+#endif
+
+	/* apply ac prediction & calc cost*/
+	if (direction == 1) {
+		for (i = 1; i < 8; i++) {
+			tmp[i] = qcoeff[i];
+			qcoeff[i] -= predictors[i];
+			predictors[i] = qcoeff[i];
+		}
+	}else{						// acpred_direction == 2
+		for (i = 1; i < 8; i++) {
+			tmp[i] = qcoeff[i*8];
+			qcoeff[i*8] -= predictors[i];
+			predictors[i] = qcoeff[i*8];
+		}
+	}
+
+#ifdef BIGLUT
+	Z1 = CodeCoeff_CalcBits(qcoeff, intra_table, scan_tables[direction], 1);
+#else
+	Z1 = CodeCoeffIntra_CalcBits(qcoeff, scan_tables[direction]);
+#endif
+
+	/* undo prediction */
+	if (direction == 1) {
+		for (i = 1; i < 8; i++)	
+			qcoeff[i] = tmp[i];
+	}else{						// acpred_direction == 2
+		for (i = 1; i < 8; i++)	
+			qcoeff[i*8] = tmp[i];
+	}
+
+	return Z2-Z1;
+}
+
 /* apply predictors[] to qcoeff */
 
 void
@@ -350,16 +417,14 @@ apply_acdc(MACROBLOCK * pMB,
 		   int16_t qcoeff[64],
 		   int16_t predictors[8])
 {
-	uint32_t i;
+	unsigned int i;
 
 	if (pMB->acpred_directions[block] == 1) {
-		for (i = 1; i < 8; i++) {
+		for (i = 1; i < 8; i++)	
 			qcoeff[i] = predictors[i];
-		}
 	} else {
-		for (i = 1; i < 8; i++) {
+		for (i = 1; i < 8; i++)	
 			qcoeff[i * 8] = predictors[i];
-		}
 	}
 }
 
@@ -374,7 +439,7 @@ MBPrediction(FRAMEINFO * frame,
 
 	int32_t j;
 	int32_t iDcScaler, iQuant = frame->quant;
-	int32_t S = 0;
+	int S = 0;
 	int16_t predictors[6][8];
 
 	MACROBLOCK *pMB = &frame->mbs[x + y * mb_width];
@@ -382,25 +447,26 @@ MBPrediction(FRAMEINFO * frame,
 	if ((pMB->mode == MODE_INTRA) || (pMB->mode == MODE_INTRA_Q)) {
 
 		for (j = 0; j < 6; j++) {
-			iDcScaler = get_dc_scaler(iQuant, (j < 4) ? 1 : 0);
+			iDcScaler = get_dc_scaler(iQuant, j<4);
 
 			predict_acdc(frame->mbs, x, y, mb_width, j, &qcoeff[j * 64],
 						 iQuant, iDcScaler, predictors[j], 0);
 
-			S += calc_acdc(pMB, j, &qcoeff[j * 64], iDcScaler, predictors[j]);
+			if ((frame->global_flags & XVID_HQACPRED))
+				S += calc_acdc_bits(pMB, j, &qcoeff[j * 64], iDcScaler, predictors[j]);
+			else
+				S += calc_acdc_coeff(pMB, j, &qcoeff[j * 64], iDcScaler, predictors[j]);
 
 		}
 
-		if (S < 0)				// dont predict
-		{
-			for (j = 0; j < 6; j++) {
+		if (S<=0) {				// dont predict
+			for (j = 0; j < 6; j++)
 				pMB->acpred_directions[j] = 0;
-			}
-		} else {
-			for (j = 0; j < 6; j++) {
+		}else{
+			for (j = 0; j < 6; j++) 
 				apply_acdc(pMB, j, &qcoeff[j * 64], predictors[j]);
-			}
 		}
+		
 		pMB->cbp = calc_cbp(qcoeff);
 	}
 

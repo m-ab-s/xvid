@@ -3,6 +3,7 @@
 
 #include "../portab.h"
 #include "../global.h"
+#include "vlc_codes.h"
 #include "bitstream.h"
 
 void init_vlc_tables(void);
@@ -47,5 +48,13 @@ MBSkip(Bitstream * bs)
 {
 	BitstreamPutBit(bs, 1);	// not coded
 }
+
+
+#ifdef BIGLUT
+extern VLC *intra_table;
+int CodeCoeff_CalcBits(const int16_t qcoeff[64], VLC * table, const uint16_t * zigzag, uint16_t intra);
+#else
+int CodeCoeffIntra_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag);
+#endif
 
 #endif							/* _MB_CODING_H_ */

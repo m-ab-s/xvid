@@ -72,7 +72,8 @@ static REVERSE_EVENT DCT3D[2][4096];
 
 #ifdef BIGLUT
 static VLC coeff_VLC[2][2][4096][64];
-static VLC *intra_table, *inter_table; 
+VLC *intra_table;
+static VLC *inter_table; 
 #else
 static VLC coeff_VLC[2][2][64][64];
 #endif
@@ -373,6 +374,50 @@ CodeCoeff(Bitstream * bs,
 
 }
 
+
+
+/* returns the number of bits required to encode qcoeff */
+int
+CodeCoeff_CalcBits(const int16_t qcoeff[64],
+		  VLC * table,
+		  const uint16_t * zigzag,
+		  uint16_t intra)
+{
+	int bits = 0;
+	uint32_t j, last;
+	short v;
+	VLC *vlc;
+
+	j = intra;
+	last = intra;
+
+	while (j < 64 && (v = qcoeff[zigzag[j]]) == 0)
+		j++;
+
+	if (j >= 64) return 0;	/* empty block */
+
+	do {
+		vlc = table + 64 * 2048 + (v << 6) + j - last;
+		last = ++j;
+
+		/* count zeroes */
+		while (j < 64 && (v = qcoeff[zigzag[j]]) == 0)
+			j++;
+
+		/* write code */
+		if (j != 64) {
+			bits += vlc->len;
+		} else {
+			vlc += 64 * 4096;
+			bits += vlc->len;
+			break;
+		}
+	} while (1);
+
+	return bits;
+}
+
+
 #else
 
 static __inline void
@@ -442,7 +487,7 @@ CodeCoeffIntra(Bitstream * bs,
 	i	= 1;
 	run = 0;
 
-	while (!(level = qcoeff[zigzag[i++]]))
+	while (i<64 && !(level = qcoeff[zigzag[i++]]))
 		run++;
 
 	prev_level = level;
@@ -486,6 +531,55 @@ CodeCoeffIntra(Bitstream * bs,
 	}
 	BitstreamPutBits(bs, code, len);
 }
+
+
+
+/* returns the number of bits required to encode qcoeff */
+
+int 
+CodeCoeffIntra_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag)
+{
+	int bits = 0;
+	uint32_t i, abs_level, run, prev_run, len;
+	int32_t level, prev_level;
+
+	i	= 1;
+	run = 0;
+
+	while (i<64 && !(level = qcoeff[zigzag[i++]]))
+		run++;
+
+	if (i >= 64) return 0;	/* empty block */
+
+	prev_level = level;
+	prev_run   = run;
+	run = 0;
+
+	while (i < 64)
+	{
+		if ((level = qcoeff[zigzag[i++]]) != 0)
+		{
+			abs_level = ABS(prev_level);
+			abs_level = abs_level < 64 ? abs_level : 0;
+			len		  = coeff_VLC[1][0][abs_level][prev_run].len;
+			bits      += len!=128 ? len : 30;
+
+			prev_level = level;
+			prev_run   = run;
+			run = 0;
+		}
+		else
+			run++;
+	}
+
+	abs_level = ABS(prev_level);
+	abs_level = abs_level < 64 ? abs_level : 0;
+	len		  = coeff_VLC[1][1][abs_level][prev_run].len;
+	bits      += len!=128 ? len : 30;
+
+	return bits;
+}
+
 
 #endif
 

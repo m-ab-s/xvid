@@ -160,7 +160,7 @@ typedef struct
 }
 MACROBLOCK;
 
-static __inline int8_t
+static __inline uint32_t
 get_dc_scaler(uint32_t quant,
 			  uint32_t lum)
 {
