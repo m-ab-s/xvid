@@ -251,40 +251,30 @@ MBMotionCompensationBVOP(MBParam * pParam,
 	int k,sum;
 	int x = i;
 	int y = j;
-
+	uint32_t quarterpel = pParam->m_quarterpel;
 
 	switch (mb->mode) {
 	case MODE_FORWARD:
-		dx = mb->mvs[0].x;
-		dy = mb->mvs[0].y;
 
-		transfer_8to16sub(&dct_codes[0 * 64],
-							cur->y + (j * 16) * edged_width + (i * 16),
-							get_ref(f_ref->y, f_refh->y, f_refv->y, f_refhv->y,
-									i * 16, j * 16, 1, dx, dy, edged_width),
-							edged_width);
+		if (quarterpel) {
+			dx = mb->qmvs[0].x;
+			dy = mb->qmvs[0].y;		
+		} else {
+			dx = mb->mvs[0].x;
+			dy = mb->mvs[0].y;
+		}
 
-		transfer_8to16sub(&dct_codes[1 * 64],
-							cur->y + (j * 16) * edged_width + (i * 16 + 8),
-							get_ref(f_ref->y, f_refh->y, f_refv->y, f_refhv->y,
-								  i * 16 + 8, j * 16, 1, dx, dy, edged_width),
-							edged_width);
+		compensate16x16_interpolate(&dct_codes[0 * 64], cur->y, f_ref->y, f_refh->y,
+						  f_refv->y, f_refhv->y, 16 * i, 16 * j, dx,
+						  dy, edged_width, quarterpel, 0);
 
-		transfer_8to16sub(&dct_codes[2 * 64],
-							cur->y + (j * 16 + 8) * edged_width + (i * 16),
-							get_ref(f_ref->y, f_refh->y, f_refv->y, f_refhv->y,
-									i * 16, j * 16 + 8, 1, dx, dy, edged_width),
-							edged_width);
+		if (quarterpel) {
+			dx /= 2;
+			dy /= 2;
+		}
 
-		transfer_8to16sub(&dct_codes[3 * 64],
-							cur->y + (j * 16 + 8) * edged_width + (i * 16 + 8),
-							get_ref(f_ref->y, f_refh->y, f_refv->y, f_refhv->y,
-								  i * 16 + 8, j * 16 + 8, 1, dx, dy, edged_width),
-							edged_width);
-
-
-		dx = (dx & 3) ? (dx >> 1) | 1 : dx / 2;
-		dy = (dy & 3) ? (dy >> 1) | 1 : dy / 2;
+		dx = (dx >> 1) + roundtab_79[dx & 0x3];
+		dy = (dy >> 1) + roundtab_79[dy & 0x3];
 
 		/* uv-block-based compensation */
 		transfer_8to16sub(&dct_codes[4 * 64],
@@ -304,35 +294,26 @@ MBMotionCompensationBVOP(MBParam * pParam,
 		break;
 
 	case MODE_BACKWARD:
-		b_dx = mb->b_mvs[0].x;
-		b_dy = mb->b_mvs[0].y;
+		if (quarterpel) {
+			b_dx = mb->b_qmvs[0].x;
+			b_dy = mb->b_qmvs[0].y;		
+		} else {
+			b_dx = mb->b_mvs[0].x;
+			b_dy = mb->b_mvs[0].y;
+		}
 
-		transfer_8to16sub(&dct_codes[0 * 64],
-							cur->y + (j * 16) * edged_width + (i * 16),
-							get_ref(b_ref->y, b_refh->y, b_refv->y, b_refhv->y,
-									i * 16, j * 16, 1, b_dx, b_dy,
-									edged_width), edged_width);
+		compensate16x16_interpolate(&dct_codes[0 * 64], cur->y, b_ref->y, b_refh->y,
+						  b_refv->y, b_refhv->y, 16 * i, 16 * j, b_dx,
+						  b_dy, edged_width, quarterpel, 0);
 
-		transfer_8to16sub(&dct_codes[1 * 64],
-						  cur->y + (j * 16) * edged_width + (i * 16 + 8),
-						  get_ref(b_ref->y, b_refh->y, b_refv->y, b_refhv->y,
-								  i * 16 + 8, j * 16, 1, b_dx, b_dy,
-								  edged_width), edged_width);
+		if (quarterpel) {
+			b_dx /= 2;
+			b_dy /= 2;
+		}
 
-		transfer_8to16sub(&dct_codes[2 * 64],
-							cur->y + (j * 16 + 8) * edged_width + (i * 16),
-							get_ref(b_ref->y, b_refh->y, b_refv->y, b_refhv->y,
-									i * 16, j * 16 + 8, 1, b_dx, b_dy,
-									edged_width), edged_width);
+		b_dx = (b_dx >> 1) + roundtab_79[b_dx & 0x3];
+		b_dy = (b_dy >> 1) + roundtab_79[b_dy & 0x3];
 
-		transfer_8to16sub(&dct_codes[3 * 64],
-						  cur->y + (j * 16 + 8) * edged_width + (i * 16 + 8),
-						  get_ref(b_ref->y, b_refh->y, b_refv->y, b_refhv->y,
-								  i * 16 + 8, j * 16 + 8, 1, b_dx, b_dy,
-								  edged_width), edged_width);
-
-		b_dx = (b_dx & 3) ? (b_dx >> 1) | 1 : b_dx / 2;
-		b_dy = (b_dy & 3) ? (b_dy >> 1) | 1 : b_dy / 2;
 
 		/* uv-block-based compensation */
 		transfer_8to16sub(&dct_codes[4 * 64],
@@ -351,33 +332,58 @@ MBMotionCompensationBVOP(MBParam * pParam,
 
 		break;
 
-
 	case MODE_INTERPOLATE:		/* _could_ use DIRECT, but would be overkill (no 4MV there) */
 	case MODE_DIRECT_NO4V:
 
-		dx = mb->mvs[0].x;
-		dy = mb->mvs[0].y;
+		if (quarterpel) {
+			dx = mb->qmvs[0].x;
+			dy = mb->qmvs[0].y;
+			b_dx = mb->b_qmvs[0].x;
+			b_dy = mb->b_qmvs[0].y;
 
-		b_dx = mb->b_mvs[0].x;
-		b_dy = mb->b_mvs[0].y;
+			interpolate16x16_quarterpel((uint8_t *) f_refv->y, (uint8_t *) f_ref->y, (uint8_t *) f_refh->y,
+				(uint8_t *) f_refh->y + 64, (uint8_t *) f_refhv->y, 16*i, 16*j, dx, dy, edged_width, 0);
+			interpolate16x16_quarterpel((uint8_t *) b_refv->y, (uint8_t *) b_ref->y, (uint8_t *) b_refh->y,
+				(uint8_t *) b_refh->y + 64, (uint8_t *) b_refhv->y, 16*i, 16*j, b_dx, b_dy, edged_width, 0);
 
-		for (k = 0; k < 4; k++) {
-			transfer_8to16sub2(&dct_codes[k * 64],
-							cur->y + (i * 16+(k&1)*8) + (j * 16+((k>>1)*8)) * edged_width,
-							get_ref(f_ref->y, f_refh->y, f_refv->y,
-									f_refhv->y, 2*i + (k&1), 2*j + (k>>1), 8, dx, dy,
-									edged_width), 
-							get_ref(b_ref->y, b_refh->y, b_refv->y,
-									b_refhv->y, 2*i + (k&1), 2 * j+(k>>1), 8, b_dx, b_dy, 
-									edged_width),
-							edged_width);
+			for (k = 0; k < 4; k++) {
+				transfer_8to16sub2(&dct_codes[k * 64],
+								cur->y + (i * 16+(k&1)*8) + (j * 16+((k>>1)*8)) * edged_width,
+								f_refv->y + (i * 16+(k&1)*8) + (j * 16+((k>>1)*8)) * edged_width,
+								b_refv->y + (i * 16+(k&1)*8) + (j * 16+((k>>1)*8)) * edged_width,
+								edged_width);
+			}
+			b_dx /= 2;
+			b_dy /= 2;
+			dx /= 2;
+			dy /= 2;
+
+		} else {
+			dx = mb->mvs[0].x;
+			dy = mb->mvs[0].y;
+			b_dx = mb->b_mvs[0].x;
+			b_dy = mb->b_mvs[0].y;
+
+			for (k = 0; k < 4; k++) {
+				transfer_8to16sub2(&dct_codes[k * 64],
+								cur->y + (i * 16+(k&1)*8) + (j * 16+((k>>1)*8)) * edged_width,
+								get_ref(f_ref->y, f_refh->y, f_refv->y,
+										f_refhv->y, 2*i + (k&1), 2*j + (k>>1), 8, dx, dy,
+										edged_width), 
+								get_ref(b_ref->y, b_refh->y, b_refv->y,
+										b_refhv->y, 2*i + (k&1), 2 * j+(k>>1), 8, b_dx, b_dy, 
+										edged_width),
+								edged_width);
+			}
+
 		}
 
-		dx = (dx & 3) ? (dx >> 1) | 1 : dx / 2;
-		dy = (dy & 3) ? (dy >> 1) | 1 : dy / 2;
 
-		b_dx = (b_dx & 3) ? (b_dx >> 1) | 1 : b_dx / 2;
-		b_dy = (b_dy & 3) ? (b_dy >> 1) | 1 : b_dy / 2;
+		dx = (dx >> 1) + roundtab_79[dx & 0x3];
+		dy = (dy >> 1) + roundtab_79[dy & 0x3];
+
+		b_dx = (b_dx >> 1) + roundtab_79[b_dx & 0x3];
+		b_dy = (b_dy >> 1) + roundtab_79[b_dy & 0x3];
 
 		transfer_8to16sub2(&dct_codes[4 * 64],
 							cur->u + (y * 8) * edged_width / 2 + (x * 8),
@@ -398,46 +404,76 @@ MBMotionCompensationBVOP(MBParam * pParam,
 		break;
 	
 	case MODE_DIRECT:
+		if (quarterpel) {
+			for (k=0;k<4;k++) {
 
-		for (k=0;k<4;k++)
-		{
-			dx = mb->mvs[k].x;
-			dy = mb->mvs[k].y;
-		
-			b_dx = mb->b_mvs[k].x;
-			b_dy = mb->b_mvs[k].y;
+				dx = mb->qmvs[k].x;
+				dy = mb->qmvs[k].y;
+				b_dx = mb->b_qmvs[k].x;
+				b_dy = mb->b_qmvs[k].y;
 
-//		fprintf(stderr,"Direct Vector %d -- %d:%d    %d:%d\n",k,dx,dy,b_dx,b_dy);
+				interpolate8x8_quarterpel((uint8_t *) f_refv->y, 
+					(uint8_t *) f_ref->y, 
+					(uint8_t *) f_refh->y,
+					(uint8_t *) f_refh->y + 64,
+					(uint8_t *) f_refhv->y, 
+					16*i + (k&1)*8, 16*j + (k>>1)*8, dx, dy, edged_width, 0);
+				interpolate8x8_quarterpel((uint8_t *) b_refv->y, 
+					(uint8_t *) b_ref->y, 
+					(uint8_t *) b_refh->y,
+					(uint8_t *) b_refh->y + 64,
+					(uint8_t *) b_refhv->y, 
+					16*i + (k&1)*8, 16*j + (k>>1)*8, b_dx, b_dy, edged_width, 0);
 
-			transfer_8to16sub2(&dct_codes[k * 64],
-							cur->y + (i*16 + (k&1)*8) + (j*16 + (k>>1)*8 ) * edged_width,
-							get_ref(f_ref->y, f_refh->y, f_refv->y, f_refhv->y, 
-							 		2*i + (k&1), 2*j + (k>>1), 8, dx, dy,
-									edged_width), 
-							get_ref(b_ref->y, b_refh->y, b_refv->y, b_refhv->y, 
-							 		2*i + (k&1), 2*j + (k>>1), 8, b_dx, b_dy, 
-									edged_width),
-							edged_width);
+
+				transfer_8to16sub2(&dct_codes[k * 64],
+								cur->y + (i * 16+(k&1)*8) + (j * 16+((k>>1)*8)) * edged_width,
+								f_refv->y + (i * 16+(k&1)*8) + (j * 16+((k>>1)*8)) * edged_width,
+								b_refv->y + (i * 16+(k&1)*8) + (j * 16+((k>>1)*8)) * edged_width,
+								edged_width);
+			}
+			sum = mb->qmvs[0].y/2 + mb->qmvs[1].y/2 + mb->qmvs[2].y/2 + mb->qmvs[3].y/2;
+			dy = (sum >> 3) + roundtab_76[sum & 0xf];
+			sum = mb->qmvs[0].x/2 + mb->qmvs[1].x/2 + mb->qmvs[2].x/2 + mb->qmvs[3].x/2;
+			dx = (sum >> 3) + roundtab_76[sum & 0xf];
+
+			sum = mb->b_qmvs[0].y/2 + mb->b_qmvs[1].y/2 + mb->b_qmvs[2].y/2 + mb->b_qmvs[3].y/2;
+			b_dy = (sum >> 3) + roundtab_76[sum & 0xf];
+			sum = mb->b_qmvs[0].x/2 + mb->b_qmvs[1].x/2 + mb->b_qmvs[2].x/2 + mb->b_qmvs[3].x/2;
+			b_dx = (sum >> 3) + roundtab_76[sum & 0xf];
+
+		} else {
+			for (k=0;k<4;k++) {
+				dx = mb->mvs[k].x;
+				dy = mb->mvs[k].y;
+
+				b_dx = mb->b_mvs[k].x;
+				b_dy = mb->b_mvs[k].y;
+
+				transfer_8to16sub2(&dct_codes[k * 64],
+								cur->y + (i*16 + (k&1)*8) + (j*16 + (k>>1)*8 ) * edged_width,
+								get_ref(f_ref->y, f_refh->y, f_refv->y, f_refhv->y, 
+								 		2*i + (k&1), 2*j + (k>>1), 8, dx, dy,
+										edged_width), 
+								get_ref(b_ref->y, b_refh->y, b_refv->y, b_refhv->y, 
+								 		2*i + (k&1), 2*j + (k>>1), 8, b_dx, b_dy, 
+										edged_width),
+								edged_width);
+			}
+
+			sum = mb->mvs[0].x + mb->mvs[1].x + mb->mvs[2].x + mb->mvs[3].x;
+			dx = (sum == 0 ? 0 : SIGN(sum) * (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2));
+
+			sum = mb->mvs[0].y + mb->mvs[1].y + mb->mvs[2].y + mb->mvs[3].y;
+			dy = (sum == 0 ? 0 : SIGN(sum) * (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2));
+
+			sum = mb->b_mvs[0].x + mb->b_mvs[1].x + mb->b_mvs[2].x + mb->b_mvs[3].x;
+			b_dx = (sum == 0 ? 0 : SIGN(sum) * (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2));
+
+			sum = mb->b_mvs[0].y + mb->b_mvs[1].y + mb->b_mvs[2].y + mb->b_mvs[3].y;
+			b_dy = (sum == 0 ? 0 : SIGN(sum) * (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2));
+
 		}
-
-		sum = mb->mvs[0].x + mb->mvs[1].x + mb->mvs[2].x + mb->mvs[3].x;
-		dx = (sum == 0 ? 0 : SIGN(sum) * (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2));
-
-		sum = mb->mvs[0].y + mb->mvs[1].y + mb->mvs[2].y + mb->mvs[3].y;
-		dy = (sum == 0 ? 0 : SIGN(sum) * (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2));
-
-
-		sum = mb->b_mvs[0].x + mb->b_mvs[1].x + mb->b_mvs[2].x + mb->b_mvs[3].x;
-		b_dx = (sum == 0 ? 0 : SIGN(sum) * (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2));
-
-		sum = mb->b_mvs[0].y + mb->b_mvs[1].y + mb->b_mvs[2].y + mb->b_mvs[3].y;
-		b_dy = (sum == 0 ? 0 : SIGN(sum) * (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2));
-
-/*		// for QPel don't forget to always do
-
-		if (quarterpel)
-			sum /= 2;
-*/
 		transfer_8to16sub2(&dct_codes[4 * 64],
 							cur->u + (y * 8) * edged_width / 2 + (x * 8),
 							interpolate8x8_switch2(f_refv->u, b_ref->u, 8 * i, 8 * j,

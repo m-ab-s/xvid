@@ -61,6 +61,17 @@
 		default : REF = (uint8_t *)data->RefHV + ((X)-1)/2 + (((Y)-1)/2)*(data->iEdgedWidth); break; \
 	} \
 }
+// I hate those macros :/
+#define GET_REFERENCE2(X, Y, REF) { \
+	switch ( (((X)&1)<<1) + ((Y)&1) ) \
+	{ \
+		case 0 : REF = (uint8_t *)data->bRef + (X)/2 + ((Y)/2)*(data->iEdgedWidth); break; \
+		case 1 : REF = (uint8_t *)data->bRefV + (X)/2 + (((Y)-1)/2)*(data->iEdgedWidth); break; \
+		case 2 : REF = (uint8_t *)data->bRefH + ((X)-1)/2 + ((Y)/2)*(data->iEdgedWidth); break; \
+		default : REF = (uint8_t *)data->bRefHV + ((X)-1)/2 + (((Y)-1)/2)*(data->iEdgedWidth); break; \
+	} \
+}
+
 
 #define iDiamondSize 2
 
@@ -190,7 +201,10 @@ CheckCandidate16no4v(const int x, const int y, const int Direction, int * const 
 	}
 
 	sad = sad16(data->Cur, Reference, data->iEdgedWidth, MV_MAX_ERROR);
-	sad += (data->lambda16 * d_mv_bits(x - data->predMV.x, y - data->predMV.y, data->iFcode) * sad)/1000;
+	if (data->qpel)	//only to be used in b-frames' ME
+		sad += (data->lambda16 * d_mv_bits(2*x - data->predMV.x, 2*y - data->predMV.y, data->iFcode) * sad)/1000;
+	else
+		sad += (data->lambda16 * d_mv_bits(x - data->predMV.x, y - data->predMV.y, data->iFcode) * sad)/1000;
 
 	if (sad < *(data->iMinSAD)) {
 		*(data->iMinSAD) = sad;
@@ -277,8 +291,72 @@ CheckCandidate16_qpel(const int x, const int y, const int Direction, int * const
 }
 
 static void 
+CheckCandidate16no4v_qpel(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
+
+// CheckCandidate16no4v variant which expects x and y in quarter pixel resolution
+// Important: This is no general usable routine! x and y must be +/-1 (qpel resolution!)
+// around currentMV!
+// this function is for B-frames' search only
+{
+	uint8_t * Reference = (uint8_t *)data->RefQ;
+	const uint8_t *ref1, *ref2, *ref3, *ref4;
+	VECTOR halfpelMV = *(data->currentMV);
+
+	int32_t iEdgedWidth = data->iEdgedWidth;
+	int32_t sad;
+
+	if (( x > data->max_dx) || ( x < data->min_dx)
+		|| ( y > data->max_dy) || (y < data->min_dy)) return;
+
+	GET_REFERENCE(halfpelMV.x, halfpelMV.y, ref1); // this refenrence is used in all cases
+	switch( ((x&1)<<1) + (y&1) )
+	{
+	case 0: // pure halfpel position - shouldn't happen during a refinement step
+		GET_REFERENCE(halfpelMV.x, halfpelMV.y, Reference); 
+		break;
+
+	case 1: // x halfpel, y qpel - top or bottom during qpel refinement
+		GET_REFERENCE(halfpelMV.x, y - halfpelMV.y, ref2);
+		interpolate8x8_avg2(Reference, ref1, ref2, iEdgedWidth, 0);
+		interpolate8x8_avg2(Reference+8, ref1+8, ref2+8, iEdgedWidth, 0);
+		interpolate8x8_avg2(Reference+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, iEdgedWidth, 0);
+		interpolate8x8_avg2(Reference+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, iEdgedWidth, 0);
+		break;
+
+	case 2: // x qpel, y halfpel - left or right during qpel refinement
+		GET_REFERENCE(x - halfpelMV.x, halfpelMV.y, ref2);
+		interpolate8x8_avg2(Reference, ref1, ref2, iEdgedWidth, 0);
+		interpolate8x8_avg2(Reference+8, ref1+8, ref2+8, iEdgedWidth, 0);
+		interpolate8x8_avg2(Reference+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, iEdgedWidth, 0);
+		interpolate8x8_avg2(Reference+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, iEdgedWidth, 0);
+		break;
+
+	default: // x and y in qpel resolution - the "corners" (top left/right and
+			 // bottom left/right) during qpel refinement
+		GET_REFERENCE(halfpelMV.x, y - halfpelMV.y, ref2);
+		GET_REFERENCE(x - halfpelMV.x, halfpelMV.y, ref3);
+		GET_REFERENCE(x - halfpelMV.x, y - halfpelMV.y, ref4);
+
+		interpolate8x8_avg4(Reference, ref1, ref2, ref3, ref4, iEdgedWidth, 0);
+		interpolate8x8_avg4(Reference+8, ref1+8, ref2+8, ref3+8, ref4+8, iEdgedWidth, 0);
+		interpolate8x8_avg4(Reference+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, ref3+8*iEdgedWidth, ref4+8*iEdgedWidth, iEdgedWidth, 0);
+		interpolate8x8_avg4(Reference+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, ref3+8*iEdgedWidth+8, ref4+8*iEdgedWidth+8, iEdgedWidth, 0);
+		break;
+	}
+	
+	sad = sad16(data->Cur, Reference, data->iEdgedWidth, 256*4096);
+	sad += (data->lambda16 * d_mv_bits(x - data->predMV.x, y - data->predMV.y, data->iFcode) * sad)/1000;
+
+	if (sad < data->iMinSAD[0]) {
+		data->iMinSAD[0] = sad;
+		data->currentQMV[0].x = x; data->currentQMV[0].y = y;
+	/*	*dir = Direction;*/ }
+}
+
+static void 
 CheckCandidate16no4vI(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
 {
+// maximum speed - for P/B/I decision
 	int32_t sad;
 
 	if (( x > data->max_dx) || ( x < data->min_dx)
@@ -321,13 +399,124 @@ CheckCandidateInt(const int xf, const int yf, const int Direction, int * const d
 
 	sad = sad16bi(data->Cur, ReferenceF, ReferenceB, data->iEdgedWidth);
 
-	sad += (data->lambda16 *
+	if (data->qpel)
+		sad += (data->lambda16 *
+			( d_mv_bits(2*xf - data->predMV.x, 2*yf - data->predMV.y, data->iFcode) + 
+			  d_mv_bits(2*xb - data->bpredMV.x, 2*yb - data->bpredMV.y, data->iFcode)) * sad)/1000;
+	else
+		sad += (data->lambda16 *
 			( d_mv_bits(xf - data->predMV.x, yf - data->predMV.y, data->iFcode) + 
 			  d_mv_bits(xb - data->bpredMV.x, yb - data->bpredMV.y, data->iFcode)) * sad)/1000;
 
 	if (sad < *(data->iMinSAD)) {
 		*(data->iMinSAD) = sad;
 		data->currentMV->x = xf; data->currentMV->y = yf;
+		*dir = Direction; }
+}
+
+
+static void 
+CheckCandidateInt_qpel(const int xf, const int yf, const int Direction, int * const dir, const SearchData * const data)
+{
+// CheckCandidateInt variant which expects x and y in quarter pixel resolution
+
+	int32_t sad;
+	const int xb = data->currentQMV[1].x;
+	const int yb = data->currentQMV[1].y;
+	uint8_t * ReferenceF = (uint8_t *)data->RefQ;
+	uint8_t * ReferenceB = (uint8_t *)data->RefQ + 16;
+	const uint8_t *ref1, *ref2, *ref3, *ref4;
+	VECTOR halfpelMV;
+	const int32_t iEdgedWidth = data->iEdgedWidth;
+
+	if (( xf > data->max_dx) || ( xf < data->min_dx)
+		|| ( yf > data->max_dy) || (yf < data->min_dy)) return;
+
+	halfpelMV.x = xf/2; //forward first
+	halfpelMV.y = yf/2;
+	GET_REFERENCE(halfpelMV.x, halfpelMV.y, ref1); // this reference is used in all cases
+	switch( ((xf&1)<<1) + (yf&1) )
+	{
+	case 0: // pure halfpel position - shouldn't happen during a refinement step
+		GET_REFERENCE(halfpelMV.x, halfpelMV.y, ReferenceF); 
+		break;
+
+	case 1: // x halfpel, y qpel - top or bottom during qpel refinement
+		GET_REFERENCE(halfpelMV.x, yf - halfpelMV.y, ref2);
+		interpolate8x8_avg2(ReferenceF, ref1, ref2, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceF+8, ref1+8, ref2+8, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceF+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceF+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, iEdgedWidth, 0);
+		break;
+
+	case 2: // x qpel, y halfpel - left or right during qpel refinement
+		GET_REFERENCE(xf - halfpelMV.x, halfpelMV.y, ref2);
+		interpolate8x8_avg2(ReferenceF, ref1, ref2, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceF+8, ref1+8, ref2+8, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceF+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceF+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, iEdgedWidth, 0);
+		break;
+
+	default: // x and y in qpel resolution - the "corners" (top left/right and
+			 // bottom left/right) during qpel refinement
+		GET_REFERENCE(halfpelMV.x, yf - halfpelMV.y, ref2);
+		GET_REFERENCE(xf - halfpelMV.x, halfpelMV.y, ref3);
+		GET_REFERENCE(xf - halfpelMV.x, yf - halfpelMV.y, ref4);
+
+		interpolate8x8_avg4(ReferenceF, ref1, ref2, ref3, ref4, iEdgedWidth, 0);
+		interpolate8x8_avg4(ReferenceF+8, ref1+8, ref2+8, ref3+8, ref4+8, iEdgedWidth, 0);
+		interpolate8x8_avg4(ReferenceF+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, ref3+8*iEdgedWidth, ref4+8*iEdgedWidth, iEdgedWidth, 0);
+		interpolate8x8_avg4(ReferenceF+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, ref3+8*iEdgedWidth+8, ref4+8*iEdgedWidth+8, iEdgedWidth, 0);
+		break;
+	}
+
+	halfpelMV.x = xb/2; //backward
+	halfpelMV.y = yb/2;
+	GET_REFERENCE2(halfpelMV.x, halfpelMV.y, ref1); // this reference is used in all cases
+	switch( ((xb&1)<<1) + (yb&1) )
+	{
+	case 0: // pure halfpel position - shouldn't happen during a refinement step
+		GET_REFERENCE2(halfpelMV.x, halfpelMV.y, ReferenceB); 
+		break;
+
+	case 1: // x halfpel, y qpel - top or bottom during qpel refinement
+		GET_REFERENCE2(halfpelMV.x, yb - halfpelMV.y, ref2);
+		interpolate8x8_avg2(ReferenceB, ref1, ref2, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceB+8, ref1+8, ref2+8, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceB+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceB+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, iEdgedWidth, 0);
+		break;
+
+	case 2: // x qpel, y halfpel - left or right during qpel refinement
+		GET_REFERENCE2(xb - halfpelMV.x, halfpelMV.y, ref2);
+		interpolate8x8_avg2(ReferenceB, ref1, ref2, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceB+8, ref1+8, ref2+8, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceB+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceB+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, iEdgedWidth, 0);
+		break;
+
+	default: // x and y in qpel resolution - the "corners" (top left/right and
+			 // bottom left/right) during qpel refinement
+		GET_REFERENCE2(halfpelMV.x, yb - halfpelMV.y, ref2);
+		GET_REFERENCE2(xb - halfpelMV.x, halfpelMV.y, ref3);
+		GET_REFERENCE2(xb - halfpelMV.x, yb - halfpelMV.y, ref4);
+
+		interpolate8x8_avg4(ReferenceB, ref1, ref2, ref3, ref4, iEdgedWidth, 0);
+		interpolate8x8_avg4(ReferenceB+8, ref1+8, ref2+8, ref3+8, ref4+8, iEdgedWidth, 0);
+		interpolate8x8_avg4(ReferenceB+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, ref3+8*iEdgedWidth, ref4+8*iEdgedWidth, iEdgedWidth, 0);
+		interpolate8x8_avg4(ReferenceB+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, ref3+8*iEdgedWidth+8, ref4+8*iEdgedWidth+8, iEdgedWidth, 0);
+		break;
+	}
+
+	sad = sad16bi(data->Cur, ReferenceF, ReferenceB, data->iEdgedWidth);
+
+	sad += (data->lambda16 *
+			( d_mv_bits(xf - data->predMV.x, yf - data->predMV.y, data->iFcode) + 
+			  d_mv_bits(xb - data->bpredMV.x, yb - data->bpredMV.y, data->iFcode)) * sad)/1000;
+
+	if (sad < *(data->iMinSAD)) {
+		*(data->iMinSAD) = sad;
+		data->currentQMV->x = xf; data->currentQMV->y = yf;
 		*dir = Direction; }
 }
 
@@ -386,6 +575,228 @@ CheckCandidateDirect(const int x, const int y, const int Direction, int * const 
 		data->currentMV->x = x; data->currentMV->y = y;
 		*dir = Direction; }
 }
+
+
+static void 
+CheckCandidateDirect_qpel(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
+{
+	int32_t sad = 0;
+	int k;
+	VECTOR mvs, b_mvs, halfpelMV;
+	const uint8_t *ref1, *ref2, *ref3, *ref4;
+	uint8_t *ReferenceF, *ReferenceB;
+	const uint32_t iEdgedWidth = data->iEdgedWidth;
+
+	if (( x > 31) || ( x < -32) || ( y > 31) || (y < -32)) return;
+
+	for (k = 0; k < 4; k++) {
+		ReferenceF = (uint8_t *)data->RefQ;
+		ReferenceB = (uint8_t *)data->RefQ + 64;
+
+		mvs.x = data->directmvF[k].x + x;
+		b_mvs.x = ((x == 0) ?
+			data->directmvB[k].x
+			: mvs.x - data->referencemv[k].x);
+
+		mvs.y = data->directmvF[k].y + y;
+		b_mvs.y = ((y == 0) ?
+			data->directmvB[k].y
+			: mvs.y - data->referencemv[k].y);
+
+		if (( mvs.x > data->max_dx ) || ( mvs.x < data->min_dx )
+			|| ( mvs.y > data->max_dy ) || ( mvs.y < data->min_dy )
+			|| ( b_mvs.x > data->max_dx ) || ( b_mvs.x < data->min_dx )
+			|| ( b_mvs.y > data->max_dy ) || ( b_mvs.y < data->min_dy )) return;
+
+		halfpelMV.x = mvs.x/2; //forward first
+		halfpelMV.y = mvs.y/2;
+		GET_REFERENCE(halfpelMV.x, halfpelMV.y, ref1); // this reference is used in all cases
+		switch( ((mvs.x&1)<<1) + (mvs.y&1) ) {
+		case 0: // pure halfpel position
+			GET_REFERENCE(halfpelMV.x + 16*(k&1), halfpelMV.y + 16*(k>>1), ReferenceF); 
+			break;
+
+		case 1: // x halfpel, y qpel - top or bottom during qpel refinement
+			GET_REFERENCE(halfpelMV.x, mvs.y - halfpelMV.y, ref2);
+			interpolate8x8_avg2(ReferenceF, ref1+8*(k&1) + 8*(k>>1)*(data->iEdgedWidth), 
+							ref2+ 8*(k&1) + 8*(k>>1)*(data->iEdgedWidth), iEdgedWidth, 0);
+			break;
+
+		case 2: // x qpel, y halfpel - left or right during qpel refinement
+			GET_REFERENCE(mvs.x - halfpelMV.x, halfpelMV.y, ref2);
+			interpolate8x8_avg2(ReferenceF, ref1 + 8*(k&1) + 8*(k>>1)*(data->iEdgedWidth),
+							ref2 + 8*(k&1) + 8*(k>>1)*(data->iEdgedWidth), iEdgedWidth, 0);
+			break;
+
+		default: // x and y in qpel resolution - the "corners" (top left/right and
+				 // bottom left/right) during qpel refinement
+			GET_REFERENCE(halfpelMV.x, mvs.y - halfpelMV.y, ref2);
+			GET_REFERENCE(mvs.x - halfpelMV.x, halfpelMV.y, ref3);
+			GET_REFERENCE(mvs.x - halfpelMV.x, mvs.y - halfpelMV.y, ref4);
+			interpolate8x8_avg4(ReferenceF, ref1 + 8*(k&1) + 8*(k>>1)*(data->iEdgedWidth),
+								ref2 + 8*(k&1) + 8*(k>>1)*(data->iEdgedWidth),
+								ref3 + 8*(k&1) + 8*(k>>1)*(data->iEdgedWidth),
+								ref4 + 8*(k&1) + 8*(k>>1)*(data->iEdgedWidth), iEdgedWidth, 0);
+			break;
+		}
+
+		halfpelMV.x = b_mvs.x/2;
+		halfpelMV.y = b_mvs.y/2;
+		GET_REFERENCE2(halfpelMV.x, halfpelMV.y, ref1); // this reference is used in most cases
+		switch( ((b_mvs.x&1)<<1) + (b_mvs.y&1) ) {
+		case 0: // pure halfpel position
+			GET_REFERENCE2(halfpelMV.x + 16*(k&1), halfpelMV.y + 16*(k>>1), ReferenceB);
+			break;
+
+		case 1: // x halfpel, y qpel - top or bottom during qpel refinement
+			GET_REFERENCE2(halfpelMV.x, b_mvs.y - halfpelMV.y, ref2);
+			interpolate8x8_avg2(ReferenceB, ref1+8*(k&1) + 8*(k>>1)*(data->iEdgedWidth), 
+								ref2+ 8*(k&1) + 8*(k>>1)*(data->iEdgedWidth), iEdgedWidth, 0);
+			break;
+
+		case 2: // x qpel, y halfpel - left or right during qpel refinement
+			GET_REFERENCE2(b_mvs.x - halfpelMV.x, halfpelMV.y, ref2);
+			interpolate8x8_avg2(ReferenceB, ref1 + 8*(k&1) + 8*(k>>1)*(data->iEdgedWidth),
+								ref2 + 8*(k&1) + 8*(k>>1)*(data->iEdgedWidth), iEdgedWidth, 0);
+			break;
+
+		default: // x and y in qpel resolution - the "corners" (top left/right and
+				 // bottom left/right) during qpel refinement
+			GET_REFERENCE2(halfpelMV.x, b_mvs.y - halfpelMV.y, ref2);
+			GET_REFERENCE2(b_mvs.x - halfpelMV.x, halfpelMV.y, ref3);
+			GET_REFERENCE2(b_mvs.x - halfpelMV.x, b_mvs.y - halfpelMV.y, ref4);
+			interpolate8x8_avg4(ReferenceB, ref1 + 8*(k&1) + 8*(k>>1)*(data->iEdgedWidth),
+								ref2 + 8*(k&1) + 8*(k>>1)*(data->iEdgedWidth),
+								ref3 + 8*(k&1) + 8*(k>>1)*(data->iEdgedWidth),
+								ref4 + 8*(k&1) + 8*(k>>1)*(data->iEdgedWidth), iEdgedWidth, 0);
+			break;
+		}
+
+		sad += sad8bi(data->Cur + 8*(k&1) + 8*(k>>1)*(data->iEdgedWidth),
+						ReferenceF,
+						ReferenceB,
+						data->iEdgedWidth);
+		if (sad > *(data->iMinSAD)) return;
+	}
+
+	sad += (data->lambda16 * d_mv_bits(x, y, 1) * sad)/1000;
+
+	if (sad < *(data->iMinSAD)) {
+		*(data->iMinSAD) = sad;
+		data->currentMV->x = x; data->currentMV->y = y;
+		*dir = Direction; }
+}
+
+static void 
+CheckCandidateDirectno4v_qpel(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
+{
+	int32_t sad = 0;
+	VECTOR mvs, b_mvs, halfpelMV;
+	const uint8_t *ref1, *ref2, *ref3, *ref4;
+	const uint32_t iEdgedWidth = data->iEdgedWidth;
+	uint8_t * ReferenceF = (uint8_t *)data->RefQ;
+	uint8_t * ReferenceB = (uint8_t *)data->RefQ + 64;
+
+	if (( x > 31) || ( x < -32) || ( y > 31) || (y < -32)) return;
+
+	mvs.x = data->directmvF[0].x + x;
+	b_mvs.x = ((x == 0) ?
+			data->directmvB[0].x
+			: mvs.x - data->referencemv[0].x);
+
+	mvs.y = data->directmvF[0].y + y;
+	b_mvs.y = ((y == 0) ?
+			data->directmvB[0].y
+			: mvs.y - data->referencemv[0].y);
+		
+	if (( mvs.x > data->max_dx ) || ( mvs.x < data->min_dx )
+			|| ( mvs.y > data->max_dy ) || ( mvs.y < data->min_dy )
+			|| ( b_mvs.x > data->max_dx ) || ( b_mvs.x < data->min_dx )
+			|| ( b_mvs.y > data->max_dy ) || ( b_mvs.y < data->min_dy )) return;
+
+	halfpelMV.x = mvs.x/2; //forward first
+	halfpelMV.y = mvs.y/2;
+	GET_REFERENCE(halfpelMV.x, halfpelMV.y, ref1); // this reference is used in all cases
+	switch( ((mvs.x&1)<<1) + (mvs.y&1) ) {
+	case 0: // pure halfpel position
+		GET_REFERENCE(halfpelMV.x, halfpelMV.y, ReferenceF);
+		break;
+
+	case 1: // x halfpel, y qpel - top or bottom during qpel refinement
+		GET_REFERENCE(halfpelMV.x, mvs.y - halfpelMV.y, ref2);
+		interpolate8x8_avg2(ReferenceF, ref1, ref2, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceF+8, ref1+8, ref2+8, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceF+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceF+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, iEdgedWidth, 0);
+		break;
+
+	case 2: // x qpel, y halfpel - left or right during qpel refinement
+		GET_REFERENCE(mvs.x - halfpelMV.x, halfpelMV.y, ref2);
+		interpolate8x8_avg2(ReferenceF, ref1, ref2, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceF+8, ref1+8, ref2+8, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceF+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceF+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, iEdgedWidth, 0);
+		break;
+
+	default: // x and y in qpel resolution
+		GET_REFERENCE(halfpelMV.x, mvs.y - halfpelMV.y, ref2);
+		GET_REFERENCE(mvs.x - halfpelMV.x, halfpelMV.y, ref3);
+		GET_REFERENCE(mvs.x - halfpelMV.x, mvs.y - halfpelMV.y, ref4);
+
+		interpolate8x8_avg4(ReferenceF, ref1, ref2, ref3, ref4, iEdgedWidth, 0);
+		interpolate8x8_avg4(ReferenceF+8, ref1+8, ref2+8, ref3+8, ref4+8, iEdgedWidth, 0);
+		interpolate8x8_avg4(ReferenceF+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, ref3+8*iEdgedWidth, ref4+8*iEdgedWidth, iEdgedWidth, 0);
+		interpolate8x8_avg4(ReferenceF+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, ref3+8*iEdgedWidth+8, ref4+8*iEdgedWidth+8, iEdgedWidth, 0);
+		break;
+	}
+
+	halfpelMV.x = b_mvs.x/2; //backward
+	halfpelMV.y = b_mvs.y/2;
+	GET_REFERENCE2(halfpelMV.x, halfpelMV.y, ref1);
+	switch( ((b_mvs.x&1)<<1) + (b_mvs.y&1) )
+	{
+	case 0: // pure halfpel position
+		GET_REFERENCE2(halfpelMV.x, halfpelMV.y, ReferenceB); 
+		break;
+
+	case 1: // x halfpel, y qpel - top or bottom during qpel refinement
+		GET_REFERENCE2(halfpelMV.x, b_mvs.y - halfpelMV.y, ref2);
+		interpolate8x8_avg2(ReferenceB, ref1, ref2, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceB+8, ref1+8, ref2+8, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceB+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceB+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, iEdgedWidth, 0);
+		break;
+
+	case 2: // x qpel, y halfpel - left or right during qpel refinement
+		GET_REFERENCE2(b_mvs.x - halfpelMV.x, halfpelMV.y, ref2);
+		interpolate8x8_avg2(ReferenceB, ref1, ref2, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceB+8, ref1+8, ref2+8, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceB+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, iEdgedWidth, 0);
+		interpolate8x8_avg2(ReferenceB+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, iEdgedWidth, 0);
+		break;
+
+	default: // x and y in qpel resolution - the "corners" (top left/right and
+			 // bottom left/right) during qpel refinement
+		GET_REFERENCE2(halfpelMV.x, b_mvs.y - halfpelMV.y, ref2);
+		GET_REFERENCE2(b_mvs.x - halfpelMV.x, halfpelMV.y, ref3);
+		GET_REFERENCE2(b_mvs.x - halfpelMV.x, b_mvs.y - halfpelMV.y, ref4);
+
+		interpolate8x8_avg4(ReferenceB, ref1, ref2, ref3, ref4, iEdgedWidth, 0);
+		interpolate8x8_avg4(ReferenceB+8, ref1+8, ref2+8, ref3+8, ref4+8, iEdgedWidth, 0);
+		interpolate8x8_avg4(ReferenceB+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, ref3+8*iEdgedWidth, ref4+8*iEdgedWidth, iEdgedWidth, 0);
+		interpolate8x8_avg4(ReferenceB+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, ref3+8*iEdgedWidth+8, ref4+8*iEdgedWidth+8, iEdgedWidth, 0);
+		break;
+	}
+
+	sad = sad16bi(data->Cur, ReferenceF, ReferenceB, data->iEdgedWidth);	
+	sad += (data->lambda16 * d_mv_bits(x, y, 1) * sad)/1000;
+
+	if (sad < *(data->iMinSAD)) {
+		*(data->iMinSAD) = sad;
+		data->currentMV->x = x; data->currentMV->y = y;
+		*dir = Direction; }
+}
+
 
 static void 
 CheckCandidateDirectno4v(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
@@ -466,7 +877,7 @@ CheckCandidate8(const int x, const int y, const int Direction, int * const dir, 
 
 static void
 CheckCandidate8_qpel(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
-// CheckCandidate16no4v variant which expects x and y in quarter pixel resolution
+// CheckCandidate8 variant which expects x and y in quarter pixel resolution
 // Important: This is no general usable routine! x and y must be +/-1 (qpel resolution!)
 // around currentMV!
 
@@ -1319,6 +1730,7 @@ SearchBF(	const uint8_t * const pRef,
 				pParam->width, pParam->height, iFcode, pParam->m_quarterpel);
 
 	pmv[0] = Data->predMV;
+	if (Data->qpel) { pmv[0].x /= 2; pmv[0].y /= 2; }
 	PreparePredictionsBF(pmv, x, y, pParam->mb_width, pMB, mode_current);
 
 	Data->currentMV->x = Data->currentMV->y = 0;
@@ -1340,6 +1752,15 @@ SearchBF(	const uint8_t * const pRef,
 	(*MainSearchPtr)(Data->currentMV->x, Data->currentMV->y, Data, 255);
 
 	HalfpelRefine(Data);
+	
+	if (Data->qpel) {
+		Data->currentQMV->x = 2*Data->currentMV->x;
+		Data->currentQMV->y = 2*Data->currentMV->y;
+		CheckCandidate = CheckCandidate16no4v_qpel;
+		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
+					pParam->width, pParam->height, iFcode, pParam->m_quarterpel);
+		QuarterpelRefine(Data);
+	}
 
 // three bits are needed to code backward mode. four for forward
 // we treat the bits just like they were vector's
@@ -1349,10 +1770,22 @@ SearchBF(	const uint8_t * const pRef,
 	if (*Data->iMinSAD < *best_sad) {
 		*best_sad = *Data->iMinSAD;
 		pMB->mode = mode_current;
-		pMB->pmvs[0].x = Data->currentMV->x - predMV->x;
-		pMB->pmvs[0].y = Data->currentMV->y - predMV->y;
-		if (mode_current == MODE_FORWARD) pMB->mvs[0] = *(Data->currentMV+2) = *Data->currentMV;
-		else pMB->b_mvs[0] = *(Data->currentMV+1) = *Data->currentMV; //we store currmv for interpolate search
+		if (Data->qpel) {
+			pMB->pmvs[0].x = Data->currentQMV->x - predMV->x;
+			pMB->pmvs[0].y = Data->currentQMV->y - predMV->y;
+			if (mode_current == MODE_FORWARD) 
+				pMB->qmvs[0] = *Data->currentQMV;
+			else 
+				pMB->b_qmvs[0] = *Data->currentQMV;
+		} else {
+			pMB->pmvs[0].x = Data->currentMV->x - predMV->x;
+			pMB->pmvs[0].y = Data->currentMV->y - predMV->y;
+		}
+		if (mode_current == MODE_FORWARD) 
+			pMB->mvs[0] = *(Data->currentMV+2) = *Data->currentMV;
+		else 
+			pMB->b_mvs[0] = *(Data->currentMV+1) = *Data->currentMV; //we store currmv for interpolate search
+
 	}
 	
 }
@@ -1383,7 +1816,6 @@ SearchDirect(const IMAGE * const f_Ref,
 	MainSearchFunc *MainSearchPtr;
 
 	*Data->iMinSAD = 256*4096;
-	Data->referencemv = b_mb->mvs;
 
 	Data->Ref = f_Ref->y + (x + Data->iEdgedWidth*y) * 16;
 	Data->RefH = f_RefH + (x + Data->iEdgedWidth*y) * 16;
@@ -1398,6 +1830,13 @@ SearchDirect(const IMAGE * const f_Ref,
 	Data->max_dy = 2 * pParam->height - 2 * (y) * 16;
 	Data->min_dx = -(2 * 16 + 2 * (x) * 16);
 	Data->min_dy = -(2 * 16 + 2 * (y) * 16);
+	if (Data->qpel) { //we measure in qpixels
+		Data->max_dx *= 2;
+		Data->max_dy *= 2;
+		Data->min_dx *= 2;
+		Data->min_dy *= 2;
+		Data->referencemv = b_mb->qmvs;
+	} else Data->referencemv = b_mb->mvs;
 
 	for (k = 0; k < 4; k++) {
 		pMB->mvs[k].x = Data->directmvF[k].x = ((TRB * Data->referencemv[k].x) / TRD);
@@ -1422,10 +1861,15 @@ SearchDirect(const IMAGE * const f_Ref,
 		}
 	}
 
-	if (b_mb->mode == MODE_INTER4V) 
-		CheckCandidate = CheckCandidateDirect;
-	else CheckCandidate = CheckCandidateDirectno4v;
-
+	if (Data->qpel) { 
+			if (b_mb->mode == MODE_INTER4V) 
+		CheckCandidate = CheckCandidateDirect_qpel;
+			else CheckCandidate = CheckCandidateDirectno4v_qpel;
+	} else {
+			if (b_mb->mode == MODE_INTER4V) CheckCandidate = CheckCandidateDirect;
+			else CheckCandidate = CheckCandidateDirectno4v;
+	}
+		
 	(*CheckCandidate)(0, 0, 255, &k, Data);
 
 // skip decision
@@ -1434,18 +1878,28 @@ SearchDirect(const IMAGE * const f_Ref,
 		//this is not full chroma compensation, only it's fullpel approximation. should work though
 		int sum, dx, dy, b_dx, b_dy;
 
-		sum = pMB->mvs[0].x + pMB->mvs[1].x + pMB->mvs[2].x + pMB->mvs[3].x;
-		dx = (sum == 0 ? 0 : SIGN(sum) * (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2));
+		if (Data->qpel) {
+			sum = pMB->mvs[0].y/2 + pMB->mvs[1].y/2 + pMB->mvs[2].y/2 + pMB->mvs[3].y/2;
+			dy = (sum >> 3) + roundtab_76[sum & 0xf];
+			sum = pMB->mvs[0].x/2 + pMB->mvs[1].x/2 + pMB->mvs[2].x/2 + pMB->mvs[3].x/2;
+			dx = (sum >> 3) + roundtab_76[sum & 0xf];
 
-		sum = pMB->mvs[0].y + pMB->mvs[1].y + pMB->mvs[2].y + pMB->mvs[3].y;
-		dy = (sum == 0 ? 0 : SIGN(sum) * (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2));
+			sum = pMB->b_mvs[0].y/2 + pMB->b_mvs[1].y/2 + pMB->b_mvs[2].y/2 + pMB->b_mvs[3].y/2;
+			b_dy = (sum >> 3) + roundtab_76[sum & 0xf];
+			sum = pMB->b_mvs[0].x/2 + pMB->b_mvs[1].x/2 + pMB->b_mvs[2].x/2 + pMB->b_mvs[3].x/2;
+			b_dx = (sum >> 3) + roundtab_76[sum & 0xf];
 
-		sum = pMB->b_mvs[0].x + pMB->b_mvs[1].x + pMB->b_mvs[2].x + pMB->b_mvs[3].x;
-		b_dx = (sum == 0 ? 0 : SIGN(sum) * (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2));
+		} else {
+			sum = pMB->mvs[0].x + pMB->mvs[1].x + pMB->mvs[2].x + pMB->mvs[3].x;
+			dx = (sum == 0 ? 0 : SIGN(sum) * (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2));
+			sum = pMB->mvs[0].y + pMB->mvs[1].y + pMB->mvs[2].y + pMB->mvs[3].y;
+			dy = (sum == 0 ? 0 : SIGN(sum) * (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2));
 
-		sum = pMB->b_mvs[0].y + pMB->b_mvs[1].y + pMB->b_mvs[2].y + pMB->b_mvs[3].y;
-		b_dy = (sum == 0 ? 0 : SIGN(sum) * (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2));
-
+			sum = pMB->b_mvs[0].x + pMB->b_mvs[1].x + pMB->b_mvs[2].x + pMB->b_mvs[3].x;
+			b_dx = (sum == 0 ? 0 : SIGN(sum) * (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2));
+			sum = pMB->b_mvs[0].y + pMB->b_mvs[1].y + pMB->b_mvs[2].y + pMB->b_mvs[3].y;
+			b_dy = (sum == 0 ? 0 : SIGN(sum) * (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2));
+		}
 		sum = sad8bi(pCur->u + 8*x + 8*y*(Data->iEdgedWidth/2),
 					f_Ref->u + (y*8 + dy/2) * (Data->iEdgedWidth/2) + x*8 + dx/2,
 					b_Ref->u + (y*8 + b_dy/2) * (Data->iEdgedWidth/2) + x*8 + b_dx/2,
@@ -1472,7 +1926,7 @@ SearchDirect(const IMAGE * const f_Ref,
 
 	(*MainSearchPtr)(0, 0, Data, 255);
 
-	HalfpelRefine(Data);
+	HalfpelRefine(Data); //or qpel refine, if we're in qpel mode
 
 	*Data->iMinSAD +=  1 * Data->lambda16; // one bit is needed to code direct mode
 	*best_sad = *Data->iMinSAD;
@@ -1485,16 +1939,25 @@ SearchDirect(const IMAGE * const f_Ref,
 
 	for (k = 0; k < 4; k++) {
 		pMB->mvs[k].x = Data->directmvF[k].x + Data->currentMV->x;
-		pMB->b_mvs[k].x = ((Data->currentMV->x == 0)
+		pMB->b_mvs[k].x = (	(Data->currentMV->x == 0)
 							? Data->directmvB[k].x
-							: pMB->mvs[k].x - Data->referencemv[k].x);
+							:pMB->mvs[k].x - Data->referencemv[k].x);
 		pMB->mvs[k].y = (Data->directmvF[k].y + Data->currentMV->y);
 		pMB->b_mvs[k].y = ((Data->currentMV->y == 0)
 							? Data->directmvB[k].y
 							: pMB->mvs[k].y - Data->referencemv[k].y);
+		if (Data->qpel) {
+			pMB->qmvs[k].x = pMB->mvs[k].x; pMB->mvs[k].x /= 2;
+			pMB->b_qmvs[k].x = pMB->b_mvs[k].x; pMB->b_mvs[k].x /= 2;
+			pMB->qmvs[k].y = pMB->mvs[k].y; pMB->mvs[k].y /= 2;
+			pMB->b_qmvs[k].y = pMB->b_mvs[k].y; pMB->b_mvs[k].y /= 2;
+		}
+
 		if (b_mb->mode != MODE_INTER4V) {
 			pMB->mvs[3] = pMB->mvs[2] = pMB->mvs[1] = pMB->mvs[0];
 			pMB->b_mvs[3] = pMB->b_mvs[2] = pMB->b_mvs[1] = pMB->b_mvs[0];
+			pMB->qmvs[3] = pMB->qmvs[2] = pMB->qmvs[1] = pMB->qmvs[0];
+			pMB->b_qmvs[3] = pMB->b_qmvs[2] = pMB->b_qmvs[1] = pMB->b_qmvs[0];
 			break;
 		}
 	}
@@ -1526,14 +1989,13 @@ SearchInterpolate(const uint8_t * const f_Ref,
 {
 
 	const int32_t iEdgedWidth = pParam->edged_width;
-
 	int iDirection, i, j;
 	SearchData bData;
 
 	*(bData.iMinSAD = fData->iMinSAD) = 4096*256;
 	bData.Cur = fData->Cur;
 	fData->iEdgedWidth = bData.iEdgedWidth = iEdgedWidth;
-	bData.currentMV = fData->currentMV + 1;
+	bData.currentMV = fData->currentMV + 1; bData.currentQMV = fData->currentQMV + 1;
 	bData.lambda16 = fData->lambda16;
 	fData->iFcode = bData.bFcode = fcode; fData->bFcode = bData.iFcode = bcode;
 
@@ -1545,11 +2007,12 @@ SearchInterpolate(const uint8_t * const f_Ref,
 	bData.RefH = fData->bRefH = b_RefH + (x + y * iEdgedWidth) * 16;
 	bData.RefV = fData->bRefV = b_RefV + (x + y * iEdgedWidth) * 16;
 	bData.RefHV = fData->bRefHV = b_RefHV + (x + y * iEdgedWidth) * 16;
+	bData.RefQ = fData->RefQ;
 
 	bData.bpredMV = fData->predMV = *f_predMV;
 	fData->bpredMV = bData.predMV = *b_predMV;
 
-	fData->currentMV[0] = fData->currentMV[3]; //forward search stored it's vector here. backward stored it in the place it's needed
+	fData->currentMV[0] = fData->currentMV[3];
 	get_range(&fData->min_dx, &fData->max_dx, &fData->min_dy, &fData->max_dy, x, y, 16, pParam->width, pParam->height, fcode, pParam->m_quarterpel);
 	get_range(&bData.min_dx, &bData.max_dx, &bData.min_dy, &bData.max_dy, x, y, 16, pParam->width, pParam->height, bcode, pParam->m_quarterpel);
 
@@ -1580,7 +2043,6 @@ SearchInterpolate(const uint8_t * const f_Ref,
 		// backward MV moves
 		i = fData->currentMV[1].x; j = fData->currentMV[1].y;
 		fData->currentMV[2] = fData->currentMV[0];
-
 		CheckCandidateInt(i + 1, j, 0, &iDirection, &bData);
 		CheckCandidateInt(i, j + 1, 0, &iDirection, &bData);
 		CheckCandidateInt(i - 1, j, 0, &iDirection, &bData);
@@ -1590,16 +2052,37 @@ SearchInterpolate(const uint8_t * const f_Ref,
 
 	*fData->iMinSAD +=  2 * fData->lambda16; // two bits are needed to code interpolate mode.
 
+	if (fData->qpel) {
+		CheckCandidate = CheckCandidateInt_qpel;
+		get_range(&fData->min_dx, &fData->max_dx, &fData->min_dy, &fData->max_dy, x, y, 16, pParam->width, pParam->height, fcode, 0);
+		get_range(&bData.min_dx, &bData.max_dx, &bData.min_dy, &bData.max_dy, x, y, 16, pParam->width, pParam->height, bcode, 0);
+		fData->currentQMV[2].x = fData->currentQMV[0].x = 2 * fData->currentMV[0].x;
+		fData->currentQMV[2].y = fData->currentQMV[0].y = 2 * fData->currentMV[0].y;
+		fData->currentQMV[1].x = 2 * fData->currentMV[1].x;
+		fData->currentQMV[1].y = 2 * fData->currentMV[1].y;
+		QuarterpelRefine(fData);
+		fData->currentQMV[2] = fData->currentQMV[0];
+		QuarterpelRefine(&bData);
+	}
+
 	if (*fData->iMinSAD < *best_sad) {
 		*best_sad = *fData->iMinSAD;
 		pMB->mvs[0] = fData->currentMV[0];
 		pMB->b_mvs[0] = fData->currentMV[1];
 		pMB->mode = MODE_INTERPOLATE;
-
-		pMB->pmvs[1].x = pMB->mvs[0].x - f_predMV->x;
-		pMB->pmvs[1].y = pMB->mvs[0].y - f_predMV->y;
-		pMB->pmvs[0].x = pMB->b_mvs[0].x - b_predMV->x;
-		pMB->pmvs[0].y = pMB->b_mvs[0].y - b_predMV->y;
+		if (fData->qpel) {
+			pMB->qmvs[0] = fData->currentQMV[0];
+			pMB->b_qmvs[0] = fData->currentQMV[1];
+			pMB->pmvs[1].x = pMB->qmvs[0].x - f_predMV->x;
+			pMB->pmvs[1].y = pMB->qmvs[0].y - f_predMV->y;
+			pMB->pmvs[0].x = pMB->b_qmvs[0].x - b_predMV->x;
+			pMB->pmvs[0].y = pMB->b_qmvs[0].y - b_predMV->y;
+		} else {
+			pMB->pmvs[1].x = pMB->mvs[0].x - f_predMV->x;
+			pMB->pmvs[1].y = pMB->mvs[0].y - f_predMV->y;
+			pMB->pmvs[0].x = pMB->b_mvs[0].x - b_predMV->x;
+			pMB->pmvs[0].y = pMB->b_mvs[0].y - b_predMV->y;
+		}
 	}
 }
 
@@ -1631,19 +2114,27 @@ MotionEstimationBVOP(MBParam * const pParam,
 
 	const int32_t TRB = time_pp - time_bp;
 	const int32_t TRD = time_pp;
+	uint8_t * qimage;
 
 // some pre-inintialized data for the rest of the search
 
 	SearchData Data;
 	int32_t iMinSAD;
 	VECTOR currentMV[3];
+	VECTOR currentQMV[3];
 	Data.iEdgedWidth = pParam->edged_width;
-	Data.currentMV = currentMV;
+	Data.currentMV = currentMV; Data.currentQMV = currentQMV;
 	Data.iMinSAD = &iMinSAD;
 	Data.lambda16 = lambda_vec16[frame->quant];
+	Data.qpel = pParam->m_quarterpel;
+
+	if((qimage = (uint8_t *) malloc(32 * pParam->edged_width)) == NULL)
+		return; // allocate some mem for qpel interpolated blocks
+				  // somehow this is dirty since I think we shouldn't use malloc outside
+				  // encoder_create() - so please fix me!
+	Data.RefQ = qimage;
 
 	// note: i==horizontal, j==vertical
-
 	for (j = 0; j < pParam->mb_height; j++) {
 
 		f_predMV = b_predMV = zeroMV;	/* prediction is reset at left boundary */
@@ -1676,7 +2167,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 									&Data);
 
 			if (pMB->mode == MODE_DIRECT_NONE_MV) { n_count++; continue; }
-
+			
 			// forward search
 			SearchBF(f_ref->y, f_refH->y, f_refV->y, f_refHV->y,
 						&frame->image, i, j,
@@ -1709,16 +2200,23 @@ MotionEstimationBVOP(MBParam * const pParam,
 			switch (pMB->mode) {
 				case MODE_FORWARD:
 					f_count++;
-					f_predMV = pMB->mvs[0];
+					if (pParam->m_quarterpel) f_predMV = pMB->qmvs[0];
+					else f_predMV = pMB->mvs[0];
 					break;
 				case MODE_BACKWARD:
 					b_count++;
-					b_predMV = pMB->b_mvs[0];
+					if (pParam->m_quarterpel) b_predMV = pMB->b_qmvs[0];
+					else b_predMV = pMB->b_mvs[0];
 					break;
 				case MODE_INTERPOLATE:
 					i_count++;
-					f_predMV = pMB->mvs[0];
-					b_predMV = pMB->b_mvs[0];
+					if (pParam->m_quarterpel) {
+						f_predMV = pMB->qmvs[0];
+						b_predMV = pMB->b_qmvs[0];
+					} else { 
+						f_predMV = pMB->mvs[0];
+						b_predMV = pMB->b_mvs[0];
+					}
 					break;
 				case MODE_DIRECT:
 				case MODE_DIRECT_NO4V:
@@ -1729,6 +2227,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 			}
 		}
 	}
+	free(qimage);
 }
 
 /* Hinted ME starts here */
@@ -1838,13 +2337,13 @@ SearchPhinted (	const IMAGE * const pRef,
 			int sum, dx, dy;
 
 			if(pParam->m_quarterpel)
-				sum = (pMB->qmvs[0].y + pMB->qmvs[1].y + pMB->qmvs[2].y + pMB->qmvs[3].y)/2;
+				sum = (pMB->qmvs[0].y/2 + pMB->qmvs[1].y/2 + pMB->qmvs[2].y/2 + pMB->qmvs[3].y/2);
 			else sum = pMB->mvs[0].y + pMB->mvs[1].y + pMB->mvs[2].y + pMB->mvs[3].y;
 			dy = (sum ? SIGN(sum) *
 				  (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2) : 0);
 
 			if(pParam->m_quarterpel)
-				sum = (pMB->qmvs[0].x + pMB->qmvs[1].x + pMB->qmvs[2].x + pMB->qmvs[3].x)/2;
+				sum = (pMB->qmvs[0].x/2 + pMB->qmvs[1].x/2 + pMB->qmvs[2].x/2 + pMB->qmvs[3].x/2);
 			else sum = pMB->mvs[0].x + pMB->mvs[1].x + pMB->mvs[2].x + pMB->mvs[3].x;
 			dx = (sum ? SIGN(sum) *
 				  (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2) : 0);
@@ -2034,8 +2533,8 @@ MEanalysis(	const IMAGE * const pRef,
 	Data.iFcode = Current->fcode;
 	CheckCandidate = CheckCandidate16no4vI;
 
-	if (intraCount < 12) // we're right after an I frame
-		IntraThresh += 4 * (intraCount - 12) * (intraCount - 12);
+	if (intraCount < 10) // we're right after an I frame
+		IntraThresh += 4 * (intraCount - 10) * (intraCount - 10);
 	else
 		if ( 5*(maxIntra - intraCount) < maxIntra) // we're close to maximum. 2 sec when max is 10 sec
 			IntraThresh -= (IntraThresh * (maxIntra - 5*(maxIntra - intraCount)))/maxIntra;

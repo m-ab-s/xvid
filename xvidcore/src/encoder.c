@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.18 2002-11-12 14:44:53 syskin Exp $
+ *  $Id: encoder.c,v 1.76.2.19 2002-11-19 13:03:57 syskin Exp $
  *
  ****************************************************************************/
 
@@ -938,6 +938,10 @@ bvop_loop:
 		/*
 		 * This will be coded as an Intra Frame
 		 */
+		if ((pEnc->current->global_flags & XVID_QUARTERPEL))
+			pEnc->mbParam.m_quarterpel = 1;
+		else
+			pEnc->mbParam.m_quarterpel = 0;
 
 		DPRINTF(DPRINTF_DEBUG,"*** IFRAME bf: head=%i tail=%i   queue: head=%i tail=%i size=%i",
 				pEnc->bframenum_head, pEnc->bframenum_tail,

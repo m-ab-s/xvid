@@ -71,6 +71,7 @@ typedef struct
 	// bframe stuff
 
 	VECTOR b_mvs[4];
+	VECTOR b_qmvs[4];
 //	VECTOR b_pmvs[1];
 
 	// bframe direct mode
@@ -83,12 +84,13 @@ typedef struct
 
 	// stuff for block based ME (needed for Qpel ME)
 	// backup of last integer ME vectors/sad
-	
-	VECTOR i_mv16;
+
+//	VECTOR i_mv16;
 	VECTOR i_mvs[4];
 
 	int32_t i_sad8[4];	// SAD values for inter4v-VECTORs
-	int32_t i_sad16;	// SAD value for inter-VECTOR
+//	int32_t i_sad16;	// SAD value for inter-VECTOR
+
 
 }
 MACROBLOCK;
