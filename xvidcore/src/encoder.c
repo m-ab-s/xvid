@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.65 2004-03-29 17:37:55 Skal Exp $
+ * $Id: encoder.c,v 1.95.2.66 2004-03-30 12:30:48 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1089,6 +1089,7 @@ repeat:
 				DPRINTF(XVID_DEBUG_DEBUG,"*** PFRAME bf: head=%i tail=%i   queue: head=%i tail=%i size=%i\n",
 				pEnc->bframenum_head, pEnc->bframenum_tail,
 				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
+				pEnc->mbParam.frame_drop_ratio = -1; /* it must be a coded vop */
 
 				FrameCodeP(pEnc, &bs, 1, 0);
 
@@ -1342,7 +1343,11 @@ repeat:
 				   pEnc->mbParam.edged_width, pEnc->mbParam.height);
 		}
 
-		FrameCodeP(pEnc, &bs, 1, 0);
+		if ( FrameCodeP(pEnc, &bs, 1, 0) == 0 ) {
+			/* N-VOP, we mustn't code b-frames yet */
+			call_plugins(pEnc, pEnc->current, &pEnc->sOriginal, XVID_PLG_AFTER, 0, 0, stats);
+			goto done;
+		}
 	}
 
 
@@ -1539,6 +1544,7 @@ FrameCodeP(Encoder * pEnc,
 	MBParam * const pParam = &pEnc->mbParam;
 	int mb_width = pParam->mb_width;
 	int mb_height = pParam->mb_height;
+	int coded = 1;
 
 
 	/* IMAGE *pCurrent = &current->image; */
@@ -1866,7 +1872,7 @@ FrameCodeP(Encoder * pEnc,
 #if 0
 	DPRINTF(XVID_DEBUG_DEBUG, "kmu %i %i %i\n", current->sStat.kblks, current->sStat.mblks, current->sStat.ublks);
 #endif
-	if (current->sStat.kblks + current->sStat.mblks <
+	if (current->sStat.kblks + current->sStat.mblks <=
 		(pParam->frame_drop_ratio * mb_width * mb_height) / 100)
 	{
 		current->sStat.kblks = current->sStat.mblks = 0;
@@ -1883,20 +1889,23 @@ FrameCodeP(Encoder * pEnc,
 		current->rounding_type = reference->rounding_type;
 		current->fcode = reference->fcode;
 		current->bcode = reference->bcode;
+		current->stamp = reference->stamp;
 		image_copy(&current->image, &reference->image, pParam->edged_width, pParam->height);
 		memcpy(current->mbs, reference->mbs, sizeof(MACROBLOCK) * mb_width * mb_height);
+		coded = 0;
+	
+	} else {
+
+		pEnc->current->is_edged = 0; /* not edged */
+		pEnc->current->is_interpolated = -1; /* not interpolated (fake rounding -1) */
+
+		/* what was this frame's interpolated reference will become 
+			forward (past) reference in b-frame coding */
+
+		image_swap(&pEnc->vInterH, &pEnc->f_refh);
+		image_swap(&pEnc->vInterV, &pEnc->f_refv);
+		image_swap(&pEnc->vInterHV, &pEnc->f_refhv);
 	}
-
-	pEnc->current->is_edged = 0; /* not edged */
-	pEnc->current->is_interpolated = -1; /* not interpolated (fake rounding -1) */
-
-	/* what was this frame's interpolated reference will become 
-		forward (past) reference in b-frame coding */
-
-	image_swap(&pEnc->vInterH, &pEnc->f_refh);
-	image_swap(&pEnc->vInterV, &pEnc->f_refv);
-	image_swap(&pEnc->vInterHV, &pEnc->f_refhv);
-
 
 	/* XXX: debug
 	{
@@ -1917,7 +1926,7 @@ FrameCodeP(Encoder * pEnc,
 
 	current->length = (BitstreamPos(bs) - bits) / 8;
 
-	return 0;					/* inter */
+	return coded;
 }
 
 
