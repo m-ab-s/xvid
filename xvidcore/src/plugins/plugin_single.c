@@ -20,7 +20,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_single.c,v 1.1.2.6 2003-11-19 15:42:38 syskin Exp $
+ * $Id: plugin_single.c,v 1.1.2.7 2003-11-28 14:20:13 syskin Exp $
  *
  ****************************************************************************/
 
@@ -183,8 +183,8 @@ rc_single_after(rc_single_t * rc,
 	rc->rtn_quant = data->quant;
 
 	/* Compute the deviation from expected total size */
-	deviation = (int64_t)
-		((double) rc->total_size - (double) rc->bytes_per_sec * rc->time);
+	deviation = 
+		rc->total_size - rc->bytes_per_sec * rc->time;
 
 
 	if (data->quant >= 2) {
@@ -245,11 +245,13 @@ rc_single_after(rc_single_t * rc,
 	else if (rtn_quant < data->quant - 1)
 		rtn_quant = data->quant - 1;
 
-    /* limit to min/max range */
-	if (rtn_quant > data->max_quant[data->type-1])
-		rtn_quant = data->max_quant[data->type-1];
-	else if (rtn_quant < data->min_quant[data->type-1])
-		rtn_quant = data->min_quant[data->type-1];
+    /* limit to min/max range 
+	   we don't know frame type of the next frame, so we just use 
+	   P-VOP's range... */
+	if (rtn_quant > data->max_quant[XVID_TYPE_PVOP-1])
+		rtn_quant = data->max_quant[XVID_TYPE_PVOP-1];
+	else if (rtn_quant < data->min_quant[XVID_TYPE_PVOP-1])
+		rtn_quant = data->min_quant[XVID_TYPE_PVOP-1];
 
 	rc->rtn_quant = rtn_quant;
 
