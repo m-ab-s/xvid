@@ -25,7 +25,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.15 2003-05-29 11:37:20 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.16 2003-05-29 12:38:44 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -873,7 +873,6 @@ internal_scale(rc_2pass2_t *rc)
 	int64_t pass1_length = rc->tot_length[0] + rc->tot_length[1] + rc->tot_length[2] - rc->tot_quant;
 	double scaler;
 	int i, num_MBs;
-	int min_size[3];
 
 	/* Let's compute a linear scaler in order to perform curve scaling */
 	scaler = (double)target / (double)pass1_length;
@@ -891,11 +890,20 @@ internal_scale(rc_2pass2_t *rc)
 	 * Compute min frame lengths (for each frame type) according to the number
 	 * of MBs. We sum all blocks count from frame 0 (should be an IFrame, so
 	 * blocks[0] should be enough) to know how many MBs there are.
+	 *
+	 * We compare these hardcoded values with observed values in first pass
+	 * (determined in pre_process0).Then we keep the real minimum.
 	 */
 	num_MBs = rc->stats[0].blks[0] + rc->stats[0].blks[1] + rc->stats[0].blks[2];
-	min_size[0] = ((num_MBs*22) + 240) / 8;
-	min_size[1] = ((num_MBs)    + 88)  / 8;
-	min_size[2] = 8;
+
+	if(rc->min_length[0] > ((num_MBs*22) + 240) / 8)
+		rc->min_length[0] = ((num_MBs*22) + 240) / 8;
+
+	if(rc->min_length[1] > ((num_MBs) + 88)  / 8)
+		rc->min_length[1] = ((num_MBs) + 88)  / 8;
+
+	if(rc->min_length[2] > 8)
+		rc->min_length[2] = 8;
 
 	/*
 	 * Perform an initial scale pass.
@@ -916,9 +924,9 @@ internal_scale(rc_2pass2_t *rc)
 		len = (int)((double)s->length * scaler * s->weight / rc->avg_weight);
 
 		/* Compare with the computed minimum */
-		if (len < min_size[s->type-1]) {
+		if (len < rc->min_length[s->type-1]) {
 			/* force frame size to our computed minimum */
-			s->scaled_length = min_size[s->type-1];
+			s->scaled_length = rc->min_length[s->type-1];
 			target -= s->scaled_length;
 			pass1_length -= s->length;
 		} else {
