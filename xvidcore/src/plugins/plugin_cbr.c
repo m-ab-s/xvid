@@ -1,9 +1,10 @@
 /*****************************************************************************
  *
- * XviD VBR Library
+ * XviD Standard Plugins
  * - CBR/ABR bitrate controller implementation -
  *
- * Copyright (C) 2002 Edouard Gomez <ed.gomez@wanadoo.fr>
+ *  Copyright(C) 2002      Benjamin Lambert <foxer@hotmail.com>
+ *               2002-2003 Edouard Gomez <ed.gomez@free.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,102 +20,145 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_cbr.c,v 1.1.2.2 2003-03-23 09:39:29 suxen_drol Exp $
+ * $Id: plugin_cbr.c,v 1.1.2.3 2003-04-27 15:40:50 edgomez Exp $
  *
  ****************************************************************************/
 
 
+#include <limits.h>
+
 #include "../xvid.h"
 #include "../image/image.h"
 
-#define INITIAL_QUANT 5
+#define DEFAULT_INITIAL_QUANTIZER 5
 
+#define DEFAULT_BITRATE 900000	/* 900kbps */
+#define DEFAULT_MAX_QUANT 31
+#define DEFAULT_MIN_QUANT  2
+#define DEFAULT_DELAY_FACTOR 16
+#define DEFAULT_AVERAGING_PERIOD 100
+#define DEFAULT_BUFFER 100
 
 typedef struct
 {
-    int max_quantizer;
-    int min_quantizer;
-    int reaction_delay_factor;
-    int averaging_period;
-    int buffer;
-    
-    int bytes_per_sec;
-	double  target_framesize;
+	int max_quantizer;
+	int min_quantizer;
+	int reaction_delay_factor;
+	int averaging_period;
+	int buffer;
 
-    double time;
+	int bytes_per_sec;
+	double target_framesize;
+
+	double time;
 	int64_t total_size;
 	int rtn_quant;
 
 
-	double  sequence_quality;
-	double  avg_framesize;
-	double  quant_error[31];
-} rc_cbr_t;
+	double sequence_quality;
+	double avg_framesize;
+	double quant_error[31];
+}
+rc_cbr_t;
 
 
-
-static int rc_cbr_create(xvid_plg_create_t * create, rc_cbr_t ** handle)
+static int
+get_initial_quant(unsigned int bitrate)
 {
-    xvid_plugin_cbr_t * param = (xvid_plugin_cbr_t *)create->param;
-	rc_cbr_t * rc;
+
+#if 0
 	int i;
 
-    /* cbr need to caclulate the average frame size. in order to do that, we need some fps */
-    if (create->fincr == 0) {
-        return XVID_ERR_FAIL;
-    }
+	const unsigned int bitrate_quant[31] = {
+		UINT_MAX
+	};
 
-    /* allocate context struct */
-	if((rc = malloc(sizeof(rc_cbr_t))) == NULL)
-		return(XVID_ERR_MEMORY);
+	for (i = 30; i >= 0; i--) {
+		if (bitrate > bitrate_quant[i])
+			continue;
+	}
 
-	/* constants */
-    rc->bytes_per_sec         = param->bitrate / 8;
-    rc->target_framesize      = (double)rc->bytes_per_sec / ((double)create->fbase / create->fincr);
-    rc->max_quantizer         = param->max_quantizer>0 ? param->max_quantizer : 12;
-	rc->min_quantizer         = param->min_quantizer>0 ? param->min_quantizer : 2;
-    rc->reaction_delay_factor = param->reaction_delay_factor>0 ? param->reaction_delay_factor : 16;
-    rc->averaging_period      = param->averaging_period>0 ? param->averaging_period : 100;
-    rc->buffer                = param->buffer>0 ? param->buffer : 100;
+	return (i + 1);
+#else
+	return (DEFAULT_INITIAL_QUANTIZER);
+#endif
+}
 
-    rc->time                  = 0;
-    rc->total_size            = 0;
-	rc->rtn_quant             = INITIAL_QUANT;
+static int
+rc_cbr_create(xvid_plg_create_t * create,
+			  rc_cbr_t ** handle)
+{
+	xvid_plugin_cbr_t *param = (xvid_plugin_cbr_t *) create->param;
+	rc_cbr_t *rc;
+	int i;
+
+	/*
+	 * CBR needs to caclculate the average frame size. In order to do that,
+	 * we really need valid fps
+	 */
+	if (create->fincr == 0) {
+		return XVID_ERR_FAIL;
+	}
+
+	/* Allocate context struct */
+	if ((rc = malloc(sizeof(rc_cbr_t))) == NULL)
+		return (XVID_ERR_MEMORY);
+
+	/* Constants */
+	rc->bytes_per_sec =	(param->bitrate > 0) ? param->bitrate / 8 : DEFAULT_BITRATE / 8;
+	rc->target_framesize =(double) rc->bytes_per_sec / ((double) create->fbase / create->fincr);
+	rc->max_quantizer =	(param->max_quantizer > 0) ? param->max_quantizer : DEFAULT_MAX_QUANT;
+	rc->min_quantizer =	(param->min_quantizer > 0) ? param->min_quantizer : DEFAULT_MIN_QUANT;
+	rc->reaction_delay_factor =	(param->reaction_delay_factor > 0) ? param->reaction_delay_factor : DEFAULT_DELAY_FACTOR;
+	rc->averaging_period = (param->averaging_period > 0) ? param->averaging_period : DEFAULT_AVERAGING_PERIOD;
+	rc->buffer = (param->buffer > 0) ? param->buffer : DEFAULT_BUFFER;
+
+	rc->time = 0;
+	rc->total_size = 0;
+	rc->rtn_quant = get_initial_quant(param->bitrate);
 
 	/* Reset quant error accumulators */
 	for (i = 0; i < 31; i++)
 		rc->quant_error[i] = 0.0;
 
 	/* Last bunch of variables */
-    
-    DPRINTF(DPRINTF_RC, "bytes_per_sec: %i\n", rc->bytes_per_sec);
-    DPRINTF(DPRINTF_RC, "frame rate   : %f\n", (double)create->fbase / create->fincr);
-    DPRINTF(DPRINTF_RC, "target_framesize: %f\n",rc->target_framesize);
-
-    rc->sequence_quality = 2.0 / (double) rc->rtn_quant;
+	rc->sequence_quality = 2.0 / (double) rc->rtn_quant;
 	rc->avg_framesize = rc->target_framesize;
 
-    *handle = rc;
-	return(0);
+	/* Bind the RC */
+	*handle = rc;
+
+	/* A bit of debug info */
+	DPRINTF(DPRINTF_RC, "bytes_per_sec: %i\n", rc->bytes_per_sec);
+	DPRINTF(DPRINTF_RC, "frame rate   : %f\n", (double) create->fbase / create->fincr);
+	DPRINTF(DPRINTF_RC, "target_framesize: %f\n", rc->target_framesize);
+
+	return (0);
 }
 
 
-static int rc_cbr_destroy(rc_cbr_t * rc, xvid_plg_destroy_t * destroy)
+static int
+rc_cbr_destroy(rc_cbr_t * rc,
+			   xvid_plg_destroy_t * destroy)
 {
 	free(rc);
-	return(0);
+	return (0);
 }
 
 
-static int rc_cbr_before(rc_cbr_t * rc, xvid_plg_data_t * data)
+static int
+rc_cbr_before(rc_cbr_t * rc,
+			  xvid_plg_data_t * data)
 {
-    data->quant = rc->rtn_quant;
-    data->type = XVID_TYPE_AUTO;
-    return 0;
+	data->quant = rc->rtn_quant;
+	data->type = XVID_TYPE_AUTO;
+	return 0;
 }
 
 
-static int rc_cbr_after(rc_cbr_t * rc, xvid_plg_data_t * data)
+static int
+rc_cbr_after(rc_cbr_t * rc,
+			 xvid_plg_data_t * data)
 {
 	int64_t deviation;
 	int rtn_quant;
@@ -125,22 +169,21 @@ static int rc_cbr_after(rc_cbr_t * rc, xvid_plg_data_t * data)
 	double base_quality;
 	double target_quality;
 
-    
+
 	/* Update internal values */
-    rc->time += (double)data->fincr / data->fbase;
-    rc->total_size += data->length;
+	rc->time += (double) data->fincr / data->fbase;
+	rc->total_size += data->length;
 
 	/* Compute the deviation from expected total size */
 	deviation = (int64_t)
-        ((double)rc->total_size - (double)rc->bytes_per_sec*rc->time);
-	
+		((double) rc->total_size - (double) rc->bytes_per_sec * rc->time);
 
-    if(rc->rtn_quant >= 2) {
+
+	if (rc->rtn_quant >= 2) {
 
 		averaging_period = (double) rc->averaging_period;
 
-		rc->sequence_quality -=
-			rc->sequence_quality / averaging_period;
+		rc->sequence_quality -= rc->sequence_quality / averaging_period;
 
 		rc->sequence_quality +=
 			2.0 / (double) rc->rtn_quant / averaging_period;
@@ -157,8 +200,8 @@ static int rc_cbr_after(rc_cbr_t * rc, xvid_plg_data_t * data)
 	}
 
 	quality_scale =
-		rc->target_framesize / rc->avg_framesize *
-		rc->target_framesize / rc->avg_framesize;
+		rc->target_framesize / rc->avg_framesize * rc->target_framesize /
+		rc->avg_framesize;
 
 	base_quality = rc->sequence_quality;
 	if (quality_scale >= 1.0) {
@@ -170,8 +213,8 @@ static int rc_cbr_after(rc_cbr_t * rc, xvid_plg_data_t * data)
 	overflow = -((double) deviation / (double) rc->buffer);
 
 	target_quality =
-		base_quality +
-		(base_quality -	0.06452) * overflow / rc->target_framesize;
+		base_quality + (base_quality -
+						0.06452) * overflow / rc->target_framesize;
 
 	if (target_quality > 2.0)
 		target_quality = 2.0;
@@ -180,11 +223,10 @@ static int rc_cbr_after(rc_cbr_t * rc, xvid_plg_data_t * data)
 
 	rtn_quant = (int) (2.0 / target_quality);
 
-	if (rtn_quant < 31) {
-		rc->quant_error[rtn_quant-1] +=
-			2.0 / target_quality - rtn_quant;
-		if (rc->quant_error[rtn_quant-1] >= 1.0) {
-			rc->quant_error[rtn_quant-1] -= 1.0;
+	if (rtn_quant > 0 && rtn_quant < 31) {
+		rc->quant_error[rtn_quant - 1] += 2.0 / target_quality - rtn_quant;
+		if (rc->quant_error[rtn_quant - 1] >= 1.0) {
+			rc->quant_error[rtn_quant - 1] -= 1.0;
 			rtn_quant++;
 		}
 	}
@@ -201,31 +243,33 @@ static int rc_cbr_after(rc_cbr_t * rc, xvid_plg_data_t * data)
 
 	rc->rtn_quant = rtn_quant;
 
-	return(0);
+	return (0);
 }
 
 
 
-int xvid_plugin_cbr(void * handle, int opt, void * param1, void * param2)
+int
+xvid_plugin_cbr(void *handle,
+				int opt,
+				void *param1,
+				void *param2)
 {
-    switch(opt)
-    {
-    case XVID_PLG_INFO :
-        return 0;
+	switch (opt) {
+	case XVID_PLG_INFO:
+		return 0;
 
-    case XVID_PLG_CREATE :
-        return rc_cbr_create((xvid_plg_create_t*)param1, param2);
+	case XVID_PLG_CREATE:
+		return rc_cbr_create((xvid_plg_create_t *) param1, param2);
 
-    case XVID_PLG_DESTROY :
-        return rc_cbr_destroy((rc_cbr_t*)handle, (xvid_plg_destroy_t*)param1);
+	case XVID_PLG_DESTROY:
+		return rc_cbr_destroy((rc_cbr_t *) handle,(xvid_plg_destroy_t *) param1);
 
-    case XVID_PLG_BEFORE :
-        return rc_cbr_before((rc_cbr_t*)handle, (xvid_plg_data_t*)param1);
+	case XVID_PLG_BEFORE:
+		return rc_cbr_before((rc_cbr_t *) handle, (xvid_plg_data_t *) param1);
 
-    case XVID_PLG_AFTER :
-        return rc_cbr_after((rc_cbr_t*)handle, (xvid_plg_data_t*)param1);
-    }
+	case XVID_PLG_AFTER:
+		return rc_cbr_after((rc_cbr_t *) handle, (xvid_plg_data_t *) param1);
+	}
 
-    return XVID_ERR_FAIL;
+	return XVID_ERR_FAIL;
 }
-
