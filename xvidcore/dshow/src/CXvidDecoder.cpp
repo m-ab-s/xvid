@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.1.2.19 2004-02-28 07:24:34 syskin Exp $
+ * $Id: CXvidDecoder.cpp,v 1.1.2.20 2004-02-29 04:45:19 syskin Exp $
  *
  ****************************************************************************/
 
@@ -418,7 +418,7 @@ HRESULT CXvidDecoder::GetMediaType(int iPosition, CMediaType *mtOut)
 		VIDEOINFOHEADER * vih = (VIDEOINFOHEADER *) mtOut->ReallocFormatBuffer(sizeof(VIDEOINFOHEADER));
 		if (vih == NULL) return E_OUTOFMEMORY;
 
-		ZeroMemory(vih, sizeof (VIDEOINFOHEADER2));
+		ZeroMemory(vih, sizeof (VIDEOINFOHEADER));
 		bmih = &(vih->bmiHeader);
 		mtOut->SetFormatType(&FORMAT_VideoInfo);
 	}
