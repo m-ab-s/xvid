@@ -7,7 +7,7 @@
 //
 // Generated from the TEXTINCLUDE 2 resource.
 //
-#include "afxres.h"
+#include "winres.h"
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -115,7 +115,7 @@ BEGIN
     CONTROL         "Quarterpel",IDC_QPEL,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,16,122,49,10
     CONTROL         "Global Motion Compensation",IDC_GMC,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,86,121,106,10
+                    BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,86,121,106,10
     EDITTEXT        IDC_MAXBFRAMES,111,144,76,12,ES_AUTOHSCROLL
     EDITTEXT        IDC_BQUANTRATIO,111,157,76,12,ES_AUTOHSCROLL
     EDITTEXT        IDC_BQUANTOFFSET,111,169,76,12,ES_AUTOHSCROLL
