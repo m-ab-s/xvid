@@ -1,32 +1,29 @@
-/**************************************************************************
+/*****************************************************************************
  *
- *	XVID MPEG-4 VIDEO CODEC
- *	motion estimation
+ *  XVID MPEG-4 VIDEO CODEC
+ *  - Motion Estimation related code  -
  *
- *	This program is an implementation of a part of one or more MPEG-4
- *	Video tools as specified in ISO/IEC 14496-2 standard.  Those intending
- *	to use this software module in hardware or software products are
- *	advised that its use may infringe existing patents or copyrights, and
- *	any such use would be at such party's own risk.  The original
- *	developer of this software module and his/her company, and subsequent
- *	editors and their companies, will have no liability for use of this
- *	software or modifications or derivatives thereof.
+ *  Copyright(C) 2002 Christoph Lampert <gruel@web.de>
+ *               2002 Michael Militzer <michael@xvid.org>
+ *               2002-2003 Radoslaw Czyz <xvid@syskin.cjb.net>
  *
- *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
+ *  This program is free software ; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation ; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- *	This program is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY ; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *	You should have received a copy of the GNU General Public License
- *	along with this program; if not, write to the Free Software
- *	Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program ; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *************************************************************************/
+ * $Id: motion_est.c,v 1.58.2.17 2003-06-09 13:54:37 edgomez Exp $
+ *
+ ****************************************************************************/
 
 #include <assert.h>
 #include <stdio.h>

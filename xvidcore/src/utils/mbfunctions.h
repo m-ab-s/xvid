@@ -1,16 +1,27 @@
-/**************************************************************************
+/*****************************************************************************
  *
- *  Modifications:
+ *  XVID MPEG-4 VIDEO CODEC
+ *  - MB related header  -
  *
- *  29.03.2002 removed MBFieldToFrame - no longer used (transfers instead)
- *  26.03.2002 interlacing support
- *  02.12.2001 motion estimation/compensation split
- *  16.11.2001 const/uint32_t changes to MBMotionEstComp()
- *  26.08.2001 added inter4v_mode parameter to MBMotionEstComp()
+ *  Copyright(C) 2001 Michael Militzer <isibaar@videocoding.de>
  *
- *  Michael Militzer <isibaar@videocoding.de>
+ *  This program is free software ; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation ; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- **************************************************************************/
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY ; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program ; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+ *
+ * $Id: mbfunctions.h,v 1.17.2.4 2003-06-09 13:55:34 edgomez Exp $
+ *
+ ****************************************************************************/
 
 #ifndef _ENCORE_BLOCK_H
 #define _ENCORE_BLOCK_H

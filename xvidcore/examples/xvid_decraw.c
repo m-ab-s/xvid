@@ -4,6 +4,7 @@
  *  - Console based decoding test application  -
  *
  *  Copyright(C) 2002-2003 Christoph Lampert
+ *               2002-2003 Edouard Gomez <ed.gomez@free.fr>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,7 +20,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_decraw.c,v 1.7.2.2 2003-03-26 10:29:10 suxen_drol Exp $
+ * $Id: xvid_decraw.c,v 1.7.2.3 2003-06-09 13:49:13 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -29,24 +30,11 @@
  *		                    
  *  An MPEG-4 bitstream is read from an input file (or stdin) and decoded,
  *  the speed for this is measured.
- *		                   
+ *
  *  The program is plain C and needs no libraries except for libxvidcore, 
- *  and maths-lib, so with UN*X you simply compile by
- *
- *   gcc xvid_decraw.c -lxvidcore -lm -o xvid_decraw
- *
- *  You have to specify the image dimensions (until the add the feature 
- *  to read this from the bitstream)
- *
- * Usage : xvid_decraw <-w width> <-h height> [OPTIONS]
- * Options :
- *  -asm           : use assembly optimizations (default=disabled)
- *  -i string      : input filename (default=stdin)
- *  -t integer     : input data type (raw=0, mp4u=1)
- *  -d             : save decoder output (0 False*, !=0 True)
- *  -m             : save mpeg4 raw stream to single files (0 False*, !=0 True)
- *  -help          : This help message
- * (* means default)
+ *  and maths-lib.
+ *		                   
+ *  Use ./xvid_decraw -help for a list of options
  * 
  ****************************************************************************/
 

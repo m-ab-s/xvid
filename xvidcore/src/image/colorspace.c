@@ -1,35 +1,27 @@
-/**************************************************************************
+/*****************************************************************************
  *
- *	XVID MPEG-4 VIDEO CODEC
- *	colorspace conversions
+ *  XVID MPEG-4 VIDEO CODEC
+ *  - Colorspace conversion functions -
  *
- *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
+ *  Copyright(C) 2001-2003 Peter Ross <pross@xvid.org>
  *
- *	This program is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *  This program is free software ; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation ; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- *	You should have received a copy of the GNU General Public License
- *	along with this program; if not, write to the Free Software
- *	Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY ; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *************************************************************************/
-
-/**************************************************************************
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program ; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *	History:
+ * $Id: colorspace.c,v 1.8.2.3 2003-06-09 13:53:20 edgomez Exp $
  *
- *	14.04.2002	added user_to_yuv_c()
- *	30.02.2002	out_yuv dst_stride2 fix
- *	26.02.2002	rgb555, rgb565
- *	24.11.2001	accuracy improvement to yuyv/vyuy conversion
- *	28.10.2001	total rewrite <pross@cs.rmit.edu.au>
- *
- **************************************************************************/
+ ****************************************************************************/
 
 #include <string.h>				/* memcpy */
 

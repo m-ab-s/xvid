@@ -50,7 +50,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: reduced.c,v 1.2.2.1 2003-06-09 01:21:09 edgomez Exp $
+ * $Id: reduced.c,v 1.2.2.2 2003-06-09 13:54:13 edgomez Exp $
  *
  ****************************************************************************/
 

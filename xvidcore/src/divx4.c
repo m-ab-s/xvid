@@ -1,46 +1,28 @@
-/**************************************************************************
+/*****************************************************************************
  *
  *  XVID MPEG-4 VIDEO CODEC
- *  - OpenDivx API wrapper -
+ *  - DivX 4.x compatibility layer (Deprecated and not up2date code) -
  *
- *  This program is an implementation of a part of one or more MPEG-4
- *  Video tools as specified in ISO/IEC 14496-2 standard.  Those intending
- *  to use this software module in hardware or software products are
- *  advised that its use may infringe existing patents or copyrights, and
- *  any such use would be at such party's own risk.  The original
- *  developer of this software module and his/her company, and subsequent
- *  editors and their companies, will have no liability for use of this
- *  software or modifications or derivatives thereof.
+ *  Copyright(C) 2001-2003 Peter Ross <pross@xvid.org>
+ *               2002-2003 Edouard Gomez <ed.gomez@free.fr>
  *
- *  This program is free software; you can redistribute it and/or modify
+ *  This program is free software ; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
+ *  the Free Software Foundation ; either version 2 of the License, or
  *  (at your option) any later version.
  *
  *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  but WITHOUT ANY WARRANTY ; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *  along with this program ; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *************************************************************************/
-
-/**************************************************************************
+ * $Id: divx4.c,v 1.21.2.2 2003-06-09 13:50:12 edgomez Exp $
  *
- *  History:
- *
- *	24.02.2002	#def BFRAMES compatibility
- *  26.02.2001  fixed dec_csp bugs
- *  26.12.2001  xvid_init() support
- *  22.12.2001  removed some compiler warnings
- *  16.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
- *
- *  $Id: divx4.c,v 1.21.2.1 2003-03-26 14:56:09 edgomez Exp $
- *
- *************************************************************************/
+ ****************************************************************************/
 
 #include <stdlib.h>
 #include <string.h>
@@ -53,7 +35,7 @@
 
 #define EMULATED_DIVX_VERSION 20011001
 
-/**************************************************************************
+/*****************************************************************************
  * Divx Instance Structure
  *
  * This chain list datatype allows XviD do instanciate multiples divx4
@@ -63,7 +45,7 @@
  *        because they are not protected by any kind of mutex to allow
  *        only one modifier. We should add a mutex for each element in
  *        the chainlist.
- *************************************************************************/
+ ****************************************************************************/
 
 
 typedef struct DINST
@@ -87,16 +69,16 @@ typedef struct EINST
 }
 EINST;
 
-/**************************************************************************
+/*****************************************************************************
  * Global data (needed to emulate correctly exported symbols from divx4)
- *************************************************************************/
+ ****************************************************************************/
 
 /* This is not used in this module but is required by some divx4 encoders*/
 int quiet_encore = 1;
 
-/**************************************************************************
+/*****************************************************************************
  * Local data
- *************************************************************************/
+ ****************************************************************************/
 
 /* The Divx4 instance chainlist */
 static DINST *dhead = NULL;
@@ -131,9 +113,9 @@ static int const divx4_general_presets[7] = {
 	XVID_H263QUANT | XVID_VOP_INTER4V | XVID_VOP_HALFPEL
 };
 
-/**************************************************************************
+/*****************************************************************************
  * Local Prototypes
- *************************************************************************/
+ ****************************************************************************/
 
 /* Chain list helper functions */
 static DINST *dinst_find(unsigned long key);
@@ -148,12 +130,12 @@ static void einst_remove(void *handle);
 static int xvid_to_opendivx_dec_csp(int csp);
 static int xvid_to_opendivx_enc_csp(int csp);
 
-/**************************************************************************
+/*****************************************************************************
  * decore part
  *
  * decore is the divx4 entry point used to decompress the mpeg4 bitstream
  * into a user defined image format.
- *************************************************************************/
+ ****************************************************************************/
 
 int
 decore(unsigned long key,
@@ -319,12 +301,12 @@ decore(unsigned long key,
 	}
 }
 
-/**************************************************************************
+/*****************************************************************************
  * Encore Part
  *
  * encore is the divx4 entry point used to compress a frame to a mpeg4
  * bitstream.
- *************************************************************************/
+ ****************************************************************************/
 
 #define FRAMERATE_INCR		1001
 
@@ -479,9 +461,9 @@ encore(void *handle,
 	}
 }
 
-/**************************************************************************
+/*****************************************************************************
  * Local Functions
- *************************************************************************/
+ ****************************************************************************/
 
 /***************************************
  * DINST chainlist helper functions    *

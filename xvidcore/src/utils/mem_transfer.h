@@ -3,14 +3,7 @@
  *  XVID MPEG-4 VIDEO CODEC
  *  - 8<->16 bit buffer transfer header -
  *
- *  This program is an implementation of a part of one or more MPEG-4
- *  Video tools as specified in ISO/IEC 14496-2 standard.  Those intending
- *  to use this software module in hardware or software products are
- *  advised that its use may infringe existing patents or copyrights, and
- *  any such use would be at such party's own risk.  The original
- *  developer of this software module and his/her company, and subsequent
- *  editors and their companies, will have no liability for use of this
- *  software or modifications or derivatives thereof.
+ *  Copyright(C) 2001-2003 Peter Ross <pross@xvid.org>
  *
  *  This program is free software ; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -26,17 +19,9 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- ****************************************************************************/
-/*****************************************************************************
- *
- *  History
- *
- *  - Sun Jun 16 00:12:49 2002 Added legal header
- *                             Cosmetic
- *  $Id: mem_transfer.h,v 1.12 2003-02-15 15:22:19 edgomez Exp $
+ * $Id: mem_transfer.h,v 1.12.2.1 2003-06-09 13:55:44 edgomez Exp $
  *
  ****************************************************************************/
-
 
 #ifndef _MEM_TRANSFER_H
 #define _MEM_TRANSFER_H

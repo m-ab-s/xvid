@@ -3,7 +3,9 @@
  *  XVID MPEG-4 VIDEO CODEC
  *  - Console based test application  -
  *
- *  Copyright(C) 2002-2003 Christoph Lampert
+ *  Copyright(C) 2002-2003 Christoph Lampert <gruel@web.de>
+ *               2002-2003 Edouard Gomez <ed.gomez@free.fr>
+ *               2003      Peter Ross <pross@xvid.org>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,7 +21,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.26 2003-05-18 12:24:55 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.27 2003-06-09 13:49:25 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -31,6 +33,8 @@
  *		                   
  *  The program is plain C and needs no libraries except for libxvidcore, 
  *  and maths-lib.
+ *
+ *  Use ./xvid_encraw -help for a list of options
  *	
  ************************************************************************/
 

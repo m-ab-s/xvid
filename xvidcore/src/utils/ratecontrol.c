@@ -1,7 +1,9 @@
 /*****************************************************************************
  *
  *  XVID MPEG-4 VIDEO CODEC
- *  - Rate Controler module -
+ *  - Deprecated code  -
+ *
+ *  Copyright(C) 2002 Benjamin Lambert <foxer@hotmail.com>
  *
  *  This program is free software ; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,17 +19,9 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- ****************************************************************************/
-/*****************************************************************************
- *
- *  History
- *
- *  - Mon Jun 17 13:04:15 2002 Added legal header
- *
- *  $Id: ratecontrol.c,v 1.19.2.1 2003-05-17 13:37:11 suxen_drol Exp $
+ * $Id: ratecontrol.c,v 1.19.2.2 2003-06-09 13:55:47 edgomez Exp $
  *
  ****************************************************************************/
-
 
 /* For the fabs function */
 #include <math.h>

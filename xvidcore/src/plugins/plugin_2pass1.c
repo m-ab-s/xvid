@@ -1,28 +1,28 @@
 /******************************************************************************
  *
- * XviD Bit Rate Controller Library
- * - VBR 2 pass bitrate controler implementation -
+ *  XviD Bit Rate Controller Library
+ *  - VBR 2 pass bitrate controler implementation -
  *
- * Copyright (C) 2002 Edouard Gomez <ed.gomez@wanadoo.fr>
+ *  Copyright (C) 2002-2003 Edouard Gomez <ed.gomez@free.fr>
  *
- * The curve treatment algorithm is the one implemented by Foxer <email?> and
- * Dirk Knop <dknop@gwdg.de> for the XviD vfw dynamic library.
+ *  The curve treatment algorithm is the one implemented by Foxer <email?> and
+ *  Dirk Knop <dknop@gwdg.de> for the XviD vfw dynamic library.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass1.c,v 1.1.2.4 2003-05-17 13:36:38 suxen_drol Exp $
+ * $Id: plugin_2pass1.c,v 1.1.2.5 2003-06-09 13:55:07 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -65,10 +65,12 @@ static int rc_2pass1_create(xvid_plg_create_t * create, rc_2pass1_t ** handle)
 	/*
 	 * The File Header
 	 */
-	/* fprintf(rc->stat_file, "# XviD 2pass stat file\n");
+#if 0
+	fprintf(rc->stat_file, "# XviD 2pass stat file\n");
     fprintf(rc->stat_file, "version %i.%i.%i\n",XVID_MAJOR(XVID_VERSION), XVID_MINOR(XVID_VERSION), XVID_PATCH(XVID_VERSION));
 	fprintf(rc->stat_file, "start\n");
-    fprintf(rc->stat_file, "type quantizer length kblocks mblocks ublocks\n");  */
+    fprintf(rc->stat_file, "type quantizer length kblocks mblocks ublocks\n");
+#endif
     
     rc->fq_error = 0;
 

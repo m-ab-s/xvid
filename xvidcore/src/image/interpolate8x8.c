@@ -1,34 +1,27 @@
-/**************************************************************************
+/*****************************************************************************
  *
  *	XVID MPEG-4 VIDEO CODEC
- *	8x8 block-based halfpel interpolation
+ *	- 8x8 block-based halfpel interpolation -
  *
- *	This program is free software; you can redistribute it and/or modify
- *	it under the terms of the GNU General Public License as published by
- *	the Free Software Foundation; either version 2 of the License, or
- *	(at your option) any later version.
+ *  Copyright(C) 2001-2003 Peter Ross <pross@xvid.org>
  *
- *	This program is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *	GNU General Public License for more details.
+ *  This program is free software ; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation ; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- *	You should have received a copy of the GNU General Public License
- *	along with this program; if not, write to the Free Software
- *	Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY ; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *************************************************************************/
-
-/**************************************************************************
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program ; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *	History:
+ * $Id: interpolate8x8.c,v 1.10.2.3 2003-06-09 13:54:02 edgomez Exp $
  *
- *  05.10.2002	new bilinear and qpel interpolation code - Isibaar
- *	27.12.2001	modified "compensate_halfpel"
- *	05.11.2001	initial version; (c)2001 peter ross <pross@cs.rmit.edu.au>
- *
- *************************************************************************/
-
+ ****************************************************************************/
 
 #include "../portab.h"
 #include "../global.h"

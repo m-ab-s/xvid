@@ -3,6 +3,8 @@
  *  XVID MPEG-4 VIDEO CODEC
  *  - Native API implementation  -
  *
+ *  Copyright(C) 2001-2003 Peter Ross <pross@xvid.org>
+ *
  *  This program is free software ; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation ; either version 2 of the License, or
@@ -17,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.5 2003-06-09 01:16:57 edgomez Exp $
+ * $Id: xvid.c,v 1.45.2.6 2003-06-09 13:51:17 edgomez Exp $
  *
  ****************************************************************************/
 
