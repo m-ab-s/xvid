@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mem_transfer.c,v 1.9.2.2 2003-06-09 13:55:42 edgomez Exp $
+ * $Id: mem_transfer.c,v 1.9.2.3 2003-11-09 20:47:14 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -166,8 +166,9 @@ transfer_8to16subro_c(int16_t * const dct,
  *
  *    R1  (8bit) = R1
  *    R2  (8bit) = R2
- *    C   (8bit) = C
- *    DCT (16bit)= C - min((R1 + R2)/2, 255)
+ *    R   (temp) = min((R1 + R2)/2, 255)
+ *    DCT (16bit)= C - R
+ *    C   (8bit) = R
  */
 void
 transfer_8to16sub2_c(int16_t * const dct,
@@ -186,7 +187,7 @@ transfer_8to16sub2_c(int16_t * const dct,
 			if (r > 255) {
 				r = 255;
 			}
-			/* cur[j * stride + i] = r; */
+			cur[j * stride + i] = r;
 			dct[j * 8 + i] = (int16_t) c - (int16_t) r;
 		}
 	}

@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_bvop.c,v 1.1.2.2 2003-09-30 18:20:31 edgomez Exp $
+ * $Id: estimation_bvop.c,v 1.1.2.3 2003-11-09 20:47:14 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -468,8 +468,8 @@ SkipDecisionB(const IMAGE * const pCur,
 	if (sum < MAX_CHROMA_SAD_FOR_SKIP * (int)Data->iQuant) {
 		pMB->mode = MODE_DIRECT_NONE_MV; /* skipped */
 		for (k = 0; k < 4; k++) {
-			pMB->qmvs[k] = pMB->mvs[k];
-			pMB->b_qmvs[k] = pMB->b_mvs[k];
+			pMB->qmvs[k] = pMB->mvs[k] = Data->directmvF[k];
+			pMB->b_qmvs[k] = pMB->b_mvs[k] =  Data->directmvB[k];
 		}
 	}
 }

@@ -19,7 +19,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: mem_transfer_3dne.asm,v 1.2.2.2 2003-11-03 15:51:50 edgomez Exp $
+; * $Id: mem_transfer_3dne.asm,v 1.2.2.3 2003-11-09 20:47:14 edgomez Exp $
 ; *
 ; ***************************************************************************/
 
@@ -295,8 +295,10 @@ ALIGN 4
 
   movq mm4, [byte ebx]      ; ref1
   pavgb mm4, [byte esi]     ; ref2
+  movq [eax], mm4
   movq mm5, [ebx+edx]  ; ref
   pavgb mm5, [esi+edx] ; ref2
+  movq [eax+edx], mm5
   movq mm6, mm4
   punpcklbw mm4, mm7
   punpckhbw mm6, mm7
@@ -308,7 +310,7 @@ ALIGN 4
   mov esi,[esp]
   mov ebx,[esp+4]
   add esp,byte 8
-  %endif
+%endif
   psubsw mm0, mm4
   psubsw mm1, mm6
   movq mm6, mm5

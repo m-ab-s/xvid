@@ -21,7 +21,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: mem_transfer_mmx.asm,v 1.9.2.1 2003-10-28 22:23:03 edgomez Exp $
+; * $Id: mem_transfer_mmx.asm,v 1.9.2.2 2003-11-09 20:47:14 edgomez Exp $
 ; *
 ; ***************************************************************************/
 
@@ -35,6 +35,20 @@ BITS 32
 		global %1
 	%endif
 %endmacro
+
+;=============================================================================
+; Read only data
+;=============================================================================
+
+%ifdef FORMAT_COFF
+SECTION .rodata data
+%else
+SECTION .rodata data align=16
+%endif
+
+ALIGN 16
+mmx_one:
+	dw 1, 1, 1, 1
 
 ;=============================================================================
 ; Code
@@ -231,9 +245,12 @@ transfer_8to16subro_mmx:
   punpckhbw mm3, mm7
   paddusw mm4, mm1
   paddusw mm6, mm3
+  paddusw mm4, [mmx_one]
+  paddusw mm6, [mmx_one]
   psrlw mm4, 1
   psrlw mm6, 1
   packuswb mm4, mm6
+  movq [eax], mm4
 
     ; mm5 <- (ref1+ref2+1) / 2
   movq mm5, [ebx+edx]  ; ref1
@@ -246,11 +263,13 @@ transfer_8to16subro_mmx:
   punpckhbw mm3, mm7
   paddusw mm5, mm1
   paddusw mm6, mm3
+  paddusw mm5, [mmx_one]
+  paddusw mm6, [mmx_one]
   lea esi, [esi+2*edx]
   psrlw mm5, 1
   psrlw mm6, 1
   packuswb mm5, mm6
-
+  movq [eax+edx], mm5
 
   movq mm1, mm0
   movq mm3, mm2
@@ -318,10 +337,12 @@ transfer_8to16sub2_mmx:
   punpcklbw mm2, mm7
   movq mm4, [ebx]     ; ref1
   pavgb mm4, [esi]     ; ref2
+  movq [eax], mm4
   punpckhbw mm1, mm7
   punpckhbw mm3, mm7
   movq mm5, [ebx+edx] ; ref
   pavgb mm5, [esi+edx] ; ref2
+  movq [eax+edx], mm5
 
   movq mm6, mm4
   punpcklbw mm4, mm7

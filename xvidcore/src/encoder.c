@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.47 2003-11-05 16:15:47 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.48 2003-11-09 20:47:14 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1913,7 +1913,11 @@ FrameCodeB(Encoder * pEnc,
 
 			/* decoder ignores mb when refence block is INTER(0,0), CBP=0 */
 			if (mb->mode == MODE_NOT_CODED) {
-				/* mb->mvs[0].x = mb->mvs[0].y = mb->cbp = 0; */
+				if (pEnc->mbParam.plugin_flags & XVID_REQORIGINAL) {
+					MBMotionCompensation(mb, x, y, f_ref, NULL, f_ref, NULL, NULL, &frame->image,
+											NULL, 0, 0, pEnc->mbParam.edged_width, 0, 0, 0);
+				}
+
 				continue;
 			}
 
