@@ -52,7 +52,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: portab.h,v 1.26.2.7 2003-01-26 05:09:00 suxen_drol Exp $
+ * $Id: portab.h,v 1.26.2.8 2003-02-15 08:39:17 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -101,7 +101,7 @@
  | msvc (lacks such a header file)
  *---------------------------------------------------------------------------*/
 
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) || defined (__WATCOMC__)
 #    define int8_t   char
 #    define uint8_t  unsigned char
 #    define int16_t  short
@@ -366,6 +366,63 @@
 
 #    endif /* Architecture checking */
 
+/*****************************************************************************
+ *  OPEN WATCOM C/C++ compiler
+ ****************************************************************************/
+#elif defined(__WATCOMC__)
+
+#	include <stdio.h>
+#	include <stdarg.h>
+
+    static __inline void DPRINTF(int level, char *fmt, ...)
+    {
+		if (DPRINTF_LEVEL & level) {
+            va_list args;
+            char buf[DPRINTF_BUF_SZ];
+            va_start(args, fmt);
+            vsprintf(buf, fmt, args);
+			fprintf(stderr, "%s\n", buf);
+		}
+	}
+
+#       define DECLARE_ALIGNED_MATRIX(name,sizex,sizey,type,alignment) \
+                type name##_storage[(sizex)*(sizey)+(alignment)-1]; \
+                type * name = (type *) (((int32_t) name##_storage+(alignment - 1)) & ~((int32_t)(alignment)-1))
+
+/*----------------------------------------------------------------------------
+ | watcom x86 specific macros/functions
+ *---------------------------------------------------------------------------*/
+#	if defined(ARCH_X86)
+
+#		define BSWAP(a)  __asm mov eax,a __asm bswap eax __asm mov a, eax
+
+		static __inline int64_t read_counter(void)
+		{
+			int64_t ts;
+			uint32_t ts1, ts2;
+			__asm {
+				rdtsc
+				mov ts1, eax
+				mov ts2, edx
+			}
+			ts = ((uint64_t) ts2 << 32) | ((uint64_t) ts1);
+			return ts;
+		}
+
+/*----------------------------------------------------------------------------
+ | watcom unsupported architecture
+ *---------------------------------------------------------------------------*/
+#	else
+
+#		define BSWAP(x) \
+			x = ((((x) & 0xff000000) >> 24) | \
+				(((x) & 0x00ff0000) >>  8) | \
+				(((x) & 0x0000ff00) <<  8) | \
+				(((x) & 0x000000ff) << 24))
+
+		static int64_t read_counter() { return 0; }
+
+#	endif
 /*****************************************************************************
  *  Unknown compiler
  ****************************************************************************/
