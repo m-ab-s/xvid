@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.19 2003-11-13 22:35:30 edgomez Exp $
+ * $Id: decoder.c,v 1.49.2.20 2003-11-30 16:13:15 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -41,6 +41,7 @@
 #include "bitstream/mbcoding.h"
 
 #include "quant/quant.h"
+#include "quant/quant_matrix.h"
 #include "dct/idct.h"
 #include "dct/fdct.h"
 #include "utils/mem_transfer.h"
@@ -175,7 +176,14 @@ decoder_create(xvid_dec_create_t * create)
 	if (dec == NULL) {
 		return XVID_ERR_MEMORY;
 	}
+
 	memset(dec, 0, sizeof(DECODER));
+
+	dec->mpeg_quant_matrices = xvid_malloc(sizeof(uint16_t) * 64 * 8, CACHE_LINE);
+	if (dec->mpeg_quant_matrices == NULL) {
+		xvid_free(dec);
+		return XVID_ERR_MEMORY;
+	}
 
 	create->handle = dec;
 
@@ -196,6 +204,7 @@ decoder_create(xvid_dec_create_t * create)
 	dec->last_mbs = NULL;
 
 	init_timer();
+	init_mpeg_matrix(dec->mpeg_quant_matrices);
 
 	/* For B-frame support (used to save reference frame's time */
 	dec->frames = 0;
@@ -226,6 +235,7 @@ decoder_destroy(DECODER * dec)
 	image_destroy(&dec->tmp, dec->edged_width, dec->edged_height);
 	image_destroy(&dec->qtmp, dec->edged_width, dec->edged_height);
 	image_destroy(&dec->cur, dec->edged_width, dec->edged_height);
+	xvid_free(dec->mpeg_quant_matrices);
 	xvid_free(dec);
 
 	write_timer();
@@ -321,9 +331,9 @@ decoder_mbintra(DECODER * dec,
 
 		start_timer();
 		if (dec->quant_type == 0) {
-			dequant_h263_intra(&data[i * 64], &block[i * 64], iQuant, iDcScaler);
+			dequant_h263_intra(&data[i * 64], &block[i * 64], iQuant, iDcScaler, dec->mpeg_quant_matrices);
 		} else {
-			dequant_mpeg_intra(&data[i * 64], &block[i * 64], iQuant, iDcScaler);
+			dequant_mpeg_intra(&data[i * 64], &block[i * 64], iQuant, iDcScaler, dec->mpeg_quant_matrices);
 		}
 		stop_iquant_timer();
 
@@ -392,7 +402,7 @@ decoder_mb_decode(DECODER * dec,
 			stop_coding_timer();
 
 			start_timer();
-			dequant(&data[i * 64], block, iQuant);
+			dequant(&data[i * 64], block, iQuant, dec->mpeg_quant_matrices);
 			stop_iquant_timer();
 
 			start_timer();

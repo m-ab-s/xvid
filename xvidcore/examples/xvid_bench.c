@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_bench.c,v 1.9.2.8 2003-11-19 21:27:25 edgomez Exp $
+ * $Id: xvid_bench.c,v 1.9.2.9 2003-11-30 16:13:15 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -119,7 +119,7 @@ CPU cpu_list[] =
   , { "MMXEXT", XVID_CPU_MMXEXT | XVID_CPU_MMX }
   , { "SSE2  ", XVID_CPU_SSE2 | XVID_CPU_MMX }
   , { "3DNOW ", XVID_CPU_3DNOW }
-  , { "3DNOWE", XVID_CPU_3DNOWEXT }
+  , { "3DNOWE", XVID_CPU_3DNOW | XVID_CPU_3DNOWEXT }
 #endif
 //, { "IA64  ", XVID_CPU_IA64 }  
 //, { "TSC   ", XVID_CPU_TSC }
@@ -169,6 +169,109 @@ int init_cpu(CPU *cpu)
 		return(0);
 	}
 	return 1;
+}
+
+#define CRC32_REMAINDER 0xCBF43926
+#define CRC32_INITIAL 0xffffffff
+
+#define DO1(c, crc) ((crc) = crc32tab[((unsigned int)((crc)>>24) ^ (*c++)) & 0xff] ^ ((crc) << 8))
+#define DO2(c, crc)  DO1(c, crc); DO1(c, crc);
+#define DO4(c, crc)  DO2(c, crc); DO2(c, crc);
+#define DO8(c, crc)  DO4(c, crc); DO4(c, crc);
+
+/******************************************************************************
+* Precomputed AAL5 CRC32 lookup table
+******************************************************************************/
+
+static unsigned long crc32tab[256] = {
+
+	0x00000000L, 0x04C11DB7L, 0x09823B6EL, 0x0D4326D9L,
+	0x130476DCL, 0x17C56B6BL, 0x1A864DB2L, 0x1E475005L,
+	0x2608EDB8L, 0x22C9F00FL, 0x2F8AD6D6L, 0x2B4BCB61L,
+	0x350C9B64L, 0x31CD86D3L, 0x3C8EA00AL, 0x384FBDBDL,
+	0x4C11DB70L, 0x48D0C6C7L, 0x4593E01EL, 0x4152FDA9L,
+	0x5F15ADACL, 0x5BD4B01BL, 0x569796C2L, 0x52568B75L,
+	0x6A1936C8L, 0x6ED82B7FL, 0x639B0DA6L, 0x675A1011L,
+	0x791D4014L, 0x7DDC5DA3L, 0x709F7B7AL, 0x745E66CDL,
+	0x9823B6E0L, 0x9CE2AB57L, 0x91A18D8EL, 0x95609039L,
+	0x8B27C03CL, 0x8FE6DD8BL, 0x82A5FB52L, 0x8664E6E5L,
+	0xBE2B5B58L, 0xBAEA46EFL, 0xB7A96036L, 0xB3687D81L,
+	0xAD2F2D84L, 0xA9EE3033L, 0xA4AD16EAL, 0xA06C0B5DL,
+	0xD4326D90L, 0xD0F37027L, 0xDDB056FEL, 0xD9714B49L,
+	0xC7361B4CL, 0xC3F706FBL, 0xCEB42022L, 0xCA753D95L,
+	0xF23A8028L, 0xF6FB9D9FL, 0xFBB8BB46L, 0xFF79A6F1L,
+	0xE13EF6F4L, 0xE5FFEB43L, 0xE8BCCD9AL, 0xEC7DD02DL,
+	0x34867077L, 0x30476DC0L, 0x3D044B19L, 0x39C556AEL,
+	0x278206ABL, 0x23431B1CL, 0x2E003DC5L, 0x2AC12072L,
+	0x128E9DCFL, 0x164F8078L, 0x1B0CA6A1L, 0x1FCDBB16L,
+	0x018AEB13L, 0x054BF6A4L, 0x0808D07DL, 0x0CC9CDCAL,
+	0x7897AB07L, 0x7C56B6B0L, 0x71159069L, 0x75D48DDEL,
+	0x6B93DDDBL, 0x6F52C06CL, 0x6211E6B5L, 0x66D0FB02L,
+	0x5E9F46BFL, 0x5A5E5B08L, 0x571D7DD1L, 0x53DC6066L,
+	0x4D9B3063L, 0x495A2DD4L, 0x44190B0DL, 0x40D816BAL,
+	0xACA5C697L, 0xA864DB20L, 0xA527FDF9L, 0xA1E6E04EL,
+	0xBFA1B04BL, 0xBB60ADFCL, 0xB6238B25L, 0xB2E29692L,
+	0x8AAD2B2FL, 0x8E6C3698L, 0x832F1041L, 0x87EE0DF6L,
+	0x99A95DF3L, 0x9D684044L, 0x902B669DL, 0x94EA7B2AL,
+	0xE0B41DE7L, 0xE4750050L, 0xE9362689L, 0xEDF73B3EL,
+	0xF3B06B3BL, 0xF771768CL, 0xFA325055L, 0xFEF34DE2L,
+	0xC6BCF05FL, 0xC27DEDE8L, 0xCF3ECB31L, 0xCBFFD686L,
+	0xD5B88683L, 0xD1799B34L, 0xDC3ABDEDL, 0xD8FBA05AL,
+	0x690CE0EEL, 0x6DCDFD59L, 0x608EDB80L, 0x644FC637L,
+	0x7A089632L, 0x7EC98B85L, 0x738AAD5CL, 0x774BB0EBL,
+	0x4F040D56L, 0x4BC510E1L, 0x46863638L, 0x42472B8FL,
+	0x5C007B8AL, 0x58C1663DL, 0x558240E4L, 0x51435D53L,
+	0x251D3B9EL, 0x21DC2629L, 0x2C9F00F0L, 0x285E1D47L,
+	0x36194D42L, 0x32D850F5L, 0x3F9B762CL, 0x3B5A6B9BL,
+	0x0315D626L, 0x07D4CB91L, 0x0A97ED48L, 0x0E56F0FFL,
+	0x1011A0FAL, 0x14D0BD4DL, 0x19939B94L, 0x1D528623L,
+	0xF12F560EL, 0xF5EE4BB9L, 0xF8AD6D60L, 0xFC6C70D7L,
+	0xE22B20D2L, 0xE6EA3D65L, 0xEBA91BBCL, 0xEF68060BL,
+	0xD727BBB6L, 0xD3E6A601L, 0xDEA580D8L, 0xDA649D6FL,
+	0xC423CD6AL, 0xC0E2D0DDL, 0xCDA1F604L, 0xC960EBB3L,
+	0xBD3E8D7EL, 0xB9FF90C9L, 0xB4BCB610L, 0xB07DABA7L,
+	0xAE3AFBA2L, 0xAAFBE615L, 0xA7B8C0CCL, 0xA379DD7BL,
+	0x9B3660C6L, 0x9FF77D71L, 0x92B45BA8L, 0x9675461FL,
+	0x8832161AL, 0x8CF30BADL, 0x81B02D74L, 0x857130C3L,
+	0x5D8A9099L, 0x594B8D2EL, 0x5408ABF7L, 0x50C9B640L,
+	0x4E8EE645L, 0x4A4FFBF2L, 0x470CDD2BL, 0x43CDC09CL,
+	0x7B827D21L, 0x7F436096L, 0x7200464FL, 0x76C15BF8L,
+	0x68860BFDL, 0x6C47164AL, 0x61043093L, 0x65C52D24L,
+	0x119B4BE9L, 0x155A565EL, 0x18197087L, 0x1CD86D30L,
+	0x029F3D35L, 0x065E2082L, 0x0B1D065BL, 0x0FDC1BECL,
+	0x3793A651L, 0x3352BBE6L, 0x3E119D3FL, 0x3AD08088L,
+	0x2497D08DL, 0x2056CD3AL, 0x2D15EBE3L, 0x29D4F654L,
+	0xC5A92679L, 0xC1683BCEL, 0xCC2B1D17L, 0xC8EA00A0L,
+	0xD6AD50A5L, 0xD26C4D12L, 0xDF2F6BCBL, 0xDBEE767CL,
+	0xE3A1CBC1L, 0xE760D676L, 0xEA23F0AFL, 0xEEE2ED18L,
+	0xF0A5BD1DL, 0xF464A0AAL, 0xF9278673L, 0xFDE69BC4L,
+	0x89B8FD09L, 0x8D79E0BEL, 0x803AC667L, 0x84FBDBD0L,
+	0x9ABC8BD5L, 0x9E7D9662L, 0x933EB0BBL, 0x97FFAD0CL,
+	0xAFB010B1L, 0xAB710D06L, 0xA6322BDFL, 0xA2F33668L,
+	0xBCB4666DL, 0xB8757BDAL, 0xB5365D03L, 0xB1F740B4L
+
+};
+
+uint32_t
+calc_crc(uint8_t *mem, int len, uint32_t initial)
+{
+
+	register unsigned int crc;
+
+	crc = initial;
+
+	while( len >= 8) {
+		DO8(mem, crc);
+		len -= 8;
+	}
+
+	while( len ) {
+		DO1(mem, crc);
+		len--;
+	}
+
+	return(crc);
+
 }
 
 /*********************************************************************
@@ -223,9 +326,9 @@ void test_dct()
 			MSE += delta*delta;
 		}
 		PSNR = (MSE==0.) ? 1.e6 : -4.3429448*log( MSE/64. );
-		printf( "%s -  %.3f usec       PSNR=%.3f  MSE=%.3f\n",
-				cpu->name, t, PSNR, MSE );
-		if (ABS(MSE)>=64) printf( "*** CRC ERROR! ***\n" );
+		printf( "%s -  %.3f usec       PSNR=%.3f  MSE=%.3f %s\n",
+				cpu->name, t, PSNR, MSE,
+				(ABS(MSE)>=64)? "| ERROR" :"");
 	}
 }
 
@@ -260,32 +363,36 @@ void test_sad()
 		for(tst=0; tst<nb_tests; ++tst) s = sad8(Cur, Ref1, 16);
 		emms();
 		t = (gettime_usec() - t) / nb_tests;
-		printf( "%s - sad8    %.3f usec       sad=%d\n", cpu->name, t, s );
-		if (s!=3776) printf( "*** CRC ERROR! ***\n" );
+		printf("%s - sad8    %.3f usec       sad=%d %s\n",
+			   cpu->name, t, s,
+			   (s!=3776)?"| ERROR": "" );
 
 		t = gettime_usec();
 		emms();
 		for(tst=0; tst<nb_tests; ++tst) s = sad16(Cur, Ref1, 16, -1);
 		emms();
 		t = (gettime_usec() - t) / nb_tests;
-		printf( "%s - sad16   %.3f usec       sad=%d\n", cpu->name, t, s );
-		if (s!=27214) printf( "*** CRC ERROR! ***\n" );
+		printf("%s - sad16   %.3f usec       sad=%d %s\n",
+			   cpu->name, t, s,
+			   (s!=27214)?"| ERROR": "" );
 
 		t = gettime_usec();
 		emms();
 		for(tst=0; tst<nb_tests; ++tst) s = sad16bi(Cur, Ref1, Ref2, 16);
 		emms();
 		t = (gettime_usec() - t) / nb_tests;
-		printf( "%s - sad16bi %.3f usec       sad=%d\n", cpu->name, t, s );
-		if (s!=26274) printf( "*** CRC ERROR! ***\n" );
+		printf( "%s - sad16bi %.3f usec       sad=%d %s\n",
+				cpu->name, t, s,
+				(s!=26274)?"| ERROR": "" );
 
 		t = gettime_usec();
 		emms();
 		for(tst=0; tst<nb_tests; ++tst) s = dev16(Cur, 16);
 		emms();
 		t = (gettime_usec() - t) / nb_tests;
-		printf( "%s - dev16   %.3f usec       sad=%d\n", cpu->name, t, s );
-		if (s!=3344) printf( "*** CRC ERROR! ***\n" );
+		printf( "%s - dev16   %.3f usec       sad=%d %s\n",
+				cpu->name, t, s,
+				(s!=3344)?"| ERROR": "" );
 
 		printf( " --- \n" );
 	}
@@ -303,8 +410,7 @@ emms();
 #define LEAVE \
 emms();                             \
 t = (gettime_usec() - t) / nb_tests;  \
-iCrc = 0;                           \
-for(i=0; i<16*8; ++i) { iCrc += Dst[i]^i; }
+	iCrc = calc_crc((uint8_t*)Dst, sizeof(Dst), CRC32_INITIAL)
 
 #define TEST_MB(FUNC, R)                \
 ENTER                               \
@@ -323,15 +429,15 @@ void test_mb()
 	CPU *cpu;
 	const uint8_t Src0[16*9] = {
 		/* try to have every possible combinaison of rounding... */
-		0, 0, 1, 0, 2, 0, 3, 0, 4             ,0,0,0, 0,0,0,0
-		, 0, 1, 1, 1, 2, 1, 3, 1, 3             ,0,0,0, 0,0,0,0
-		, 0, 2, 1, 2, 2, 2, 3, 2, 2             ,0,0,0, 0,0,0,0
-		, 0, 3, 1, 3, 2, 3, 3, 3, 1             ,0,0,0, 0,0,0,0
-		, 1, 3, 0, 2, 1, 0, 2, 3, 4             ,0,0,0, 0,0,0,0
-		, 2, 2, 1, 2, 0, 1, 3, 5, 3             ,0,0,0, 0,0,0,0
-		, 3, 1, 2, 3, 1, 2, 2, 6, 2             ,0,0,0, 0,0,0,0
-		, 1, 0, 1, 3, 0, 3, 1, 6, 1             ,0,0,0, 0,0,0,0
-		, 4, 3, 2, 1, 2, 3, 4, 0, 3             ,0,0,0, 0,0,0,0
+		0, 0, 1, 0, 2, 0, 3, 0, 4             ,0,0,0, 0,0,0,0,
+		0, 1, 1, 1, 2, 1, 3, 1, 3             ,0,0,0, 0,0,0,0,
+		0, 2, 1, 2, 2, 2, 3, 2, 2             ,0,0,0, 0,0,0,0,
+		0, 3, 1, 3, 2, 3, 3, 3, 1             ,0,0,0, 0,0,0,0,
+		1, 3, 0, 2, 1, 0, 2, 3, 4             ,0,0,0, 0,0,0,0,
+		2, 2, 1, 2, 0, 1, 3, 5, 3             ,0,0,0, 0,0,0,0,
+		3, 1, 2, 3, 1, 2, 2, 6, 2             ,0,0,0, 0,0,0,0,
+		1, 0, 1, 3, 0, 3, 1, 6, 1             ,0,0,0, 0,0,0,0,
+		4, 3, 2, 1, 2, 3, 4, 0, 3             ,0,0,0, 0,0,0,0
 	};
 	uint8_t Dst[16*8] = {0};
 
@@ -346,37 +452,44 @@ void test_mb()
 			continue;
 
 		TEST_MB(interpolate8x8_halfpel_h, 0);
-		printf( "%s - interp- h-round0 %.3f usec       iCrc=%d\n", cpu->name, t, iCrc );
-		if (iCrc!=8107) printf( "*** CRC ERROR! ***\n" );
+		printf("%s - interp- h-round0 %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, iCrc,
+			   (iCrc!=0x115381ba)?"| ERROR": "" );
 
 		TEST_MB(interpolate8x8_halfpel_h, 1);
-		printf( "%s -           round1 %.3f usec       iCrc=%d\n", cpu->name, t, iCrc );
-		if (iCrc!=8100) printf( "*** CRC ERROR! ***\n" );
+		printf("%s -           round1 %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, iCrc,
+			   (iCrc!=0x2b1f528f)?"| ERROR": "" );
 
 
 		TEST_MB(interpolate8x8_halfpel_v, 0);
-		printf( "%s - interp- v-round0 %.3f usec       iCrc=%d\n", cpu->name, t, iCrc );
-		if (iCrc!=8108) printf( "*** CRC ERROR! ***\n" );
+		printf("%s - interp- v-round0 %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, iCrc,
+			   (iCrc!=0x423cdcc7)?"| ERROR": "" );
 
 		TEST_MB(interpolate8x8_halfpel_v, 1);
-		printf( "%s -           round1 %.3f usec       iCrc=%d\n", cpu->name, t, iCrc );
-		if (iCrc!=8105) printf( "*** CRC ERROR! ***\n" );
+		printf("%s -           round1 %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, iCrc,
+			   (iCrc!=0x42202efe)?"| ERROR": "" );
 
 
 		TEST_MB(interpolate8x8_halfpel_hv, 0);
-		printf( "%s - interp-hv-round0 %.3f usec       iCrc=%d\n", cpu->name, t, iCrc );
-		if (iCrc!=8112) printf( "*** CRC ERROR! ***\n" );
+		printf("%s - interp-hv-round0 %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, iCrc,
+			   (iCrc!=0xd198d387)?"| ERROR": "" );
 
 		TEST_MB(interpolate8x8_halfpel_hv, 1);
-		printf( "%s -           round1 %.3f usec       iCrc=%d\n", cpu->name, t, iCrc );
-		if (iCrc!=8103) printf( "*** CRC ERROR! ***\n" );
+		printf("%s -           round1 %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, iCrc,
+			   (iCrc!=0x9ecfd921)?"| ERROR": "" );
 
 
 		/* this is a new function, as of 06.06.2002 */
 #if 0
 		TEST_MB2(interpolate8x8_avrg);
-		printf( "%s - interpolate8x8_c %.3f usec       iCrc=%d\n", cpu->name, t, iCrc );
-		if (iCrc!=8107) printf( "*** CRC ERROR! ***\n" );
+		printf("%s - interpolate8x8_c %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, iCrc,
+			   (iCrc!=8107)?"| ERROR": "" );
 #endif
 
 		printf( " --- \n" );
@@ -412,7 +525,7 @@ for(tst=0; tst<nb_tests; ++tst) {         \
 }                                         \
 emms();                                   \
 t = (gettime_usec()-t -overhead) / nb_tests;\
-s = 0; for(i=0; i<8*32; ++i) { s += (DST)[i]^i; }
+s = calc_crc((uint8_t*)(DST), sizeof((DST)), CRC32_INITIAL)
 
 #define TEST_TRANSFER(FUNC, DST, SRC)         \
 TEST_TRANSFER_BEGIN(DST);                 \
@@ -438,7 +551,7 @@ for(tst=0; tst<nb_tests; ++tst) {         \
 }                                         \
 emms();                                   \
 t = (gettime_usec()-t -overhead) / nb_tests;\
-s = 0; for(i=0; i<8*32; ++i) { s += (DST)[i]; }
+s = calc_crc((uint8_t*)(DST), sizeof((DST)), CRC32_INITIAL)
 
 #define TEST_TRANSFER2(FUNC, DST, SRC, R1)    \
 TEST_TRANSFER2_BEGIN(DST,SRC);            \
@@ -469,31 +582,40 @@ void test_transfer()
 			continue;
 
 		TEST_TRANSFER(transfer_8to16copy, Dst16, Src8);
-		printf( "%s - 8to16     %.3f usec       crc=%d\n", cpu->name, t, s );
-		if (s!=28288) printf( "*** CRC ERROR! ***\n" );
+		printf("%s - 8to16     %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, s,
+			   (s!=0x115814bb)?"| ERROR": "");
 
 		TEST_TRANSFER(transfer_16to8copy, Dst8, Src16);
-		printf( "%s - 16to8     %.3f usec       crc=%d\n", cpu->name, t, s );
-		if (s!=28288) printf( "*** CRC ERROR! ***\n" );
+		printf( "%s - 16to8     %.3f usec       crc32=0x%08x %s\n",
+				cpu->name, t, s,
+				(s!=0xee7ccbb4)?"| ERROR": "");
 
 		TEST_TRANSFER(transfer8x8_copy, Dst8, Src8);
-		printf( "%s - 8to8      %.3f usec       crc=%d\n", cpu->name, t, s );
-		if (s!=20352) printf( "*** CRC ERROR! ***\n" );
+		printf("%s - 8to8      %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, s,
+			   (s!=0xd37b3295)?"| ERROR": "");
 
 		TEST_TRANSFER(transfer_16to8add, Dst8, Src16);
-		printf( "%s - 16to8add  %.3f usec       crc=%d\n", cpu->name, t, s );
-		if (s!=25536) printf( "*** CRC ERROR! ***\n" );
+		printf("%s - 16to8add  %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, s,
+			   (s!=0xdd817bf4)?"| ERROR": "" );
 
 		TEST_TRANSFER2(transfer_8to16sub, Dst16, Src8, Ref1);
-		printf( "%s - 8to16sub  %.3f usec       crc1=%d ", cpu->name, t, s );
-		if (s!=28064) printf( "*** CRC ERROR! ***\n" );
-		s = 0; for(i=0; i<8*32; ++i) { s += (Src8[i]-Ref1[i])&i; }
-		printf( "crc2=%d\n", s);
-		if (s!=16256) printf( "*** CRC ERROR! ***\n" );
+		{
+			int s1, s2;
+			s1 = calc_crc((uint8_t*)Dst16, sizeof(Dst16), CRC32_INITIAL);
+			s2 = calc_crc((uint8_t*)Src8, sizeof(Src8), CRC32_INITIAL);
+			printf("%s - 8to16sub  %.3f usec       crc32(1)=0x%08x crc32(2)=0x%08x %s %s\n",
+				   cpu->name, t, s1, s2,
+				   (s1!=0xa1e07163)?"| ERROR1": "",
+				   (s2!=0xd86c5d23)?"| ERROR2": "" );
+		}
 
 		TEST_TRANSFER3(transfer_8to16sub2, Dst16, Src8, Ref1, Ref2);
-		printf( "%s - 8to16sub2 %.3f usec       crc=%d\n", cpu->name, t, s );
-		if (s!=22368) printf( "*** CRC ERROR! ***\n" );
+		printf("%s - 8to16sub2 %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, s,
+			   (s!=0x99b6c4c7)?"| ERROR": "" );
 
 		printf( " --- \n" );
 	}
@@ -505,40 +627,40 @@ void test_transfer()
 
 #define TEST_QUANT(FUNC, DST, SRC)              \
 t = gettime_usec();                         \
-for(s=0,qm=1; qm<=255; ++qm) {              \
+for(s=CRC32_INITIAL,qm=1; qm<=255; ++qm) {              \
   for(i=0; i<8*8; ++i) Quant[i] = qm;       \
-  set_inter_matrix( Quant );                \
+  set_inter_matrix( mpeg_quant_matrices, Quant );                \
   emms();                                   \
   for(q=1; q<=max_Q; ++q) {                 \
 	for(tst=0; tst<nb_tests; ++tst)         \
-	  (FUNC)((DST), (SRC), q);              \
-	for(i=0; i<64; ++i) s+=(DST)[i]^i^qm;   \
+	  (FUNC)((DST), (SRC), q, mpeg_quant_matrices);              \
+	s = calc_crc((uint8_t*)(DST), sizeof((DST)), s); \
   }                                         \
   emms();                                   \
 }                                           \
-t = (gettime_usec()-t-overhead)/nb_tests/qm;\
-s = (s&0xffff)^(s>>16)
+t = (gettime_usec()-t-overhead)/nb_tests/qm
 
 #define TEST_QUANT2(FUNC, DST, SRC)             \
 t = gettime_usec();                         \
-for(s=0,qm=1; qm<=255; ++qm) {              \
+for(s=CRC32_INITIAL,qm=1; qm<=255; ++qm) {              \
   for(i=0; i<8*8; ++i) Quant[i] = qm;       \
-  set_intra_matrix( Quant );                \
+  set_intra_matrix( mpeg_quant_matrices, Quant );                \
   emms();                                   \
   for(q=1; q<=max_Q; ++q) {                 \
 	for(tst=0; tst<nb_tests; ++tst)         \
-	  (FUNC)((DST), (SRC), q, q);           \
-	for(i=0; i<64; ++i) s+=(DST)[i]^i^qm;   \
+	  (FUNC)((DST), (SRC), q, q, mpeg_quant_matrices);           \
+	s = calc_crc((uint8_t*)(DST), sizeof((DST)), s); \
   }                                         \
   emms();                                   \
 }                                           \
-t = (gettime_usec()-t-overhead)/nb_tests/qm;\
-s = (s&0xffff)^(s>>16)
+t = (gettime_usec()-t-overhead)/nb_tests/qm
 
 void test_quant()
 {
 	const int nb_tests = 1*speed_ref;
 	const int max_Q = 31;
+	uint16_t mpeg_quant_matrices[64*8];
+
 	int i, qm;
 	CPU *cpu;
 	int16_t  Src[8*8], Dst[8*8];
@@ -565,48 +687,52 @@ void test_quant()
 		overhead = -gettime_usec();
 		for(s=0,qm=1; qm<=255; ++qm) {
 			for(i=0; i<8*8; ++i) Quant[i] = qm;
-			set_inter_matrix( Quant );
+			set_inter_matrix(mpeg_quant_matrices, Quant );
 			for(q=1; q<=max_Q; ++q)
 				for(i=0; i<64; ++i) s+=Dst[i]^i^qm;
 		}
 		overhead += gettime_usec();
 
-#if 1
 		TEST_QUANT2(quant_mpeg_intra, Dst, Src);
-		printf( "%s -   quant_mpeg_intra %.3f usec       crc=%d\n", cpu->name, t, s );
-		if (s!=29809) printf( "*** CRC ERROR! ***\n" );
+		printf("%s -   quant_mpeg_intra %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, s,
+			   (s!=0xfd6a21a4)? "| ERROR": "");
 
 		TEST_QUANT(quant_mpeg_inter, Dst, Src);
-		printf( "%s -   quant_mpeg_inter %.3f usec       crc=%d\n", cpu->name, t, s );
-		if (s!=12574) printf( "*** CRC ERROR! ***\n" );
-#endif
-#if 1
+		printf("%s -   quant_mpeg_inter %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, s,
+			   (s!=0xf6de7757)?"| ERROR": "");
+
 		TEST_QUANT2(dequant_mpeg_intra, Dst, Src);
-		printf( "%s - dequant_mpeg_intra %.3f usec       crc=%d\n", cpu->name, t, s );
-		if (s!=24052) printf( "*** CRC ERROR! ***\n" );
+		printf("%s - dequant_mpeg_intra %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, s,
+			   (s!=0x2def7bc7)?"| ERROR": "");
 
 		TEST_QUANT(dequant_mpeg_inter, Dst, Src);
-		printf( "%s - dequant_mpeg_inter %.3f usec       crc=%d\n", cpu->name, t, s );
-		if (s!=63847) printf( "*** CRC ERROR! ***\n" );
-#endif
-#if 1
+		printf("%s - dequant_mpeg_inter %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, s,
+			   (s!=0xd878c722)?"| ERROR": "");
+
 		TEST_QUANT2(quant_h263_intra, Dst, Src);
-		printf( "%s -   quant_h263_intra %.3f usec       crc=%d\n", cpu->name, t, s );
-		if (s!=25662) printf( "*** CRC ERROR! ***\n" );
+		printf("%s -   quant_h263_intra %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, s,
+			   (s!=0x2eba9d43)?"| ERROR": "");
 
 		TEST_QUANT(quant_h263_inter, Dst, Src);
-		printf( "%s -   quant_h263_inter %.3f usec       crc=%d\n", cpu->name, t, s );
-		if (s!=23972) printf( "*** CRC ERROR! ***\n" );
-#endif
-#if 1
+		printf("%s -   quant_h263_inter %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, s,
+			   (s!=0xbd315a7e)?"| ERROR": "");
+
 		TEST_QUANT2(dequant_h263_intra, Dst, Src);
-		printf( "%s - dequant_h263_intra %.3f usec       crc=%d\n", cpu->name, t, s );
-		if (s!=49900) printf( "*** CRC ERROR! ***\n" );
+		printf("%s - dequant_h263_intra %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, s,
+			   (s!=0x9841212a)?"| ERROR": "");
 
 		TEST_QUANT(dequant_h263_inter, Dst, Src);
-		printf( "%s - dequant_h263_inter %.3f usec       crc=%d\n", cpu->name, t, s );
-		if (s!=48899) printf( "*** CRC ERROR! ***\n" );
-#endif
+		printf("%s - dequant_h263_inter %.3f usec       crc32=0x%08x %s\n",
+			   cpu->name, t, s,
+			   (s!=0xe7df8fba)?"| ERROR": "");
+
 		printf( " --- \n" );
 	}
 }
@@ -649,17 +775,17 @@ void test_cbp()
 			continue;
 
 		TEST_CBP(calc_cbp, Src1);
-		printf( "%s -   calc_cbp#1 %.3f usec       cbp=0x%x\n", cpu->name, t, cbp );
-		if (cbp!=0x15) printf( "*** CRC ERROR! ***\n" );
+		printf("%s -   calc_cbp#1 %.3f usec       cbp=0x%02x\n",
+			   cpu->name, t, cbp, (cbp!=0x15)?"| ERROR": "");
 		TEST_CBP(calc_cbp, Src2);
-		printf( "%s -   calc_cbp#2 %.3f usec       cbp=0x%x\n", cpu->name, t, cbp );
-		if (cbp!=0x38) printf( "*** CRC ERROR! ***\n" );
+		printf("%s -   calc_cbp#2 %.3f usec       cbp=0x%02x\n",
+			   cpu->name, t, cbp, (cbp!=0x38)?"| ERROR": "");
 		TEST_CBP(calc_cbp, Src3);
-		printf( "%s -   calc_cbp#3 %.3f usec       cbp=0x%x\n", cpu->name, t, cbp );
-		if (cbp!=0x0f) printf( "*** CRC ERROR! ***\n" );
+		printf("%s -   calc_cbp#3 %.3f usec       cbp=0x%02x\n",
+			   cpu->name, t, cbp, (cbp!=0x0f)?"| ERROR": "" );
 		TEST_CBP(calc_cbp, Src4);
-		printf( "%s -   calc_cbp#4 %.3f usec       cbp=0x%x\n", cpu->name, t, cbp );
-		if (cbp!=0x05) printf( "*** CRC ERROR! ***\n" );
+		printf("%s -   calc_cbp#4 %.3f usec       cbp=0x%02x\n",
+			   cpu->name, t, cbp, (cbp!=0x05)?"| ERROR": "" );
 		printf( " --- \n" );
 	}
 }
@@ -1163,6 +1289,7 @@ void test_dec(const char *name, int width, int height, int with_chksum)
 void test_bugs1()
 {
 	CPU *cpu;
+	uint16_t mpeg_quant_matrices[64*8];
 
 	printf( "\n =====  (de)quant4_intra saturation bug? =====\n" );
 
@@ -1175,8 +1302,8 @@ void test_bugs1()
 			continue;
 
 		for(i=0; i<64; ++i) Src[i] = i-32;
-		set_intra_matrix( get_default_intra_matrix() );
-		dequant_mpeg_intra(Dst, Src, 31, 5);
+		set_intra_matrix( mpeg_quant_matrices, get_default_intra_matrix() );
+		dequant_mpeg_intra(Dst, Src, 31, 5, mpeg_quant_matrices);
 		printf( "dequant_mpeg_intra with CPU=%s:  ", cpu->name);
 		printf( "  Out[]= " );
 		for(i=0; i<64; ++i) printf( "[%d]", Dst[i]);
@@ -1194,8 +1321,8 @@ void test_bugs1()
 			continue;
 
 		for(i=0; i<64; ++i) Src[i] = i-32;
-		set_inter_matrix( get_default_inter_matrix() );
-		dequant_mpeg_inter(Dst, Src, 31);
+		set_inter_matrix( mpeg_quant_matrices, get_default_inter_matrix() );
+		dequant_mpeg_inter(Dst, Src, 31, mpeg_quant_matrices);
 		printf( "dequant_mpeg_inter with CPU=%s:  ", cpu->name);
 		printf( "  Out[]= " );
 		for(i=0; i<64; ++i) printf( "[%d]", Dst[i]);
@@ -1244,6 +1371,8 @@ void test_quant_bug()
 	CPU cpu_bug_list[] = { { "PLAINC", 0 }, { "MMX   ", XVID_CPU_MMX }, {0,0} };
 	uint16_t Crcs_Inter[2][32];
 	uint16_t Crcs_Intra[2][32];
+	uint16_t mpeg_quant_matrices[64*8];
+
 	printf( "\n =====  test MPEG4-quantize bug =====\n" );
 
 	for(i=0; i<64; ++i) Src[i] = 2048*(i-32)/32;
@@ -1252,7 +1381,7 @@ void test_quant_bug()
 	for(qm=1; qm<=255; ++qm)
 	{
 		for(i=0; i<8*8; ++i) Quant[i] = qm;
-		set_inter_matrix( Quant );
+		set_inter_matrix( mpeg_quant_matrices, Quant );
 
 		for(n=0, cpu = cpu_bug_list; cpu->name!=0; ++cpu, ++n)
 		{
@@ -1263,7 +1392,7 @@ void test_quant_bug()
 
 			for(q=1; q<=max_Q; ++q) {
 				emms();
-				quant_mpeg_inter( Dst, Src, q );
+				quant_mpeg_inter( Dst, Src, q, mpeg_quant_matrices );
 				emms();
 				for(s=0, i=0; i<64; ++i) s+=((uint16_t)Dst[i])^i;
 				Crcs_Inter[n][q] = s;
@@ -1282,7 +1411,7 @@ void test_quant_bug()
 	for(qm=1; qm<=255; ++qm)
 	{
 		for(i=0; i<8*8; ++i) Quant[i] = qm;
-		set_intra_matrix( Quant );
+		set_intra_matrix( mpeg_quant_matrices, Quant );
 
 		for(n=0, cpu = cpu_bug_list; cpu->name!=0; ++cpu, ++n)
 		{
@@ -1293,7 +1422,7 @@ void test_quant_bug()
 
 			for(q=1; q<=max_Q; ++q) {
 				emms();
-				quant_mpeg_intra( Dst, Src, q, q);
+				quant_mpeg_intra( Dst, Src, q, q, mpeg_quant_matrices);
 				emms();
 				for(s=0, i=0; i<64; ++i) s+=((uint16_t)Dst[i])^i;
 				Crcs_Intra[n][q] = s;
@@ -1352,6 +1481,23 @@ int main(int argc, char *argv[])
 	if (what==-2)
 		test_quant_bug();
 
+	if (what >= 0 && what <= 6) {
+		printf("\n\n"
+			   "NB: If a function isn't optimised for a specific set of intructions,\n"
+			   "    a C function is used instead. So don't panic if some functions\n"
+			   "    may appear to be slow.\n");
+	}
+
+#ifdef ARCH_IS_IA32
+	if (what == 0 || what == 5) {
+		printf("\n"
+			   "NB: MMX mpeg4 quantization is known to have very small errors (+/-1 magnitude)\n"
+			   "    for 1 or 2 coefficients a block. This is mainly caused by the fact the unit\n"
+			   "    test goes far behind the usual limits of real encoding. Please do not report\n"
+			   "    this error to the developers.\n");
+	}
+#endif
+
 	return 0;
 }
 
@@ -1359,191 +1505,202 @@ int main(int argc, char *argv[])
  * 'Reference' output (except for timing) on an Athlon XP 2200+
  *********************************************************************/
 
-/* as of 07/01/2002, there's a problem with MMX mpeg4-quantization */
-/*
+/* as of 2002-01-07, there's a problem with MMX mpeg4-quantization */
+/* as of 2003-11-30, the problem is still here */
+
+/*********************************************************************
+
 
  ===== test fdct/idct =====
-PLAINC -  1.446 usec       PSNR=13.291  MSE=3.000
-MMX    -  -0.260 usec       PSNR=9.611  MSE=7.000
-MMXEXT -  -0.293 usec       PSNR=9.611  MSE=7.000
-3DNOW  -  1.535 usec       PSNR=13.291  MSE=3.000
-3DNOWE -  0.376 usec       PSNR=13.291  MSE=3.000
+PLAINC -  2.867 usec       PSNR=13.291  MSE=3.000 
+MMX    -  -0.211 usec       PSNR=9.611  MSE=7.000 
+MMXEXT -  -0.256 usec       PSNR=9.611  MSE=7.000 
+3DNOW  -  2.855 usec       PSNR=13.291  MSE=3.000 
+3DNOWE -  1.429 usec       PSNR=13.291  MSE=3.000 
 
  ===  test block motion ===
-PLAINC - interp- h-round0 0.126 usec       iCrc=8107
-PLAINC -           round1 0.136 usec       iCrc=8100
-PLAINC - interp- v-round0 0.121 usec       iCrc=8108
-PLAINC -           round1 0.127 usec       iCrc=8105
-PLAINC - interp-hv-round0 0.192 usec       iCrc=8112
-PLAINC -           round1 0.213 usec       iCrc=8103
+PLAINC - interp- h-round0 0.538 usec       crc32=0x115381ba 
+PLAINC -           round1 0.527 usec       crc32=0x2b1f528f 
+PLAINC - interp- v-round0 0.554 usec       crc32=0x423cdcc7 
+PLAINC -           round1 0.551 usec       crc32=0x42202efe 
+PLAINC - interp-hv-round0 1.041 usec       crc32=0xd198d387 
+PLAINC -           round1 1.038 usec       crc32=0x9ecfd921 
  --- 
-MMX    - interp- h-round0 0.048 usec       iCrc=8107
-MMX    -           round1 0.048 usec       iCrc=8100
-MMX    - interp- v-round0 0.046 usec       iCrc=8108
-MMX    -           round1 0.047 usec       iCrc=8105
-MMX    - interp-hv-round0 0.074 usec       iCrc=8112
-MMX    -           round1 0.074 usec       iCrc=8103
+MMX    - interp- h-round0 0.051 usec       crc32=0x115381ba 
+MMX    -           round1 0.053 usec       crc32=0x2b1f528f 
+MMX    - interp- v-round0 0.048 usec       crc32=0x423cdcc7 
+MMX    -           round1 0.048 usec       crc32=0x42202efe 
+MMX    - interp-hv-round0 0.074 usec       crc32=0xd198d387 
+MMX    -           round1 0.073 usec       crc32=0x9ecfd921 
  --- 
-MMXEXT - interp- h-round0 0.019 usec       iCrc=8107
-MMXEXT -           round1 0.025 usec       iCrc=8100
-MMXEXT - interp- v-round0 0.015 usec       iCrc=8108
-MMXEXT -           round1 0.024 usec       iCrc=8105
-MMXEXT - interp-hv-round0 0.039 usec       iCrc=8112
-MMXEXT -           round1 0.037 usec       iCrc=8103
+MMXEXT - interp- h-round0 0.020 usec       crc32=0x115381ba 
+MMXEXT -           round1 0.025 usec       crc32=0x2b1f528f 
+MMXEXT - interp- v-round0 0.016 usec       crc32=0x423cdcc7 
+MMXEXT -           round1 0.024 usec       crc32=0x42202efe 
+MMXEXT - interp-hv-round0 0.037 usec       crc32=0xd198d387 
+MMXEXT -           round1 0.037 usec       crc32=0x9ecfd921 
  --- 
-3DNOW  - interp- h-round0 0.019 usec       iCrc=8107
-3DNOW  -           round1 0.023 usec       iCrc=8100
-3DNOW  - interp- v-round0 0.015 usec       iCrc=8108
-3DNOW  -           round1 0.024 usec       iCrc=8105
-3DNOW  - interp-hv-round0 0.037 usec       iCrc=8112
-3DNOW  -           round1 0.038 usec       iCrc=8103
+3DNOW  - interp- h-round0 0.020 usec       crc32=0x115381ba 
+3DNOW  -           round1 0.029 usec       crc32=0x2b1f528f 
+3DNOW  - interp- v-round0 0.016 usec       crc32=0x423cdcc7 
+3DNOW  -           round1 0.024 usec       crc32=0x42202efe 
+3DNOW  - interp-hv-round0 0.038 usec       crc32=0xd198d387 
+3DNOW  -           round1 0.039 usec       crc32=0x9ecfd921 
  --- 
-3DNOWE - interp- h-round0 0.022 usec       iCrc=8107
-3DNOWE -           round1 0.023 usec       iCrc=8100
-3DNOWE - interp- v-round0 0.016 usec       iCrc=8108
-3DNOWE -           round1 0.021 usec       iCrc=8105
-3DNOWE - interp-hv-round0 0.036 usec       iCrc=8112
-3DNOWE -           round1 0.036 usec       iCrc=8103
+3DNOWE - interp- h-round0 0.020 usec       crc32=0x115381ba 
+3DNOWE -           round1 0.024 usec       crc32=0x2b1f528f 
+3DNOWE - interp- v-round0 0.016 usec       crc32=0x423cdcc7 
+3DNOWE -           round1 0.021 usec       crc32=0x42202efe 
+3DNOWE - interp-hv-round0 0.037 usec       crc32=0xd198d387 
+3DNOWE -           round1 0.036 usec       crc32=0x9ecfd921 
  --- 
 
  ======  test SAD ======
-PLAINC - sad8    0.165 usec       sad=3776
-PLAINC - sad16   0.587 usec       sad=27214
-PLAINC - sad16bi 1.290 usec       sad=26274
-PLAINC - dev16   1.535 usec       sad=3344
+PLAINC - sad8    0.505 usec       sad=3776 
+PLAINC - sad16   1.941 usec       sad=27214 
+PLAINC - sad16bi 4.925 usec       sad=26274 
+PLAINC - dev16   4.254 usec       sad=3344 
  --- 
-MMX    - sad8    0.036 usec       sad=3776
-MMX    - sad16   0.113 usec       sad=27214
-MMX    - sad16bi 0.250 usec       sad=26274
-MMX    - dev16   0.187 usec       sad=3344
+MMX    - sad8    0.036 usec       sad=3776 
+MMX    - sad16   0.107 usec       sad=27214 
+MMX    - sad16bi 0.259 usec       sad=26274 
+MMX    - dev16   0.187 usec       sad=3344 
  --- 
-MMXEXT - sad8    0.015 usec       sad=3776
-MMXEXT - sad16   0.046 usec       sad=27214
-MMXEXT - sad16bi 0.059 usec       sad=26274
-MMXEXT - dev16   0.088 usec       sad=3344
+MMXEXT - sad8    0.016 usec       sad=3776 
+MMXEXT - sad16   0.050 usec       sad=27214 
+MMXEXT - sad16bi 0.060 usec       sad=26274 
+MMXEXT - dev16   0.086 usec       sad=3344 
  --- 
-3DNOW  - sad8    0.165 usec       sad=3776
-3DNOW  - sad16   0.589 usec       sad=27214
-3DNOW  - sad16bi 0.119 usec       sad=26274
-3DNOW  - dev16   1.541 usec       sad=3344
+3DNOW  - sad8    0.506 usec       sad=3776 
+3DNOW  - sad16   1.954 usec       sad=27214 
+3DNOW  - sad16bi 0.119 usec       sad=26274 
+3DNOW  - dev16   4.252 usec       sad=3344 
  --- 
-3DNOWE - sad8    0.018 usec       sad=3776
-3DNOWE - sad16   0.039 usec       sad=27214
-3DNOWE - sad16bi 0.051 usec       sad=26274
-3DNOWE - dev16   0.070 usec       sad=3344
+3DNOWE - sad8    0.017 usec       sad=3776 
+3DNOWE - sad16   0.038 usec       sad=27214 
+3DNOWE - sad16bi 0.052 usec       sad=26274 
+3DNOWE - dev16   0.067 usec       sad=3344 
  --- 
 
  ===  test transfer ===
-PLAINC - 8to16     0.207 usec       crc=28288
-PLAINC - 16to8     0.357 usec       crc=28288
-PLAINC - 8to8      0.154 usec       crc=20352
-PLAINC - 16to8add  0.391 usec       crc=25536
-PLAINC - 8to16sub  0.562 usec       crc1=28064 crc2=16256
-PLAINC - 8to16sub2 0.519 usec       crc=22368
+PLAINC - 8to16     0.603 usec       crc32=0x115814bb 
+PLAINC - 16to8     1.077 usec       crc32=0xee7ccbb4 
+PLAINC - 8to8      0.679 usec       crc32=0xd37b3295 
+PLAINC - 16to8add  1.341 usec       crc32=0xdd817bf4 
+PLAINC - 8to16sub  1.566 usec       crc32(1)=0xa1e07163 crc32(2)=0xd86c5d23  
+PLAINC - 8to16sub2 2.206 usec       crc32=0x99b6c4c7 
  --- 
-MMX    - 8to16     0.048 usec       crc=28288
-MMX    - 16to8     0.205 usec       crc=28288
-MMX    - 8to8      -0.158 usec       crc=20352
-MMX    - 16to8add  0.015 usec       crc=25536
-MMX    - 8to16sub  0.203 usec       crc1=28064 crc2=16256
-MMX    - 8to16sub2 0.087 usec       crc=22368
+MMX    - 8to16     -0.025 usec       crc32=0x115814bb 
+MMX    - 16to8     -0.049 usec       crc32=0xee7ccbb4 
+MMX    - 8to8      0.014 usec       crc32=0xd37b3295 
+MMX    - 16to8add  0.011 usec       crc32=0xdd817bf4 
+MMX    - 8to16sub  0.108 usec       crc32(1)=0xa1e07163 crc32(2)=0xd86c5d23  
+MMX    - 8to16sub2 0.164 usec       crc32=0x99b6c4c7 
  --- 
-MMXEXT - 8to16     0.013 usec       crc=28288
-MMXEXT - 16to8     0.011 usec       crc=28288
-MMXEXT - 8to8      -0.023 usec       crc=20352
-MMXEXT - 16to8add  0.023 usec       crc=25536
-MMXEXT - 8to16sub  0.072 usec       crc1=28064 crc2=16256
-MMXEXT - 8to16sub2 0.093 usec       crc=22368
+MMXEXT - 8to16     -0.054 usec       crc32=0x115814bb 
+MMXEXT - 16to8     0.010 usec       crc32=0xee7ccbb4 
+MMXEXT - 8to8      0.015 usec       crc32=0xd37b3295 
+MMXEXT - 16to8add  0.008 usec       crc32=0xdd817bf4 
+MMXEXT - 8to16sub  0.263 usec       crc32(1)=0xa1e07163 crc32(2)=0xd86c5d23  
+MMXEXT - 8to16sub2 0.178 usec       crc32=0x99b6c4c7 
  --- 
-3DNOW  - 8to16     0.192 usec       crc=28288
-3DNOW  - 16to8     0.367 usec       crc=28288
-3DNOW  - 8to8      0.132 usec       crc=20352
-3DNOW  - 16to8add  0.440 usec       crc=25536
-3DNOW  - 8to16sub  0.557 usec       crc1=28064 crc2=16256
-3DNOW  - 8to16sub2 0.691 usec       crc=22368
+3DNOW  - 8to16     0.666 usec       crc32=0x115814bb 
+3DNOW  - 16to8     1.078 usec       crc32=0xee7ccbb4 
+3DNOW  - 8to8      0.665 usec       crc32=0xd37b3295 
+3DNOW  - 16to8add  1.365 usec       crc32=0xdd817bf4 
+3DNOW  - 8to16sub  1.356 usec       crc32(1)=0xa1e07163 crc32(2)=0xd86c5d23  
+3DNOW  - 8to16sub2 2.098 usec       crc32=0x99b6c4c7 
  --- 
-3DNOWE - 8to16     0.004 usec       crc=28288
-3DNOWE - 16to8     0.019 usec       crc=28288
-3DNOWE - 8to8      -0.294 usec       crc=20352
-3DNOWE - 16to8add  0.028 usec       crc=25536
-3DNOWE - 8to16sub  0.065 usec       crc1=28064 crc2=16256
-3DNOWE - 8to16sub2 0.027 usec       crc=22368
+3DNOWE - 8to16     -0.024 usec       crc32=0x115814bb 
+3DNOWE - 16to8     0.010 usec       crc32=0xee7ccbb4 
+3DNOWE - 8to8      0.014 usec       crc32=0xd37b3295 
+3DNOWE - 16to8add  0.016 usec       crc32=0xdd817bf4 
+3DNOWE - 8to16sub  -0.000 usec       crc32(1)=0xa1e07163 crc32(2)=0xd86c5d23  
+3DNOWE - 8to16sub2 -0.031 usec       crc32=0x99b6c4c7 
  --- 
 
  =====  test quant =====
-PLAINC -   quant_mpeg_intra 67.757 usec       crc=29809
-PLAINC -   quant_mpeg_inter 68.482 usec       crc=12574
-PLAINC - dequant_mpeg_intra 20.764 usec       crc=24052
-PLAINC - dequant_mpeg_inter 24.413 usec       crc=63847
-PLAINC -   quant_h263_intra 16.446 usec       crc=25662
-PLAINC -   quant_h263_inter 14.499 usec       crc=23972
-PLAINC - dequant_h263_intra 16.419 usec       crc=49900
-PLAINC - dequant_h263_inter 18.679 usec       crc=48899
+PLAINC -   quant_mpeg_intra 98.631 usec       crc32=0xfd6a21a4 
+PLAINC -   quant_mpeg_inter 104.876 usec       crc32=0xf6de7757 
+PLAINC - dequant_mpeg_intra 50.285 usec       crc32=0x2def7bc7 
+PLAINC - dequant_mpeg_inter 58.316 usec       crc32=0xd878c722 
+PLAINC -   quant_h263_intra 33.803 usec       crc32=0x2eba9d43 
+PLAINC -   quant_h263_inter 45.411 usec       crc32=0xbd315a7e 
+PLAINC - dequant_h263_intra 39.302 usec       crc32=0x9841212a 
+PLAINC - dequant_h263_inter 44.124 usec       crc32=0xe7df8fba 
  --- 
-MMX    -   quant_mpeg_intra 8.299 usec       crc=3459
-*** CRC ERROR! ***
-MMX    -   quant_mpeg_inter 7.078 usec       crc=13247
-*** CRC ERROR! ***
-MMX    - dequant_mpeg_intra 3.455 usec       crc=24052
-MMX    - dequant_mpeg_inter 4.483 usec       crc=63847
-MMX    -   quant_h263_intra 2.597 usec       crc=25662
-MMX    -   quant_h263_inter 2.151 usec       crc=23972
-MMX    - dequant_h263_intra 2.684 usec       crc=49900
-MMX    - dequant_h263_inter 2.647 usec       crc=48899
+MMX    -   quant_mpeg_intra 4.273 usec       crc32=0xdacabdb6 | ERROR
+MMX    -   quant_mpeg_inter 3.576 usec       crc32=0x72883ab6 | ERROR
+MMX    - dequant_mpeg_intra 3.793 usec       crc32=0x2def7bc7 
+MMX    - dequant_mpeg_inter 4.808 usec       crc32=0xd878c722 
+MMX    -   quant_h263_intra 2.881 usec       crc32=0x2eba9d43 
+MMX    -   quant_h263_inter 2.550 usec       crc32=0xbd315a7e 
+MMX    - dequant_h263_intra 2.974 usec       crc32=0x9841212a 
+MMX    - dequant_h263_inter 2.906 usec       crc32=0xe7df8fba 
  --- 
-MMXEXT -   quant_mpeg_intra 3.878 usec       crc=29809
-MMXEXT -   quant_mpeg_inter 4.112 usec       crc=12574
-MMXEXT - dequant_mpeg_intra 3.452 usec       crc=24052
-MMXEXT - dequant_mpeg_inter 4.473 usec       crc=63847
-MMXEXT -   quant_h263_intra 2.608 usec       crc=25662
-MMXEXT -   quant_h263_inter 2.145 usec       crc=23972
-MMXEXT - dequant_h263_intra 2.478 usec       crc=49900
-MMXEXT - dequant_h263_inter 2.450 usec       crc=48899
+MMXEXT -   quant_mpeg_intra 4.221 usec       crc32=0xfd6a21a4 
+MMXEXT -   quant_mpeg_inter 4.339 usec       crc32=0xf6de7757 
+MMXEXT - dequant_mpeg_intra 3.802 usec       crc32=0x2def7bc7 
+MMXEXT - dequant_mpeg_inter 4.821 usec       crc32=0xd878c722 
+MMXEXT -   quant_h263_intra 2.884 usec       crc32=0x2eba9d43 
+MMXEXT -   quant_h263_inter 2.554 usec       crc32=0xbd315a7e 
+MMXEXT - dequant_h263_intra 2.728 usec       crc32=0x9841212a 
+MMXEXT - dequant_h263_inter 2.611 usec       crc32=0xe7df8fba 
  --- 
-3DNOW  -   quant_mpeg_intra 66.051 usec       crc=29809
-3DNOW  -   quant_mpeg_inter 73.494 usec       crc=12574
-3DNOW  - dequant_mpeg_intra 20.374 usec       crc=24052
-3DNOW  - dequant_mpeg_inter 23.645 usec       crc=63847
-3DNOW  -   quant_h263_intra 16.292 usec       crc=25662
-3DNOW  -   quant_h263_inter 14.322 usec       crc=23972
-3DNOW  - dequant_h263_intra 16.613 usec       crc=49900
-3DNOW  - dequant_h263_inter 18.382 usec       crc=48899
+3DNOW  -   quant_mpeg_intra 98.512 usec       crc32=0xfd6a21a4 
+3DNOW  -   quant_mpeg_inter 104.873 usec       crc32=0xf6de7757 
+3DNOW  - dequant_mpeg_intra 50.219 usec       crc32=0x2def7bc7 
+3DNOW  - dequant_mpeg_inter 58.254 usec       crc32=0xd878c722 
+3DNOW  -   quant_h263_intra 33.778 usec       crc32=0x2eba9d43 
+3DNOW  -   quant_h263_inter 41.998 usec       crc32=0xbd315a7e 
+3DNOW  - dequant_h263_intra 39.344 usec       crc32=0x9841212a 
+3DNOW  - dequant_h263_inter 43.607 usec       crc32=0xe7df8fba 
  --- 
-3DNOWE -   quant_mpeg_intra 66.140 usec       crc=29809
-3DNOWE -   quant_mpeg_inter 68.454 usec       crc=12574
-3DNOWE - dequant_mpeg_intra 2.881 usec       crc=24052
-3DNOWE - dequant_mpeg_inter 4.155 usec       crc=63847
-3DNOWE -   quant_h263_intra 1.451 usec       crc=25662
-3DNOWE -   quant_h263_inter 1.849 usec       crc=23972
-3DNOWE - dequant_h263_intra 2.101 usec       crc=49900
-3DNOWE - dequant_h263_inter 2.109 usec       crc=48899
+3DNOWE -   quant_mpeg_intra 98.490 usec       crc32=0xfd6a21a4 
+3DNOWE -   quant_mpeg_inter 104.889 usec       crc32=0xf6de7757 
+3DNOWE - dequant_mpeg_intra 3.277 usec       crc32=0x2def7bc7 
+3DNOWE - dequant_mpeg_inter 4.485 usec       crc32=0xd878c722 
+3DNOWE -   quant_h263_intra 1.882 usec       crc32=0x2eba9d43 
+3DNOWE -   quant_h263_inter 2.246 usec       crc32=0xbd315a7e 
+3DNOWE - dequant_h263_intra 3.457 usec       crc32=0x9841212a 
+3DNOWE - dequant_h263_inter 3.275 usec       crc32=0xe7df8fba 
  --- 
 
  =====  test cbp =====
-PLAINC -   calc_cbp#1 0.090 usec       cbp=0x15
-PLAINC -   calc_cbp#2 0.086 usec       cbp=0x38
-PLAINC -   calc_cbp#3 0.087 usec       cbp=0xf
-PLAINC -   calc_cbp#4 0.114 usec       cbp=0x5
+PLAINC -   calc_cbp#1 0.168 usec       cbp=0x15
+PLAINC -   calc_cbp#2 0.168 usec       cbp=0x38
+PLAINC -   calc_cbp#3 0.157 usec       cbp=0x0f
+PLAINC -   calc_cbp#4 0.235 usec       cbp=0x05
  --- 
-MMX    -   calc_cbp#1 0.061 usec       cbp=0x15
-MMX    -   calc_cbp#2 0.063 usec       cbp=0x38
-MMX    -   calc_cbp#3 0.061 usec       cbp=0xf
-MMX    -   calc_cbp#4 0.060 usec       cbp=0x5
+MMX    -   calc_cbp#1 0.070 usec       cbp=0x15
+MMX    -   calc_cbp#2 0.062 usec       cbp=0x38
+MMX    -   calc_cbp#3 0.062 usec       cbp=0x0f
+MMX    -   calc_cbp#4 0.061 usec       cbp=0x05
  --- 
 MMXEXT -   calc_cbp#1 0.062 usec       cbp=0x15
-MMXEXT -   calc_cbp#2 0.060 usec       cbp=0x38
-MMXEXT -   calc_cbp#3 0.062 usec       cbp=0xf
-MMXEXT -   calc_cbp#4 0.061 usec       cbp=0x5
+MMXEXT -   calc_cbp#2 0.061 usec       cbp=0x38
+MMXEXT -   calc_cbp#3 0.061 usec       cbp=0x0f
+MMXEXT -   calc_cbp#4 0.061 usec       cbp=0x05
  --- 
-3DNOW  -   calc_cbp#1 0.089 usec       cbp=0x15
-3DNOW  -   calc_cbp#2 0.087 usec       cbp=0x38
-3DNOW  -   calc_cbp#3 0.087 usec       cbp=0xf
-3DNOW  -   calc_cbp#4 0.116 usec       cbp=0x5
+3DNOW  -   calc_cbp#1 0.168 usec       cbp=0x15
+3DNOW  -   calc_cbp#2 0.168 usec       cbp=0x38
+3DNOW  -   calc_cbp#3 0.157 usec       cbp=0x0f
+3DNOW  -   calc_cbp#4 0.238 usec       cbp=0x05
  --- 
-3DNOWE -   calc_cbp#1 0.050 usec       cbp=0x15
-3DNOWE -   calc_cbp#2 0.051 usec       cbp=0x38
-3DNOWE -   calc_cbp#3 0.050 usec       cbp=0xf
-3DNOWE -   calc_cbp#4 0.049 usec       cbp=0x5
+3DNOWE -   calc_cbp#1 0.049 usec       cbp=0x15
+3DNOWE -   calc_cbp#2 0.049 usec       cbp=0x38
+3DNOWE -   calc_cbp#3 0.049 usec       cbp=0x0f
+3DNOWE -   calc_cbp#4 0.049 usec       cbp=0x05
  --- 
 
-*/
+
+NB: If a function isn't optimised for a specific set of intructions,
+    a C function is used instead. So don't panic if some functions
+    may appear to be slow.
+
+NB: MMX mpeg4 quantization is known to have very small errors (+/-1 magnitude)
+    for 1 or 2 coefficients a block. This is mainly caused by the fact the unit
+    test goes far behind the usual limits of real encoding. Please do not report
+    this error to the developers
+
+*********************************************************************/

@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: quant_matrix.h,v 1.6.2.2 2003-10-07 13:02:35 edgomez Exp $
+ * $Id: quant_matrix.h,v 1.6.2.3 2003-11-30 16:13:16 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -29,17 +29,16 @@
 
 #include "../portab.h"
 
-uint8_t get_intra_matrix_status(void);
-uint8_t get_inter_matrix_status(void);
+void init_mpeg_matrix(uint16_t * mpeg_quant_matrices);
 
-void set_intra_matrix_status(uint8_t status);
-void set_inter_matrix_status(uint8_t status);
+int is_custom_intra_matrix(const uint16_t * mpeg_quant_matrices);
+int is_custom_inter_matrix(const uint16_t * mpeg_quant_matrices);
 
-uint8_t set_intra_matrix(const uint8_t * matrix);
-uint8_t set_inter_matrix(const uint8_t * matrix);
+void set_intra_matrix(uint16_t *mpeg_quant_matrices, const uint8_t * matrix);
+void set_inter_matrix(uint16_t *mpeg_quant_matrices, const uint8_t * matrix);
 
-const int16_t *get_intra_matrix(void);
-const int16_t *get_inter_matrix(void);
+const uint16_t *get_intra_matrix(const uint16_t *mpeg_quant_matrices);
+const uint16_t *get_inter_matrix(const uint16_t *mpeg_quant_matrices);
 
 const uint8_t *get_default_intra_matrix(void);
 const uint8_t *get_default_inter_matrix(void);

@@ -19,7 +19,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: quantize_h263_3dne.asm,v 1.1.2.4 2003-11-03 15:51:50 edgomez Exp $
+; * $Id: quantize_h263_3dne.asm,v 1.1.2.5 2003-11-30 16:13:16 edgomez Exp $
 ; *
 ; *************************************************************************/
 ;
@@ -156,7 +156,8 @@ SECTION .text
 ; uint32_t quant_h263_intra_3dne(int16_t * coeff,
 ;                                const int16_t const * data,
 ;                                const uint32_t quant,
-;                                const uint32_t dcscalar);
+;                                const uint32_t dcscalar,
+;                                const uint16_t *mpeg_matrices);
 ;
 ;-----------------------------------------------------------------------------
 ;This is Athlon-optimized code (ca 70 clk per call)
@@ -408,7 +409,8 @@ ALIGN 16
 ;
 ; uint32_t quant_h263_inter_3dne(int16_t * coeff,
 ;                                const int16_t const * data,
-;                                const uint32_t quant);
+;                                const uint32_t quant,
+;                                const uint16_t *mpeg_matrices);
 ;
 ;-----------------------------------------------------------------------------
 ;This is Athlon-optimized code (ca 90 clk per call)
@@ -561,7 +563,8 @@ ALIGN 16
 ; uint32_t dequant_h263_intra_3dne(int16_t *data,
 ;                                  const int16_t const *coeff,
 ;                                  const uint32_t quant,
-;                                  const uint32_t dcscalar);
+;                                  const uint32_t dcscalar,
+;                                  const uint16_t *mpeg_matrices);
 ;
 ;-----------------------------------------------------------------------------
 
@@ -710,7 +713,8 @@ ALIGN 8
 ;
 ; uint32_t dequant_h263_inter_3dne(int16_t * data,
 ;                                  const int16_t * const coeff,
-;                                  const uint32_t quant);
+;                                  const uint32_t quant,
+;                                  const uint16_t *mpeg_matrices);
 ;
 ;-----------------------------------------------------------------------------
 

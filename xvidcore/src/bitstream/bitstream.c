@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.c,v 1.39.2.19 2003-11-19 15:42:38 syskin Exp $
+ * $Id: bitstream.c,v 1.39.2.20 2003-11-30 16:13:15 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -662,9 +662,9 @@ BitstreamReadHeaders(Bitstream * bs,
 						DPRINTF(XVID_DEBUG_HEADER, "load_intra_quant_mat\n");
 
 						bs_get_matrix(bs, matrix);
-						set_intra_matrix(matrix);
+						set_intra_matrix(dec->mpeg_quant_matrices, matrix);
 					} else
-						set_intra_matrix(get_default_intra_matrix());
+						set_intra_matrix(dec->mpeg_quant_matrices, get_default_intra_matrix());
 
 					if (BitstreamGetBit(bs))	/* load_inter_quant_mat */
 					{
@@ -673,9 +673,9 @@ BitstreamReadHeaders(Bitstream * bs,
 						DPRINTF(XVID_DEBUG_HEADER, "load_inter_quant_mat\n");
 
 						bs_get_matrix(bs, matrix);
-						set_inter_matrix(matrix);
+						set_inter_matrix(dec->mpeg_quant_matrices, matrix);
 					} else
-						set_inter_matrix(get_default_inter_matrix());
+						set_inter_matrix(dec->mpeg_quant_matrices, get_default_inter_matrix());
 
 					if (dec->shape == VIDOBJLAY_SHAPE_GRAYSCALE) {
 						DPRINTF(XVID_DEBUG_ERROR, "greyscale matrix not supported\n");
@@ -1053,7 +1053,7 @@ BitstreamReadHeaders(Bitstream * bs,
 
 static void
 bs_put_matrix(Bitstream * bs,
-			  const int16_t * matrix)
+			  const uint16_t * matrix)
 {
 	int i, j;
 	const int last = matrix[scan_tables[0][63]];
@@ -1211,16 +1211,13 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	BitstreamPutBit(bs, pParam->vol_flags & XVID_VOL_MPEGQUANT);
 
 	if ((pParam->vol_flags & XVID_VOL_MPEGQUANT)) {
-		BitstreamPutBit(bs, get_intra_matrix_status());	/* load_intra_quant_mat */
-		if (get_intra_matrix_status()) {
-			bs_put_matrix(bs, get_intra_matrix());
-		}
+		BitstreamPutBit(bs, is_custom_intra_matrix(pParam->mpeg_quant_matrices));	/* load_intra_quant_mat */
+		if(is_custom_intra_matrix(pParam->mpeg_quant_matrices))
+			bs_put_matrix(bs, get_intra_matrix(pParam->mpeg_quant_matrices));
 
-		BitstreamPutBit(bs, get_inter_matrix_status());	/* load_inter_quant_mat */
-		if (get_inter_matrix_status()) {
-			bs_put_matrix(bs, get_inter_matrix());
-		}
-
+		BitstreamPutBit(bs, is_custom_inter_matrix(pParam->mpeg_quant_matrices));	/* load_inter_quant_mat */
+		if(is_custom_inter_matrix(pParam->mpeg_quant_matrices))
+			bs_put_matrix(bs, get_inter_matrix(pParam->mpeg_quant_matrices));
 	}
 
 	if (vol_ver_id != 1) {

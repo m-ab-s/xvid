@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_pvop.c,v 1.1.2.8 2003-11-19 12:24:25 syskin Exp $
+ * $Id: estimation_pvop.c,v 1.1.2.9 2003-11-30 16:13:16 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -948,6 +948,7 @@ MotionEstimation(MBParam * const pParam,
 	Data.rrv = (current->vop_flags & XVID_VOP_REDUCED) ? 1:0;
 	Data.dctSpace = dct_space;
 	Data.quant_type = !(pParam->vol_flags & XVID_VOL_MPEGQUANT);
+	Data.mpeg_quant_matrices = pParam->mpeg_quant_matrices;
 	Data.iMinSAD2 = 0;
 
 	if ((current->vop_flags & XVID_VOP_REDUCED)) {

@@ -20,7 +20,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: quantize_mpeg_xmm.asm,v 1.1.2.4 2003-11-03 15:51:50 edgomez Exp $
+; * $Id: quantize_mpeg_xmm.asm,v 1.1.2.5 2003-11-30 16:13:16 edgomez Exp $
 ; *
 ; ***************************************************************************/
 
@@ -89,31 +89,9 @@ mmx_div:		;quant>2
 	%assign quant quant+1
 %endrep
 
-
-;-----------------------------------------------------------------------------
-; intra matrix
-; (TODO remove dependency on external tables for instance safiness)
-;-----------------------------------------------------------------------------
-
 %macro FIXX 1
 dw (1 << 16) / (%1) + 1
 %endmacro
-
-cextern intra_matrix_fixl
-cextern intra_matrix_fix
-cextern intra_matrix1
-cextern intra_matrix
-
-;-----------------------------------------------------------------------------
-; inter matrix
-; (TODO remove dependency on external tables for instance safiness)
-;-----------------------------------------------------------------------------
-
-cextern inter_matrix1
-cextern inter_matrix
-cextern inter_matrix_fix
-cextern inter_matrix_fixl
-
 
 %define nop4	db	08Dh, 074h, 026h,0
 %define nop3	add	esp, byte 0
@@ -188,7 +166,8 @@ cglobal dequant_mpeg_inter_3dne
 ; uint32_t quant_mpeg_intra_xmm(int16_t * coeff,
 ;                               const int16_t const * data,
 ;                               const uint32_t quant,
-;                               const uint32_t dcscalar);
+;                               const uint32_t dcscalar,
+;                               const uint16_t *mpeg_matrices);
 ;
 ;-----------------------------------------------------------------------------
 
@@ -201,7 +180,7 @@ quant_mpeg_intra_xmm:
   push edi
   push ebx
   nop
-  mov edi, mmzero
+  mov edi, [esp + 12 + 20]		; mpeg_quant_matrices
   mov esi, -14
   pxor mm0, mm0
   pxor mm3, mm3
@@ -224,15 +203,15 @@ ALIGN 16
   psraw mm4, 15
   psllw mm0, 4      ;level << 4 ;
   psllw mm3, 4
-  paddw mm0, [intra_matrix1 + 8*esi+112]
-  paddw mm3, [intra_matrix1 + 8*esi+120]
-  movq mm5, [intra_matrix_fixl + 8*esi+112]
-  movq mm7, [intra_matrix_fixl + 8*esi+120]
+  paddw mm0, [edi + 128 + 8*esi+112]
+  paddw mm3, [edi + 128 + 8*esi+120]
+  movq mm5, [edi + 384 + 8*esi+112]
+  movq mm7, [edi + 384 + 8*esi+120]
   pmulhuw mm5, mm0
   pmulhuw mm7, mm3
   mov esp, esp
-  movq mm2, [intra_matrix + 8*esi+112]
-  movq mm6, [intra_matrix + 8*esi+120]
+  movq mm2, [edi + 8*esi+112]
+  movq mm6, [edi + 8*esi+120]
   pmullw mm2, mm5
   pmullw mm6, mm7
   psubw mm0, mm2
@@ -243,12 +222,12 @@ ALIGN 16
   paddw mm5, mm2
   paddw mm7, mm2
   mov esp, esp
-  pmulhuw mm0, [intra_matrix_fix + 8*esi+112]
-  pmulhuw mm3, [intra_matrix_fix + 8*esi+120]
+  pmulhuw mm0, [edi + 256 + 8*esi+112]
+  pmulhuw mm3, [edi + 256 + 8*esi+120]
   paddw mm5, mm0
   paddw mm7, mm3
-  movq mm0, [edi]
-  movq mm3, [edi]
+  pxor mm0, mm0
+  pxor mm3, mm3
   pmulhuw mm5, mm6      ; mm0 = (mm0 / 2Q) >> 16
   pmulhuw mm7, mm6      ;  (level + quantd) / quant (0<quant<32)
   pxor mm5, mm1         ; mm0 *= sign(mm0)
@@ -301,15 +280,15 @@ ALIGN 16
   psraw mm4, 15
   psllw mm0, 4                              ; level << 4
   psllw mm3, 4
-  paddw mm0, [intra_matrix1 + 8*esi+112]    ;mm0 is to be divided
-  paddw mm3, [intra_matrix1 + 8*esi+120]    ;intra1 contains fix for division by 1
-  movq mm5, [intra_matrix_fixl + 8*esi+112] ;with rounding down
-  movq mm7, [intra_matrix_fixl + 8*esi+120]
+  paddw mm0, [edi + 128 + 8*esi+112]    ;mm0 is to be divided
+  paddw mm3, [edi + 128 + 8*esi+120]    ;intra1 contains fix for division by 1
+  movq mm5, [edi + 384 + 8*esi+112] ;with rounding down
+  movq mm7, [edi + 384 + 8*esi+120]
   pmulhuw mm5, mm0
   pmulhuw mm7, mm3      ;mm7: first approx of division
   mov esp, esp
-  movq mm2, [intra_matrix + 8*esi+112]
-  movq mm6, [intra_matrix + 8*esi+120]      ; divs for q<=16
+  movq mm2, [edi + 8*esi+112]
+  movq mm6, [edi + 8*esi+120]      ; divs for q<=16
   pmullw mm2, mm5       ;test value <= original
   pmullw mm6, mm7
   psubw mm0, mm2        ;mismatch
@@ -319,12 +298,12 @@ ALIGN 16
   paddw mm5, mm2        ;first approx with quantd
   paddw mm7, mm2
   mov esp, esp
-  pmulhuw mm0, [intra_matrix_fix + 8*esi+112]   ;correction
-  pmulhuw mm3, [intra_matrix_fix + 8*esi+120]
+  pmulhuw mm0, [edi + 256 + 8*esi+112]   ;correction
+  pmulhuw mm3, [edi + 256 + 8*esi+120]
   paddw mm5, mm0        ;final result with quantd
   paddw mm7, mm3
-  movq mm0, [edi]
-  movq mm3, [edi]
+  pxor mm0, mm0
+  pxor mm3, mm3
   mov esp, esp
   psrlw mm5, 1          ;  (level + quantd) /2  (quant = 1)
   psrlw mm7, 1
@@ -351,15 +330,15 @@ ALIGN 8
   psraw mm4, 15
   psllw mm0, 4          ; level << 4
   psllw mm3, 4          ;
-  paddw mm0, [intra_matrix1 + 8*esi+112] ;mm0 is to be divided intra1 contains fix for division by 1
-  paddw mm3, [intra_matrix1 + 8*esi+120]
-  movq mm5, [intra_matrix_fixl + 8*esi+112]
-  movq mm7, [intra_matrix_fixl + 8*esi+120]
+  paddw mm0, [edi + 128 + 8*esi+112] ;mm0 is to be divided intra1 contains fix for division by 1
+  paddw mm3, [edi + 128 + 8*esi+120]
+  movq mm5, [edi + 384 + 8*esi+112]
+  movq mm7, [edi + 384 + 8*esi+120]
   pmulhuw mm5, mm0
   pmulhuw mm7, mm3      ;mm7: first approx of division
   mov esp, esp
-  movq mm2, [intra_matrix + 8*esi+112]
-  movq mm6, [intra_matrix + 8*esi+120]
+  movq mm2, [edi + 8*esi+112]
+  movq mm6, [edi + 8*esi+120]
   pmullw mm2, mm5       ;test value <= original
   pmullw mm6, mm7
   psubw mm0, mm2        ;mismatch
@@ -370,12 +349,12 @@ ALIGN 8
   paddw mm5, mm2        ;first approx with quantd
   paddw mm7, mm2
   mov esp, esp
-  pmulhuw mm0, [intra_matrix_fix + 8*esi+112] ;correction
-  pmulhuw mm3, [intra_matrix_fix + 8*esi+120]
+  pmulhuw mm0, [edi + 256 + 8*esi+112] ;correction
+  pmulhuw mm3, [edi + 256 + 8*esi+120]
   paddw mm5, mm0        ;final result with quantd
   paddw mm7, mm3
-  movq mm0, [edi]
-  movq mm3, [edi]
+  pxor mm0, mm0
+  pxor mm3, mm3
   mov esp, esp
   pmulhuw mm5, mm6      ; mm0 = (mm0 / 2Q) >> 16
   pmulhuw mm7, mm6      ;  (level + quantd) / quant (0<quant<32)
@@ -395,7 +374,8 @@ ALIGN 8
 ;
 ; uint32_t quant_mpeg_inter_xmm(int16_t * coeff,
 ;                               const int16_t const * data,
-;                               const uint32_t quant);
+;                               const uint32_t quant,
+;                               const uint16_t *mpeg_matrices);
 ;
 ;-----------------------------------------------------------------------------
 
@@ -408,7 +388,7 @@ quant_mpeg_inter_xmm:
   push edi
   push ebx
   nop
-  mov edi, mmzero
+  mov edi, [esp + 12 + 16]
   mov esi, -14
   mov ebx, esp
   sub esp, byte 24
@@ -437,28 +417,28 @@ ALIGN 16
   psraw mm4, 15
   psllw mm0, 4          ; level << 4
   psllw mm3, 4          ;
-  paddw mm0, [inter_matrix1 + 8*esi+112]
-  paddw mm3, [inter_matrix1 + 8*esi+120]
-  movq mm5, [inter_matrix_fixl + 8*esi+112]
-  movq mm7, [inter_matrix_fixl + 8*esi+120]
+  paddw mm0, [edi + 640 + 8*esi+112]
+  paddw mm3, [edi + 640 + 8*esi+120]
+  movq mm5, [edi + 896 + 8*esi+112]
+  movq mm7, [edi + 896 + 8*esi+120]
   pmulhuw mm5, mm0
   pmulhuw mm7, mm3
   mov esp, esp
-  movq mm2, [inter_matrix + 8*esi+112]
-  movq mm6, [inter_matrix + 8*esi+120]
+  movq mm2, [edi + 512 + 8*esi+112]
+  movq mm6, [edi + 512 + 8*esi+120]
   pmullw mm2, mm5
   pmullw mm6, mm7
   psubw mm0, mm2
   psubw mm3, mm6
   movq mm2, [byte ebx]
   movq mm6, [mmx_divs + ecx * 8 - 8]
-  pmulhuw mm0, [inter_matrix_fix + 8*esi+112]
-  pmulhuw mm3, [inter_matrix_fix + 8*esi+120]
+  pmulhuw mm0, [edi + 768 + 8*esi+112]
+  pmulhuw mm3, [edi + 768 + 8*esi+120]
   paddw mm2, [ebx+8]    ;sum
   paddw mm5, mm0
   paddw mm7, mm3
-  movq mm0, [edi]
-  movq mm3, [edi]
+  pxor mm0, mm0
+  pxor mm3, mm3
   pmulhuw mm5, mm6      ; mm0 = (mm0 / 2Q) >> 16
   pmulhuw mm7, mm6      ;  (level ) / quant (0<quant<32)
   add esi, byte 2
@@ -501,27 +481,27 @@ ALIGN 16
   psraw mm4, 15
   psllw mm0, 4                              ; level << 4
   psllw mm3, 4
-  paddw mm0, [inter_matrix1 + 8*esi+112]    ;mm0 is to be divided
-  paddw mm3, [inter_matrix1 + 8*esi+120]    ; inter1 contains fix for division by 1
-  movq mm5, [inter_matrix_fixl + 8*esi+112] ;with rounding down
-  movq mm7, [inter_matrix_fixl + 8*esi+120]
+  paddw mm0, [edi + 640 + 8*esi+112]    ;mm0 is to be divided
+  paddw mm3, [edi + 640 + 8*esi+120]    ; inter1 contains fix for division by 1
+  movq mm5, [edi + 896 + 8*esi+112] ;with rounding down
+  movq mm7, [edi + 896 + 8*esi+120]
   pmulhuw mm5, mm0
   pmulhuw mm7, mm3                          ;mm7: first approx of division
   mov esp, esp
-  movq mm2, [inter_matrix + 8*esi+112]
-  movq mm6, [inter_matrix + 8*esi+120]      ; divs for q<=16
+  movq mm2, [edi + 512 + 8*esi+112]
+  movq mm6, [edi + 512 + 8*esi+120]      ; divs for q<=16
   pmullw mm2, mm5                           ;test value <= original
   pmullw mm6, mm7
   psubw mm0, mm2                            ;mismatch
   psubw mm3, mm6
   movq mm2, [byte ebx]
-  pmulhuw mm0, [inter_matrix_fix + 8*esi+112]  ;correction
-  pmulhuw mm3, [inter_matrix_fix + 8*esi+120]
+  pmulhuw mm0, [edi + 768 + 8*esi+112]  ;correction
+  pmulhuw mm3, [edi + 768 + 8*esi+120]
   paddw mm2, [ebx+8]    ;sum
   paddw mm5, mm0        ;final result
   paddw mm7, mm3
-  movq mm0, [edi]
-  movq mm3, [edi]
+  pxor mm0, mm0
+  pxor mm3, mm3
   psrlw mm5, 1          ;  (level ) /2  (quant = 1)
   psrlw mm7, 1
   add esi, byte 2
@@ -550,28 +530,28 @@ ALIGN 8
   psraw mm4,15
   psllw mm0, 4          ; level << 4
   psllw mm3, 4          ;
-  paddw mm0, [inter_matrix1 + 8*esi+112] ;mm0 is to be divided inter1 contains fix for division by 1
-  paddw mm3, [inter_matrix1 + 8*esi+120]
-  movq mm5,[inter_matrix_fixl + 8*esi+112]
-  movq mm7,[inter_matrix_fixl + 8*esi+120]
+  paddw mm0, [edi + 640 + 8*esi+112] ;mm0 is to be divided inter1 contains fix for division by 1
+  paddw mm3, [edi + 640 + 8*esi+120]
+  movq mm5,[edi + 896 + 8*esi+112]
+  movq mm7,[edi + 896 + 8*esi+120]
   pmulhuw mm5,mm0
   pmulhuw mm7,mm3       ;mm7: first approx of division
   mov esp,esp
-  movq mm2,[inter_matrix + 8*esi+112]
-  movq mm6,[inter_matrix + 8*esi+120]
+  movq mm2,[edi + 512 + 8*esi+112]
+  movq mm6,[edi + 512 + 8*esi+120]
   pmullw mm2,mm5        ;test value <= original
   pmullw mm6,mm7
   psubw mm0,mm2         ;mismatch
   psubw mm3,mm6
   movq mm2,[byte ebx]
   movq mm6,[mmx_div + ecx * 8 - 8]  ; divs for q<=16
-  pmulhuw mm0,[inter_matrix_fix + 8*esi+112] ;correction
-  pmulhuw mm3,[inter_matrix_fix + 8*esi+120]
+  pmulhuw mm0,[edi + 768 + 8*esi+112] ;correction
+  pmulhuw mm3,[edi + 768 + 8*esi+120]
   paddw mm2,[ebx+8]     ;sum
   paddw mm5,mm0         ;final result
   paddw mm7,mm3
-  movq mm0,[edi]
-  movq mm3,[edi]
+  pxor mm0,mm0
+  pxor mm3,mm3
   pmulhuw mm5, mm6      ; mm0 = (mm0 / 2Q) >> 16
   pmulhuw mm7, mm6      ;  (level ) / quant (0<quant<32)
   add esi,byte 2
@@ -595,7 +575,8 @@ ALIGN 8
 ; uint32_t dequant_mpeg_intra_3dne(int16_t *data,
 ;                                  const int16_t const *coeff,
 ;                                  const uint32_t quant,
-;                                  const uint32_t dcscalar);
+;                                  const uint32_t dcscalar,
+;                                  const uint16_t *mpeg_matrices);
 ;
 ;-----------------------------------------------------------------------------
 
@@ -622,8 +603,8 @@ ALIGN 8
   movq mm2, [eax+8] ;preshifted quant
   movq mm7, [eax+8]
 %endif
-  pmullw mm2, [intra_matrix + 16 * %1 ]     ; matrix[i]*quant
-  pmullw mm7, [intra_matrix + 16 * %1 +8]   ; matrix[i+1]*quant
+  pmullw mm2, [edi + 16 * %1 ]     ; matrix[i]*quant
+  pmullw mm7, [edi + 16 * %1 +8]   ; matrix[i+1]*quant
   movq mm5, mm0
   movq mm6, mm3
   pmulhw mm0, mm2   ; high of coeff*(matrix*quant)
@@ -667,7 +648,8 @@ dequant_mpeg_intra_3dne:
   movq [eax+8], mm7
   imul ebx, [esp+16+8+32]    ; dcscalar
   movq mm2, mm7
-
+  push edi
+  mov edi, [esp + 32 + 12 + 20] ; mpeg_quant_matrices	
 ALIGN 4
 
   DEQUANT4INTRAMMX 0
@@ -690,14 +672,16 @@ ALIGN 4
 
   DEQUANT4INTRAMMX 3
 
-  mov esi, [esp+32]
+  mov esi, [esp+36]
   mov [byte edx], bx
-  mov ebx, [esp+32+4]
+  mov ebx, [esp+36+4]
 
   DEQUANT4INTRAMMX 4
   DEQUANT4INTRAMMX 5
   DEQUANT4INTRAMMX 6
   DEQUANT4INTRAMMX 7
+
+  pop edi
 
   add esp, byte 32+8
 
@@ -708,7 +692,8 @@ ALIGN 4
 ;
 ; uint32_t dequant_mpeg_inter_3dne(int16_t * data,
 ;                                  const int16_t * const coeff,
-;                                  const uint32_t quant);
+;                                  const uint32_t quant,
+;                                  const uint16_t *mpeg_matrices);
 ;
 ;-----------------------------------------------------------------------------
 
@@ -727,9 +712,11 @@ dequant_mpeg_inter_3dne:
   paddw mm7, mm7    ; << 1
   pxor mm6, mm6     ; mismatch sum
   push esi
+  push edi
   mov esi, mmzero
   pxor mm1, mm1
   pxor mm3, mm3
+  mov edi, [esp + 8 + 16] ; mpeg_quant_matrices
   nop
   nop4
 
@@ -760,13 +747,13 @@ ALIGN 16
 
   movq mm4, mm7     ; (matrix*quant)
   nop
-  pmullw mm4, [inter_matrix + 8*eax + 7*16]
+  pmullw mm4, [edi + 512 + 8*eax + 7*16]
   movq mm5, mm4
   pmulhw mm5, mm0   ; high of c*(matrix*quant)
   pmullw mm0, mm4   ; low  of c*(matrix*quant)
 
   movq mm4, mm7     ; (matrix*quant)
-  pmullw mm4, [inter_matrix + 8*eax + 7*16 + 8]
+  pmullw mm4, [edi + 512 + 8*eax + 7*16 + 8]
   add eax, byte 2
 
   pcmpgtw mm5, [esi]
@@ -805,6 +792,7 @@ ALIGN 16
   pxor mm1, mm2
   pxor mm6, mm1
   movd eax, mm6
+  pop edi
   and eax, byte 1
   xor eax, byte 1
   mov esi, [esp]

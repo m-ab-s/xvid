@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation.h,v 1.1.2.5 2003-11-19 12:24:25 syskin Exp $
+ * $Id: estimation.h,v 1.1.2.6 2003-11-30 16:13:16 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -116,6 +116,7 @@ typedef struct
 	uint32_t quant_type;		/* current quant type */
 	unsigned int cbp[2];					/* CBP of the best vector found so far + cbp for inter4v search */
 	const uint16_t * scan_table; /* current scan table */
+	const uint16_t * mpeg_quant_matrices;			/* current MPEG quantization matrices */
 
 } SearchData;
 

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: quant.h,v 1.1.2.2 2003-10-09 18:50:22 edgomez Exp $
+ * $Id: quant.h,v 1.1.2.3 2003-11-30 16:13:16 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -35,7 +35,8 @@
 typedef uint32_t (quant_intraFunc) (int16_t * coeff,
 									const int16_t * data,
 									const uint32_t quant,
-									const uint32_t dcscalar);
+									const uint32_t dcscalar,
+									const uint16_t * mpeg_quant_matrices);
 
 typedef quant_intraFunc *quant_intraFuncPtr;
 
@@ -90,7 +91,8 @@ quanth263_intraFunc dequant_intra_ia64;
 
 typedef uint32_t (quant_interFunc) (int16_t * coeff,
 									const int16_t * data,
-									const uint32_t quant);
+									const uint32_t quant,
+									const uint16_t * mpeg_quant_matrices);
 
 typedef quant_interFunc *quant_interFuncPtr;
 

@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbtransquant.c,v 1.21.2.20 2003-11-24 22:06:19 edgomez Exp $
+ * $Id: mbtransquant.c,v 1.21.2.21 2003-11-30 16:13:16 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -138,12 +138,12 @@ MBQuantIntra(const MBParam * pParam,
 
 	/* Quantize the block */
 	start_timer();
-	quant[mpeg](&data[0 * 64], &qcoeff[0 * 64], pMB->quant, scaler_lum);
-	quant[mpeg](&data[1 * 64], &qcoeff[1 * 64], pMB->quant, scaler_lum);
-	quant[mpeg](&data[2 * 64], &qcoeff[2 * 64], pMB->quant, scaler_lum);
-	quant[mpeg](&data[3 * 64], &qcoeff[3 * 64], pMB->quant, scaler_lum);
-	quant[mpeg](&data[4 * 64], &qcoeff[4 * 64], pMB->quant, scaler_chr);
-	quant[mpeg](&data[5 * 64], &qcoeff[5 * 64], pMB->quant, scaler_chr);
+	quant[mpeg](&data[0 * 64], &qcoeff[0 * 64], pMB->quant, scaler_lum, pParam->mpeg_quant_matrices);
+	quant[mpeg](&data[1 * 64], &qcoeff[1 * 64], pMB->quant, scaler_lum, pParam->mpeg_quant_matrices);
+	quant[mpeg](&data[2 * 64], &qcoeff[2 * 64], pMB->quant, scaler_lum, pParam->mpeg_quant_matrices);
+	quant[mpeg](&data[3 * 64], &qcoeff[3 * 64], pMB->quant, scaler_lum, pParam->mpeg_quant_matrices);
+	quant[mpeg](&data[4 * 64], &qcoeff[4 * 64], pMB->quant, scaler_chr, pParam->mpeg_quant_matrices);
+	quant[mpeg](&data[5 * 64], &qcoeff[5 * 64], pMB->quant, scaler_chr, pParam->mpeg_quant_matrices);
 	stop_quant_timer();
 }
 
@@ -168,12 +168,12 @@ MBDeQuantIntra(const MBParam * pParam,
 	scaler_chr = get_dc_scaler(iQuant, 0);
 
 	start_timer();
-	dequant[mpeg](&qcoeff[0 * 64], &data[0 * 64], iQuant, scaler_lum);
-	dequant[mpeg](&qcoeff[1 * 64], &data[1 * 64], iQuant, scaler_lum);
-	dequant[mpeg](&qcoeff[2 * 64], &data[2 * 64], iQuant, scaler_lum);
-	dequant[mpeg](&qcoeff[3 * 64], &data[3 * 64], iQuant, scaler_lum);
-	dequant[mpeg](&qcoeff[4 * 64], &data[4 * 64], iQuant, scaler_chr);
-	dequant[mpeg](&qcoeff[5 * 64], &data[5 * 64], iQuant, scaler_chr);
+	dequant[mpeg](&qcoeff[0 * 64], &data[0 * 64], iQuant, scaler_lum, pParam->mpeg_quant_matrices);
+	dequant[mpeg](&qcoeff[1 * 64], &data[1 * 64], iQuant, scaler_lum, pParam->mpeg_quant_matrices);
+	dequant[mpeg](&qcoeff[2 * 64], &data[2 * 64], iQuant, scaler_lum, pParam->mpeg_quant_matrices);
+	dequant[mpeg](&qcoeff[3 * 64], &data[3 * 64], iQuant, scaler_lum, pParam->mpeg_quant_matrices);
+	dequant[mpeg](&qcoeff[4 * 64], &data[4 * 64], iQuant, scaler_chr, pParam->mpeg_quant_matrices);
+	dequant[mpeg](&qcoeff[5 * 64], &data[5 * 64], iQuant, scaler_chr, pParam->mpeg_quant_matrices);
 	stop_iquant_timer();
 }
 
@@ -214,9 +214,10 @@ MBQuantInter(const MBParam * pParam,
 		/* Quantize the block */
 		start_timer();
 
-		sum = quant[mpeg](&qcoeff[i*64], &data[i*64], pMB->quant);
+		sum = quant[mpeg](&qcoeff[i*64], &data[i*64], pMB->quant, pParam->mpeg_quant_matrices);
 
 		if(sum && (frame->vop_flags & XVID_VOP_TRELLISQUANT)) {
+			const uint16_t *matrix;
 			const static uint16_t h263matrix[] =
 				{
 					16, 16, 16, 16, 16, 16, 16, 16,
@@ -228,9 +229,11 @@ MBQuantInter(const MBParam * pParam,
 					16, 16, 16, 16, 16, 16, 16, 16,
 					16, 16, 16, 16, 16, 16, 16, 16
 				};
+
+			matrix = (mpeg)?get_inter_matrix(pParam->mpeg_quant_matrices):h263matrix;
 			sum = dct_quantize_trellis_c(&qcoeff[i*64], &data[i*64],
 										 pMB->quant, &scan_tables[0][0],
-										 (mpeg)?(uint16_t*)get_inter_matrix():h263matrix,
+										 matrix,
 										 63);
 		}
 		stop_quant_timer();
@@ -281,12 +284,12 @@ MBDeQuantInter(const MBParam * pParam,
 	mpeg = !!(pParam->vol_flags & XVID_VOL_MPEGQUANT);
 
 	start_timer();
-	if(cbp & (1 << (5 - 0))) dequant[mpeg](&data[0 * 64], &qcoeff[0 * 64], iQuant);
-	if(cbp & (1 << (5 - 1))) dequant[mpeg](&data[1 * 64], &qcoeff[1 * 64], iQuant);
-	if(cbp & (1 << (5 - 2))) dequant[mpeg](&data[2 * 64], &qcoeff[2 * 64], iQuant);
-	if(cbp & (1 << (5 - 3))) dequant[mpeg](&data[3 * 64], &qcoeff[3 * 64], iQuant);
-	if(cbp & (1 << (5 - 4))) dequant[mpeg](&data[4 * 64], &qcoeff[4 * 64], iQuant);
-	if(cbp & (1 << (5 - 5))) dequant[mpeg](&data[5 * 64], &qcoeff[5 * 64], iQuant);
+	if(cbp & (1 << (5 - 0))) dequant[mpeg](&data[0 * 64], &qcoeff[0 * 64], iQuant, pParam->mpeg_quant_matrices);
+	if(cbp & (1 << (5 - 1))) dequant[mpeg](&data[1 * 64], &qcoeff[1 * 64], iQuant, pParam->mpeg_quant_matrices);
+	if(cbp & (1 << (5 - 2))) dequant[mpeg](&data[2 * 64], &qcoeff[2 * 64], iQuant, pParam->mpeg_quant_matrices);
+	if(cbp & (1 << (5 - 3))) dequant[mpeg](&data[3 * 64], &qcoeff[3 * 64], iQuant, pParam->mpeg_quant_matrices);
+	if(cbp & (1 << (5 - 4))) dequant[mpeg](&data[4 * 64], &qcoeff[4 * 64], iQuant, pParam->mpeg_quant_matrices);
+	if(cbp & (1 << (5 - 5))) dequant[mpeg](&data[5 * 64], &qcoeff[5 * 64], iQuant, pParam->mpeg_quant_matrices);
 	stop_iquant_timer();
 }
 

@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.55 2003-11-20 12:07:19 syskin Exp $
+ * $Id: encoder.c,v 1.95.2.56 2003-11-30 16:13:15 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -250,6 +250,14 @@ enc_create(xvid_enc_create_t * create)
 	if (pEnc->current->mbs == NULL || pEnc->reference->mbs == NULL)
 		goto xvid_err_memory2;
 
+	/* allocate quant matrix memory */
+
+	pEnc->mbParam.mpeg_quant_matrices =
+		xvid_malloc(sizeof(uint16_t) * 64 * 8, CACHE_LINE);
+
+	if (pEnc->mbParam.mpeg_quant_matrices == NULL)
+		goto xvid_err_memory2a;
+
 	/* allocate interpolation image memory */
 
 	if ((pEnc->mbParam.plugin_flags & XVID_REQORIGINAL)) {
@@ -403,6 +411,7 @@ enc_create(xvid_enc_create_t * create)
 	create->handle = (void *) pEnc;
 
 	init_timer();
+	init_mpeg_matrix(pEnc->mbParam.mpeg_quant_matrices);
 
 	return 0;   /* ok */
 
@@ -469,6 +478,8 @@ enc_create(xvid_enc_create_t * create)
 	image_destroy(&pEnc->vGMC, pEnc->mbParam.edged_width,
 				  pEnc->mbParam.edged_height);
 
+  xvid_err_memory2a:
+	xvid_free(pEnc->mbParam.mpeg_quant_matrices);
 
   xvid_err_memory2:
 	xvid_free(pEnc->current->mbs);
@@ -596,6 +607,8 @@ enc_destroy(Encoder * pEnc)
 		}
 		xvid_free(pEnc->plugins);
 	}
+
+	xvid_free(pEnc->mbParam.mpeg_quant_matrices);
 
 	if (pEnc->num_plugins>0)
 		xvid_free(pEnc->zones);
@@ -1227,9 +1240,9 @@ repeat:
 
 		if ((pEnc->mbParam.vol_flags & XVID_VOL_MPEGQUANT)) {
 			if (frame->quant_intra_matrix != NULL)
-				set_intra_matrix(frame->quant_intra_matrix);
+				set_intra_matrix(pEnc->mbParam.mpeg_quant_matrices, frame->quant_intra_matrix);
 			if (frame->quant_inter_matrix != NULL)
-				set_inter_matrix(frame->quant_inter_matrix);
+				set_inter_matrix(pEnc->mbParam.mpeg_quant_matrices, frame->quant_inter_matrix);
 		}
 
 		/* prevent vol/vop misuse */

@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.h,v 1.27.2.16 2003-11-05 16:15:47 edgomez Exp $
+ * $Id: encoder.h,v 1.27.2.17 2003-11-30 16:13:15 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -96,8 +96,9 @@ typedef struct
     int vol_flags;
 
 	int64_t m_stamp;
-}
-MBParam;
+
+	uint16_t *mpeg_quant_matrices;
+} MBParam;
 
 
 typedef struct
@@ -109,8 +110,7 @@ typedef struct
 	int mblks;
 	int ublks;
 	int gblks;
-}
-Statistics;
+} Statistics;
 
 
 /* encoding queue */
@@ -153,8 +153,7 @@ typedef struct
 
 	Statistics sStat;
 	int is_edged, is_interpolated;
-}
-FRAMEINFO;
+} FRAMEINFO;
 
 
 typedef struct
@@ -214,8 +213,7 @@ typedef struct
 	int m_framenum; /* debug frame num counter; unlike iFrameNum, does not reset at ivop */
 
 	float fMvPrevSigma;
-}
-Encoder;
+} Encoder;
 
 /*****************************************************************************
  * Inline functions

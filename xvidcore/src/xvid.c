@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.21 2003-11-29 17:26:12 edgomez Exp $
+ * $Id: xvid.c,v 1.45.2.22 2003-11-30 16:13:15 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -288,8 +288,6 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	dev16      = dev16_c;
 	sad16v	   = sad16v_c;
 	sse8_16bit = sse8_16bit_c;
-
-/*	Halfpel8_Refine = Halfpel8_Refine_c; */
 
 #if defined(ARCH_IS_IA32)
 

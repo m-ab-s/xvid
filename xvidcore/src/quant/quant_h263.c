@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: quant_h263.c,v 1.7.2.3 2003-10-09 18:50:22 edgomez Exp $
+ * $Id: quant_h263.c,v 1.7.2.4 2003-11-30 16:13:16 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -71,7 +71,8 @@ uint32_t
 quant_h263_intra_c(int16_t * coeff,
 				   const int16_t * data,
 				   const uint32_t quant,
-				   const uint32_t dcscalar)
+				   const uint32_t dcscalar,
+				   const uint16_t * mpeg_quant_matrices)
 {
 	const uint32_t mult = multipliers[quant];
 	const uint16_t quant_m_2 = quant << 1;
@@ -110,7 +111,8 @@ quant_h263_intra_c(int16_t * coeff,
 uint32_t
 quant_h263_inter_c(int16_t * coeff,
 				   const int16_t * data,
-				   const uint32_t quant)
+				   const uint32_t quant,
+				   const uint16_t * mpeg_quant_matrices)
 {
 	const uint32_t mult = multipliers[quant];
 	const uint16_t quant_m_2 = quant << 1;
@@ -154,7 +156,8 @@ uint32_t
 dequant_h263_intra_c(int16_t * data,
 					 const int16_t * coeff,
 					 const uint32_t quant,
-					 const uint32_t dcscalar)
+					 const uint32_t dcscalar,
+					 const uint16_t * mpeg_quant_matrices)
 {
 	const int32_t quant_m_2 = quant << 1;
 	const int32_t quant_add = (quant & 1 ? quant : quant - 1);
@@ -191,8 +194,9 @@ dequant_h263_intra_c(int16_t * data,
 
 uint32_t
 dequant_h263_inter_c(int16_t * data,
-				const int16_t * coeff,
-				const uint32_t quant)
+					 const int16_t * coeff,
+					 const uint32_t quant,
+					 const uint16_t * mpeg_quant_matrices)
 {
 	const uint16_t quant_m_2 = quant << 1;
 	const uint16_t quant_add = (quant & 1 ? quant : quant - 1);

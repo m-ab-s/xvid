@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: quant_mpeg.c,v 1.1.2.2 2003-10-09 18:50:22 edgomez Exp $
+ * $Id: quant_mpeg.c,v 1.1.2.3 2003-11-30 16:13:16 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -79,11 +79,12 @@ uint32_t
 quant_mpeg_intra_c(int16_t * coeff,
 				   const int16_t * data,
 				   const uint32_t quant,
-				   const uint32_t dcscalar)
+				   const uint32_t dcscalar,
+				   const uint16_t * mpeg_quant_matrices)
 {
 	const uint32_t quantd = ((VM18P * quant) + (VM18Q / 2)) / VM18Q;
 	const uint32_t mult = multipliers[quant];
-	const int16_t *intra_matrix = get_intra_matrix();
+	const uint16_t *intra_matrix = get_intra_matrix(mpeg_quant_matrices);
 	int i;
 
 	coeff[0] = DIV_DIV(data[0], (int32_t) dcscalar);
@@ -119,10 +120,11 @@ quant_mpeg_intra_c(int16_t * coeff,
 uint32_t
 quant_mpeg_inter_c(int16_t * coeff,
 				   const int16_t * data,
-				   const uint32_t quant)
+				   const uint32_t quant,
+				   const uint16_t * mpeg_quant_matrices)
 {
 	const uint32_t mult = multipliers[quant];
-	const int16_t *inter_matrix = get_inter_matrix();
+	const uint16_t *inter_matrix = get_inter_matrix(mpeg_quant_matrices);
 	uint32_t sum = 0;
 	int i;
 
@@ -158,9 +160,10 @@ uint32_t
 dequant_mpeg_intra_c(int16_t * data,
 					 const int16_t * coeff,
 					 const uint32_t quant,
-					 const uint32_t dcscalar)
+					 const uint32_t dcscalar,
+					 const uint16_t * mpeg_quant_matrices)
 {
-	const int16_t *intra_matrix = get_intra_matrix();
+	const uint16_t *intra_matrix = get_intra_matrix(mpeg_quant_matrices);
 	int i;
 
 	data[0] = coeff[0] * dcscalar;
@@ -197,10 +200,11 @@ dequant_mpeg_intra_c(int16_t * data,
 uint32_t
 dequant_mpeg_inter_c(int16_t * data,
 					 const int16_t * coeff,
-					 const uint32_t quant)
+					 const uint32_t quant,
+					 const uint16_t * mpeg_quant_matrices)
 {
 	uint32_t sum = 0;
-	const int16_t *inter_matrix = get_inter_matrix();
+	const uint16_t *inter_matrix = get_inter_matrix(mpeg_quant_matrices);
 	int i;
 
 	for (i = 0; i < 64; i++) {

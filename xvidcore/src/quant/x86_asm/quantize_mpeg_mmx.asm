@@ -21,7 +21,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: quantize_mpeg_mmx.asm,v 1.1.2.4 2003-11-03 15:51:50 edgomez Exp $
+; * $Id: quantize_mpeg_mmx.asm,v 1.1.2.5 2003-11-30 16:13:16 edgomez Exp $
 ; *
 ; *************************************************************************/
 
@@ -75,21 +75,6 @@ mmx_div:
 	times 4 dw  (1<<17) / (quant*2) + 1
 	%assign quant quant+1
 %endrep
-
-;-----------------------------------------------------------------------------
-; intra matrix
-;-----------------------------------------------------------------------------
-
-cextern intra_matrix
-cextern intra_matrix_fix
-
-;-----------------------------------------------------------------------------
-; inter matrix
-;-----------------------------------------------------------------------------
-
-cextern inter_matrix
-cextern inter_matrix_fix
-
 
 %define VM18P 3
 %define VM18Q 4
@@ -150,7 +135,8 @@ cglobal dequant_mpeg_inter_mmx
 ; uint32_t quant_mpeg_intra_mmx(int16_t * coeff,
 ;                               const int16_t const * data,
 ;                               const uint32_t quant,
-;                               const uint32_t dcscalar);
+;                               const uint32_t dcscalar,
+;                               const uint16_t *mpeg_matrices);
 ;
 ;-----------------------------------------------------------------------------
 
@@ -160,10 +146,12 @@ quant_mpeg_intra_mmx:
   push ecx
   push esi
   push edi
+  push ebx
 
-  mov edi, [esp + 12 + 4]       ; coeff
-  mov esi, [esp + 12 + 8]       ; data
-  mov eax, [esp + 12 + 12]      ; quant
+  mov edi, [esp + 16 + 4]       ; coeff
+  mov esi, [esp + 16 + 8]       ; data
+  mov eax, [esp + 16 + 12]      ; quant
+  mov ebx, [esp + 16 + 20]		; mpeg_quant_matrices
 
   movq mm5, [quantd + eax * 8 - 8] ; quantd -> mm5
 
@@ -190,15 +178,15 @@ ALIGN 16
   psubw mm3, mm4                ;
   psllw mm0, 4                  ; level << 4
   psllw mm3, 4
-  movq mm2, [intra_matrix + 8*ecx]
+  movq mm2, [ebx + 8*ecx]
   psrlw mm2, 1                  ; intra_matrix[i]>>1
   paddw mm0, mm2
-  movq mm2, [intra_matrix_fix + ecx*8]
+  movq mm2, [ebx + 256 + ecx*8]
   pmulhw mm0, mm2                       ; (level<<4 + intra_matrix[i]>>1) / intra_matrix[i]
-  movq mm2, [intra_matrix + 8*ecx + 8]
+  movq mm2, [ebx + 8*ecx + 8]
   psrlw mm2, 1
   paddw mm3, mm2
-  movq mm2, [intra_matrix_fix + ecx*8 + 8]
+  movq mm2, [ebx + 256 + ecx*8 + 8]
   pmulhw mm3, mm2
   paddw mm0, mm5                ; + quantd
   paddw mm3, mm5
@@ -220,7 +208,7 @@ ALIGN 16
 
 .done
   ; caclulate  data[0] // (int32_t)dcscalar)
-  mov ecx, [esp + 12 + 16]  ; dcscalar
+  mov ecx, [esp + 16 + 16]  ; dcscalar
   mov edx, ecx
   movsx eax, word [esi]     ; data[0]
   shr edx, 1                ; edx = dcscalar /2
@@ -237,6 +225,7 @@ ALIGN 16
 
   mov [edi], ax             ; coeff[0] = ax
 
+  pop ebx
   pop edi
   pop esi
   pop ecx
@@ -258,15 +247,15 @@ ALIGN 16
   psubw mm3, mm4                ;
   psllw mm0, 4
   psllw mm3, 4
-  movq mm2, [intra_matrix + 8*ecx]
+  movq mm2, [ebx + 8*ecx]
   psrlw mm2, 1
   paddw mm0, mm2
-  movq mm2, [intra_matrix_fix + ecx*8]
+  movq mm2, [ebx + 256 + ecx*8]
   pmulhw mm0, mm2                       ; (level<<4 + intra_matrix[i]>>1) / intra_matrix[i]
-  movq mm2, [intra_matrix + 8*ecx + 8]
+  movq mm2, [ebx + 8*ecx + 8]
   psrlw mm2, 1
   paddw mm3, mm2
-  movq mm2, [intra_matrix_fix + ecx*8 + 8]
+  movq mm2, [ebx + 256 + ecx*8 + 8]
   pmulhw mm3, mm2
   paddw mm0, mm5
   paddw mm3, mm5
@@ -299,15 +288,15 @@ ALIGN 16
   psubw mm3, mm4                ;
   psllw mm0, 4
   psllw mm3, 4
-  movq mm2, [intra_matrix + 8*ecx]
+  movq mm2, [ebx + 8*ecx]
   psrlw mm2, 1
   paddw mm0, mm2
-  movq mm2, [intra_matrix_fix + ecx*8]
+  movq mm2, [ebx + 256 + ecx*8]
   pmulhw mm0, mm2                       ; (level<<4 + intra_matrix[i]>>1) / intra_matrix[i]
-  movq mm2, [intra_matrix + 8*ecx + 8]
+  movq mm2, [ebx + 8*ecx + 8]
   psrlw mm2, 1
   paddw mm3, mm2
-  movq mm2, [intra_matrix_fix + ecx*8 + 8]
+  movq mm2, [ebx + 256 + ecx*8 + 8]
   pmulhw mm3, mm2
   paddw mm0, mm5
   paddw mm3, mm5
@@ -330,7 +319,8 @@ ALIGN 16
 ;
 ; uint32_t quant_mpeg_inter_mmx(int16_t * coeff,
 ;                               const int16_t const * data,
-;                               const uint32_t quant);
+;                               const uint32_t quant,
+;                               const uint16_t *mpeg_matrices);
 ;
 ;-----------------------------------------------------------------------------
 
@@ -340,10 +330,12 @@ quant_mpeg_inter_mmx:
   push ecx
   push esi
   push edi
+  push ebx
 
-  mov edi, [esp + 12 + 4]       ; coeff
-  mov esi, [esp + 12 + 8]       ; data
-  mov eax, [esp + 12 + 12]  ; quant
+  mov edi, [esp + 16 + 4]       ; coeff
+  mov esi, [esp + 16 + 8]       ; data
+  mov eax, [esp + 16 + 12]  ; quant
+  mov ebx, [esp + 16 + 16]		; mpeg_quant_matrices
 
   xor ecx, ecx
 
@@ -371,15 +363,15 @@ ALIGN 16
   psubw mm3, mm4                ;
   psllw mm0, 4
   psllw mm3, 4
-  movq mm2, [inter_matrix + 8*ecx]
+  movq mm2, [ebx + 512 + 8*ecx]
   psrlw mm2, 1
   paddw mm0, mm2
-  movq mm2, [inter_matrix_fix + ecx*8]
+  movq mm2, [ebx + 768 + ecx*8]
   pmulhw mm0, mm2               ; (level<<4 + inter_matrix[i]>>1) / inter_matrix[i]
-  movq mm2, [inter_matrix + 8*ecx + 8]
+  movq mm2, [ebx + 512 + 8*ecx + 8]
   psrlw mm2, 1
   paddw mm3, mm2
-  movq mm2, [inter_matrix_fix + ecx*8 + 8]
+  movq mm2, [ebx + 768 + ecx*8 + 8]
   pmulhw mm3, mm2
   pmulhw mm0, mm7               ; mm0 = (mm0 / 2Q) >> 16
   pmulhw mm3, mm7               ;
@@ -405,6 +397,7 @@ ALIGN 16
   paddd mm0, mm5
   movd eax, mm0                 ; return sum
 
+  pop ebx
   pop edi
   pop esi
   pop ecx
@@ -425,15 +418,15 @@ ALIGN 16
   psubw mm3, mm4                ;
   psllw mm0, 4
   psllw mm3, 4
-  movq mm2, [inter_matrix + 8*ecx]
+  movq mm2, [ebx + 512 + 8*ecx]
   psrlw mm2, 1
   paddw mm0, mm2
-  movq mm2, [inter_matrix_fix + ecx*8]
+  movq mm2, [ebx + 768 + ecx*8]
   pmulhw mm0, mm2               ; (level<<4 + inter_matrix[i]>>1) / inter_matrix[i]
-  movq mm2, [inter_matrix + 8*ecx + 8]
+  movq mm2, [ebx + 512 + 8*ecx + 8]
   psrlw mm2, 1
   paddw mm3, mm2
-  movq mm2, [inter_matrix_fix + ecx*8 + 8]
+  movq mm2, [ebx + 768 + ecx*8 + 8]
   pmulhw mm3, mm2
   psrlw mm0, 1                  ; mm0 >>= 1   (/2)
   psrlw mm3, 1                  ;
@@ -467,15 +460,15 @@ ALIGN 16
   psubw mm3, mm4                ;
   psllw mm0, 4
   psllw mm3, 4
-  movq mm2, [inter_matrix + 8*ecx]
+  movq mm2, [ebx + 512 + 8*ecx]
   psrlw mm2, 1
   paddw mm0, mm2
-  movq mm2, [inter_matrix_fix + ecx*8]
+  movq mm2, [ebx + 768 + ecx*8]
   pmulhw mm0, mm2               ; (level<<4 + inter_matrix[i]>>1) / inter_matrix[i]
-  movq mm2, [inter_matrix + 8*ecx + 8]
+  movq mm2, [ebx + 512 + 8*ecx + 8]
   psrlw mm2, 1
   paddw mm3, mm2
-  movq mm2, [inter_matrix_fix + ecx*8 + 8]
+  movq mm2, [ebx + 768 + ecx*8 + 8]
   pmulhw mm3, mm2
   psrlw mm0, 2                  ; mm0 >>= 1   (/2)
   psrlw mm3, 2                  ;
@@ -500,7 +493,8 @@ ALIGN 16
 ; uint32_t dequant_mpeg_intra_mmx(int16_t *data,
 ;                                 const int16_t const *coeff,
 ;                                 const uint32_t quant,
-;                                 const uint32_t dcscalar);
+;                                 const uint32_t dcscalar,
+;                                 const uint16_t *mpeg_matrices);
 ;
 ;-----------------------------------------------------------------------------
 
@@ -523,7 +517,7 @@ ALIGN 16
   psubw mm0, mm1    ; -> mm0 = abs(coeff[i]), mm1 = sign of coeff[i]
 
   movq mm2, mm7     ; mm2 = quant
-  pmullw mm2, [intra_matrix + 8*eax + 8*16 ]  ; matrix[i]*quant.
+  pmullw mm2, [ebx + 8*eax + 8*16 ]  ; matrix[i]*quant.
 
   movq mm6, mm2
   pmulhw mm2, mm0   ; high of coeff*(matrix*quant)  (should be 0 if no overflow)
@@ -546,9 +540,12 @@ ALIGN 16
 ALIGN 16
 dequant_mpeg_intra_mmx:
 
-  mov edx, [esp+4]  ; data
-  mov ecx, [esp+8]  ; coeff
-  mov eax, [esp+12] ; quant
+  push ebx
+
+  mov edx, [esp + 4 + 4]  ; data
+  mov ecx, [esp + 4 + 8]  ; coeff
+  mov eax, [esp + 4 + 12] ; quant
+  mov ebx, [esp + 4 + 20] ; mpeg_quant_matrices
 
   movq mm7, [mmx_mul_quant  + eax*8 - 8]
   mov eax, -16      ; to keep ALIGNed, we regularly process coeff[0]
@@ -565,7 +562,7 @@ ALIGN 16
   movq mm2, mm7     ; mm2 = quant
 
   pcmpgtw mm4, mm3  ; mm4 = sgn(c')
-  pmullw mm2,  [intra_matrix + 8*eax + 8*16 ]  ; matrix[i]*quant
+  pmullw mm2,  [ebx + 8*eax + 8*16 ]  ; matrix[i]*quant
 
   pxor mm0, mm1     ; negate if negative
   pxor mm3, mm4     ; negate if negative
@@ -581,7 +578,7 @@ ALIGN 16
   pmulhw mm0, mm5   ; high of coeff*(matrix*quant)
   movq mm5, mm7     ; mm2 = quant
 
-  pmullw mm5,  [intra_matrix + 8*eax + 8*16 +8]  ; matrix[i+1]*quant
+  pmullw mm5,  [ebx + 8*eax + 8*16 +8]  ; matrix[i+1]*quant
 
   movq mm6, mm5
   add eax,2   ; z-flag will be tested later
@@ -613,7 +610,7 @@ ALIGN 16
 
     ; deal with DC
   movd mm0, [ecx]
-  pmullw mm0, [esp+16]  ; dcscalar
+  pmullw mm0, [esp + 4 + 16]  ; dcscalar
   movq mm2, [mmx_32767_minus_2047]
   paddsw mm0, mm2
   psubsw mm0, mm2
@@ -624,13 +621,17 @@ ALIGN 16
   mov [edx], ax
 
   xor eax, eax
+  
+  pop ebx
+
   ret
 
 ;-----------------------------------------------------------------------------
 ;
 ; uint32_t dequant_mpeg_inter_mmx(int16_t * data,
 ;                                 const int16_t * const coeff,
-;                                 const uint32_t quant);
+;                                 const uint32_t quant,
+;                                 const uint16_t *mpeg_matrices);
 ;
 ;-----------------------------------------------------------------------------
 
@@ -642,9 +643,13 @@ ALIGN 16
 ALIGN 16
 dequant_mpeg_inter_mmx:
 
-  mov edx, [esp+ 4]        ; data
-  mov ecx, [esp+ 8]        ; coeff
-  mov eax, [esp+12]        ; quant
+  push ebx
+
+  mov edx, [esp + 4 + 4]        ; data
+  mov ecx, [esp + 4 + 8]        ; coeff
+  mov eax, [esp + 4 + 12]        ; quant
+  mov ebx, [esp + 4 + 16]		   ; mpeg_quant_matrices
+
   movq mm7, [mmx_mul_quant  + eax*8 - 8]
   mov eax, -16
   paddw mm7, mm7    ; << 1
@@ -679,13 +684,13 @@ ALIGN 16
     ; we're short on register, here. Poor pairing...
 
   movq mm4, mm7     ; (matrix*quant)
-  pmullw mm4,  [inter_matrix + 8*eax + 8*16 -2*8]
+  pmullw mm4,  [ebx + 512 + 8*eax + 8*16 -2*8]
   movq mm5, mm4
   pmulhw mm5, mm0   ; high of c*(matrix*quant)
   pmullw mm0, mm4   ; low  of c*(matrix*quant)
 
   movq mm4, mm7     ; (matrix*quant)
-  pmullw mm4,  [inter_matrix + 8*eax + 8*16 -2*8 + 8]
+  pmullw mm4,  [ebx + 512 + 8*eax + 8*16 -2*8 + 8]
 
   pcmpgtw mm5, [zero]
   paddusw mm0, mm5
@@ -729,4 +734,7 @@ ALIGN 16
   xor word [edx + 2*63], ax
 
   xor eax, eax
+  
+  pop ebx
+
   ret
