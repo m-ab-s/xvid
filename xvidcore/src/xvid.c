@@ -37,7 +37,7 @@
  *  - 22.12.2001  API change: added xvid_init() - Isibaar
  *  - 16.12.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: xvid.c,v 1.33.2.14 2002-11-20 19:52:32 Isibaar Exp $
+ *  $Id: xvid.c,v 1.33.2.15 2002-12-08 05:38:56 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -49,6 +49,7 @@
 #include "dct/fdct.h"
 #include "image/colorspace.h"
 #include "image/interpolate8x8.h"
+#include "image/reduced.h"
 #include "utils/mem_transfer.h"
 #include "utils/mbfunctions.h"
 #include "quant/quant_h263.h"
@@ -234,6 +235,18 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 	interpolate8x8_avg2 = interpolate8x8_avg2_c;
 	interpolate8x8_avg4 = interpolate8x8_avg4_c;
 
+	/* reduced resoltuion */
+
+#ifdef ARCH_X86
+	vfilter_31 = xvid_VFilter_31_x86;
+	hfilter_31 = xvid_HFilter_31_x86;
+#else
+	copy_upsampled_8x8_16to8 = xvid_Copy_Upsampled_8x8_16To8_C;
+	add_upsampled_8x8_16to8 = xvid_Add_Upsampled_8x8_16To8_C;
+	vfilter_31 = xvid_VFilter_31_C;
+	hfilter_31 = xvid_HFilter_31_C;
+#endif
+
 	/* Initialize internal colorspace transformation tables */
 	colorspace_init();
 
@@ -337,6 +350,11 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 		interpolate8x8_avg2 = interpolate8x8_avg2_mmx;
 		interpolate8x8_avg4 = interpolate8x8_avg4_mmx;
 
+		/* reduced resolution */
+		copy_upsampled_8x8_16to8 = xvid_Copy_Upsampled_8x8_16To8_mmx;
+		add_upsampled_8x8_16to8 = xvid_Add_Upsampled_8x8_16To8_mmx;
+		hfilter_31 = xvid_HFilter_31_mmx;
+
 		/* image input xxx_to_yv12 related functions */
 		yv12_to_yv12  = yv12_to_yv12_mmx;
 		bgr_to_yv12   = bgr_to_yv12_mmx;
@@ -385,6 +403,10 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 		interpolate8x8_halfpel_h  = interpolate8x8_halfpel_h_xmm;
 		interpolate8x8_halfpel_v  = interpolate8x8_halfpel_v_xmm;
 		interpolate8x8_halfpel_hv = interpolate8x8_halfpel_hv_xmm;
+
+		/* reduced resolution */
+		copy_upsampled_8x8_16to8 = xvid_Copy_Upsampled_8x8_16To8_xmm;
+		add_upsampled_8x8_16to8 = xvid_Add_Upsampled_8x8_16To8_xmm;
 
 		/* Quantization */
 		dequant_intra = dequant_intra_xmm;

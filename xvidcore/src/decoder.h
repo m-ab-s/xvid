@@ -33,7 +33,7 @@
  *
  *  - 13.06.2002 Added legal header - Cosmetic
  *
- *  $Id: decoder.h,v 1.10.2.2 2002-11-12 15:53:47 Isibaar Exp $
+ *  $Id: decoder.h,v 1.10.2.3 2002-12-08 05:38:56 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -49,6 +49,40 @@
  * Structures
  ****************************************************************************/
 
+/* complexity estimation toggles */
+typedef struct
+{
+	int method;
+
+	int opaque;
+	int transparent;
+	int intra_cae;
+	int inter_cae;
+	int no_update;
+	int upsampling;
+
+	int intra_blocks;
+	int inter_blocks;
+	int inter4v_blocks;
+	int not_coded_blocks;
+
+	int dct_coefs;
+	int dct_lines;
+	int vlc_symbols;
+	int vlc_bits;
+
+	int apm;
+	int npm;
+	int interpolate_mc_q;
+	int forw_back_mc_q;
+	int halfpel2;
+	int halfpel4;
+
+	int sadct;
+	int quarterpel;
+} ESTIMATION;
+
+
 typedef struct
 {
 	// vol bitstream
@@ -61,6 +95,8 @@ typedef struct
 	uint32_t quant_bits;
 	uint32_t quant_type;
 	uint32_t quarterpel;
+	int complexity_estimation_disable;
+	ESTIMATION estimation;
 
 	int interlacing;
 	uint32_t top_field_first;

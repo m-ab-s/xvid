@@ -11,7 +11,6 @@
 #define MODE_INTER4V	2
 #define	MODE_INTRA		3
 #define MODE_INTRA_Q	4
-#define MODE_STUFFING	7
 #define MODE_NOT_CODED	16
 
 /* --- bframe specific --- */
