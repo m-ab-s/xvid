@@ -155,6 +155,41 @@ interpolate8x8_switch(uint8_t * const cur,
 	}
 }
 
+
+static __inline void
+interpolate16x16_switch(uint8_t * const cur,
+					  const uint8_t * const refn,
+					  const uint32_t x,
+					  const uint32_t y,
+					  const int32_t dx,
+					  const int dy,
+					  const uint32_t stride,
+					  const uint32_t rounding)
+{
+	interpolate8x8_switch(cur, refn, x,   y,   dx, dy, stride, rounding);
+	interpolate8x8_switch(cur, refn, x+8, y,   dx, dy, stride, rounding);
+	interpolate8x8_switch(cur, refn, x,   y+8, dx, dy, stride, rounding);
+	interpolate8x8_switch(cur, refn, x+8, y+8, dx, dy, stride, rounding);
+}
+
+
+static __inline void
+interpolate32x32_switch(uint8_t * const cur,
+					  const uint8_t * const refn,
+					  const uint32_t x,
+					  const uint32_t y,
+					  const int32_t dx,
+					  const int dy,
+					  const uint32_t stride,
+					  const uint32_t rounding)
+{
+	interpolate16x16_switch(cur, refn, x,    y,    dx, dy, stride, rounding);
+	interpolate16x16_switch(cur, refn, x+16, y,    dx, dy, stride, rounding);
+	interpolate16x16_switch(cur, refn, x,    y+16, dx, dy, stride, rounding);
+	interpolate16x16_switch(cur, refn, x+16, y+16, dx, dy, stride, rounding);
+}
+
+
 static __inline uint8_t *
 interpolate8x8_switch2(uint8_t * const buffer,
 					  const uint8_t * const refn,
