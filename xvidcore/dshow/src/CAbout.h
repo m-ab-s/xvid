@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CAbout.h,v 1.1.2.7 2004-01-30 03:21:20 syskin Exp $
+ * $Id: CAbout.h,v 1.1.2.8 2004-01-31 13:44:33 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -32,25 +32,6 @@
 DEFINE_GUID(CLSID_CABOUT, 
 	0x00000001, 0x4fef, 0x40d3, 0xb3, 0xfa, 0xe0, 0x53, 0x1b, 0x89, 0x7f, 0x98);
 
-#define FORCE_NONE  0
-#define FORCE_YV12  1
-#define FORCE_YUY2  2
-#define FORCE_RGB24 3
-#define FORCE_RGB32 4
-
-struct PostProcessing_Settings
-{
-	int nBrightness;
-	int nDeblock_Y;
-	int nDeblock_UV;
-	int nDering;
-	int nFilmEffect;
-	int nFlipVideo;
-	int nForceColorspace;
-};
-
-extern PostProcessing_Settings PPSettings;
-extern unsigned int supported_4cc;
 
 class CAbout : public CBasePropertyPage
 {

@@ -48,5 +48,7 @@ Already completed items:
 * Interlacing for bvop and svop (syskin)
 * YV12/I420/USER clarification (christoph)
 * vfw and dshow link dynamically to xvidcore.dll (syskin)
+* vfw bitrate calculator (peter)
+* dshow configure from command line (peter)
 
-Last edited: $Date: 2004-01-22 14:51:09 $
+Last edited: $Date: 2004-01-31 13:44:56 $

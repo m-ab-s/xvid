@@ -3,7 +3,7 @@
  *  XVID MPEG-4 VIDEO CODEC
  *  - XviD Decoder part of the DShow Filter  -
  *
- *  Copyright(C) 2002-2003 Peter Ross <pross@xvid.org>
+ *  Copyright(C) 2002-2004 Peter Ross <pross@xvid.org>
  *
  *  This program is free software ; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.1.2.15 2004-01-30 13:13:10 syskin Exp $
+ * $Id: CXvidDecoder.cpp,v 1.1.2.16 2004-01-31 13:44:33 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -60,22 +60,20 @@
 #include "IXvidDecoder.h"
 #include "CXvidDecoder.h"
 #include "CAbout.h"
-
-// Externs defined here
-PostProcessing_Settings PPSettings;
-unsigned int supported_4cc;
-int rgb_flip;
+#include "config.h"
+#include "debug.h"
 
 
-bool USE_IYUV;
-bool USE_YV12;
-bool USE_YUY2;
-bool USE_YVYU;
-bool USE_UYVY;
-bool USE_RGB32;
-bool USE_RGB24;
-bool USE_RG555;
-bool USE_RG565;
+static int rgb_flip;
+static bool USE_IYUV;
+static bool USE_YV12;
+static bool USE_YUY2;
+static bool USE_YVYU;
+static bool USE_UYVY;
+static bool USE_RGB32;
+static bool USE_RGB24;
+static bool USE_RG555;
+static bool USE_RG565;
 
 const AMOVIESETUP_MEDIATYPE sudInputPinTypes[] =
 {
@@ -152,6 +150,8 @@ CFactoryTemplate g_Templates[] =
 
 };
 
+
+/* note: g_cTemplates must be global; used by strmbase.lib(dllentry.cpp,dllsetup.cpp) */
 int g_cTemplates = sizeof(g_Templates) / sizeof(CFactoryTemplate);
 
 
@@ -248,21 +248,7 @@ CXvidDecoder::CXvidDecoder(LPUNKNOWN punk, HRESULT *phr) :
 	memset(&m_frame, 0, sizeof(m_frame));
 	m_frame.version = XVID_VERSION;
 
-	HKEY hKey;
-	DWORD size;
-	RegOpenKeyEx(XVID_REG_KEY, XVID_REG_SUBKEY, 0, KEY_READ, &hKey);
-
-	// Set the default post-processing settings
-	REG_GET_N("Brightness", PPSettings.nBrightness, 25)
-	REG_GET_N("Deblock_Y",  PPSettings.nDeblock_Y, 0)
-	REG_GET_N("Deblock_UV", PPSettings.nDeblock_UV, 0)
-	REG_GET_N("Dering",  PPSettings.nDering, 0)
-	REG_GET_N("FilmEffect", PPSettings.nFilmEffect, 0)
-	REG_GET_N("ForceColorspace", PPSettings.nForceColorspace, 0)
-	REG_GET_N("FlipVideo",  PPSettings.nFlipVideo, 0)
-	REG_GET_N("Supported_4CC",  supported_4cc, 0)
-
-	RegCloseKey(hKey);
+	LoadRegistryInfo();
 
 	USE_IYUV = false;
 	USE_YV12 = false;
@@ -274,7 +260,7 @@ CXvidDecoder::CXvidDecoder(LPUNKNOWN punk, HRESULT *phr) :
 	USE_RG555 = false;
 	USE_RG565 = false;
 
-	switch ( PPSettings.nForceColorspace )
+	switch ( g_config.nForceColorspace )
 	{
 	case FORCE_NONE:
 		USE_IYUV = true;
@@ -373,13 +359,13 @@ HRESULT CXvidDecoder::CheckInputType(const CMediaType * mtIn)
 	{
 
 	case FOURCC_MP4V:
-		if (!(supported_4cc & SUPPORT_MP4V)) return VFW_E_TYPE_NOT_ACCEPTED;
+		if (!(g_config.supported_4cc & SUPPORT_MP4V)) return VFW_E_TYPE_NOT_ACCEPTED;
 		break;	
 	case FOURCC_DIVX :
-		if (!(supported_4cc & SUPPORT_DIVX)) return VFW_E_TYPE_NOT_ACCEPTED;
+		if (!(g_config.supported_4cc & SUPPORT_DIVX)) return VFW_E_TYPE_NOT_ACCEPTED;
 		break;
 	case FOURCC_DX50 :
-		if (!(supported_4cc & SUPPORT_DX50)) return VFW_E_TYPE_NOT_ACCEPTED;
+		if (!(g_config.supported_4cc & SUPPORT_DX50)) return VFW_E_TYPE_NOT_ACCEPTED;
 	case FOURCC_XVID :
 		break;
 		
@@ -720,20 +706,20 @@ HRESULT CXvidDecoder::Transform(IMediaSample *pIn, IMediaSample *pOut)
 	if (pIn->IsDiscontinuity() == S_OK)
 		m_frame.general = XVID_DISCONTINUITY;
 
-	if (PPSettings.nDeblock_Y)
+	if (g_config.nDeblock_Y)
 		m_frame.general |= XVID_DEBLOCKY;
 
-	if (PPSettings.nDeblock_UV)
+	if (g_config.nDeblock_UV)
 		m_frame.general |= XVID_DEBLOCKUV;
 /*
-	if (PPSettings.nDering)
+	if (g_config.nDering)
 		m_frame.general |= XVID_DERING;
 */
-	if (PPSettings.nFilmEffect)
+	if (g_config.nFilmEffect)
 		m_frame.general |= XVID_FILMEFFECT;
 
 	m_frame.output.csp &= ~XVID_CSP_VFLIP;
-	m_frame.output.csp |= rgb_flip^(PPSettings.nFlipVideo ? XVID_CSP_VFLIP : 0);
+	m_frame.output.csp |= rgb_flip^(g_config.nFlipVideo ? XVID_CSP_VFLIP : 0);
 
 repeat :
 

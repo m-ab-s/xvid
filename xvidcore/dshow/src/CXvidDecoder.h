@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.h,v 1.1.2.7 2004-01-30 03:21:20 syskin Exp $
+ * $Id: CXvidDecoder.h,v 1.1.2.8 2004-01-31 13:44:33 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -29,33 +29,6 @@
 #include <xvid.h>
 #include "IXvidDecoder.h"
 
-#ifdef _DEBUG
-#include <stdio.h>	/* vsprintf */
-#define DPRINTF_BUF_SZ  1024
-static __inline void
-DPRINTF(char *fmt, ...)
-{
-	va_list args;
-	char buf[DPRINTF_BUF_SZ];
-
-	va_start(args, fmt);
-	vsprintf(buf, fmt, args);
-	OutputDebugString(buf);
-}
-#else
-static __inline void 
-DPRINTF(char *fmt, ...) { }
-#endif
-
-/* registry stuff */
-#define XVID_REG_KEY	HKEY_CURRENT_USER
-#define XVID_REG_SUBKEY	"Software\\GNU\\XviD"
-#define XVID_REG_CLASS	"config"
-
-#define REG_GET_N(X, Y, Z) size=sizeof(int);if(RegQueryValueEx(hKey, X, 0, 0, (LPBYTE)&Y, &size) != ERROR_SUCCESS) {Y=Z;}
-#define REG_GET_S(X, Y, Z) size=MAX_PATH;if(RegQueryValueEx(hKey, X, 0, 0, Y, &size) != ERROR_SUCCESS) {lstrcpy(Y, Z);}
-#define REG_SET_N(X, Y) RegSetValueEx(hKey, X, 0, REG_DWORD, (LPBYTE)&Y, sizeof(int))
-#define REG_SET_S(X, Y) RegSetValueEx(hKey, X, 0, REG_SZ, Y, lstrlen(Y)+1)
 
 #define XVID_NAME_L		L"XviD MPEG-4 Video Decoder"
 
@@ -65,10 +38,6 @@ DPRINTF(char *fmt, ...) { }
 #define FOURCC_DIVX	mmioFOURCC('D','I','V','X')
 #define FOURCC_DX50	mmioFOURCC('D','X','5','0')
 #define FOURCC_MP4V	mmioFOURCC('m','p','4','v')
-
-#define SUPPORT_DX50		(1<<0)
-#define SUPPORT_DIVX		(1<<1)
-#define SUPPORT_MP4V		(1<<2)
 
 /* --- media uids --- */
 

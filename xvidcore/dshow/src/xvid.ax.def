@@ -1,4 +1,5 @@
 EXPORTS
+	Configure
 	DllGetClassObject PRIVATE
 	DllCanUnloadNow PRIVATE
 	DllRegisterServer PRIVATE

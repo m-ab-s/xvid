@@ -53,7 +53,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib msvcrt.lib advapi32.lib winmm.lib ole32.lib uuid.lib strmbase.lib oleaut32.lib /nologo /entry:"DllEntryPoint@12" /dll /machine:I386 /nodefaultlib /out:"bin\xvid.ax"
+# ADD LINK32 kernel32.lib user32.lib msvcrt.lib advapi32.lib winmm.lib ole32.lib uuid.lib strmbase.lib oleaut32.lib comctl32.lib /nologo /entry:"DllEntryPoint@12" /dll /machine:I386 /nodefaultlib /out:"bin\xvid.ax"
+# SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "dshow - Win32 Debug"
 
@@ -79,7 +80,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib msvcrt.lib advapi32.lib winmm.lib ole32.lib uuid.lib strmbase.lib oleaut32.lib /nologo /entry:"DllEntryPoint@12" /dll /debug /machine:I386 /nodefaultlib /out:"bin\xvid.ax" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib msvcrt.lib advapi32.lib winmm.lib ole32.lib uuid.lib strmbase.lib oleaut32.lib comctl32.lib /nologo /entry:"DllEntryPoint@12" /dll /debug /machine:I386 /nodefaultlib /out:"bin\xvid.ax" /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
@@ -88,28 +89,20 @@ LINK32=link.exe
 
 # Name "dshow - Win32 Release"
 # Name "dshow - Win32 Debug"
-# Begin Group "doc"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\authors.txt
-# End Source File
-# Begin Source File
-
-SOURCE=.\gpl.txt
-# End Source File
-# Begin Source File
-
-SOURCE=.\todo.txt
-# End Source File
-# End Group
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
 SOURCE=.\src\CAbout.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\config.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\Configure.cpp
 # End Source File
 # Begin Source File
 
@@ -125,7 +118,15 @@ SOURCE=.\src\CAbout.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\config.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\CXvidDecoder.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\debug.h
 # End Source File
 # Begin Source File
 
