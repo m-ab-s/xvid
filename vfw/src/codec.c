@@ -336,7 +336,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	// we actually need "default/custom" selectbox for both inter/intra
 	// this will do for now
 
-	if ((codec->config.quant_type == QUANT_MODE_CUSTOM) && (codec->config.quant_type == 1))
+	if (codec->config.quant_type == QUANT_MODE_CUSTOM)
 	{
 		frame.general |= XVID_CUSTOM_QMATRIX; 
 		frame.quant_intra_matrix = codec->config.qmatrix_intra;
