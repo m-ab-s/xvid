@@ -1114,10 +1114,6 @@ InputName=quantize_mmx
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\src\quant\adapt_quant.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\src\quant\quant_h263.h
 # End Source File
 # Begin Source File
@@ -1129,10 +1125,6 @@ SOURCE=..\..\src\quant\quant_matrix.h
 SOURCE=..\..\src\quant\quant_mpeg4.h
 # End Source File
 # End Group
-# Begin Source File
-
-SOURCE=..\..\src\quant\adapt_quant.c
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\src\quant\quant_h263.c
