@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.15 2003-10-07 13:02:35 edgomez Exp $
+ * $Id: decoder.c,v 1.49.2.16 2003-10-14 14:22:45 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1138,51 +1138,31 @@ decoder_bf_mbinter(DECODER * dec,
 	pV_Cur = dec->cur.v + (y_pos << 3) * stride2 + (x_pos << 3);
 
 
-	if (!(pMB->mode == MODE_INTER || pMB->mode == MODE_INTER_Q)) {
-		uv_dx = pMB->mvs[0].x;
-		uv_dy = pMB->mvs[0].y;
+	uv_dx = pMB->mvs[0].x;
+	uv_dy = pMB->mvs[0].y;
 
-		if (dec->quarterpel)
-		{
+	if (dec->quarterpel) {
 			uv_dx /= 2;
 			uv_dy /= 2;
-		}
-
-		uv_dx = (uv_dx >> 1) + roundtab_79[uv_dx & 0x3];
-		uv_dy = (uv_dy >> 1) + roundtab_79[uv_dy & 0x3];
-	} else {
-		int sum;
-
-		if(dec->quarterpel)
-			sum = (pMB->mvs[0].x / 2) + (pMB->mvs[1].x / 2) + (pMB->mvs[2].x / 2) + (pMB->mvs[3].x / 2);
-		else
-			sum = pMB->mvs[0].x + pMB->mvs[1].x + pMB->mvs[2].x + pMB->mvs[3].x;
-
-		uv_dx = (sum >> 3) + roundtab_76[sum & 0xf];
-
-		if(dec->quarterpel)
-			sum = (pMB->mvs[0].y / 2) + (pMB->mvs[1].y / 2) + (pMB->mvs[2].y / 2) + (pMB->mvs[3].y / 2);
-		else
-			sum = pMB->mvs[0].y + pMB->mvs[1].y + pMB->mvs[2].y + pMB->mvs[3].y;
-
-		uv_dy = (sum >> 3) + roundtab_76[sum & 0xf];
 	}
+
+	uv_dx = (uv_dx >> 1) + roundtab_79[uv_dx & 0x3];
+	uv_dy = (uv_dy >> 1) + roundtab_79[uv_dy & 0x3];
 
 	start_timer();
 	if(dec->quarterpel) {
 		interpolate16x16_quarterpel(dec->cur.y, dec->refn[ref].y, dec->qtmp.y, dec->qtmp.y + 64,
  								    dec->qtmp.y + 128, 16*x_pos, 16*y_pos,
 								    pMB->mvs[0].x, pMB->mvs[0].y, stride, 0);
-	}
-	else {
+	} else {
 		interpolate8x8_switch(dec->cur.y, dec->refn[ref].y, 16*x_pos, 16*y_pos,
 							  pMB->mvs[0].x, pMB->mvs[0].y, stride, 0);
 		interpolate8x8_switch(dec->cur.y, dec->refn[ref].y, 16*x_pos + 8, 16*y_pos,
-						      pMB->mvs[1].x, pMB->mvs[1].y, stride, 0);
+						      pMB->mvs[0].x, pMB->mvs[0].y, stride, 0);
 		interpolate8x8_switch(dec->cur.y, dec->refn[ref].y, 16*x_pos, 16*y_pos + 8,
-							  pMB->mvs[2].x, pMB->mvs[2].y, stride, 0);
+							  pMB->mvs[0].x, pMB->mvs[0].y, stride, 0);
 		interpolate8x8_switch(dec->cur.y, dec->refn[ref].y, 16*x_pos + 8, 16*y_pos + 8,
-							  pMB->mvs[3].x, pMB->mvs[3].y, stride, 0);
+							  pMB->mvs[0].x, pMB->mvs[0].y, stride, 0);
 	}
 
 	interpolate8x8_switch(dec->cur.u, dec->refn[ref].u, 8 * x_pos, 8 * y_pos,
@@ -1194,8 +1174,8 @@ decoder_bf_mbinter(DECODER * dec,
 	for (i = 0; i < 6; i++) {
 		int direction = dec->alternate_vertical_scan ? 2 : 0;
 
-		if (cbp & (1 << (5 - i)))	/* coded */
-		{
+		if (cbp & (1 << (5 - i))) {	/* coded */
+
 			memset(&block[i * 64], 0, 64 * sizeof(int16_t));	/* clear */
 
 			start_timer();
@@ -1203,11 +1183,11 @@ decoder_bf_mbinter(DECODER * dec,
 			stop_coding_timer();
 
 			start_timer();
-			if (dec->quant_type == 0) {
+			if (dec->quant_type == 0)
 				dequant_h263_inter(&data[i * 64], &block[i * 64], iQuant);
-			} else {
+			else
 				dequant_mpeg_inter(&data[i * 64], &block[i * 64], iQuant);
-			}
+
 			stop_iquant_timer();
 
 			start_timer();
@@ -1237,7 +1217,7 @@ decoder_bf_mbinter(DECODER * dec,
 	stop_transfer_timer();
 }
 
-/* decode an B-frame direct &  inter macroblock */
+/* decode an B-frame direct & interpolate macroblock */
 void
 decoder_bf_interpolate_mbinter(DECODER * dec,
 							   IMAGE forward,
@@ -1245,7 +1225,8 @@ decoder_bf_interpolate_mbinter(DECODER * dec,
 							   const MACROBLOCK * pMB,
 							   const uint32_t x_pos,
 							   const uint32_t y_pos,
-							   Bitstream * bs)
+							   Bitstream * bs,
+							   const int direct)
 {
 
 	DECLARE_ALIGNED_MATRIX(block, 6, 64, int16_t, CACHE_LINE);
@@ -1266,7 +1247,7 @@ decoder_bf_interpolate_mbinter(DECODER * dec,
 	pV_Cur = dec->cur.v + (y_pos << 3) * stride2 + (x_pos << 3);
 
 
-	if ((pMB->mode == MODE_INTER || pMB->mode == MODE_INTER_Q)) {
+	if (!direct) {
 		uv_dx = pMB->mvs[0].x;
 		uv_dy = pMB->mvs[0].y;
 
@@ -1323,7 +1304,7 @@ decoder_bf_interpolate_mbinter(DECODER * dec,
 
 	start_timer();
 	if(dec->quarterpel) {
-		if((pMB->mode == MODE_INTER || pMB->mode == MODE_INTER_Q))
+		if(!direct)
 			interpolate16x16_quarterpel(dec->cur.y, forward.y, dec->qtmp.y, dec->qtmp.y + 64,
  									    dec->qtmp.y + 128, 16*x_pos, 16*y_pos,
 									    pMB->mvs[0].x, pMB->mvs[0].y, stride, 0);
@@ -1361,7 +1342,7 @@ decoder_bf_interpolate_mbinter(DECODER * dec,
 
 
 	if(dec->quarterpel) {
-		if((pMB->mode == MODE_INTER || pMB->mode == MODE_INTER_Q))
+		if(!direct)
 			interpolate16x16_quarterpel(dec->tmp.y, backward.y, dec->qtmp.y, dec->qtmp.y + 64,
  									    dec->qtmp.y + 128, 16*x_pos, 16*y_pos,
 									    pMB->b_mvs[0].x, pMB->b_mvs[0].y, stride, 0);
@@ -1434,8 +1415,7 @@ decoder_bf_interpolate_mbinter(DECODER * dec,
 	for (i = 0; i < 6; i++) {
 		int direction = dec->alternate_vertical_scan ? 2 : 0;
 
-		if (cbp & (1 << (5 - i)))	/* coded */
-		{
+		if (cbp & (1 << (5 - i))) {	/* coded */
 			memset(&block[i * 64], 0, 64 * sizeof(int16_t));	/* clear */
 
 			start_timer();
@@ -1528,7 +1508,7 @@ decoder_bframe(DECODER * dec,
 	FILE *fp;
 	static char first=0;
 #define BFRAME_DEBUG  	if (!first && fp){ \
-		fprintf(fp,"Y=%3d   X=%3d   MB=%2d   CBP=%02X\n",y,x,mb->mb_type,mb->cbp); \
+		fprintf(fp,"Y=%3d   X=%3d   MB=%2d   CBP=%02X\n",y,x,mb->mode,mb->cbp); \
 	}
 #endif
 
@@ -1565,11 +1545,7 @@ decoder_bframe(DECODER * dec,
 			if (last_mb->mode == MODE_NOT_CODED) {
 				/* DEBUG2("Skip MB in B-frame at (X,Y)=!",x,y); */
 				mb->cbp = 0;
-#ifdef BFRAMES_DEC_DEBUG
-				mb->mb_type = MODE_NOT_CODED;
-	BFRAME_DEBUG
-#endif
-				mb->mb_type = MODE_FORWARD;
+				mb->mode = MODE_FORWARD;
 				mb->quant = last_mb->quant;
 				/*
 				  mb->mvs[1].x = mb->mvs[2].x = mb->mvs[3].x = mb->mvs[0].x;
@@ -1583,14 +1559,14 @@ decoder_bframe(DECODER * dec,
 			if (!BitstreamGetBit(bs)) {	/* modb=='0' */
 				const uint8_t modb2 = BitstreamGetBit(bs);
 
-				mb->mb_type = get_mbtype(bs);
+				mb->mode = get_mbtype(bs);
 
 				if (!modb2) {	/* modb=='00' */
 					mb->cbp = BitstreamGetBits(bs, 6);
 				} else {
 					mb->cbp = 0;
 				}
-				if (mb->mb_type && mb->cbp) {
+				if (mb->mode && mb->cbp) {
 					quant += get_dbquant(bs);
 
 					if (quant > 31) {
@@ -1606,7 +1582,7 @@ decoder_bframe(DECODER * dec,
 						DPRINTF(XVID_DEBUG_MB,"decp: field_dct: %i\n", mb->field_dct);
 					}
 
-					if (mb->mb_type) {
+					if (mb->mode) {
 						mb->field_pred = BitstreamGetBit(bs);
 						DPRINTF(XVID_DEBUG_MB, "decp: field_pred: %i\n", mb->field_pred);
 
@@ -1620,19 +1596,18 @@ decoder_bframe(DECODER * dec,
 				}
 
 			} else {
-				mb->mb_type = MODE_DIRECT_NONE_MV;
+				mb->mode = MODE_DIRECT_NONE_MV;
 				mb->cbp = 0;
 			}
 
 			mb->quant = quant;
-			mb->mode = MODE_INTER4V;
-			/* DEBUG1("Switch bm_type=",mb->mb_type); */
+			/* DEBUG1("Switch bm_type=",mb->mode); */
 
 #ifdef BFRAMES_DEC_DEBUG
 	BFRAME_DEBUG
 #endif
 
-			switch (mb->mb_type) {
+			switch (mb->mode) {
 			case MODE_DIRECT:
 				get_b_motion_vector(dec, bs, x, y, &mv, 1, zeromv);
 
@@ -1658,7 +1633,7 @@ decoder_bframe(DECODER * dec,
 					/* DEBUG("B-frame Direct!\n"); */
 				}
 				decoder_bf_interpolate_mbinter(dec, dec->refn[1], dec->refn[0],
-											   mb, x, y, bs);
+											   mb, x, y, bs, 1);
 				break;
 
 			case MODE_INTERPOLATE:
@@ -1672,7 +1647,7 @@ decoder_bframe(DECODER * dec,
 					mb->b_mvs[3] = mb->b_mvs[0];
 
 				decoder_bf_interpolate_mbinter(dec, dec->refn[1], dec->refn[0],
-											   mb, x, y, bs);
+											   mb, x, y, bs, 0);
 				/* DEBUG("B-frame Bidir!\n"); */
 				break;
 
@@ -1681,7 +1656,6 @@ decoder_bframe(DECODER * dec,
 									dec->p_bmv);
 				dec->p_bmv = mb->mvs[1] = mb->mvs[2] = mb->mvs[3] =	mb->mvs[0];
 
-				mb->mode = MODE_INTER;
 				decoder_bf_mbinter(dec, mb, x, y, mb->cbp, bs, quant, 0);
 				/* DEBUG("B-frame Backward!\n"); */
 				break;
@@ -1691,13 +1665,12 @@ decoder_bframe(DECODER * dec,
 									dec->p_fmv);
 				dec->p_fmv = mb->mvs[1] = mb->mvs[2] = mb->mvs[3] =	mb->mvs[0];
 
-				mb->mode = MODE_INTER;
 				decoder_bf_mbinter(dec, mb, x, y, mb->cbp, bs, quant, 1);
 				/* DEBUG("B-frame Forward!\n"); */
 				break;
 
 			default:
-				DPRINTF(XVID_DEBUG_ERROR,"Not support B-frame mb_type = %i\n", mb->mb_type);
+				DPRINTF(XVID_DEBUG_ERROR,"Not supported B-frame mb_type = %i\n", mb->mode);
 			}
 		} /* End of for */
 	}
