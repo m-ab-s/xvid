@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.1.2.12 2004-01-26 05:49:42 syskin Exp $
+ * $Id: CXvidDecoder.cpp,v 1.1.2.13 2004-01-29 07:06:04 syskin Exp $
  *
  ****************************************************************************/
 
@@ -538,28 +538,33 @@ HRESULT CXvidDecoder::ChangeColorspace(GUID subtype, GUID formattype, void * for
 	if (subtype == CLSID_MEDIASUBTYPE_IYUV)
 	{
 		DPRINTF("IYUV");
+		rgb_flip = 0;
 		m_frame.output.csp = XVID_CSP_I420;
 		m_frame.output.stride[0] = (m_frame.output.stride[0] * 2) / 3;	/* planar format fix */
 	}
 	else if (subtype == MEDIASUBTYPE_YV12)
 	{
 		DPRINTF("YV12");
+		rgb_flip = 0;
 		m_frame.output.csp = XVID_CSP_YV12;
 		m_frame.output.stride[0] = (m_frame.output.stride[0] * 2) / 3;	/* planar format fix */
 	}
 	else if (subtype == MEDIASUBTYPE_YUY2)
 	{
 		DPRINTF("YUY2");
+		rgb_flip = 0;
 		m_frame.output.csp = XVID_CSP_YUY2;
 	}
 	else if (subtype == MEDIASUBTYPE_YVYU)
 	{
 		DPRINTF("YVYU");
+		rgb_flip = 0;
 		m_frame.output.csp = XVID_CSP_YVYU;
 	}
 	else if (subtype == MEDIASUBTYPE_UYVY)
 	{
 		DPRINTF("UYVY");
+		rgb_flip = 0;
 		m_frame.output.csp = XVID_CSP_UYVY;
 	}
 	else if (subtype == MEDIASUBTYPE_RGB32)
