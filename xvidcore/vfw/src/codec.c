@@ -566,7 +566,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		frame.vop_flags |= XVID_VOP_INTER4V;
 
 	if (codec->config.chromame)
-		frame.vop_flags |= XVID_ME_CHROMA16 + XVID_ME_CHROMA8;
+		frame.motion |= XVID_ME_CHROMA16 + XVID_ME_CHROMA8;
 
 	frame.motion |= pmvfast_presets[codec->config.motion_search];
 
