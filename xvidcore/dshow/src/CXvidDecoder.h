@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.h,v 1.1.2.8 2004-01-31 13:44:33 suxen_drol Exp $
+ * $Id: CXvidDecoder.h,v 1.1.2.9 2004-02-07 03:57:39 syskin Exp $
  *
  ****************************************************************************/
 
@@ -89,6 +89,8 @@ private :
 	int (*xvid_global_func)(void *handle, int opt, void *param1, void *param2);
 	int (*xvid_decore_func)(void *handle, int opt, void *param1, void *param2);
 	int ar_x, ar_y;
+
+	int rgb_flip;
 };
 
 
