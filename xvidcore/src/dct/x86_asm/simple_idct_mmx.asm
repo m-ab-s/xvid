@@ -50,7 +50,11 @@ BITS 32
 ; Data (Read Only)
 ;===========================================================================
 
-SECTION .rodata
+%ifdef FORMAT_COFF
+SECTION .rodata data
+%else
+SECTION .rodata data align=16
+%endif
 
 ;-----------------------------------------------------------------------------
 ; Trigonometric Tables

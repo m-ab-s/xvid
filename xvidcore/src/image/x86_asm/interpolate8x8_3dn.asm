@@ -38,7 +38,11 @@ BITS 32
 ; Read Only data
 ;=============================================================================
 
-SECTION .rodata
+%ifdef FORMAT_COFF
+SECTION .rodata data
+%else
+SECTION .rodata data align=16
+%endif
 
 ALIGN 16
 mmx_one:

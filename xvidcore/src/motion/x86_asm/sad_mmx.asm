@@ -20,7 +20,7 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: sad_mmx.asm,v 1.11.2.1 2003-10-28 22:23:03 edgomez Exp $
+; * $Id: sad_mmx.asm,v 1.11.2.2 2003-11-03 15:51:50 edgomez Exp $
 ; *
 ; ***************************************************************************/
 
@@ -39,7 +39,11 @@ BITS 32
 ; Read only data
 ;=============================================================================
 
-SECTION .rodata
+%ifdef FORMAT_COFF
+SECTION .rodata data
+%else
+SECTION .rodata data align=16
+%endif
 
 ALIGN 16
 mmx_one:

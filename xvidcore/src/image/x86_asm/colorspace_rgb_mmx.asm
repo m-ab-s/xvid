@@ -63,7 +63,11 @@ BITS 32
 ; Read only data
 ;=============================================================================
 
-SECTION .rodata
+%ifdef FORMAT_COFF
+SECTION .rodata data
+%else
+SECTION .rodata data align=16
+%endif
 ALIGN 16
 
 ;-----------------------------------------------------------------------------

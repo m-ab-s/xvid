@@ -19,7 +19,7 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: idct_sse2_dmitry.asm,v 1.1.2.1 2003-11-02 23:02:52 edgomez Exp $
+; * $Id: idct_sse2_dmitry.asm,v 1.1.2.2 2003-11-03 15:51:50 edgomez Exp $
 ; *
 ; ***************************************************************************/
 
@@ -54,7 +54,11 @@ BITS 32
 ; Local Data (Read Only)
 ;=============================================================================
 
-SECTION .rodata
+%ifdef FORMAT_COFF
+SECTION .rodata data
+%else
+SECTION .rodata data align=16
+%endif
 
 ALIGN 16
 tab_i_04:

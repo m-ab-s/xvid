@@ -19,7 +19,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: quantize_h263_3dne.asm,v 1.1.2.3 2003-10-28 22:23:03 edgomez Exp $
+; * $Id: quantize_h263_3dne.asm,v 1.1.2.4 2003-11-03 15:51:50 edgomez Exp $
 ; *
 ; *************************************************************************/
 ;
@@ -44,7 +44,11 @@ BITS 32
 ; Local data
 ;=============================================================================
 
-SECTION .rodata
+%ifdef FORMAT_COFF
+SECTION .rodata data
+%else
+SECTION .rodata data align=16
+%endif
 
 align 4
 int_div:
