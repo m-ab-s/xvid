@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass1.c,v 1.1.2.10 2003-12-17 15:16:16 edgomez Exp $
+ * $Id: plugin_2pass1.c,v 1.1.2.11 2003-12-18 17:43:32 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -105,9 +105,10 @@ static int rc_2pass1_before(rc_2pass1_t * rc, xvid_plg_data_t * data)
 static int rc_2pass1_after(rc_2pass1_t * rc, xvid_plg_data_t * data)
 {
 	char type;
+	xvid_enc_stats_t *stats = &data->stats;
 
 	/* Frame type in ascii I/P/B */
-	switch(data->type) {
+	switch(stats->type) {
 	case XVID_TYPE_IVOP:
 		type = 'i';
 		break;
@@ -126,13 +127,14 @@ static int rc_2pass1_after(rc_2pass1_t * rc, xvid_plg_data_t * data)
 
 	/* write the resulting statistics */
 
-	fprintf(rc->stat_file, "%c %d %d %d %d %d\n",
-        type,
-		data->quant,
-		data->kblks,
-        data->mblks,
-        data->ublks,
-        data->length);
+	fprintf(rc->stat_file, "%c %d %d %d %d %d %d\n",
+			type,
+			stats->quant,
+			stats->kblks,
+			stats->mblks,
+			stats->ublks,
+			stats->length,
+			stats->hlength);
 
 	return(0);
 }
