@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.1.2.10 2004-01-09 04:37:59 syskin Exp $
+ * $Id: CXvidDecoder.cpp,v 1.1.2.11 2004-01-21 04:26:21 syskin Exp $
  *
  ****************************************************************************/
 
@@ -252,10 +252,10 @@ CXvidDecoder::CXvidDecoder(LPUNKNOWN punk, HRESULT *phr) :
 
 	// Set the default post-processing settings
 	REG_GET_N("Brightness", PPSettings.nBrightness, 25)
-	REG_GET_N("Deblock_Y",  PPSettings.bDeblock_Y, 1)
-	REG_GET_N("Deblock_UV", PPSettings.bDeblock_UV, 1)
-	REG_GET_N("Dering",  PPSettings.bDering, 1)
-	REG_GET_N("FilmEffect", PPSettings.bFilmEffect, 1)
+	REG_GET_N("Deblock_Y",  PPSettings.bDeblock_Y, 0)
+	REG_GET_N("Deblock_UV", PPSettings.bDeblock_UV, 0)
+	REG_GET_N("Dering",  PPSettings.bDering, 0)
+	REG_GET_N("FilmEffect", PPSettings.bFilmEffect, 0)
 	REG_GET_N("ForceColorspace", PPSettings.nForceColorspace, 0)
 
 	RegCloseKey(hKey);
