@@ -323,8 +323,8 @@ image_interpolate(const IMAGE * refn,
 				h_ptr += 8;
 			}
 
-			hv_ptr += EDGE_SIZE2;
-			h_ptr += EDGE_SIZE2;
+			hv_ptr += EDGE_SIZE;
+			h_ptr += EDGE_SIZE;
 
 			hv_ptr += stride_add;
 			h_ptr += stride_add;
