@@ -403,10 +403,7 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
 	switch((y_frac << 2) | (x_frac)) {
 
 	case 0:
-		transfer8x8_copy(dst, src, stride);
-		transfer8x8_copy(dst+8, src+8, stride);
-		transfer8x8_copy(dst+8*stride, src+8*stride, stride);
-		transfer8x8_copy(dst+8*stride+8, src+8*stride+8, stride);
+		transfer16x16_copy(dst, src, stride);
 		break;
 
 	case 1:
@@ -544,4 +541,5 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
 		break;
 	}
 }
+
 #endif
