@@ -16,7 +16,7 @@ Active Items to work on:
     dshow are included.
 * update/fix CBR plugin
   - misses target bitrate, bitrate burst in static motion/high motion
-    transistions
+    transitions
 * bug hunting (ed.gomez/sysKin)
   - xvidcore is still a place where bugs feel confortable
 * quant matrix usage (not thread nor instance safe)
@@ -25,9 +25,15 @@ Active Items to work on:
     be put in FRAMEINFO structures, and matrices should be pushed down 
     through many function calls. I had no idea how to do that w/o
     hacking nastly.
-* docbook writing (ed.gomez)
+* docbook writing (every developer should contribute)
   - New API has to be documented.
 * two pass code should not introduce quality regressions (every tester)
+* YV12/I420/USER clarification
+  - item submited by Ivan Kalvachev <ivan at cacad.com>
+    Planes are swaped
+* Interlacing is broken
+  - item submited by Ivan Kalvachev <ivan at cacad.com>
+    Artefacts for all interlaced blocks
 
 
 Already completed items:
@@ -52,4 +58,4 @@ Already completed items:
 * update/fix Lumimasking (sysKin)
 * trellis for mpeg and relaxed optimization for big levels (skal)
 
-Last edited: $Date: 2003-11-24 22:06:19 $
+Last edited: $Date: 2003-11-29 17:59:28 $

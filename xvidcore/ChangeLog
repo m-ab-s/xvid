@@ -6,6 +6,286 @@
 #
 
 
+2003-11-29 17:21:08 GMT	                                	patch-111
+
+    Summary:
+      First beta marking
+    Revision:
+      xvidcore--devapi4--1.0--patch-111
+
+    First beta marking
+    
+
+    modified files:
+     build/generic/configure.in src/xvid.c src/xvid.h
+
+
+2003-11-29 16:59:14 GMT	                                	patch-110
+
+    Summary:
+      Catching up with CVS.
+    Revision:
+      xvidcore--devapi4--1.0--patch-110
+
+    Changes from sysKin:
+    * dquant optimization.
+    * CBR fix
+
+    modified files:
+     src/encoder.c src/plugins/plugin_single.c
+
+
+2003-11-24 22:05:38 GMT	                                	patch-109
+
+    Summary:
+      Big level handling in trellis.
+    Revision:
+      xvidcore--devapi4--1.0--patch-109
+
+    Trellis was treating big levels exactly the same way as lower ones.
+    In some cases, trellis was doing wild optimizations favoring a 0
+    because the distortion introduced by that big coeff change was acceptable.
+    But visually this could result in some nasty blocks with wrong chroma
+    information or similar brutal changes in other planes as well.
+    
+    Skal added big levels handling where trellis just tries to minimize
+    the cost varying the run value only. No level modification is done
+    anymore.
+
+    modified files:
+     TODO src/utils/mbtransquant.c
+
+
+2003-11-23 16:42:55 GMT	                                	patch-108
+
+    Summary:
+      Trellis for MPEG.
+    Revision:
+      xvidcore--devapi4--1.0--patch-108
+
+    * Added trellis support for MPEg quantization type.
+    * Changed RD fixed point precision, should help avoiding overflow
+      (see the constant TL_SHIFT)
+    
+    NB: we still have some problems when trellis optimizes DC for big DC
+        values.
+
+    modified files:
+     src/utils/mbtransquant.c
+
+
+2003-11-22 00:53:59 GMT	                                	patch-107
+
+    Summary:
+      Win32 lib project fix (bis)
+    Revision:
+      xvidcore--devapi4--1.0--patch-107
+
+    * nasm >= 0.98.37 support in project file got reverted in a previous
+      patch, push it back. Nota bene /O3 changed to /O2 for proper
+      compilation with msvc compiler (everyone is not supposed to compile
+      stuff with icc)
+    * TODO update.
+
+    modified files:
+     TODO build/win32/libxvidcore.dsp
+
+
+2003-11-19 21:26:34 GMT	                                	patch-106
+
+    Summary:
+      updated bench crc
+    Revision:
+      xvidcore--devapi4--1.0--patch-106
+
+    updated bench crc
+    
+
+    modified files:
+     examples/xvid_bench.c
+
+
+2003-11-19 16:00:00 GMT	                                	patch-105
+
+    Summary:
+      Lumimasking fixes.
+    Revision:
+      xvidcore--devapi4--1.0--patch-105
+
+    from sysKin:
+    * New plugin hook entry XVID_PLG_FRAME that happens inside FrameCodeIPB
+      when both type and quant are known. Added hook handling in all plugins.
+    * Fixed lumimasking.
+    
+    from me:
+    * small reverse commit in pvop estimation fixed.
+
+    modified files:
+     src/bitstream/bitstream.c src/bitstream/bitstream.h
+     src/encoder.c src/motion/estimation_pvop.c
+     src/plugins/plugin_2pass1.c src/plugins/plugin_2pass2.c
+     src/plugins/plugin_dump.c src/plugins/plugin_lumimasking.c
+     src/plugins/plugin_psnr.c src/plugins/plugin_single.c
+     src/xvid.h
+
+
+2003-11-19 15:37:16 GMT	                                	patch-104
+
+    Summary:
+      Removed indirections from SearchData structure.
+    Revision:
+      xvidcore--devapi4--1.0--patch-104
+
+    Patch from sysKin:
+    * removed indirections in SearchData structure. CheckCandidate functions
+      don't use a const SearchData pointer anymore, but they should be a bit
+      faster because of the less numerous indirections.
+
+    modified files:
+     src/motion/estimation.h src/motion/estimation_bvop.c
+     src/motion/estimation_common.c src/motion/estimation_gmc.c
+     src/motion/estimation_pvop.c src/motion/estimation_rd_based.c
+     src/motion/vop_type_decision.c
+
+
+2003-11-19 15:33:55 GMT	                                	patch-103
+
+    Summary:
+      Formula error in twopass code.
+    Revision:
+      xvidcore--devapi4--1.0--patch-103
+
+    The reversing bframe formula in 2pass 2 was not right. This was in fact
+    a test code i used when i was maintaining the code on its own branch.
+    I should not have commited it :\
+    
+    Fixed :-)
+
+    modified files:
+     src/plugins/plugin_2pass2.c
+
+
+2003-11-18 21:41:08 GMT	                                	patch-102
+
+    Summary:
+      Another problem with mis/unitialized reads.
+    Revision:
+      xvidcore--devapi4--1.0--patch-102
+
+    Michael introduced a fast subpel refine that uses a (iMinSAD2, currentQMV2)
+    couple of data. The problem is that he plugged this in CheckCandidate16_qpel
+    that is used outside this context, thus a if statement was traversed with
+    garbage data in the standard subpel case. For perfection sake, using a
+    iMinSAD=256*4096 value collects correct data even if it will not be used in
+    the normal subpel case.
+
+    modified files:
+     src/motion/estimation_pvop.c
+
+
+2003-11-16 17:29:39 GMT	                                	patch-101
+
+    Summary:
+      The MEanalysis patch assumed bvops were always used
+    Revision:
+      xvidcore--devapi4--1.0--patch-101
+
+    The MEanalysis patch assumed bvops were always used
+    
+
+    modified files:
+     src/encoder.c
+
+
+2003-11-16 15:12:15 GMT	                                	patch-100
+
+    Summary:
+      MEanalysis using wrong mvs + bframe search using wrong mvs
+    Revision:
+      xvidcore--devapi4--1.0--patch-100
+
+    Valgrind reported lot of unitialized reads. These unitialized reads
+    helped sysKin finding three bugs:
+     - ZeroMacroblock did not reset the cbp field. So for some skipped
+       blocks, a test was done on the cbp value...
+     - MEanalysis was using wrong mvs from the current bvop (unitialized
+       or just wrong in current context). That's because in devapi3, bframes
+       used to share the same mvs array wheras now, it's one array a bvop.
+     - Collocated skipped MBs for a bvop didn't reset mvs[0] and b_mvs[0].
+
+    modified files:
+     src/encoder.c src/motion/estimation_bvop.c src/motion/motion.h
+     src/motion/motion_inlines.h src/motion/vop_type_decision.c
+
+
+2003-11-15 15:21:09 GMT	                                	patch-99
+
+    Summary:
+      Small fixes
+    Revision:
+      xvidcore--devapi4--1.0--patch-99
+
+    Small fixes
+    
+
+    modified files:
+     src/encoder.c src/motion/vop_type_decision.c
+
+
+2003-11-15 15:02:47 GMT	                                	patch-98
+
+    Summary:
+      DShow update + libxvidcore project file update
+    Revision:
+      xvidcore--devapi4--1.0--patch-98
+
+    From peter:
+    * DShow now links against libxvidcore.lib
+    * Some updates to the libxvidcore project file
+
+    modified files:
+     TODO build/win32/libxvidcore.dsp dshow/dshow.dsp
+     dshow/src/CXvidDecoder.cpp dshow/src/CXvidDecoder.h
+
+
+2003-11-15 01:51:28 GMT	                                	patch-97
+
+    Summary:
+      Small updates to doc files
+    Revision:
+      xvidcore--devapi4--1.0--patch-97
+
+    Small updates to doc files
+    
+
+    modified files:
+     AUTHORS CodingStyle TODO doc/INSTALL doc/README
+
+    renamed files:
+     .arch-ids/authors.txt.id
+       ==> .arch-ids/AUTHORS.id
+     .arch-ids/todo.txt.id
+       ==> .arch-ids/TODO.id
+     authors.txt
+       ==> AUTHORS
+     todo.txt
+       ==> TODO
+
+
+2003-11-14 11:23:55 GMT	                                	patch-96
+
+    Summary:
+      Updated ChangeLog
+    Revision:
+      xvidcore--devapi4--1.0--patch-96
+
+    Updated ChangeLog
+    
+
+    modified files:
+     ChangeLog
+
+
 2003-11-13 23:09:34 GMT	                                	patch-95
 
     Summary:
