@@ -19,6 +19,7 @@ CFG=vfw - Win32 Debug
 !MESSAGE 
 !MESSAGE "vfw - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "vfw - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "vfw - Win32 Release _SMP" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
@@ -82,12 +83,40 @@ LINK32=link.exe
 # ADD LINK32 user32.lib comdlg32.lib comctl32.lib advapi32.lib gdi32.lib shell32.lib winmm.lib ..\xvidcore\build\win32\bin\libxvidcore.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"bin\xvid.dll" /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none
 
+!ELSEIF  "$(CFG)" == "vfw - Win32 Release _SMP"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "vfw___Win32_Release__SMP"
+# PROP BASE Intermediate_Dir "vfw___Win32_Release__SMP"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "Release_SMP"
+# PROP Intermediate_Dir "Release_SMP"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\xvidcore\src" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_SMP" /YX /FD /c
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD BASE RSC /l 0xc09 /d "NDEBUG"
+# ADD RSC /l 0xc09 /d "NDEBUG"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 user32.lib comdlg32.lib comctl32.lib advapi32.lib gdi32.lib shell32.lib winmm.lib ..\xvidcore\build\win32\bin\core.lib /nologo /dll /machine:I386 /out:"bin\xvid.dll"
+# ADD LINK32 user32.lib comdlg32.lib comctl32.lib advapi32.lib gdi32.lib shell32.lib winmm.lib ..\xvidcore\build\win32\bin\core.lib pthreadVC.lib /nologo /dll /machine:I386 /out:"bin\xvid.dll"
+
 !ENDIF 
 
 # Begin Target
 
 # Name "vfw - Win32 Release"
 # Name "vfw - Win32 Debug"
+# Name "vfw - Win32 Release _SMP"
 # Begin Group "doc"
 
 # PROP Default_Filter ""
