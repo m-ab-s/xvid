@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.8 2002-11-07 10:28:15 suxen_drol Exp $
+ *  $Id: decoder.c,v 1.37.2.9 2002-11-08 22:34:16 suxen_drol Exp $
  *
  *************************************************************************/
 
@@ -1470,9 +1470,8 @@ decoder_decode(DECODER * dec,
 
 	BitstreamInit(&bs, frame->bitstream, frame->length);
 
-#ifdef BFRAMES_DEC
 	// XXX: 0x7f is only valid whilst decoding vfw xvid/divx5 avi's
-	if(BitstreamShowBits(&bs, 8) == 0x7f)
+	if(frame->length == 1 && BitstreamShowBits(&bs, 8) == 0x7f)
 	{
 		if (stats)
 			stats->notify = XVID_DEC_VOP;
@@ -1481,7 +1480,6 @@ decoder_decode(DECODER * dec,
 					 frame->image, frame->stride, frame->colorspace, dec->interlacing);
 		return XVID_ERR_OK;
 	}
-#endif
 
 	// add by chenm001 <chenm001@163.com>
 	// for support B-frame to reference last 2 frame
