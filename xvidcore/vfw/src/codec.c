@@ -153,10 +153,10 @@ int get_colorspace(BITMAPINFOHEADER * hdr)
 
 	default :
 		DPRINTF("unsupported colorspace %c%c%c%c", 
-            hdr->biCompression&0xff,
-            (hdr->biCompression>>8)&0xff,
-            (hdr->biCompression>>16)&0xff,
-            (hdr->biCompression>>24)&0xff);
+			hdr->biCompression&0xff,
+			(hdr->biCompression>>8)&0xff,
+			(hdr->biCompression>>16)&0xff,
+			(hdr->biCompression>>24)&0xff);
 		return XVID_CSP_NULL;
 	}
 }
@@ -172,10 +172,10 @@ LRESULT compress_query(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	BITMAPINFOHEADER * inhdr = &lpbiInput->bmiHeader;
 	BITMAPINFOHEADER * outhdr = &lpbiOutput->bmiHeader;
 
-    /* VFWEXT detection */
-    if (inhdr->biCompression == VFWEXT_FOURCC) {
-        return (ICM_USER+0x0fff);
-    }
+	/* VFWEXT detection */
+	if (inhdr->biCompression == VFWEXT_FOURCC) {
+		return (ICM_USER+0x0fff);
+	}
 
 	if (get_colorspace(inhdr) == XVID_CSP_NULL) 
 	{
@@ -246,7 +246,7 @@ LRESULT compress_get_size(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lp
 LRESULT compress_frames_info(CODEC * codec, ICCOMPRESSFRAMES * icf)
 {
 #if 0
-    DPRINTF("%i %i", icf->lStartFrame, icf->lFrameCount);
+	DPRINTF("%i %i", icf->lStartFrame, icf->lFrameCount);
 #endif
 	codec->fincr = icf->dwScale;
 	codec->fbase = icf->dwRate;
@@ -256,23 +256,24 @@ LRESULT compress_frames_info(CODEC * codec, ICCOMPRESSFRAMES * icf)
 
 const char type2char(int type)
 {
-    if (type==XVID_TYPE_IVOP)
-        return 'I';
-    if (type==XVID_TYPE_PVOP)
-        return 'P';
-    if (type==XVID_TYPE_BVOP)
-        return 'B';
-    return 'S';
+	if (type==XVID_TYPE_IVOP)
+		return 'I';
+	if (type==XVID_TYPE_PVOP)
+		return 'P';
+	if (type==XVID_TYPE_BVOP)
+		return 'B';
+	return 'S';
 }
 
 int vfw_debug(void *handle,
 			 int opt,
 			 void *param1,
-			 void *param2)
+			 void **param2)
 {
 	switch (opt) {
-	case XVID_PLG_INFO:
 	case XVID_PLG_CREATE:
+		*param2 = NULL;
+	case XVID_PLG_INFO:
 	case XVID_PLG_DESTROY:
 	case XVID_PLG_BEFORE:
 		return 0;
@@ -350,92 +351,92 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 {
 	xvid_gbl_init_t init;
 	xvid_enc_create_t create;
-    xvid_enc_plugin_t plugins[3];
+	xvid_enc_plugin_t plugins[3];
 	xvid_plugin_single_t single;
 	xvid_plugin_2pass1_t pass1;
 	xvid_plugin_2pass2_t pass2;
-    int i;
+	int i;
 
 	if (init_dll() != 0) return ICERR_ERROR;
-    /* destroy previously created codec */
+	/* destroy previously created codec */
 	if(codec->ehandle) {
 		xvid_encore_func(codec->ehandle, XVID_ENC_DESTROY, NULL, NULL);
 		codec->ehandle = NULL;
 	}
 
-    memset(&init, 0, sizeof(init));
+	memset(&init, 0, sizeof(init));
 	init.version = XVID_VERSION;
 	init.cpu_flags = codec->config.cpu;
-    init.debug = codec->config.debug;
+	init.debug = codec->config.debug;
 	xvid_global_func(0, XVID_GBL_INIT, &init, NULL);
 
 	memset(&create, 0, sizeof(create));
 	create.version = XVID_VERSION;
 
-    /* zones */
-    create.zones = malloc(sizeof(xvid_enc_zone_t) * codec->config.num_zones);
-    create.num_zones = codec->config.num_zones;
-    for (i=0; i < create.num_zones; i++) {
-        create.zones[i].frame = codec->config.zones[i].frame;
-        if (codec->config.zones[i].mode == RC_ZONE_QUANT) {
-            create.zones[i].mode = XVID_ZONE_QUANT;
-            create.zones[i].increment = codec->config.zones[i].quant;
-        }else{
-            create.zones[i].mode = XVID_ZONE_WEIGHT;
-            create.zones[i].increment = codec->config.zones[i].weight;
-        }
-        create.zones[i].base = 100;
-    }
+	/* zones */
+	create.zones = malloc(sizeof(xvid_enc_zone_t) * codec->config.num_zones);
+	create.num_zones = codec->config.num_zones;
+	for (i=0; i < create.num_zones; i++) {
+		create.zones[i].frame = codec->config.zones[i].frame;
+		if (codec->config.zones[i].mode == RC_ZONE_QUANT) {
+			create.zones[i].mode = XVID_ZONE_QUANT;
+			create.zones[i].increment = codec->config.zones[i].quant;
+		}else{
+			create.zones[i].mode = XVID_ZONE_WEIGHT;
+			create.zones[i].increment = codec->config.zones[i].weight;
+		}
+		create.zones[i].base = 100;
+	}
 
-    /* plugins */
+	/* plugins */
 	create.plugins = plugins;
 	switch (codec->config.mode) 
 	{
 	case RC_MODE_1PASS :
-    	memset(&single, 0, sizeof(single));
-	    single.version = XVID_VERSION;
-        single.bitrate = codec->config.bitrate * CONFIG_KBPS;
-        single.reaction_delay_factor = codec->config.rc_reaction_delay_factor;
+		memset(&single, 0, sizeof(single));
+		single.version = XVID_VERSION;
+		single.bitrate = codec->config.bitrate * CONFIG_KBPS;
+		single.reaction_delay_factor = codec->config.rc_reaction_delay_factor;
 		single.averaging_period = codec->config.rc_averaging_period;
 		single.buffer = codec->config.rc_buffer;
-        plugins[create.num_plugins].func = xvid_plugin_single_func;
-        plugins[create.num_plugins].param = &single;
-        create.num_plugins++;
-        break;
+		plugins[create.num_plugins].func = xvid_plugin_single_func;
+		plugins[create.num_plugins].param = &single;
+		create.num_plugins++;
+		break;
 
 	case RC_MODE_2PASS1 :
-    	memset(&pass1, 0, sizeof(pass1));
-	    pass1.version = XVID_VERSION;
-        pass1.filename = codec->config.stats;
+		memset(&pass1, 0, sizeof(pass1));
+		pass1.version = XVID_VERSION;
+		pass1.filename = codec->config.stats;
 
-        plugins[create.num_plugins].func = xvid_plugin_2pass1_func;
-        plugins[create.num_plugins].param = &pass1;
-        create.num_plugins++;
+		plugins[create.num_plugins].func = xvid_plugin_2pass1_func;
+		plugins[create.num_plugins].param = &pass1;
+		create.num_plugins++;
 		break;
 
 	case RC_MODE_2PASS2 :
-    	memset(&pass2, 0, sizeof(pass2));
-	    pass2.version = XVID_VERSION;
-        if (codec->config.use_2pass_bitrate) {
-            pass2.bitrate = codec->config.bitrate * CONFIG_KBPS;
-        }else{
-            pass2.bitrate = -codec->config.desired_size;    /* kilobytes */
-        }
+		memset(&pass2, 0, sizeof(pass2));
+		pass2.version = XVID_VERSION;
+		if (codec->config.use_2pass_bitrate) {
+			pass2.bitrate = codec->config.bitrate * CONFIG_KBPS;
+		}else{
+			pass2.bitrate = -codec->config.desired_size;	/* kilobytes */
+		}
 		pass2.filename = codec->config.stats;
 
-        pass2.keyframe_boost = codec->config.keyframe_boost;   /* keyframe boost percentage: [0..100...]; */
-        pass2.curve_compression_high = codec->config.curve_compression_high;
-        pass2.curve_compression_low = codec->config.curve_compression_low;
+		pass2.keyframe_boost = codec->config.keyframe_boost;   /* keyframe boost percentage: [0..100...]; */
+		pass2.curve_compression_high = codec->config.curve_compression_high;
+		pass2.curve_compression_low = codec->config.curve_compression_low;
 		pass2.overflow_control_strength = codec->config.overflow_control_strength;
-        pass2.max_overflow_improvement = codec->config.twopass_max_overflow_improvement;
-        pass2.max_overflow_degradation = codec->config.twopass_max_overflow_degradation;
-	    pass2.kfreduction = codec->config.kfreduction;
-        pass2.kfthreshold = codec->config.kfthreshold;
-        pass2.container_frame_overhead = 24;    /* AVI */
+		pass2.max_overflow_improvement = codec->config.twopass_max_overflow_improvement;
+		pass2.max_overflow_degradation = codec->config.twopass_max_overflow_degradation;
+		pass2.kfreduction = codec->config.kfreduction;
+		pass2.kfthreshold = codec->config.kfthreshold;
+		pass2.container_frame_overhead = 24;	/* AVI */
 
-        plugins[create.num_plugins].func = xvid_plugin_2pass2_func;
-        plugins[create.num_plugins].param = &pass2;
-        create.num_plugins++;
+		plugins[create.num_plugins].func = xvid_plugin_2pass2_func;
+		plugins[create.num_plugins].param = &pass2;
+		create.num_plugins++;
 		break;
 
 	case RC_MODE_NULL :
@@ -446,47 +447,47 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	}
 
   	if ((profiles[codec->config.profile].flags & PROFILE_ADAPTQUANT) && codec->config.lum_masking) {
-        plugins[create.num_plugins].func = xvid_plugin_lumimasking_func;
-        plugins[create.num_plugins].param = NULL;
-        create.num_plugins++; 
+		plugins[create.num_plugins].func = xvid_plugin_lumimasking_func;
+		plugins[create.num_plugins].param = NULL;
+		create.num_plugins++; 
 	}
 
-    plugins[create.num_plugins].func = vfw_debug;
-    plugins[create.num_plugins].param = NULL;
-    create.num_plugins++; 
+	plugins[create.num_plugins].func = vfw_debug;
+	plugins[create.num_plugins].param = NULL;
+	create.num_plugins++; 
 
-    create.profile = profiles[codec->config.profile].id;
+	create.profile = profiles[codec->config.profile].id;
 
 	create.width = lpbiInput->bmiHeader.biWidth;
 	create.height = lpbiInput->bmiHeader.biHeight;
 	create.fincr = codec->fincr;
 	create.fbase = codec->fbase;
 
-    create.max_key_interval = codec->config.max_key_interval;
+	create.max_key_interval = codec->config.max_key_interval;
 
-    create.min_quant[0] = codec->config.min_iquant;
-    create.max_quant[0] = codec->config.max_iquant;
-    create.min_quant[1] = codec->config.min_pquant;
-    create.max_quant[1] = codec->config.max_pquant;
-    create.min_quant[2] = codec->config.min_bquant;
-    create.max_quant[2] = codec->config.max_bquant;
+	create.min_quant[0] = codec->config.min_iquant;
+	create.max_quant[0] = codec->config.max_iquant;
+	create.min_quant[1] = codec->config.min_pquant;
+	create.max_quant[1] = codec->config.max_pquant;
+	create.min_quant[2] = codec->config.min_bquant;
+	create.max_quant[2] = codec->config.max_bquant;
 
-    if ((profiles[codec->config.profile].flags & PROFILE_BVOP) && codec->config.use_bvop) {
-        create.max_bframes = codec->config.max_bframes;
-	    create.bquant_ratio = codec->config.bquant_ratio;
-	    create.bquant_offset = codec->config.bquant_offset;
+	if ((profiles[codec->config.profile].flags & PROFILE_BVOP) && codec->config.use_bvop) {
+		create.max_bframes = codec->config.max_bframes;
+		create.bquant_ratio = codec->config.bquant_ratio;
+		create.bquant_offset = codec->config.bquant_offset;
 
-        if (codec->config.packed) 
-            create.global |= XVID_GLOBAL_PACKED;
+		if (codec->config.packed) 
+			create.global |= XVID_GLOBAL_PACKED;
 
-	    if (codec->config.closed_gov) 
-		    create.global |= XVID_GLOBAL_CLOSED_GOP;
+		if (codec->config.closed_gov) 
+			create.global |= XVID_GLOBAL_CLOSED_GOP;
 
-    }
+	}
 
 	create.frame_drop_ratio = codec->config.frame_drop_ratio;
 
-    create.num_threads = codec->config.num_threads;
+	create.num_threads = codec->config.num_threads;
 
 	switch(xvid_encore_func(0, XVID_ENC_CREATE, &create, NULL))
 	{
@@ -507,10 +508,10 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	codec->framenum = 0;
 	codec->keyspacing = 0;
 
-    if (codec->config.display_status) {
-        status_destroy_always(&codec->status);
-        status_create(&codec->status, codec->fincr, codec->fbase);
-    }
+	if (codec->config.display_status) {
+		status_destroy_always(&codec->status);
+		status_create(&codec->status, codec->fincr, codec->fbase);
+	}
 
 	return ICERR_OK;
 }
@@ -518,7 +519,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 
 LRESULT compress_end(CODEC * codec)
 {
-    if (m_hdll != NULL) {
+	if (m_hdll != NULL) {
 		if (codec->ehandle != NULL) {
 			xvid_encore_func(codec->ehandle, XVID_ENC_DESTROY, NULL, NULL);
 			codec->ehandle = NULL;
@@ -527,8 +528,8 @@ LRESULT compress_end(CODEC * codec)
 		m_hdll = NULL;
 	}
 
-    if (codec->config.display_status)
-        status_destroy(&codec->status);
+	if (codec->config.display_status)
+		status_destroy(&codec->status);
 
 	return ICERR_OK;
 }
@@ -536,26 +537,26 @@ LRESULT compress_end(CODEC * codec)
 
 static void apply_zone_modifiers(xvid_enc_frame_t * frame, CONFIG * config, int framenum)
 {
-    int i;
+	int i;
 
-    for (i=0; i<config->num_zones && config->zones[i].frame <= framenum; i++) ;
+	for (i=0; i<config->num_zones && config->zones[i].frame <= framenum; i++) ;
 
-    if (--i < 0) return; /* there are no zones, or we're before the first zone */
+	if (--i < 0) return; /* there are no zones, or we're before the first zone */
 
-    if (framenum == config->zones[i].frame)
+	if (framenum == config->zones[i].frame)
 		frame->type = config->zones[i].type;
 
-    if (config->zones[i].greyscale) {
-        frame->vop_flags |= XVID_VOP_GREYSCALE;
-    }
+	if (config->zones[i].greyscale) {
+		frame->vop_flags |= XVID_VOP_GREYSCALE;
+	}
 
-    if (config->zones[i].chroma_opt) {
-        frame->vop_flags |= XVID_VOP_CHROMAOPT;
-    }
+	if (config->zones[i].chroma_opt) {
+		frame->vop_flags |= XVID_VOP_CHROMAOPT;
+	}
 
-    if ((profiles[config->profile].flags & PROFILE_BVOP) && config->use_bvop) {
-        frame->bframe_threshold = config->zones[i].bvop_threshold;
-    }
+	if ((profiles[config->profile].flags & PROFILE_BVOP) && config->use_bvop) {
+		frame->bframe_threshold = config->zones[i].bvop_threshold;
+	}
 }
 
 
@@ -570,12 +571,12 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	memset(&frame, 0, sizeof(frame));
 	frame.version = XVID_VERSION;
 
-    frame.type = XVID_TYPE_AUTO;
+	frame.type = XVID_TYPE_AUTO;
 
 	/* vol stuff */
 
-    if ((profiles[codec->config.profile].flags & PROFILE_MPEGQUANT) && 
-        codec->config.quant_type != QUANT_MODE_H263)
+	if ((profiles[codec->config.profile].flags & PROFILE_MPEGQUANT) && 
+		codec->config.quant_type != QUANT_MODE_H263)
 	{
 		frame.vol_flags |= XVID_VOL_MPEGQUANT;
 
@@ -588,8 +589,8 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		}
 	}
 
-    if ((profiles[codec->config.profile].flags & PROFILE_REDUCED) &&
-	    codec->config.reduced_resolution) {
+	if ((profiles[codec->config.profile].flags & PROFILE_REDUCED) &&
+		codec->config.reduced_resolution) {
 		frame.vol_flags |= XVID_VOL_REDUCED_ENABLE;
 		frame.vop_flags |= XVID_VOP_REDUCED;	/* XXX: need auto decion mode */
 	}
@@ -622,7 +623,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		frame.par_height= (100 * inhdr->biWidth) / codec->config.ar_x;
 	}
 
-    /* vop stuff */
+	/* vop stuff */
 
 	frame.vop_flags |= XVID_VOP_HALFPEL;
 	frame.vop_flags |= XVID_VOP_HQACPRED;
@@ -630,11 +631,11 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	if (codec->config.vop_debug) 
 		frame.vop_flags |= XVID_VOP_DEBUG;
 
-    if (codec->config.trellis_quant) {
-        frame.vop_flags |= XVID_VOP_TRELLISQUANT;
-    }
+	if (codec->config.trellis_quant) {
+		frame.vop_flags |= XVID_VOP_TRELLISQUANT;
+	}
 
-    if (codec->config.motion_search > 4)
+	if (codec->config.motion_search > 4)
 		frame.vop_flags |= XVID_VOP_INTER4V;
 
 	if (codec->config.chromame)
@@ -699,27 +700,27 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	frame.bitstream = icc->lpOutput;
 	frame.length = icc->lpbiOutput->biSizeImage;
 
-    frame.quant = 0;
+	frame.quant = 0;
 
-    if (codec->config.mode == RC_MODE_NULL) {
+	if (codec->config.mode == RC_MODE_NULL) {
 		outhdr->biSizeImage = 0;
 		*icc->lpdwFlags = AVIIF_KEYFRAME;
 		return ICERR_OK;
-    }
+	}
 
 	// force keyframe spacing in 2-pass 1st pass
 	if (codec->config.motion_search == 0)
 		frame.type = XVID_TYPE_IVOP;
 
-    /* frame-based stuff */
-    apply_zone_modifiers(&frame, &codec->config, codec->framenum);
+	/* frame-based stuff */
+	apply_zone_modifiers(&frame, &codec->config, codec->framenum);
 
-    /* call encore */
+	/* call encore */
 
 	memset(&stats, 0, sizeof(stats));
 	stats.version = XVID_VERSION;
 
-    length = xvid_encore_func(codec->ehandle, XVID_ENC_ENCODE, &frame, &stats);
+	length = xvid_encore_func(codec->ehandle, XVID_ENC_ENCODE, &frame, &stats);
 	switch (length) 
 	{
 	case XVID_ERR_FAIL :	
@@ -735,13 +736,13 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		return ICERR_UNSUPPORTED;
 	}
 
-    if (codec->config.display_status && stats.type>0) {
-        status_update(&codec->status, stats.type, stats.length, stats.quant);
-    }
+	if (codec->config.display_status && stats.type>0) {
+		status_update(&codec->status, stats.type, stats.length, stats.quant);
+	}
 
 	DPRINTF("{type=%i len=%i} length=%i", stats.type, stats.length, length);
 
-    if (length == 0)	/* no encoder output */
+	if (length == 0)	/* no encoder output */
 	{
 		*icc->lpdwFlags = 0;
 		((char*)icc->lpOutput)[0] = 0x7f;	/* virtual dub skip frame */
@@ -749,22 +750,22 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		
 	}else{
 		if (frame.out_flags & XVID_KEYFRAME)
-	    {
-		    codec->keyspacing = 0;
-		    *icc->lpdwFlags = AVIIF_KEYFRAME;
-	    }
-	    else
-	    {
-		     *icc->lpdwFlags = 0;
-	    }
+		{
+			codec->keyspacing = 0;
+			*icc->lpdwFlags = AVIIF_KEYFRAME;
+		}
+		else
+		{
+			 *icc->lpdwFlags = 0;
+		}
 
-    	outhdr->biSizeImage = length;
+		outhdr->biSizeImage = length;
 
-    	if (codec->config.mode == RC_MODE_2PASS1 && codec->config.discard1pass)
-	    {
-		    outhdr->biSizeImage = 0;
-	    }
-    }
+		if (codec->config.mode == RC_MODE_2PASS1 && codec->config.discard1pass)
+		{
+			outhdr->biSizeImage = 0;
+		}
+	}
 
 	codec->framenum++;
 	codec->keyspacing++;
@@ -914,14 +915,14 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 		xvid_gbl_convert_t convert;
 
 		DPRINTF("input=%c%c%c%c output=%c%c%c%c", 
-            icd->lpbiInput->biCompression&0xff,
-            (icd->lpbiInput->biCompression>>8)&0xff,
-            (icd->lpbiInput->biCompression>>16)&0xff,
-            (icd->lpbiInput->biCompression>>24)&0xff,
-            icd->lpbiOutput->biCompression&0xff,
-            (icd->lpbiOutput->biCompression>>8)&0xff,
-            (icd->lpbiOutput->biCompression>>16)&0xff,
-            (icd->lpbiOutput->biCompression>>24)&0xff);
+			icd->lpbiInput->biCompression&0xff,
+			(icd->lpbiInput->biCompression>>8)&0xff,
+			(icd->lpbiInput->biCompression>>16)&0xff,
+			(icd->lpbiInput->biCompression>>24)&0xff,
+			icd->lpbiOutput->biCompression&0xff,
+			(icd->lpbiOutput->biCompression>>8)&0xff,
+			(icd->lpbiOutput->biCompression>>16)&0xff,
+			(icd->lpbiOutput->biCompression>>24)&0xff);
 
 		memset(&convert, 0, sizeof(convert));
 		convert.version = XVID_VERSION;
@@ -951,9 +952,9 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 	}
 	/* --- yv12 --- */
 	
-    memset(&frame, 0, sizeof(frame));
-    frame.version = XVID_VERSION;
-    frame.general = XVID_LOWDELAY;	/* force low_delay_default mode */
+	memset(&frame, 0, sizeof(frame));
+	frame.version = XVID_VERSION;
+	frame.general = XVID_LOWDELAY;	/* force low_delay_default mode */
 	frame.bitstream = icd->lpInput;
 	frame.length = icd->lpbiInput->biSizeImage;
 	
