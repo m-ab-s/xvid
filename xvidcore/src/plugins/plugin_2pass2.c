@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.28 2003-12-05 14:44:35 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.29 2003-12-07 15:08:15 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -333,7 +333,7 @@ rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t **handle)
 	/* Compute the target filesize */
 	if (rc->param.bitrate<0) {
 		/* if negative, bitrate equals the target (in kbytes) */
-		rc->target = (-rc->param.bitrate) * 1024;
+		rc->target = ((uint64_t)(-rc->param.bitrate)) * 1024;
 	} else if (rc->num_frames  < create->fbase/create->fincr) {
 		/* Source sequence is less than 1s long, we do as if it was 1s long */
 		rc->target = rc->param.bitrate / 8;
