@@ -87,9 +87,11 @@ REG_INT const reg_ints[] = {
 	{"lum_masking",				&reg.lum_masking,				0},
 	{"interlacing",				&reg.interlacing,				0},
 #ifdef BFRAMES
-	{"max_bframes",				&reg.max_bframes,				0},
+	{"max_bframes",				&reg.max_bframes,				-1},
 	{"bquant_ratio",			&reg.bquant_ratio,				200},
-	{"packed",					&reg.packed,					1},
+	{"packed",					&reg.packed,					0},
+	{"dx50bvop",				&reg.dx50bvop,					0},
+	{"debug",					&reg.debug,						0},
 #endif BFRAMES
 
 	{"min_iquant",				&reg.min_iquant,				1},
@@ -152,9 +154,9 @@ void config_reg_get(CONFIG * config)
 	XVID_INIT_PARAM init_param;
 	int i;
 
-	init_param.cpu_flags = 0;
+	init_param.cpu_flags = XVID_CPU_CHKONLY;
 	xvid_init(0, 0, &init_param, NULL);
-	config->cpu = init_param.cpu_flags;
+	reg.cpu = init_param.cpu_flags;
 
 	RegOpenKeyEx(XVID_REG_KEY, XVID_REG_PARENT "\\" XVID_REG_CHILD, 0, KEY_READ, &hKey);
 
@@ -616,6 +618,8 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 		SetDlgItemInt(hDlg, IDC_MAXBFRAMES, config->max_bframes, TRUE);
 		SetDlgItemInt(hDlg, IDC_BQUANTRATIO, config->bquant_ratio, FALSE);
 		CheckDlgButton(hDlg, IDC_PACKED, config->packed ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg, IDC_DX50BVOP, config->dx50bvop ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg, IDC_DEBUG, config->debug ? BST_CHECKED : BST_UNCHECKED);
 #endif
 		break;
 
@@ -731,6 +735,8 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 		config->max_bframes = config_get_int(hDlg, IDC_MAXBFRAMES, config->max_bframes);
 		config->bquant_ratio = config_get_uint(hDlg, IDC_BQUANTRATIO, config->bquant_ratio);
 		config->packed = ISDLGSET(IDC_PACKED);
+		config->dx50bvop = ISDLGSET(IDC_DX50BVOP);
+		config->debug = ISDLGSET(IDC_DEBUG);
 #endif
 		break;
 
@@ -1068,6 +1074,8 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			EnableWindow(GetDlgItem(hDlg, IDC_MAXBFRAMES), FALSE);
 			EnableWindow(GetDlgItem(hDlg, IDC_BQUANTRATIO), FALSE);
 			EnableWindow(GetDlgItem(hDlg, IDC_PACKED), FALSE);
+			EnableWindow(GetDlgItem(hDlg, IDC_DX50BVOP), FALSE);
+			EnableWindow(GetDlgItem(hDlg, IDC_DEBUG), FALSE);
 #endif
 		}
 		else if (psi->page == DLG_2PASSALT)
@@ -1308,6 +1316,7 @@ BOOL CALLBACK about_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 			SetDlgItemText(hDlg, IDC_BUILD, XVID_BUILD);
 
+			init_param.cpu_flags = XVID_CPU_CHKONLY;
 			xvid_init(NULL, 0, &init_param, 0);
 			wsprintf(core, "Core Version %d.%d", (init_param.api_version>>16),(init_param.api_version&0xFFFFU));
 			SetDlgItemText(hDlg, IDC_CORE, core);

@@ -92,6 +92,8 @@ typedef struct
 	int max_bframes;
 	int bquant_ratio;
 	int packed;
+	int dx50bvop;
+	int debug;
 #endif
 
 	int min_iquant;
