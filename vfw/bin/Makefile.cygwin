@@ -6,11 +6,12 @@
 # Modified by : Edouard Gomez <ed.gomez at wanadoo.fr>
 #		Peter Ross <suxen_drol@hotmail.com>
 #
-# $Id: Makefile.cygwin,v 1.1 2002-09-28 02:34:47 suxen_drol Exp $
+# $Id: Makefile.cygwin,v 1.2 2002-09-28 03:40:18 suxen_drol Exp $
 ##############################################################################
 
 include Makefile.inc
 
+XVIDCOREINC=/usr/local/include
 XVIDCORELIB=/usr/local/lib
 
 RM = rm -rf
@@ -18,7 +19,9 @@ RM = rm -rf
 # CC = gcc-2
 # CC = gcc-3.1
 
-CFLAGS += -I$(SRCDIR)/w32api
+# Constants which should not be modified
+# The `mingw-runtime` package is required when building with -mno-cygwin
+CFLAGS += -I$(SRCDIR)/w32api -I$(XVIDCOREINC)
 CFLAGS += -D_WIN32_IE=0x0500
 CFLAGS += -mno-cygwin
 
