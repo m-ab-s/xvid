@@ -37,7 +37,7 @@
  *  - 22.12.2001  API change: added xvid_init() - Isibaar
  *  - 16.12.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: xvid.c,v 1.33.2.2 2002-09-24 16:30:05 Isibaar Exp $
+ *  $Id: xvid.c,v 1.33.2.3 2002-09-25 16:51:05 h Exp $
  *
  ****************************************************************************/
 
@@ -50,6 +50,7 @@
 #include "image/colorspace.h"
 #include "image/interpolate8x8.h"
 #include "utils/mem_transfer.h"
+#include "utils/mbfunctions.h"
 #include "quant/quant_h263.h"
 #include "quant/quant_mpeg4.h"
 #include "motion/motion.h"
@@ -216,6 +217,9 @@ xvid_init(void *handle,
 	transfer_16to8add  = transfer_16to8add_c;
 	transfer8x8_copy   = transfer8x8_copy_c;
 
+	/* Interlacing functions */
+	MBFieldTest = MBFieldTest_c;
+
 	/* Image interpolation related functions */
 	interpolate8x8_halfpel_h  = interpolate8x8_halfpel_h_c;
 	interpolate8x8_halfpel_v  = interpolate8x8_halfpel_v_c;
@@ -282,6 +286,8 @@ xvid_init(void *handle,
 		transfer_16to8add  = transfer_16to8add_mmx;
 		transfer8x8_copy   = transfer8x8_copy_mmx;
 
+		/* Interlacing functions */
+		MBFieldTest = MBFieldTest_mmx;
 
 		/* Image Interpolation related functions */
 		interpolate8x8_halfpel_h  = interpolate8x8_halfpel_h_mmx;

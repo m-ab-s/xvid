@@ -63,6 +63,7 @@ SRC_INTEL = \
 	$(SRCDIR)/quant/x86_asm/quantize4_mmx.asm \
 	$(SRCDIR)/quant/x86_asm/quantize_mmx.asm \
 	$(SRCDIR)/utils/x86_asm/mem_transfer_mmx.asm	\
+	$(SRCDIR)/utils/x86_asm/interlacing_mmx.asm	\
 	\
 	$(SRCDIR)/image/x86_asm/interpolate8x8_xmm.asm	\
 	$(SRCDIR)/motion/x86_asm/sad_xmm.asm \

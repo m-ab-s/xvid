@@ -65,6 +65,8 @@
 #include "../quant/quant_h263.h"
 #include "../encoder.h"
 
+MBFIELDTEST_PTR MBFieldTest;
+
 #define MIN(X, Y) ((X)<(Y)?(X):(Y))
 #define MAX(X, Y) ((X)>(Y)?(X):(Y))
 
@@ -576,13 +578,27 @@ MBTransAdd(const MBParam * pParam,
 
 
 
-/* if sum(diff between field lines) < sum(diff between frame lines), use field dct */
+/* permute block and return field dct choice */
 
 
 uint32_t
 MBDecideFieldDCT(int16_t data[6 * 64])
 {
+	uint32_t field = MBFieldTest(data);
 
+	if (field) {
+		MBFrameToField(data);
+	}
+
+	return field;
+}
+
+
+/* if sum(diff between field lines) < sum(diff between frame lines), use field dct */
+
+uint32_t
+MBFieldTest_c(int16_t data[6 * 64])
+{
 	const uint8_t blocks[] =
 		{ 0 * 64, 0 * 64, 0 * 64, 0 * 64, 2 * 64, 2 * 64, 2 * 64, 2 * 64 };
 	const uint8_t lines[] = { 0, 16, 32, 48, 0, 16, 32, 48 };
@@ -616,11 +632,7 @@ MBDecideFieldDCT(int16_t data[6 * 64])
 		}
 	}
 
-	if (frame > field) {
-		MBFrameToField(data);
-	}
-
-	return (frame > field);
+	return (frame >= field);
 }
 
 

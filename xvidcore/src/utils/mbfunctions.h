@@ -169,6 +169,16 @@ void MBTransAdd(	const MBParam * pParam,
 uint32_t MBDecideFieldDCT(int16_t data[6 * 64]);	/* <- decide whether to use field-based DCT
 													   for interlacing */
 
+typedef uint32_t (MBFIELDTEST) (int16_t data[6 * 64]);	/* function pointer for field test */
+typedef MBFIELDTEST *MBFIELDTEST_PTR;
+
+/* global field test pointer for xvid.c */
+extern MBFIELDTEST_PTR MBFieldTest;
+
+/* field test implementations */
+MBFIELDTEST MBFieldTest_c;
+MBFIELDTEST MBFieldTest_mmx;
+
 void MBFrameToField(int16_t data[6 * 64]);	/* de-interlace vertical Y blocks */
 
 
