@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.13 2003-03-25 22:53:57 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.14 2003-03-26 14:56:09 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -53,32 +53,32 @@
 
 static xvid_motion_t const motion_presets[] = {
 	0,
-	PMV_HALFPELREFINE16,
-	PMV_HALFPELREFINE16,
-	PMV_HALFPELREFINE16 | PMV_HALFPELREFINE8,
-	PMV_HALFPELREFINE16 | PMV_HALFPELREFINE8 | PMV_EXTSEARCH16 |
-		PMV_USESQUARES16,
-	PMV_HALFPELREFINE16 | PMV_HALFPELREFINE8 | PMV_EXTSEARCH16 |
-		PMV_USESQUARES16 | PMV_CHROMA16 | PMV_CHROMA8,
+	XVID_ME_HALFPELREFINE16,
+	XVID_ME_HALFPELREFINE16,
+	XVID_ME_HALFPELREFINE16 | XVID_ME_HALFPELREFINE8,
+	XVID_ME_HALFPELREFINE16 | XVID_ME_HALFPELREFINE8 | XVID_ME_EXTSEARCH16 |
+		XVID_ME_USESQUARES16,
+	XVID_ME_HALFPELREFINE16 | XVID_ME_HALFPELREFINE8 | XVID_ME_EXTSEARCH16 |
+		XVID_ME_USESQUARES16 | XVID_ME_CHROMA16 | XVID_ME_CHROMA8,
 };
 
 static xvid_vol_t const vol_presets[] = {
-	XVID_MPEGQUANT,
+	XVID_VOL_MPEGQUANT,
 	0,
 	0,
-	XVID_QUARTERPEL,
-	XVID_QUARTERPEL | XVID_GMC,
+	XVID_VOL_QUARTERPEL,
+	XVID_VOL_QUARTERPEL | XVID_VOL_GMC,
 	0
 };
 
 static xvid_vop_t const vop_presets[] = {
-	XVID_DYNAMIC_BFRAMES,
-	XVID_DYNAMIC_BFRAMES,
-	XVID_DYNAMIC_BFRAMES | XVID_HALFPEL,
-	XVID_DYNAMIC_BFRAMES | XVID_HALFPEL | XVID_INTER4V,
-	XVID_DYNAMIC_BFRAMES | XVID_HALFPEL | XVID_INTER4V | XVID_HQACPRED,
-	XVID_DYNAMIC_BFRAMES | XVID_HALFPEL | XVID_HQACPRED |
-		XVID_MODEDECISION_BITS
+	XVID_VOP_DYNAMIC_BFRAMES,
+	XVID_VOP_DYNAMIC_BFRAMES,
+	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL,
+	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL | XVID_VOP_INTER4V,
+	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL | XVID_VOP_INTER4V | XVID_VOP_HQACPRED,
+	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL | XVID_VOP_HQACPRED |
+		XVID_VOP_MODEDECISION_BITS
 };
 
 /*****************************************************************************
@@ -851,10 +851,10 @@ enc_init(int use_assembler)
 	xvid_enc_create.global = 0;
 
 	if (ARG_PACKED)
-		xvid_enc_create.global |=XVID_PACKED;
+		xvid_enc_create.global |=XVID_GLOBAL_PACKED;
 
 	if (ARG_STATS)
-		xvid_enc_create.global |=XVID_EXTRASTATS_ENABLE;
+		xvid_enc_create.global |=XVID_GLOBAL_EXTRASTATS_ENABLE;
 
 	/* I use a small value here, since will not encode whole movies, but short clips */
 	xerr = xvid_encore(NULL, XVID_ENC_CREATE, &xvid_enc_create, NULL);
@@ -913,7 +913,7 @@ enc_main(unsigned char *image,
 	/* Set up core's general features */
 	xvid_enc_frame.vol_flags = vol_presets[ARG_QUALITY];
 	if (ARG_STATS)
-		xvid_enc_frame.vol_flags |= XVID_EXTRASTATS;
+		xvid_enc_frame.vol_flags |= XVID_VOL_EXTRASTATS;
 
 	/* Set up core's general features */
 	xvid_enc_frame.vop_flags = vop_presets[ARG_QUALITY];

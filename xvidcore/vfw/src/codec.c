@@ -55,10 +55,10 @@
 
 int pmvfast_presets[7] = {
 	0, 0, 0, 0,
-	0 | PMV_HALFPELREFINE16 | 0,
-	0 | PMV_HALFPELREFINE16 | 0 |
-	PMV_ADVANCEDDIAMOND16, PMV_HALFPELREFINE16 | PMV_EXTSEARCH16 |
-	PMV_HALFPELREFINE8 | 0 | PMV_USESQUARES16
+	0 | XVID_ME_HALFPELREFINE16 | 0,
+	0 | XVID_ME_HALFPELREFINE16 | 0 |
+	XVID_ME_ADVANCEDDIAMOND16, XVID_ME_HALFPELREFINE16 | XVID_ME_EXTSEARCH16 |
+	XVID_ME_HALFPELREFINE8 | 0 | XVID_ME_USESQUARES16
 };
 
 /*	return xvid compatbile colorspace,
@@ -315,9 +315,9 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
     }
 
     if (codec->config.packed) 
-        create.global |= XVID_PACKED;
+        create.global |= XVID_GLOBAL_PACKED;
 	if (codec->config.dx50bvop) 
-		create.global |= XVID_CLOSED_GOP;
+		create.global |= XVID_GLOBAL_CLOSED_GOP;
 
     create.max_key_interval = codec->config.max_key_interval;
 	/* XXX: param.min_quantizer = codec->config.min_pquant;
@@ -414,7 +414,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 
 	if (codec->config.quant_type != QUANT_MODE_H263)
 	{
-		frame.vol_flags |= XVID_MPEGQUANT;
+		frame.vol_flags |= XVID_VOL_MPEGQUANT;
 
 		// we actually need "default/custom" selectbox for both inter/intra
 		// this will do for now
@@ -431,37 +431,37 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	}
 
 	if (codec->config.reduced_resolution) {
-		frame.vol_flags |= XVID_REDUCED_ENABLE;
-		frame.vop_flags |= XVID_REDUCED;	/* XXX: need auto decion mode */
+		frame.vol_flags |= XVID_VOL_REDUCED_ENABLE;
+		frame.vop_flags |= XVID_VOP_REDUCED;	/* XXX: need auto decion mode */
 	}
 
 	if (codec->config.qpel) {
-		frame.vol_flags |= XVID_QUARTERPEL;
-		frame.motion |= PMV_QUARTERPELREFINE16 | PMV_QUARTERPELREFINE8;
+		frame.vol_flags |= XVID_VOL_QUARTERPEL;
+		frame.motion |= XVID_ME_QUARTERPELREFINE16 | XVID_ME_QUARTERPELREFINE8;
 	}
 
 	if (codec->config.gmc)
-		frame.vol_flags |= XVID_GMC;
+		frame.vol_flags |= XVID_VOL_GMC;
 
 	if (codec->config.interlacing)
-		frame.vol_flags |= XVID_INTERLACING;
+		frame.vol_flags |= XVID_VOL_INTERLACING;
 
     /* vop stuff */
 
-	frame.vop_flags |= XVID_HALFPEL;
-	frame.vop_flags |= XVID_HQACPRED;
+	frame.vop_flags |= XVID_VOP_HALFPEL;
+	frame.vop_flags |= XVID_VOP_HQACPRED;
 
 	if (codec->config.debug) 
-		frame.vop_flags |= XVID_DEBUG;
+		frame.vop_flags |= XVID_VOP_DEBUG;
 
 	if (codec->config.motion_search > 4)
-		frame.vop_flags |= XVID_INTER4V;
+		frame.vop_flags |= XVID_VOP_INTER4V;
 
 	if (codec->config.chromame)
-		frame.vop_flags |= PMV_CHROMA16 + PMV_CHROMA8;
+		frame.vop_flags |= XVID_ME_CHROMA16 + XVID_ME_CHROMA8;
 
 	if (codec->config.chroma_opt)
-		frame.vop_flags |= XVID_CHROMAOPT;
+		frame.vop_flags |= XVID_VOP_CHROMAOPT;
 
 	check_greyscale_mode(&codec->config, &frame, codec->framenum);
 
@@ -511,32 +511,32 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	switch (codec->config.vhq_mode)
 	{
 	case VHQ_MODE_DECISION :
-		frame.vop_flags |= XVID_MODEDECISION_BITS;
+		frame.vop_flags |= XVID_VOP_MODEDECISION_BITS;
 		break;
 
 	case VHQ_LIMITED_SEARCH :
-		frame.vop_flags |= XVID_MODEDECISION_BITS;
-		frame.motion |= HALFPELREFINE16_BITS;
-		frame.motion |= QUARTERPELREFINE16_BITS;
+		frame.vop_flags |= XVID_VOP_MODEDECISION_BITS;
+		frame.motion |= XVID_ME_HALFPELREFINE16_BITS;
+		frame.motion |= XVID_ME_QUARTERPELREFINE16_BITS;
 		break;
 
 	case VHQ_MEDIUM_SEARCH :
-		frame.vop_flags |= XVID_MODEDECISION_BITS;
-		frame.motion |= HALFPELREFINE16_BITS;
-		frame.motion |= HALFPELREFINE8_BITS;
-		frame.motion |= QUARTERPELREFINE16_BITS;
-		frame.motion |= QUARTERPELREFINE8_BITS;
-		frame.motion |= CHECKPREDICTION_BITS;
+		frame.vop_flags |= XVID_VOP_MODEDECISION_BITS;
+		frame.motion |= XVID_ME_HALFPELREFINE16_BITS;
+		frame.motion |= XVID_ME_HALFPELREFINE8_BITS;
+		frame.motion |= XVID_ME_QUARTERPELREFINE16_BITS;
+		frame.motion |= XVID_ME_QUARTERPELREFINE8_BITS;
+		frame.motion |= XVID_ME_CHECKPREDICTION_BITS;
 		break;
 
 	case VHQ_WIDE_SEARCH :
-		frame.vop_flags |= XVID_MODEDECISION_BITS;
-		frame.motion |= HALFPELREFINE16_BITS;
-		frame.motion |= HALFPELREFINE8_BITS;
-		frame.motion |= QUARTERPELREFINE16_BITS;
-		frame.motion |= QUARTERPELREFINE8_BITS;
-		frame.motion |= CHECKPREDICTION_BITS;
-		frame.motion |= EXTSEARCH_BITS;
+		frame.vop_flags |= XVID_VOP_MODEDECISION_BITS;
+		frame.motion |= XVID_ME_HALFPELREFINE16_BITS;
+		frame.motion |= XVID_ME_HALFPELREFINE8_BITS;
+		frame.motion |= XVID_ME_QUARTERPELREFINE16_BITS;
+		frame.motion |= XVID_ME_QUARTERPELREFINE8_BITS;
+		frame.motion |= XVID_ME_CHECKPREDICTION_BITS;
+		frame.motion |= XVID_ME_EXTSEARCH_BITS;
 		break;
 
 	default :
@@ -1086,15 +1086,15 @@ int check_greyscale_mode(CONFIG* config, xvid_enc_frame_t* frame, int framenum)
 
 		{
 
-			if ((frame->vop_flags && XVID_GREYSCALE))  // use only if not already in greyscale
+			if ((frame->vop_flags && XVID_VOP_GREYSCALE))  // use only if not already in greyscale
 
-				frame->vop_flags |= XVID_GREYSCALE;
+				frame->vop_flags |= XVID_VOP_GREYSCALE;
 
 		} else {
 
-			if (!(frame->vop_flags && XVID_GREYSCALE))  // if movie is in greyscale, switch back
+			if (!(frame->vop_flags && XVID_VOP_GREYSCALE))  // if movie is in greyscale, switch back
 
-				frame->vop_flags |= XVID_GREYSCALE;
+				frame->vop_flags |= XVID_VOP_GREYSCALE;
 
 		}
 
@@ -1104,15 +1104,15 @@ int check_greyscale_mode(CONFIG* config, xvid_enc_frame_t* frame, int framenum)
 
 		{
 
-			if ((frame->vop_flags && XVID_GREYSCALE))  // use only if not already in greyscale
+			if ((frame->vop_flags && XVID_VOP_GREYSCALE))  // use only if not already in greyscale
 
-				frame->vop_flags |= XVID_GREYSCALE;
+				frame->vop_flags |= XVID_VOP_GREYSCALE;
 
 		} else {
 
-			if (!(frame->vop_flags && XVID_GREYSCALE))  // if credits is in greyscale, switch back
+			if (!(frame->vop_flags && XVID_VOP_GREYSCALE))  // if credits is in greyscale, switch back
 
-				frame->vop_flags |= XVID_GREYSCALE;
+				frame->vop_flags |= XVID_VOP_GREYSCALE;
 
 		}
 

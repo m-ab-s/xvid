@@ -671,7 +671,7 @@ CodeBlockIntra(const FRAMEINFO * const frame,
 		BitstreamPutBits(bs, DQ_VALUE2INDEX(pMB->dquant), 2);
 
 	// write interlacing
-	if (frame->vol_flags & XVID_INTERLACING) {
+	if (frame->vol_flags & XVID_VOL_INTERLACING) {
 		BitstreamPutBit(bs, pMB->field_dct);
 	}
 	// code block coeffs
@@ -685,7 +685,7 @@ CodeBlockIntra(const FRAMEINFO * const frame,
 
 		if (pMB->cbp & (1 << (5 - i))) {
 			const uint16_t *scan_table =
-				frame->vop_flags & XVID_ALTERNATESCAN ?
+				frame->vop_flags & XVID_VOP_ALTERNATESCAN ?
 				scan_tables[2] : scan_tables[pMB->acpred_directions[i]];
 
 			bits = BitstreamPos(bs);
@@ -733,7 +733,7 @@ CodeBlockInter(const FRAMEINFO * const frame,
 		BitstreamPutBits(bs, DQ_VALUE2INDEX(pMB->dquant), 2);
 
 	// interlacing
-	if (frame->vol_flags & XVID_INTERLACING) {
+	if (frame->vol_flags & XVID_VOL_INTERLACING) {
 		if (pMB->cbp) {
 			BitstreamPutBit(bs, pMB->field_dct);
 			DPRINTF(DPRINTF_MB,"codep: field_dct: %i", pMB->field_dct);
@@ -765,7 +765,7 @@ CodeBlockInter(const FRAMEINFO * const frame,
 		if (pMB->cbp & (1 << (5 - i)))
 		{
 			const uint16_t *scan_table =
-				frame->vop_flags & XVID_ALTERNATESCAN ?
+				frame->vop_flags & XVID_VOP_ALTERNATESCAN ?
 				scan_tables[2] : scan_tables[0];
 
 #ifdef BIGLUT

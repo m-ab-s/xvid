@@ -1015,11 +1015,11 @@ MotionEstimation(MBParam * const pParam,
 	Data.temp = temp;
 	Data.iFcode = current->fcode;
 	Data.rounding = pParam->m_rounding_type;
-	Data.qpel = current->vol_flags & XVID_QUARTERPEL;
-	Data.chroma = MotionFlags & PMV_CHROMA16;
-	Data.rrv = current->vop_flags & XVID_REDUCED;
+	Data.qpel = current->vol_flags & XVID_VOL_QUARTERPEL;
+	Data.chroma = MotionFlags & XVID_ME_CHROMA16;
+	Data.rrv = current->vop_flags & XVID_VOP_REDUCED;
 
-	if ((current->vop_flags & XVID_REDUCED)) {
+	if ((current->vop_flags & XVID_VOP_REDUCED)) {
 		mb_width = (pParam->width + 31) / 32;
 		mb_height = (pParam->height + 31) / 32;
 		Data.qpel = 0;
@@ -1054,7 +1054,7 @@ MotionEstimation(MBParam * const pParam,
 
 //initial skip decision
 /* no early skip for GMC (global vector = skip vector is unknown!)  */
-			if (!(current->vol_flags & XVID_GMC))	{ /* no fast SKIP for S(GMC)-VOPs */
+			if (!(current->vol_flags & XVID_VOL_GMC))	{ /* no fast SKIP for S(GMC)-VOPs */
 				if (pMB->dquant == 0 && sad00 < pMB->quant * INITIAL_SKIP_THRESH * (Data.rrv ? 4:1) )
 					if (Data.chroma || SkipDecisionP(pCurrent, pRef, x, y, iEdgedWidth/2, pMB->quant, Data.rrv)) {
 						SkipMacroblockP(pMB, sad00);
@@ -1065,12 +1065,12 @@ MotionEstimation(MBParam * const pParam,
 			SearchP(pRef, pRefH->y, pRefV->y, pRefHV->y, pCurrent, x,
 						y, MotionFlags, current->vol_flags, pMB->quant,
 						&Data, pParam, pMBs, reference->mbs,
-						current->vop_flags & XVID_INTER4V, pMB);
+						current->vop_flags & XVID_VOP_INTER4V, pMB);
 
 /* final skip decision, a.k.a. "the vector you found, really that good?" */
-			if (!(current->vol_flags & XVID_GMC))	{
+			if (!(current->vol_flags & XVID_VOL_GMC))	{
 				if ( pMB->dquant == 0 && sad00 < pMB->quant * MAX_SAD00_FOR_SKIP) {
-					if (!(current->vop_flags & XVID_MODEDECISION_BITS)) {
+					if (!(current->vop_flags & XVID_VOP_MODEDECISION_BITS)) {
 						if ( (100*pMB->sad16)/(sad00+1) > FINAL_SKIP_THRESH * (Data.rrv ? 4:1) )
 							if (Data.chroma || SkipDecisionP(pCurrent, pRef, x, y, iEdgedWidth/2, pMB->quant, Data.rrv))
 								SkipMacroblockP(pMB, sad00);
@@ -1086,7 +1086,7 @@ MotionEstimation(MBParam * const pParam,
 		}
 	}
 
-	if (current->vol_flags & XVID_GMC )	/* GMC only for S(GMC)-VOPs */
+	if (current->vol_flags & XVID_VOL_GMC )	/* GMC only for S(GMC)-VOPs */
 	{
 		current->warp = GlobalMotionEst( pMBs, pParam, current, reference, pRefH, pRefV, pRefHV);
 	}
@@ -1166,7 +1166,7 @@ ModeDecision(const uint32_t iQuant, SearchData * const Data,
 
 	int mode = MODE_INTER;
 
-	if (!(VopFlags & XVID_MODEDECISION_BITS)) { //normal, fast, SAD-based mode decision
+	if (!(VopFlags & XVID_VOP_MODEDECISION_BITS)) { //normal, fast, SAD-based mode decision
 //		int intra = 0;
 		int sad;
 		int InterBias = MV16_INTER_BIAS;
@@ -1209,7 +1209,7 @@ ModeDecision(const uint32_t iQuant, SearchData * const Data,
 		int bits, intra, i;
 		VECTOR backup[5], *v;
 		Data->lambda16 = iQuant;
-        Data->lambda8 = (pParam->vol_flags & XVID_MPEGQUANT)?1:0;
+        Data->lambda8 = (pParam->vol_flags & XVID_VOL_MPEGQUANT)?1:0;
 
 		v = Data->qpel ? Data->currentQMV : Data->currentMV;
 		for (i = 0; i < 5; i++) {
@@ -1293,7 +1293,7 @@ SearchP(const IMAGE * const pRef,
 	Data->iMinSAD[3] = pMB->sad8[2];
 	Data->iMinSAD[4] = pMB->sad8[3];
 
-	if ((!(VopFlags & XVID_MODEDECISION_BITS)) || (x | y)) {
+	if ((!(VopFlags & XVID_VOP_MODEDECISION_BITS)) || (x | y)) {
 		threshA = Data->temp[0]; // that's where we keep this SAD atm
 		if (threshA < 512) threshA = 512;
 		else if (threshA > 1024) threshA = 1024;
@@ -1319,12 +1319,12 @@ SearchP(const IMAGE * const pRef,
 	if ((Data->iMinSAD[0] <= threshA) ||
 			(MVequal(Data->currentMV[0], (prevMBs+x+y*pParam->mb_width)->mvs[0]) &&
 			(Data->iMinSAD[0] < (prevMBs+x+y*pParam->mb_width)->sad16))) {
-		if (!(VopFlags & XVID_MODEDECISION_BITS)) inter4v = 0;	}
+		if (!(VopFlags & XVID_VOP_MODEDECISION_BITS)) inter4v = 0;	}
 	else {
 
 		MainSearchFunc * MainSearchPtr;
-		if (MotionFlags & PMV_USESQUARES16) MainSearchPtr = SquareSearch;
-		else if (MotionFlags & PMV_ADVANCEDDIAMOND16) MainSearchPtr = AdvDiamondSearch;
+		if (MotionFlags & XVID_ME_USESQUARES16) MainSearchPtr = SquareSearch;
+		else if (MotionFlags & XVID_ME_ADVANCEDDIAMOND16) MainSearchPtr = AdvDiamondSearch;
 			else MainSearchPtr = DiamondSearch;
 
 		MainSearchPtr(Data->currentMV->x, Data->currentMV->y, Data, iDirection);
@@ -1333,7 +1333,7 @@ SearchP(const IMAGE * const pRef,
 	note that this search is/might be done in halfpel positions,
 	which makes it more different than the diamond above */
 
-		if (MotionFlags & PMV_EXTSEARCH16) {
+		if (MotionFlags & XVID_ME_EXTSEARCH16) {
 			int32_t bSAD;
 			VECTOR startMV = Data->predMV, backupMV = Data->currentMV[0];
 			if (Data->rrv) {
@@ -1364,8 +1364,8 @@ SearchP(const IMAGE * const pRef,
 		}
 	}
 
-	if (MotionFlags & PMV_HALFPELREFINE16)
-		if ((!(MotionFlags & HALFPELREFINE16_BITS)) || Data->iMinSAD[0] < 200*(int)iQuant)
+	if (MotionFlags & XVID_ME_HALFPELREFINE16)
+		if ((!(MotionFlags & XVID_ME_HALFPELREFINE16_BITS)) || Data->iMinSAD[0] < 200*(int)iQuant)
 			SubpelRefine(Data);
 
 	for(i = 0; i < 5; i++) {
@@ -1373,8 +1373,8 @@ SearchP(const IMAGE * const pRef,
 		Data->currentQMV[i].y = 2 * Data->currentMV[i].y;
 	}
 
-	if (MotionFlags & PMV_QUARTERPELREFINE16)
-		if ((!(MotionFlags & QUARTERPELREFINE16_BITS)) || (Data->iMinSAD[0] < 200*(int)iQuant)) {
+	if (MotionFlags & XVID_ME_QUARTERPELREFINE16)
+		if ((!(MotionFlags & XVID_ME_QUARTERPELREFINE16_BITS)) || (Data->iMinSAD[0] < 200*(int)iQuant)) {
 			Data->qpel_precision = 1;
 			get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
 					pParam->width, pParam->height, Data->iFcode, 1, 0);
@@ -1382,11 +1382,11 @@ SearchP(const IMAGE * const pRef,
 			SubpelRefine(Data);
 		}
 
-	if ((!(VopFlags & XVID_MODEDECISION_BITS)) && (Data->iMinSAD[0] < (int32_t)iQuant * 30)) inter4v = 0;
+	if ((!(VopFlags & XVID_VOP_MODEDECISION_BITS)) && (Data->iMinSAD[0] < (int32_t)iQuant * 30)) inter4v = 0;
 
-	if (inter4v && (!(VopFlags & XVID_MODEDECISION_BITS) ||
-			(!(MotionFlags & QUARTERPELREFINE8_BITS)) || (!(MotionFlags & HALFPELREFINE8_BITS)) ||
-			((!(MotionFlags & EXTSEARCH_BITS)) && (!(MotionFlags&PMV_EXTSEARCH8)) ))) {
+	if (inter4v && (!(VopFlags & XVID_VOP_MODEDECISION_BITS) ||
+			(!(MotionFlags & XVID_ME_QUARTERPELREFINE8_BITS)) || (!(MotionFlags & XVID_ME_HALFPELREFINE8_BITS)) ||
+			((!(MotionFlags & XVID_ME_EXTSEARCH_BITS)) && (!(MotionFlags&XVID_ME_EXTSEARCH8)) ))) {
 		// if decision is BITS-based and all refinement steps will be done in BITS domain, there is no reason to call this loop
 
 		SearchData Data8;
@@ -1397,7 +1397,7 @@ SearchP(const IMAGE * const pRef,
 		Search8(Data, 2*x, 2*y + 1, MotionFlags, pParam, pMB, pMBs, 2, &Data8);
 		Search8(Data, 2*x + 1, 2*y + 1, MotionFlags, pParam, pMB, pMBs, 3, &Data8);
 
-		if ((Data->chroma) && (!(VopFlags & XVID_MODEDECISION_BITS))) {
+		if ((Data->chroma) && (!(VopFlags & XVID_VOP_MODEDECISION_BITS))) {
 			// chroma is only used for comparsion to INTER. if the comparsion will be done in BITS domain, there is no reason to compute it
 			int sumx = 0, sumy = 0;
 			const int div = 1 + Data->qpel;
@@ -1472,7 +1472,7 @@ Search8(const SearchData * const OldData,
 
 	*(Data->iMinSAD) += (Data->lambda8 * i * (*Data->iMinSAD + NEIGH_8X8_BIAS))>>10;
 
-	if (MotionFlags & (PMV_EXTSEARCH8|PMV_HALFPELREFINE8|PMV_QUARTERPELREFINE8)) {
+	if (MotionFlags & (XVID_ME_EXTSEARCH8|XVID_ME_HALFPELREFINE8|XVID_ME_QUARTERPELREFINE8)) {
 		if (Data->rrv) i = 2; else i = 1;
 
 		Data->Ref = OldData->Ref + i * 8 * ((block&1) + Data->iEdgedWidth*(block>>1));
@@ -1489,12 +1489,12 @@ Search8(const SearchData * const OldData,
 		if (!Data->rrv) CheckCandidate = CheckCandidate8;
 		else CheckCandidate = CheckCandidate16no4v;
 
-		if (MotionFlags & PMV_EXTSEARCH8 && (!(MotionFlags & EXTSEARCH_BITS))) {
+		if (MotionFlags & XVID_ME_EXTSEARCH8 && (!(MotionFlags & XVID_ME_EXTSEARCH_BITS))) {
 			int32_t temp_sad = *(Data->iMinSAD); // store current MinSAD
 
 			MainSearchFunc *MainSearchPtr;
-			if (MotionFlags & PMV_USESQUARES8) MainSearchPtr = SquareSearch;
-				else if (MotionFlags & PMV_ADVANCEDDIAMOND8) MainSearchPtr = AdvDiamondSearch;
+			if (MotionFlags & XVID_ME_USESQUARES8) MainSearchPtr = SquareSearch;
+				else if (MotionFlags & XVID_ME_ADVANCEDDIAMOND8) MainSearchPtr = AdvDiamondSearch;
 					else MainSearchPtr = DiamondSearch;
 
 			MainSearchPtr(Data->currentMV->x, Data->currentMV->y, Data, 255);
@@ -1505,7 +1505,7 @@ Search8(const SearchData * const OldData,
 			}
 		}
 
-		if (MotionFlags & PMV_HALFPELREFINE8) {
+		if (MotionFlags & XVID_ME_HALFPELREFINE8) {
 			int32_t temp_sad = *(Data->iMinSAD); // store current MinSAD
 
 			SubpelRefine(Data); // perform halfpel refine of current best vector
@@ -1516,7 +1516,7 @@ Search8(const SearchData * const OldData,
 			}
 		}
 
-		if (Data->qpel && MotionFlags & PMV_QUARTERPELREFINE8) {
+		if (Data->qpel && MotionFlags & XVID_ME_QUARTERPELREFINE8) {
 				Data->qpel_precision = 1;
 				get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 8,
 					pParam->width, pParam->height, Data->iFcode, 1, 0);
@@ -1640,8 +1640,8 @@ SearchBF(	const IMAGE * const pRef,
 		CheckCandidate16no4v(pmv[i].x, pmv[i].y, mask, &iDirection, Data);
 	}
 
-	if (MotionFlags & PMV_USESQUARES16) MainSearchPtr = SquareSearch;
-	else if (MotionFlags & PMV_ADVANCEDDIAMOND16) MainSearchPtr = AdvDiamondSearch;
+	if (MotionFlags & XVID_ME_USESQUARES16) MainSearchPtr = SquareSearch;
+	else if (MotionFlags & XVID_ME_ADVANCEDDIAMOND16) MainSearchPtr = AdvDiamondSearch;
 		else MainSearchPtr = DiamondSearch;
 
 	MainSearchPtr(Data->currentMV->x, Data->currentMV->y, Data, iDirection);
@@ -1817,8 +1817,8 @@ SearchDirect(const IMAGE * const f_Ref,
 //	DIRECT MODE DELTA VECTOR SEARCH.
 //	This has to be made more effective, but at the moment I'm happy it's running at all
 
-	if (MotionFlags & PMV_USESQUARES16) MainSearchPtr = SquareSearch;
-		else if (MotionFlags & PMV_ADVANCEDDIAMOND16) MainSearchPtr = AdvDiamondSearch;
+	if (MotionFlags & XVID_ME_USESQUARES16) MainSearchPtr = SquareSearch;
+		else if (MotionFlags & XVID_ME_ADVANCEDDIAMOND16) MainSearchPtr = AdvDiamondSearch;
 			else MainSearchPtr = DiamondSearch;
 
 	MainSearchPtr(0, 0, Data, 255);
@@ -2027,9 +2027,9 @@ MotionEstimationBVOP(MBParam * const pParam,
 	Data.currentMV = currentMV; Data.currentQMV = currentQMV;
 	Data.iMinSAD = &iMinSAD;
 	Data.lambda16 = lambda_vec16[frame->quant];
-	Data.qpel = pParam->vol_flags & XVID_QUARTERPEL;
+	Data.qpel = pParam->vol_flags & XVID_VOL_QUARTERPEL;
 	Data.rounding = 0;
-	Data.chroma = frame->motion_flags & PMV_CHROMA8;
+	Data.chroma = frame->motion_flags & XVID_ME_CHROMA8;
 	Data.temp = temp;
 
 	Data.RefQ = f_refV->u; // a good place, also used in MC (for similar purpose)
@@ -2151,7 +2151,7 @@ MEanalyzeMB (	const uint8_t * const pRef,
 			else Data->predMV = get_pmv2(pMBs, pParam->mb_width, 0, x, y, 0); //else median
 
 	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
-        pParam->width, pParam->height, Data->iFcode - (pParam->vol_flags&XVID_QUARTERPEL?1:0), 0, Data->rrv);
+        pParam->width, pParam->height, Data->iFcode - (pParam->vol_flags&XVID_VOL_QUARTERPEL?1:0), 0, Data->rrv);
 
 	Data->Cur = pCur + (x + y * pParam->edged_width) * 16;
 	Data->Ref = pRef + (x + y * pParam->edged_width) * 16;
@@ -2208,7 +2208,7 @@ MEanalysis(	const IMAGE * const pRef,
 	Data.currentMV = currentMV;
 	Data.iMinSAD = iMinSAD;
 	Data.iFcode = Current->fcode;
-	Data.rrv = Current->vop_flags & XVID_REDUCED;
+	Data.rrv = Current->vop_flags & XVID_VOP_REDUCED;
 	Data.temp = temp;
 	CheckCandidate = CheckCandidate32I;
 
@@ -2462,7 +2462,7 @@ CountMBBitsInter(SearchData * const Data,
 		if (Data->temp[0] == 0 && Data->temp[1] == 0 && Data->temp[2] == 0 && Data->temp[3] == 0)
 			return 0; //quick stop
 
-		if (MotionFlags & (HALFPELREFINE16_BITS | EXTSEARCH_BITS)) { //we have to prepare for halfpixel-precision search
+		if (MotionFlags & (XVID_ME_HALFPELREFINE16_BITS | XVID_ME_EXTSEARCH_BITS)) { //we have to prepare for halfpixel-precision search
 			for(i = 0; i < 5; i++) bsad[i] = Data->iMinSAD[i];
 			get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
 						pParam->width, pParam->height, Data->iFcode - Data->qpel, 0, Data->rrv);
@@ -2480,12 +2480,12 @@ CountMBBitsInter(SearchData * const Data,
 		}
 	}
 
-	if (MotionFlags&EXTSEARCH_BITS) SquareSearch(Data->currentMV->x, Data->currentMV->y, Data, iDirection);
+	if (MotionFlags&XVID_ME_EXTSEARCH_BITS) SquareSearch(Data->currentMV->x, Data->currentMV->y, Data, iDirection);
 
-	if (MotionFlags&HALFPELREFINE16_BITS) SubpelRefine(Data);
+	if (MotionFlags&XVID_ME_HALFPELREFINE16_BITS) SubpelRefine(Data);
 
 	if (Data->qpel) {
-		if (MotionFlags&(EXTSEARCH_BITS | HALFPELREFINE16_BITS)) { // there was halfpel-precision search
+		if (MotionFlags&(XVID_ME_EXTSEARCH_BITS | XVID_ME_HALFPELREFINE16_BITS)) { // there was halfpel-precision search
 			for(i = 0; i < 5; i++) if (bsad[i] > Data->iMinSAD[i]) {
 				Data->currentQMV[i].x = 2 * Data->currentMV[i].x; // we have found a better match
 				Data->currentQMV[i].y = 2 * Data->currentMV[i].y;
@@ -2496,10 +2496,10 @@ CountMBBitsInter(SearchData * const Data,
 			get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
 					pParam->width, pParam->height, Data->iFcode, 1, 0);
 		}
-		if (MotionFlags&QUARTERPELREFINE16_BITS) SubpelRefine(Data);
+		if (MotionFlags&XVID_ME_QUARTERPELREFINE16_BITS) SubpelRefine(Data);
 	}
 
-	if (MotionFlags&CHECKPREDICTION_BITS) { //let's check vector equal to prediction
+	if (MotionFlags&XVID_ME_CHECKPREDICTION_BITS) { //let's check vector equal to prediction
 		VECTOR * v = Data->qpel ? Data->currentQMV : Data->currentMV;
 		if (!(Data->predMV.x == v->x && Data->predMV.y == v->y))
 			CheckCandidateBits16(Data->predMV.x, Data->predMV.y, 255, &iDirection, Data);
@@ -2560,7 +2560,7 @@ CountMBBitsInter4v(const SearchData * const Data,
 		}
 
 		if (Data8->qpel) {
-			if (MotionFlags&HALFPELREFINE8_BITS || (MotionFlags&PMV_EXTSEARCH8 && MotionFlags&EXTSEARCH_BITS)) { // halfpixel motion search follows
+			if (MotionFlags&XVID_ME_HALFPELREFINE8_BITS || (MotionFlags&XVID_ME_EXTSEARCH8 && MotionFlags&XVID_ME_EXTSEARCH_BITS)) { // halfpixel motion search follows
 				int32_t s = *Data8->iMinSAD;
 				Data8->currentMV->x = Data8->currentQMV->x/2;
 				Data8->currentMV->y = Data8->currentQMV->y/2;
@@ -2571,10 +2571,10 @@ CountMBBitsInter4v(const SearchData * const Data,
 				if (Data8->currentQMV->x & 1 || Data8->currentQMV->y & 1)
 					CheckCandidateBits8(Data8->currentMV->x, Data8->currentMV->y, 255, &iDirection, Data8);
 
-				if (MotionFlags & PMV_EXTSEARCH8 && MotionFlags & EXTSEARCH_BITS)
+				if (MotionFlags & XVID_ME_EXTSEARCH8 && MotionFlags & XVID_ME_EXTSEARCH_BITS)
 					SquareSearch(Data8->currentMV->x, Data8->currentMV->x, Data8, 255);
 
-				if (MotionFlags & HALFPELREFINE8_BITS) SubpelRefine(Data8);
+				if (MotionFlags & XVID_ME_HALFPELREFINE8_BITS) SubpelRefine(Data8);
 
 				if(s > *Data8->iMinSAD) { //we have found a better match
 					Data8->currentQMV->x = 2*Data8->currentMV->x;
@@ -2586,13 +2586,13 @@ CountMBBitsInter4v(const SearchData * const Data,
 							pParam->width, pParam->height, Data8->iFcode, 1, 0);
 
 			}
-			if (MotionFlags & QUARTERPELREFINE8_BITS) SubpelRefine(Data8);
+			if (MotionFlags & XVID_ME_QUARTERPELREFINE8_BITS) SubpelRefine(Data8);
 
 		} else // not qpel
-			if (MotionFlags & HALFPELREFINE8_BITS) SubpelRefine(Data8); //halfpel mode, halfpel refinement
+			if (MotionFlags & XVID_ME_HALFPELREFINE8_BITS) SubpelRefine(Data8); //halfpel mode, halfpel refinement
 
 		//checking vector equal to predicion
-		if (i != 0 && MotionFlags & CHECKPREDICTION_BITS) {
+		if (i != 0 && MotionFlags & XVID_ME_CHECKPREDICTION_BITS) {
 			const VECTOR * v = Data->qpel ? Data8->currentQMV : Data8->currentMV;
 			if (!(Data8->predMV.x == v->x && Data8->predMV.y == v->y))
 				CheckCandidateBits8(Data8->predMV.x, Data8->predMV.y, 255, &iDirection, Data8);

@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_stat.c,v 1.21 2003-02-16 05:11:39 suxen_drol Exp $
+ * $Id: xvid_stat.c,v 1.21.2.1 2003-03-26 14:56:09 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -117,22 +117,22 @@ static int const motion_presets[7] = {
 	0,                                                        /* Q 0 */
 	PMV_EARLYSTOP16,                                          /* Q 1 */
 	PMV_EARLYSTOP16,                                          /* Q 2 */
-	PMV_EARLYSTOP16 | PMV_HALFPELREFINE16,                    /* Q 3 */
-	PMV_EARLYSTOP16 | PMV_HALFPELREFINE16,                    /* Q 4 */
-	PMV_EARLYSTOP16 | PMV_HALFPELREFINE16 | PMV_EARLYSTOP8 |  /* Q 5 */
-	PMV_HALFPELREFINE8,
-	PMV_EARLYSTOP16 | PMV_HALFPELREFINE16 | PMV_EXTSEARCH16 | /* Q 6 */
-	PMV_USESQUARES16 | PMV_EARLYSTOP8 | PMV_HALFPELREFINE8
+	PMV_EARLYSTOP16 | XVID_ME_HALFPELREFINE16,                    /* Q 3 */
+	PMV_EARLYSTOP16 | XVID_ME_HALFPELREFINE16,                    /* Q 4 */
+	PMV_EARLYSTOP16 | XVID_ME_HALFPELREFINE16 | PMV_EARLYSTOP8 |  /* Q 5 */
+	XVID_ME_HALFPELREFINE8,
+	PMV_EARLYSTOP16 | XVID_ME_HALFPELREFINE16 | XVID_ME_EXTSEARCH16 | /* Q 6 */
+	XVID_ME_USESQUARES16 | PMV_EARLYSTOP8 | XVID_ME_HALFPELREFINE8
 };
 
 static int const general_presets[7] = {
 	XVID_H263QUANT,	                              /* Q 0 */
-	XVID_MPEGQUANT,                               /* Q 1 */
+	XVID_VOL_MPEGQUANT,                               /* Q 1 */
 	XVID_H263QUANT,                               /* Q 2 */
-	XVID_H263QUANT | XVID_HALFPEL,                /* Q 3 */
-	XVID_H263QUANT | XVID_HALFPEL | XVID_INTER4V, /* Q 4 */
-	XVID_H263QUANT | XVID_HALFPEL | XVID_INTER4V, /* Q 5 */
-	XVID_H263QUANT | XVID_HALFPEL | XVID_INTER4V  /* Q 6 */
+	XVID_H263QUANT | XVID_VOP_HALFPEL,                /* Q 3 */
+	XVID_H263QUANT | XVID_VOP_HALFPEL | XVID_VOP_INTER4V, /* Q 4 */
+	XVID_H263QUANT | XVID_VOP_HALFPEL | XVID_VOP_INTER4V, /* Q 5 */
+	XVID_H263QUANT | XVID_VOP_HALFPEL | XVID_VOP_INTER4V  /* Q 6 */
 };
 		
 

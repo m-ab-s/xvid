@@ -1493,14 +1493,14 @@ int codec_2pass_get_quant(CODEC* codec, xvid_enc_frame_t* frame)
     /* XXX: vol/vop issues 
 	if (codec->config.quant_type == QUANT_MODE_MOD)
 	{
-		frame->general |= (frame->quant < 4) ? XVID_MPEGQUANT : XVID_H263QUANT;
-		frame->general &= (frame->quant < 4) ? ~XVID_H263QUANT : ~XVID_MPEGQUANT;
+		frame->general |= (frame->quant < 4) ? XVID_VOL_MPEGQUANT : XVID_H263QUANT;
+		frame->general &= (frame->quant < 4) ? ~XVID_H263QUANT : ~XVID_VOL_MPEGQUANT;
 	}
 
 	if (codec->config.quant_type == QUANT_MODE_MOD_NEW)
 	{
-		frame->general |= (frame->quant < 4) ? XVID_H263QUANT : XVID_MPEGQUANT;
-		frame->general &= (frame->quant < 4) ? ~XVID_MPEGQUANT : ~XVID_H263QUANT;
+		frame->general |= (frame->quant < 4) ? XVID_H263QUANT : XVID_VOL_MPEGQUANT;
+		frame->general &= (frame->quant < 4) ? ~XVID_VOL_MPEGQUANT : ~XVID_H263QUANT;
 	}
     */
 
@@ -1524,7 +1524,7 @@ int codec_2pass_update(CODEC* codec, xvid_enc_stats_t* stats)
 		total_size = 0;
 	}
 
-	quant_type = (stats->vol_flags & XVID_MPEGQUANT) ? "MPEG" : "H.263";
+	quant_type = (stats->vol_flags & XVID_VOL_MPEGQUANT) ? "MPEG" : "H.263";
 	if (stats->type == XVID_TYPE_IVOP)
 		frame_type = "IVOP";
 	else if (stats->type == XVID_TYPE_BVOP)

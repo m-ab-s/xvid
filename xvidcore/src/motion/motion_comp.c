@@ -370,7 +370,7 @@ MBMotionCompensationBVOP(MBParam * pParam,
 	const uint32_t edged_width = pParam->edged_width;
 	int32_t dx, dy, b_dx, b_dy, sumx, sumy, b_sumx, b_sumy;
 	int k;
-	const int quarterpel = pParam->vol_flags & XVID_QUARTERPEL;
+	const int quarterpel = pParam->vol_flags & XVID_VOL_QUARTERPEL;
 	const uint8_t * ptr1, * ptr2;
 	uint8_t * const tmp = f_refv->u;
 	const VECTOR * const fmvs = (quarterpel ? mb->qmvs : mb->mvs);

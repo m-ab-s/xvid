@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.12 2003-03-26 11:01:03 suxen_drol Exp $
+ * $Id: xvid.h,v 1.27.2.13 2003-03-26 14:56:10 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -459,82 +459,82 @@ int xvid_encore(void *handle, int opt, void *param1, void *param2);
 /* global flags  */
 typedef enum
 {
-    XVID_PACKED		        = 0x00000001,	/* packed bitstream */
-    XVID_CLOSED_GOP	        = 0x00000002,	/* closed_gop:	was DX50BVOP dx50 bvop compatibility */
-    XVID_EXTRASTATS_ENABLE  = 0x00000004
-/*define XVID_VOL_AT_IVOP	0x00000008	 write vol at every ivop: WIN32/divx compatibility */
-/*define XVID_FORCE_VOL		0x00000008	 XXX: when vol-based parameters are changed, insert an ivop NOT recommended */
+    XVID_GLOBAL_PACKED		        = 0x00000001,	/* packed bitstream */
+    XVID_GLOBAL_CLOSED_GOP	        = 0x00000002,	/* closed_gop:	was DX50BVOP dx50 bvop compatibility */
+    XVID_GLOBAL_EXTRASTATS_ENABLE  = 0x00000004
+/*define XVID_GLOBAL_VOL_AT_IVOP	0x00000008	 write vol at every ivop: WIN32/divx compatibility */
+/*define XVID_GLOBAL_FORCE_VOL		0x00000008	 XXX: when vol-based parameters are changed, insert an ivop NOT recommended */
 } xvid_global_t;
 
 
 /* XVID_ENC_ENCODE param1 */
 /* vol-based flags */
 typedef enum {
-    XVID_MPEGQUANT          = 0x00000001,
-    XVID_EXTRASTATS         = 0x00000002,
-    XVID_QUARTERPEL	        = 0x00000004,	/* enable quarterpel: frames will encoded as quarterpel */
-    XVID_GMC			    = 0x00000008,	/* enable GMC; frames will be checked for gmc suitability */
-    XVID_REDUCED_ENABLE	    = 0x00000010,	/* enable reduced resolution vops: frames will be checked for rrv suitability */
-    XVID_INTERLACING        = 0x00000400, /* enable interlaced encoding */
+    XVID_VOL_MPEGQUANT          = 0x00000001,
+    XVID_VOL_EXTRASTATS         = 0x00000002,
+    XVID_VOL_QUARTERPEL	        = 0x00000004,	/* enable quarterpel: frames will encoded as quarterpel */
+    XVID_VOL_GMC			    = 0x00000008,	/* enable GMC; frames will be checked for gmc suitability */
+    XVID_VOL_REDUCED_ENABLE	    = 0x00000010,	/* enable reduced resolution vops: frames will be checked for rrv suitability */
+    XVID_VOL_INTERLACING        = 0x00000400, /* enable interlaced encoding */
 } xvid_vol_t;
 
 
 /* vop-based flags */
 typedef enum {
-    XVID_DEBUG              = 0x00000001,
+    XVID_VOP_DEBUG              = 0x00000001,
 
-    XVID_HALFPEL            = 0x00000004, /* use halfpel interpolation */
-    XVID_INTER4V            = 0x00000008,
+    XVID_VOP_HALFPEL            = 0x00000004, /* use halfpel interpolation */
+    XVID_VOP_INTER4V            = 0x00000008,
     
-    XVID_CHROMAOPT          = 0x00000020, /* enable chroma optimization pre-filter */
-    XVID_GREYSCALE          = 0x00000040, /* enable greyscale only mode (even for
+    XVID_VOP_CHROMAOPT          = 0x00000020, /* enable chroma optimization pre-filter */
+    XVID_VOP_GREYSCALE          = 0x00000040, /* enable greyscale only mode (even for
                                               color input material chroma is ignored) */
-    XVID_HQACPRED           = 0x00000080, /* 20030209: high quality ac prediction */
-    XVID_MODEDECISION_BITS  = 0x00000100, /* enable DCT-ME and use it for mode decision */
-    XVID_DYNAMIC_BFRAMES    = 0x00000200,
+    XVID_VOP_HQACPRED           = 0x00000080, /* 20030209: high quality ac prediction */
+    XVID_VOP_MODEDECISION_BITS  = 0x00000100, /* enable DCT-ME and use it for mode decision */
+    XVID_VOP_DYNAMIC_BFRAMES    = 0x00000200,
 
-        /* only valid for vol_flags|=XVID_INTERLACING */
-    XVID_TOPFIELDFIRST      = 0x00000400, /* set top-field-first flag  */
-    XVID_ALTERNATESCAN      = 0x00000800, /* set alternate vertical scan flag */
+        /* only valid for vol_flags|=XVID_VOL_INTERLACING */
+    XVID_VOP_TOPFIELDFIRST      = 0x00000400, /* set top-field-first flag  */
+    XVID_VOP_ALTERNATESCAN      = 0x00000800, /* set alternate vertical scan flag */
 
-    /* only valid for vol_flags|=XVID_REDUCED_ENABLED */
-    XVID_REDUCED            = 0x00001000, /* reduced resolution vop */
+    /* only valid for vol_flags|=XVID_VOL_REDUCED_ENABLED */
+    XVID_VOP_REDUCED            = 0x00001000, /* reduced resolution vop */
 } xvid_vop_t;
 
 
 typedef enum {
-    PMV_ADVANCEDDIAMOND16   = 0x00008000, /* use advdiamonds instead of diamonds as search pattern */
-    PMV_USESQUARES16        = 0x00800000, /* use squares instead of diamonds as search pattern */
+    XVID_ME_ADVANCEDDIAMOND16   = 0x00008000, /* use advdiamonds instead of diamonds as search pattern */
+    XVID_ME_USESQUARES16        = 0x00800000, /* use squares instead of diamonds as search pattern */
 
-    PMV_HALFPELREFINE16     = 0x00020000,
-    PMV_HALFPELREFINE8      = 0x02000000,
+    XVID_ME_HALFPELREFINE16     = 0x00020000,
+    XVID_ME_HALFPELREFINE8      = 0x02000000,
 
-    PMV_QUARTERPELREFINE16  = 0x00040000,
-    PMV_QUARTERPELREFINE8   = 0x04000000,
+    XVID_ME_QUARTERPELREFINE16  = 0x00040000,
+    XVID_ME_QUARTERPELREFINE8   = 0x04000000,
 
-    PMV_EXTSEARCH16         = 0x00080000, /* extend PMV by more searches */
+    XVID_ME_EXTSEARCH16         = 0x00080000, /* extend PMV by more searches */
 
-    PMV_EXTSEARCH8          = 0x08000000, /* use diamond/square for extended 8x8 search */
-    PMV_ADVANCEDDIAMOND8    = 0x00004000, /* use advdiamond for PMV_EXTSEARCH8 */
-    PMV_USESQUARES8         = 0x80000000, /* use square for PMV_EXTSEARCH8 */
+    XVID_ME_EXTSEARCH8          = 0x08000000, /* use diamond/square for extended 8x8 search */
+    XVID_ME_ADVANCEDDIAMOND8    = 0x00004000, /* use advdiamond for XVID_ME_EXTSEARCH8 */
+    XVID_ME_USESQUARES8         = 0x80000000, /* use square for XVID_ME_EXTSEARCH8 */
 
-    PMV_CHROMA16            = 0x00100000, /* also use chroma for P_VOP/S_VOP ME */
-    PMV_CHROMA8             = 0x10000000, /* also use chroma for B_VOP ME */
+    XVID_ME_CHROMA16            = 0x00100000, /* also use chroma for P_VOP/S_VOP ME */
+    XVID_ME_CHROMA8             = 0x10000000, /* also use chroma for B_VOP ME */
 
-    /* Motion search using DCT. use XVID_MODEDECISION_BITS to enable */
-    HALFPELREFINE16_BITS    = 0x00000100, /* perform DCT-based halfpel refinement */
-    HALFPELREFINE8_BITS     = 0x00000200, /* perform DCT-based halfpel refinement for 8x8 mode */
-    QUARTERPELREFINE16_BITS = 0x00000400, /* perform DCT-based qpel refinement */
-    QUARTERPELREFINE8_BITS  = 0x00000800, /* perform DCT-based qpel refinement for 8x8 mode */
+    /* Motion search using DCT. use XVID_VOP_MODEDECISION_BITS to enable */
+    XVID_ME_HALFPELREFINE16_BITS    = 0x00000100, /* perform DCT-based halfpel refinement */
+    XVID_ME_HALFPELREFINE8_BITS     = 0x00000200, /* perform DCT-based halfpel refinement for 8x8 mode */
+    XVID_ME_QUARTERPELREFINE16_BITS = 0x00000400, /* perform DCT-based qpel refinement */
+    XVID_ME_QUARTERPELREFINE8_BITS  = 0x00000800, /* perform DCT-based qpel refinement for 8x8 mode */
 
-    EXTSEARCH_BITS          = 0x00001000, /* perform DCT-based search using square pattern
-                                                  enable PMV_EXTSEARCH8 to do this in 8x8 search as well */
-    CHECKPREDICTION_BITS    = 0x00002000, /* always check vector equal to prediction */
+    XVID_ME_EXTSEARCH_BITS          = 0x00001000, /* perform DCT-based search using square pattern
+                                                  enable XVID_ME_EXTSEARCH8 to do this in 8x8 search as well */
+    XVID_ME_CHECKPREDICTION_BITS    = 0x00002000, /* always check vector equal to prediction */
 
-    PMV_UNRESTRICTED16      = 0x00200000, /* unrestricted ME, not implemented */
-    PMV_OVERLAPPING16       = 0x00400000, /* overlapping ME, not implemented */
-    PMV_UNRESTRICTED8       = 0x20000000, /* unrestricted ME, not implemented */
-    PMV_OVERLAPPING8        = 0x40000000 /* overlapping ME, not implemented */
+    XVID_ME_UNRESTRICTED16      = 0x00200000, /* unrestricted ME, not implemented */
+    XVID_ME_OVERLAPPING16       = 0x00400000, /* overlapping ME, not implemented */
+    XVID_ME_UNRESTRICTED8       = 0x20000000, /* unrestricted ME, not implemented */
+    XVID_ME_OVERLAPPING8        = 0x40000000 /* overlapping ME, not implemented */
 } xvid_motion_t;
 
 
