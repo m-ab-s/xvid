@@ -25,7 +25,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.12 2003-05-24 22:03:50 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.13 2003-05-29 10:19:35 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -39,9 +39,6 @@
 /*****************************************************************************
  * Some constants
  ****************************************************************************/
-
-#define RAD2DEG 57.295779513082320876798154814105
-#define DEG2RAD 0.017453292519943295769236907684886
 
 #define DEFAULT_KEYFRAME_BOOST 0
 #define DEFAULT_PAYBACK_METHOD XVID_PAYBACK_PROP
@@ -108,14 +105,6 @@ typedef struct
 
     double curve_comp_scale;
     double movie_curve;
-
-	double alt_curve_low;
-	double alt_curve_high;
-	double alt_curve_low_diff;
-	double alt_curve_high_diff;
-    double alt_curve_curve_bias_bonus;
-	double alt_curve_mid_qual;
-	double alt_curve_qual_dev;
 
     /* dynamic */
 
@@ -211,17 +200,6 @@ rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t **handle)
     _INIT(rc->param.max_overflow_improvement, DEFAULT_MAX_OVERFLOW_IMPROVEMENT);
     _INIT(rc->param.max_overflow_degradation,  DEFAULT_MAX_OVERFLOW_DEGRADATION);
 
-    /* Alt curve settings */
-	_INIT(rc->param.use_alt_curve, DEFAULT_USE_ALT_CURVE);
-    _INIT(rc->param.alt_curve_high_dist, DEFAULT_ALT_CURVE_HIGH_DIST);
-    _INIT(rc->param.alt_curve_low_dist, DEFAULT_ALT_CURVE_LOW_DIST);
-    _INIT(rc->param.alt_curve_use_auto, DEFAULT_ALT_CURVE_USE_AUTO);
-    _INIT(rc->param.alt_curve_auto_str, DEFAULT_ALT_CURVE_AUTO_STR);
-    _INIT(rc->param.alt_curve_type, DEFAULT_ALT_CURVE_TYPE);
-    _INIT(rc->param.alt_curve_min_rel_qual, DEFAULT_ALT_CURVE_MIN_REL_QUAL);
-    _INIT(rc->param.alt_curve_use_auto_bonus_bias, DEFAULT_ALT_CURVE_USE_AUTO_BONUS_BIAS);
-    _INIT(rc->param.alt_curve_bonus_bias, DEFAULT_ALT_CURVE_BONUS_BIAS);
-
     /* Keyframe settings */
 	_INIT(rc->param.kftreshold, DEFAULT_KFTRESHOLD);
     _INIT(rc->param.kfreduction, DEFAULT_KFREDUCTION);
@@ -229,7 +207,7 @@ rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t **handle)
 #undef _INIT
 
 	/* Count frames in the stats file */
-    if (!det_stats_length(rc, param->filename)){
+    if (!det_stats_length(rc, param->filename)) {
         DPRINTF(XVID_DEBUG_RC,"fopen %s failed\n", param->filename);
         free(rc);
         return XVID_ERR_FAIL;
@@ -370,16 +348,14 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	 * The rc->overflow field represents the overflow in current scene (between two
 	 * IFrames) so we must not forget to reset it if we are entering a new scene
 	 */
-	if (s->type == XVID_TYPE_IVOP) {
+	if (s->type == XVID_TYPE_IVOP)
 		overflow = 0;
-	}
 
 	desired = s->scaled_length;
 
 	dbytes = desired;
-	if (s->type == XVID_TYPE_IVOP) {
+	if (s->type == XVID_TYPE_IVOP)
 		dbytes += desired * rc->param.keyframe_boost / 100;
-	}
 	dbytes /= rc->movie_curve;
 
 	/*
@@ -419,66 +395,7 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	/* XXX: warning */
 	curve_temp = 0;
 
-	if (rc->param.use_alt_curve) {
-		if (s->type != XVID_TYPE_IVOP)  {
-			if (dbytes > rc->avg_length[XVID_TYPE_PVOP-1]) {
-				if (dbytes >= rc->alt_curve_high) {
-					curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev);
-				} else {
-					switch(rc->param.alt_curve_type) {
-					case XVID_CURVE_SINE :
-						curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * sin(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_high_diff)));
-						break;
-					case XVID_CURVE_LINEAR :
-						curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * (dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) / rc->alt_curve_high_diff);
-						break;
-					case XVID_CURVE_COSINE :
-						curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * (1.0 - cos(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_high_diff))));
-					}
-				}
-			} else {
-				if (dbytes <= rc->alt_curve_low){
-					curve_temp = dbytes;
-				} else {
-					switch(rc->param.alt_curve_type) {
-					case XVID_CURVE_SINE :
-						curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * sin(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_low_diff)));
-						break;
-					case XVID_CURVE_LINEAR :
-						curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * (dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) / rc->alt_curve_low_diff);
-						break;
-					case XVID_CURVE_COSINE :
-						curve_temp = dbytes * (rc->alt_curve_mid_qual + rc->alt_curve_qual_dev * (1.0 - cos(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_low_diff))));
-					}
-				}
-			}
-
-			/*
-			 * End of code path for curve_temp, as told earlier, we are now
-			 * obliged to scale the value to a bframe one using the inverse
-			 * ratio applied earlier
-			 */
-			if (s->type == XVID_TYPE_BVOP)
-				curve_temp *= rc->avg_length[XVID_TYPE_BVOP-1] / rc->avg_length[XVID_TYPE_PVOP-1];
-
-			curve_temp = curve_temp * rc->curve_comp_scale + rc->alt_curve_curve_bias_bonus;
-
-			desired += ((int)curve_temp);
-			rc->curve_comp_error += curve_temp - (int)curve_temp;
-		} else {
-			/*
-			 * End of code path for dbytes, as told earlier, we are now
-			 * obliged to scale the value to a bframe one using the inverse
-			 * ratio applied earlier
-			 */
-			if (s->type == XVID_TYPE_BVOP)
-				dbytes *= rc->avg_length[XVID_TYPE_BVOP-1] / rc->avg_length[XVID_TYPE_PVOP-1];
-
-			desired += ((int)dbytes);
-			rc->curve_comp_error += dbytes - (int)dbytes;
-		}
-
-	} else if ((rc->param.curve_compression_high + rc->param.curve_compression_low) &&	s->type != XVID_TYPE_IVOP) {
+	if ((rc->param.curve_compression_high + rc->param.curve_compression_low) &&	s->type != XVID_TYPE_IVOP) {
 
 		curve_temp = rc->curve_comp_scale;
 		if (dbytes > rc->avg_length[XVID_TYPE_PVOP-1]) {
@@ -560,9 +477,8 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	overflow = (int)((double)overflow * desired / rc->avg_length[XVID_TYPE_PVOP-1]);
 
 	/* Reign in overflow with huge frames */
-	if (labs(overflow) > labs(rc->overflow)) {
+	if (labs(overflow) > labs(rc->overflow))
 		overflow = rc->overflow;
-	}
 
 	/* Make sure overflow doesn't run away */
 	if (overflow > desired * rc->param.max_overflow_improvement / 100) {
@@ -665,9 +581,8 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	 * We don't want to pollute the RC history results when our computed quant
 	 * has been computed from a capped frame size
 	 */
-	if (capped_to_max_framesize == 0) {
+	if (capped_to_max_framesize == 0)
 		rc->last_quant[s->type-1] = data->quant;
-	}
 
 	return 0;
 }
@@ -1044,51 +959,6 @@ pre_process1(rc_2pass2_t * rc)
         }
     }
 
-    /* alt curve stuff here */
-
-    if (rc->param.use_alt_curve) {
-        const double avg_pvop = rc->avg_length[XVID_TYPE_PVOP-1];
-        const uint64_t tot_pvop = rc->tot_length[XVID_TYPE_PVOP-1];
-        const uint64_t tot_bvop = rc->tot_length[XVID_TYPE_BVOP-1];
-        const uint64_t tot_scaled_pvop = rc->tot_scaled_length[XVID_TYPE_PVOP-1];
-        const uint64_t tot_scaled_bvop = rc->tot_scaled_length[XVID_TYPE_BVOP-1];
-
-		rc->alt_curve_low = avg_pvop - avg_pvop * (double)rc->param.alt_curve_low_dist / 100.0;
-		rc->alt_curve_low_diff = avg_pvop - rc->alt_curve_low;
-		rc->alt_curve_high = avg_pvop + avg_pvop * (double)rc->param.alt_curve_high_dist / 100.0;
-		rc->alt_curve_high_diff = rc->alt_curve_high - avg_pvop;
-
-        if (rc->param.alt_curve_use_auto) {
-            if (tot_bvop + tot_pvop > tot_scaled_bvop + tot_scaled_pvop) {
-				rc->param.alt_curve_min_rel_qual = (int)(100.0 - (100.0 - 100.0 /
-					((double)(tot_pvop + tot_bvop) / (double)(tot_scaled_pvop + tot_scaled_bvop))) * (double)rc->param.alt_curve_auto_str / 100.0);
-
-				if (rc->param.alt_curve_min_rel_qual < 20)
-					rc->param.alt_curve_min_rel_qual = 20;
-            }else{
-				rc->param.alt_curve_min_rel_qual = 100;
-            }
-        }
-		rc->alt_curve_mid_qual = (1.0 + (double)rc->param.alt_curve_min_rel_qual / 100.0) / 2.0;
-		rc->alt_curve_qual_dev = 1.0 - rc->alt_curve_mid_qual;
-			
-        if (rc->param.alt_curve_low_dist > 100) {
-			switch(rc->param.alt_curve_type) {
-            case XVID_CURVE_SINE: // Sine Curve (high aggressiveness)
-				rc->alt_curve_qual_dev *= 2.0 / (1.0 + sin(DEG2RAD * (avg_pvop * 90.0 / rc->alt_curve_low_diff)));
-				rc->alt_curve_mid_qual = 1.0 - rc->alt_curve_qual_dev * sin(DEG2RAD * (avg_pvop * 90.0 / rc->alt_curve_low_diff));
-				break;
-			case XVID_CURVE_LINEAR: // Linear (medium aggressiveness)
-				rc->alt_curve_qual_dev *= 2.0 / (1.0 + avg_pvop / rc->alt_curve_low_diff);
-				rc->alt_curve_mid_qual = 1.0 - rc->alt_curve_qual_dev * avg_pvop / rc->alt_curve_low_diff;
-				break;
-			case XVID_CURVE_COSINE: // Cosine Curve (low aggressiveness)
-				rc->alt_curve_qual_dev *= 2.0 / (1.0 + (1.0 - cos(DEG2RAD * (avg_pvop * 90.0 / rc->alt_curve_low_diff))));
-				rc->alt_curve_mid_qual = 1.0 - rc->alt_curve_qual_dev * (1.0 - cos(DEG2RAD * (avg_pvop * 90.0 / rc->alt_curve_low_diff)));
-			}
-		}
-    }
-
     /* --- */
 
     total1=total2=0;
@@ -1105,49 +975,11 @@ pre_process1(rc_2pass2_t * rc)
             if (s->type == XVID_TYPE_BVOP)
                 dbytes *= rc->avg_length[XVID_TYPE_PVOP-1] / rc->avg_length[XVID_TYPE_BVOP-1];
 
-            if (rc->param.use_alt_curve) {
-                if (dbytes > rc->avg_length[XVID_TYPE_PVOP-1]) {
-
-                    if (dbytes >= rc->alt_curve_high) {
-						dbytes2 = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev);
-                    }else{
-						switch(rc->param.alt_curve_type) {
-                        case XVID_CURVE_SINE :
-						    dbytes2 = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * sin(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_high_diff)));
-							break;
-                        case XVID_CURVE_LINEAR :
-						    dbytes2 = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * (dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) / rc->alt_curve_high_diff);
-							break;
-						case XVID_CURVE_COSINE :
-						    dbytes2 = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * (1.0 - cos(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_high_diff))));
-						}
-					}
-                }else{
-                    if (dbytes <= rc->alt_curve_low) {
-						dbytes2 = dbytes;
-                    }else{
-						switch(rc->param.alt_curve_type) {
-						case XVID_CURVE_SINE :
-						    dbytes2 = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * sin(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_low_diff)));
-							break;
-						case XVID_CURVE_LINEAR :
-						    dbytes2 = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * (dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) / rc->alt_curve_low_diff);
-							break;
-						case XVID_CURVE_COSINE :
-						    dbytes2 = dbytes * (rc->alt_curve_mid_qual + rc->alt_curve_qual_dev * (1.0 - cos(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_low_diff))));
-						}
-					}
-
-                }
-
-
-            }else{
-                if (dbytes > rc->avg_length[XVID_TYPE_PVOP-1]) {
-                    dbytes2=((double)dbytes + (rc->avg_length[XVID_TYPE_PVOP-1] - dbytes) * rc->param.curve_compression_high / 100.0);
-                }else{
-			        dbytes2 = ((double)dbytes + (rc->avg_length[XVID_TYPE_PVOP-1] - dbytes) * rc->param.curve_compression_low / 100.0);
-                }
-            }
+			if (dbytes > rc->avg_length[XVID_TYPE_PVOP-1]) {
+				dbytes2=((double)dbytes + (rc->avg_length[XVID_TYPE_PVOP-1] - dbytes) * rc->param.curve_compression_high / 100.0);
+			} else {
+				dbytes2 = ((double)dbytes + (rc->avg_length[XVID_TYPE_PVOP-1] - dbytes) * rc->param.curve_compression_low / 100.0);
+			}
 
             if (s->type == XVID_TYPE_BVOP) {
 			    dbytes2 *= rc->avg_length[XVID_TYPE_BVOP-1] / rc->avg_length[XVID_TYPE_PVOP-1];
@@ -1163,81 +995,9 @@ pre_process1(rc_2pass2_t * rc)
 
     rc->curve_comp_scale = total1 / total2;
 
-    if (!rc->param.use_alt_curve) {
-        DPRINTF(XVID_DEBUG_RC, "middle frame size for asymmetric curve compression: %i\n",
+	DPRINTF(XVID_DEBUG_RC, "middle frame size for asymmetric curve compression: %i\n",
             (int)(rc->avg_length[XVID_TYPE_PVOP-1] * rc->curve_comp_scale));
-    }
 
-    if (rc->param.use_alt_curve) {
-        int bonus_bias = rc->param.alt_curve_bonus_bias;
-        int oldquant = 1;
-
-	    if (rc->param.alt_curve_use_auto_bonus_bias)
-		    bonus_bias = rc->param.alt_curve_min_rel_qual;
-
-	    rc->alt_curve_curve_bias_bonus = (total1 - total2) * (double)bonus_bias / 100.0 / (double)(rc->num_frames /* - credits_frames */ - rc->num_keyframes);
-	    rc->curve_comp_scale = ((total1 - total2) * (1.0 - (double)bonus_bias / 100.0) + total2) / total2;
-
-
-        /* special info for alt curve:  bias bonus and quantizer thresholds */
-
-		DPRINTF(XVID_DEBUG_RC, "avg scaled framesize:%i\n", (int)rc->avg_length[XVID_TYPE_PVOP-1]);
-		DPRINTF(XVID_DEBUG_RC, "bias bonus:%i bytes\n", (int)rc->alt_curve_curve_bias_bonus);
-
-		for (i=1; i <= (int)(rc->alt_curve_high*2)+1; i++) {
-            double curve_temp, dbytes;
-            int newquant;
-
-            dbytes = i;
-			if (dbytes > rc->avg_length[XVID_TYPE_PVOP-1]) {
-                if (dbytes >= rc->alt_curve_high) {
-					curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev);
-                }else{
-					switch(rc->param.alt_curve_type)
-					{
-					case XVID_CURVE_SINE :
-						curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * sin(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_high_diff)));
-						break;
-					case XVID_CURVE_LINEAR :
-						curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * (dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) / rc->alt_curve_high_diff);
-						break;
-					case XVID_CURVE_COSINE :
-						curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * (1.0 - cos(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_high_diff))));
-					}
-				}
-			}else{
-                if (dbytes <= rc->alt_curve_low) {
-					curve_temp = dbytes;
-                }else{
-					switch(rc->param.alt_curve_type)
-					{
-					case XVID_CURVE_SINE :
-						curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * sin(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_low_diff)));
-						break;
-					case XVID_CURVE_LINEAR :
-						curve_temp = dbytes * (rc->alt_curve_mid_qual - rc->alt_curve_qual_dev * (dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) / rc->alt_curve_low_diff);
-						break;
-					case XVID_CURVE_COSINE :
-						curve_temp = dbytes * (rc->alt_curve_mid_qual + rc->alt_curve_qual_dev * (1.0 - cos(DEG2RAD * ((dbytes - rc->avg_length[XVID_TYPE_PVOP-1]) * 90.0 / rc->alt_curve_low_diff))));
-					}
-				}
-			}
-
-			if (rc->movie_curve > 1.0)
-				dbytes *= rc->movie_curve;
-
-			newquant = (int)(dbytes * 2.0 / (curve_temp * rc->curve_comp_scale + rc->alt_curve_curve_bias_bonus));
-			if (newquant > 1) {
-				if (newquant != oldquant) {
-                    int percent = (int)((i - rc->avg_length[XVID_TYPE_PVOP-1]) * 100.0 / rc->avg_length[XVID_TYPE_PVOP-1]);
-					oldquant = newquant;
-					DPRINTF(XVID_DEBUG_RC, "quant:%i threshold at %i : %i percent\n", newquant, i, percent);
-				}
-			}
-		}
-
-    }
-   
     rc->overflow = 0;
     rc->KFoverflow = 0;
     rc->KFoverflow_partial = 0;
