@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.1 2003-03-09 00:28:09 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.2 2003-03-09 16:45:24 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -56,7 +56,7 @@ static xvid_motion_t const motion_presets[] = {
 	PMV_HALFPELREFINE16,
 	PMV_HALFPELREFINE16 | PMV_HALFPELREFINE8,
 	PMV_HALFPELREFINE16 | PMV_HALFPELREFINE8 | PMV_EXTSEARCH16 | PMV_USESQUARES16,
-	PMV_HALFPELREFINE16 | PMV_HALFPELREFINE8 | PMV_EXTSEARCH16 | PMV_USESQUARES16,
+	PMV_HALFPELREFINE16 | PMV_HALFPELREFINE8 | PMV_EXTSEARCH16 | PMV_USESQUARES16 | PMV_CHROMA16 | PMV_CHROMA8,
 };
 
 static xvid_vol_t const vol_presets[] = {
@@ -140,7 +140,8 @@ static int enc_init(int use_assembler);
 static int enc_stop();
 static int enc_main(unsigned char* image,
 					unsigned char* bitstream,
-					long *frametype);
+					long *frametype,
+					int stats[3]);
 
 /*****************************************************************************
  *               Main function
@@ -341,13 +342,18 @@ int main(int argc, char *argv[])
 
 	do {
 
-		if (ARG_INPUTTYPE)
-			status = read_pgmdata(in_file, in_buffer);	/* read PGM data (YUV-format) */
-		else
-			status = read_yuvdata(in_file, in_buffer);	/* read raw data (YUV-format) */
+		char *type;
+		int stats[3];
+
+		if(ARG_INPUTTYPE) {
+			/* read PGM data (YUV-format) */
+			status = read_pgmdata(in_file, in_buffer);
+		} else {
+			/* read raw data (YUV-format) */
+			status = read_yuvdata(in_file, in_buffer);
+		}
 	      
-		if (status)
-		{
+		if(status) {
 			/* Couldn't read image, most likely end-of-file */
 			continue;
 		}
@@ -357,37 +363,43 @@ int main(int argc, char *argv[])
  ****************************************************************************/
 
 		enctime = msecond();
-		m4v_size = enc_main(in_buffer, mp4_buffer, &frame_type);
+		m4v_size = enc_main(in_buffer, mp4_buffer, &frame_type, stats);
 		enctime = msecond() - enctime;
 
 		/* Not coded frames return 0 */
 		if(m4v_size == 0) goto next_frame;
 
-		{
-			char *type;
+		/* Write the Frame statistics */
+		switch(frame_type) {
+		case XVID_TYPE_IVOP:
+			type = "I";
+			break;
+		case XVID_TYPE_PVOP:
+			type = "P";
+			break;
+		case XVID_TYPE_BVOP:
+			type = "B";
+			break;
+		case XVID_TYPE_SVOP:
+			type = "S";
+			break;
+		case XVID_TYPE_NOTHING:
+			type = "N";
+			break;
+		default:
+			type = "U";
+			break;
+		}		
 
-			switch(frame_type) {
-			case XVID_TYPE_IVOP:
-				type = "I";
-				break;
-			case XVID_TYPE_PVOP:
-				type = "P";
-				break;
-			case XVID_TYPE_BVOP:
-				type = "B";
-				break;
-			case XVID_TYPE_SVOP:
-				type = "S";
-				break;
-			default:
-				type = "Unknown";
-				break;
-			}		
-
-			printf("Frame %5d: type = %s, enctime(ms) =%6.1f, length(bytes) =%7d\n",
-				   (int)filenr, type, (float)enctime, (int)m4v_size);
-
-		}
+		printf("Frame %5d: type = %s, enctime(ms) =%6.1f, length(bytes) =%7d, "
+			   "psnr y = %2.2f, psnr u = %2.2f, psnr v = %2.2f\n",
+			   (int)filenr,
+			   type,
+			   (float)enctime,
+			   (int)m4v_size,
+			   (stats[0] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[0]/((float)(XDIM)*(YDIM))),
+			   (stats[1] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[1]/((float)(XDIM)*(YDIM)/4)),
+			   (stats[2] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[2]/((float)(XDIM)*(YDIM)/4)));
 
 		/* Update encoding time stats */
 		totalenctime += enctime;
@@ -420,7 +432,7 @@ int main(int argc, char *argv[])
 		if (ARG_INPUTTYPE)
 			status = read_pgmheader(in_file);
 
-		if(frame_type != 5) filenr++;
+		filenr++;
 
 	} while ( (!status) && (filenr<ARG_MAXFRAMENR) );
 
@@ -435,6 +447,7 @@ int main(int argc, char *argv[])
 
 	printf("Avg: enctime(ms) =%7.2f, fps =%7.2f, length(bytes) = %7d\n",
 		   totalenctime, 1000/totalenctime, (int)totalsize);
+
 
 /*****************************************************************************
  *                            XviD PART  Stop
@@ -662,7 +675,7 @@ static int enc_init(int use_assembler)
 	xvid_enc_create.frame_drop_ratio = 0;
 
 	/* Global encoder options */
-	xvid_enc_create.global = 0;
+	xvid_enc_create.global = XVID_EXTRASTATS_ENABLE;
 
 	/* I use a small value here, since will not encode whole movies, but short clips */
 	xerr = xvid_encore(NULL, XVID_ENC_CREATE, &xvid_enc_create, NULL);
@@ -685,7 +698,8 @@ static int enc_stop()
 
 static int enc_main(unsigned char* image,
 					unsigned char* bitstream,
-					long *frametype)
+					long *frametype,
+					int stats[3])
 {
 	int ret;
 
@@ -726,9 +740,19 @@ static int enc_main(unsigned char* image,
 	xvid_enc_frame.quant_intra_matrix = NULL;
 	xvid_enc_frame.quant_inter_matrix = NULL;
 
+	/* Foll proof */
+	xvid_enc_stats[0].sse_y = 0;
+	xvid_enc_stats[0].sse_v = 0;
+	xvid_enc_stats[0].sse_u = 0;
+
+	/* Encode the frame */
+	xvid_enc_frame.vop_flags |= XVID_EXTRASTATS;
 	ret = xvid_encore(enc_handle, XVID_ENC_ENCODE, &xvid_enc_frame, &xvid_enc_stats);
 
 	*frametype = xvid_enc_stats[0].type;
+	stats[0]   = xvid_enc_stats[0].sse_y;
+	stats[1]   = xvid_enc_stats[0].sse_u;
+	stats[2]   = xvid_enc_stats[0].sse_v;
 
 	return(ret);
 }
