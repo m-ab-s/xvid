@@ -52,7 +52,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: encoder.c,v 1.90.2.2 2003-05-28 16:44:38 edgomez Exp $
+ * $Id: encoder.c,v 1.90.2.3 2003-07-28 12:39:23 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -550,7 +550,7 @@ encoder_encode(Encoder * pEnc,
 	 * BitstreamPutBits(&bs, 0xFFFF, 16);
 	 * BitstreamPutBits(&bs, 0xFFFF, 16);
 	 */
-	BitstreamPad(&bs);
+	BitstreamPadAlways(&bs); /* next_start_code() at the end of Video Object Plane */
 	pFrame->length = BitstreamLength(&bs);
 
 	if (pResult) {
