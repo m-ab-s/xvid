@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.21 2003-05-12 00:06:49 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.22 2003-05-14 11:53:16 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -116,6 +116,11 @@ static xvid_vop_t const vop_presets[] = {
  *                     Command line global variables
  ****************************************************************************/
 
+#define MAX_ZONES   64
+
+static xvid_enc_zone_t ZONES[MAX_ZONES];
+static int NUM_ZONES = 0;
+
 /* Maximum number of frames to encode */
 #define ABS_MAXFRAMENR 9999
 
@@ -123,10 +128,9 @@ static int ARG_STATS = 0;
 static int ARG_DUMP = 0;
 static int ARG_LUMIMASKING = 0;
 static int ARG_BITRATE = 0;
+static int ARG_SINGLE = 0;
 static char *ARG_PASS1 = 0;
 static char *ARG_PASS2 = 0;
-static int ARG_PASS2_BITRATE = 0;
-static float ARG_QUANTI = 0.0f;
 static int ARG_QUALITY = 3;
 static float ARG_FRAMERATE = 25.00f;
 static int ARG_MAXFRAMENR = ABS_MAXFRAMENR;
@@ -247,17 +251,17 @@ main(int argc,
 		} else if (strcmp("-h", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			YDIM = atoi(argv[i]);
-		} else if (strcmp("-bitrate", argv[i]) == 0 && i < argc - 1) {
+        } else if (strcmp("-bitrate", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_BITRATE = atoi(argv[i]);
+		} else if (strcmp("-single", argv[i]) == 0) {
+			ARG_SINGLE = 1;
 		} else if (strcmp("-pass1", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_PASS1 = argv[i];
-		} else if (strcmp("-pass2", argv[i]) == 0 && i < argc - 2) {
+		} else if (strcmp("-pass2", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_PASS2 = argv[i];
-			i++;
-			ARG_PASS2_BITRATE = atoi(argv[i]);
 		} else if (strcmp("-max_bframes", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_MAXBFRAMES = atoi(argv[i]);
@@ -269,6 +273,21 @@ main(int argc,
 		} else if (strcmp("-bquant_offset", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_BQOFFSET = atoi(argv[i]);
+
+        } else if ((strcmp("-zq", argv[i]) == 0 || strcmp("-zw", argv[i]) == 0) && i < argc - 2) {
+
+            if (NUM_ZONES >= MAX_ZONES) {
+                fprintf(stderr,"warning: too many zones; zone ignored\n");
+                continue;
+            }
+            ZONES[NUM_ZONES].mode = strcmp("-zq", argv[i])==0 ? XVID_ZONE_QUANT : XVID_ZONE_WEIGHT;
+			i++;
+            ZONES[NUM_ZONES].frame = atoi(argv[i]);            
+            i++;
+            ZONES[NUM_ZONES].increment  = (int)(atof(argv[i]) * 100);
+            ZONES[NUM_ZONES].base  = 100;
+            NUM_ZONES++;
+        
 		} else if (strcmp("-quality", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_QUALITY = atoi(argv[i]);
@@ -290,9 +309,6 @@ main(int argc,
 		} else if (strcmp("-nframes", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_MAXFRAMENR = atoi(argv[i]);
-		} else if (strcmp("-quant", argv[i]) == 0 && i < argc - 1) {
-			i++;
-			ARG_QUANTI = (float) atof(argv[i]);
 		} else if (strcmp("-save", argv[i]) == 0) {
 			ARG_SAVEMPEGSTREAM = 1;
 		} else if (strcmp("-debug", argv[i]) == 0) {
@@ -623,10 +639,12 @@ usage()
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Rate control options:\n");
 	fprintf(stderr, " -framerate float               : target framerate (>0 | default=25.0)\n");
-	fprintf(stderr,	" -bitrate   integer             : bitrate -- for CBR/VBR pass2\n");
-	fprintf(stderr,	" -quant     float               : quantizer -- for \"Fixed\" quantizer RC\n");
-	fprintf(stderr, " -pass1     filename            : output stats filename\n");
-	fprintf(stderr,	" -pass2     filename bitrate : input stats filename, target bitrate\n");
+	fprintf(stderr,	" -bitrate   integer             : target bitrate\n");
+    fprintf(stderr,	" -single                        : single pass mode\n");
+	fprintf(stderr, " -pass1     filename            : twopass mode (first pass)\n");
+	fprintf(stderr,	" -pass2     filename            : twopass mode (2nd pass)\n");
+    fprintf(stderr,	" -zq frame float               : bitrate zone; quant\n");
+    fprintf(stderr,	" -zw frame float               : bitrate zone; weight\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Other options\n");
 	fprintf(stderr, " -asm            : use assembly optmized code\n");
@@ -769,10 +787,11 @@ static int
 enc_init(int use_assembler)
 {
 	int xerr;
-	xvid_plugin_cbr_t cbr;
+	//xvid_plugin_cbr_t cbr;
+    xvid_plugin_single_t single;
 	xvid_plugin_2pass1_t rc2pass1;
 	xvid_plugin_2pass2_t rc2pass2;
-	xvid_plugin_fixed_t rcfixed;
+	//xvid_plugin_fixed_t rcfixed;
 	xvid_enc_plugin_t plugins[7];
 	xvid_gbl_init_t xvid_gbl_init;
 	xvid_enc_create_t xvid_enc_create;
@@ -814,29 +833,19 @@ enc_init(int use_assembler)
 	xvid_enc_create.height = YDIM;
 
 	/* init plugins  */
+    xvid_enc_create.zones = ZONES;
+    xvid_enc_create.num_zones = NUM_ZONES;
 
 	xvid_enc_create.plugins = plugins;
 	xvid_enc_create.num_plugins = 0;
 
-	if (ARG_BITRATE) {
-		memset(&cbr, 0, sizeof(xvid_plugin_cbr_t));
-		cbr.version = XVID_VERSION;
-		cbr.bitrate = ARG_BITRATE;
+	if (ARG_SINGLE) {
+		memset(&single, 0, sizeof(xvid_plugin_single_t));
+		single.version = XVID_VERSION;
+		single.bitrate = ARG_BITRATE;
 
-		plugins[xvid_enc_create.num_plugins].func = xvid_plugin_cbr;
-		plugins[xvid_enc_create.num_plugins].param = &cbr;
-		xvid_enc_create.num_plugins++;
-	}
-
-	if (ARG_QUANTI) {
-		memset(&rcfixed, 0, sizeof(xvid_plugin_fixed_t));
-		rcfixed.version = XVID_VERSION;
-		/* We will use a 1/10 precision, just to make sure it works */
-		rcfixed.quant_base = 10;
-		rcfixed.quant_increment = (int) (ARG_QUANTI * 10);
-
-		plugins[xvid_enc_create.num_plugins].func = xvid_plugin_fixed;
-		plugins[xvid_enc_create.num_plugins].param = &rcfixed;
+		plugins[xvid_enc_create.num_plugins].func = xvid_plugin_single;
+		plugins[xvid_enc_create.num_plugins].param = &single;
 		xvid_enc_create.num_plugins++;
 	}
 
@@ -844,7 +853,7 @@ enc_init(int use_assembler)
 		memset(&rc2pass2, 0, sizeof(xvid_plugin_2pass2_t));
 		rc2pass2.version = XVID_VERSION;
 		rc2pass2.filename = ARG_PASS2;
-		rc2pass2.bitrate = ARG_PASS2_BITRATE;
+		rc2pass2.bitrate = ARG_BITRATE;
 
 		plugins[xvid_enc_create.num_plugins].func = xvid_plugin_2pass2;
 		plugins[xvid_enc_create.num_plugins].param = &rc2pass2;
