@@ -69,8 +69,7 @@ VLC DCT3Dintra[4096];
 VLC DCT3Dinter[4096];
 
 /* not really MB related, but VLCs are only available here */
-void inline bs_put_spritetrajectory(Bitstream * bs,
-			  const int val)
+void bs_put_spritetrajectory(Bitstream * bs, const int val)
 {
 	const int code = sprite_trajectory_code[val+16384].code;
 	const int len = sprite_trajectory_code[val+16384].len;
