@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.7 2003-06-09 13:49:50 edgomez Exp $
+ * $Id: decoder.c,v 1.49.2.8 2003-06-09 19:41:53 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1742,6 +1742,7 @@ decoder_decode(DECODER * dec,
 	WARPPOINTS gmc_warp;
 	int coding_type;
 	int success, output, seen_something;
+	idctFuncPtr idct_save;
 
 	if (XVID_MAJOR(frame->version) != 1 || (stats && XVID_MAJOR(stats->version) != 1))	/* v1.x.x */
 		return XVID_ERR_VERSION;
@@ -1787,6 +1788,7 @@ decoder_decode(DECODER * dec,
 	success = 0;
 	output = 0;
 	seen_something = 0;
+	idct_save = idct;
 
 repeat:
 
@@ -1828,6 +1830,14 @@ repeat:
 
 	dec->p_bmv.x = dec->p_bmv.y = dec->p_fmv.y = dec->p_fmv.y = 0;	/* init pred vector to 0 */
 
+#if defined(ARCH_IS_IA32)
+	/*
+	 * /!\ Ugly hack /!\
+	 * IA32: Prior to xvid bitstream 10, we were using Walten's mmx/xmm idct
+	 */
+	if((idct == simple_idct_mmx) && (dec->bs_version < 10))
+		idct = idct_mmx;
+#endif
 
 	/* packed_mode: special-N_VOP treament */
 	if (dec->packed_mode && coding_type == N_VOP)
@@ -1956,6 +1966,8 @@ done :
 
 	emms();
 	stop_global_timer();
+
+	idct = idct_save;
 
 	return BitstreamPos(&bs) / 8;	/* number of bytes consumed */
 }

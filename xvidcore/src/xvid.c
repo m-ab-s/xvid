@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.6 2003-06-09 13:51:17 edgomez Exp $
+ * $Id: xvid.c,v 1.45.2.7 2003-06-09 19:42:08 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -288,8 +288,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 
 #if defined(ARCH_IS_IA32)
 
-	if ((cpu_flags & XVID_CPU_ASM))
-	{
+	if ((cpu_flags & XVID_CPU_ASM))	{
 		vfilter_31 = xvid_VFilter_31_x86;
 		hfilter_31 = xvid_HFilter_31_x86;
 	}
@@ -306,7 +305,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 
 		/* Forward and Inverse Discrete Cosine Transformation functions */
 		fdct = fdct_mmx;
-		idct = idct_mmx;
+		idct = simple_idct_mmx;
 
 		/* Quantization related functions */
 		quant_intra   = quant_intra_mmx;
@@ -392,7 +391,9 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	if ((cpu_flags & XVID_CPU_MMXEXT)) {
 
 		/* Inverse DCT */
+#if 0 /* We don't use  Walken idct anymore! */
 		idct = idct_xmm;
+#endif
 
 		/* Interpolation */
 		interpolate8x8_halfpel_h  = interpolate8x8_halfpel_h_xmm;
@@ -438,7 +439,9 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	if ((cpu_flags & XVID_CPU_3DNOWEXT)) {
 
 		/* Inverse DCT */
+#if 0 /* We don't use  Walken idct anymore! */
 		idct =  idct_3dne;
+#endif
 
 		/* Buffer transfer */
 		transfer_8to16copy =  transfer_8to16copy_3dne;
@@ -488,8 +491,10 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		dev16    = dev16_sse2;
 #endif
 		/* Forward and Inverse DCT */
+#if 0 /* Both function are known to be unprecise, better keep them deactivated */
 		idct  = idct_sse2;
 		fdct = fdct_sse2;
+#endif
 	}
 #endif
 

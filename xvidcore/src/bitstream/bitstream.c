@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.c,v 1.39.2.11 2003-06-09 13:51:34 edgomez Exp $
+ * $Id: bitstream.c,v 1.39.2.12 2003-06-09 19:42:18 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1021,6 +1021,12 @@ BitstreamReadHeaders(Bitstream * bs,
 			}
 
 			DPRINTF(XVID_DEBUG_STARTCODE, "<user_data>: %s\n", tmp);
+
+			/* read xvid bitstream version */
+			if(strncmp(tmp, "XviD", 4) == 0) {
+				sscanf(tmp, "XviD%d", &dec->bs_version);
+				DPRINTF(XVID_DEBUG_HEADER, "xvid bitstream version=%i", dec->bs_version);
+			}
 
 		    /* divx detection */
 			i = sscanf(tmp, "DivX%dBuild%d%c", &version, &build, &packed);

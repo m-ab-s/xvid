@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.h,v 1.13.2.3 2003-06-09 13:50:02 edgomez Exp $
+ * $Id: decoder.h,v 1.13.2.4 2003-06-09 19:42:02 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -100,6 +100,9 @@ typedef struct
 
 	int newpred_enable;
 	int reduced_resolution_enable;
+
+	/* The bitstream version if it's a XviD stream */
+	int bs_version;
 
 	/* image */
 
