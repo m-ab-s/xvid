@@ -59,11 +59,15 @@
 #include <commctrl.h>
 #include <shlobj.h>
 #include <prsht.h>
+#ifdef _SMP
+#include <pthread.h>
+#endif
 
 #include "codec.h"
 #include "config.h"
 #include "xvid.h"  // cpu masks
 #include "resource.h"
+
 
 
 /* registry info structs */
@@ -92,7 +96,7 @@ REG_INT const reg_ints[] = {
 	{"packed",					&reg.packed,					0},
 	{"dx50bvop",				&reg.dx50bvop,					0},
 	{"debug",					&reg.debug,						0},
-#endif BFRAMES
+#endif
 
 	{"min_iquant",				&reg.min_iquant,				1},
 	{"max_iquant",				&reg.max_iquant,				31},
@@ -157,6 +161,10 @@ void config_reg_get(CONFIG * config)
 	init_param.cpu_flags = XVID_CPU_CHKONLY;
 	xvid_init(0, 0, &init_param, NULL);
 	reg.cpu = init_param.cpu_flags;
+
+#ifdef _SMP
+	reg.num_threads = pthread_num_processors_np();
+#endif
 
 	RegOpenKeyEx(XVID_REG_KEY, XVID_REG_PARENT "\\" XVID_REG_CHILD, 0, KEY_READ, &hKey);
 
@@ -705,6 +713,10 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 		CheckRadioButton(hDlg, IDC_CPU_AUTO, IDC_CPU_FORCE, 
 			config->cpu & XVID_CPU_FORCE ? IDC_CPU_FORCE : IDC_CPU_AUTO );
 
+#ifdef _SMP
+		SetDlgItemInt(hDlg, IDC_NUMTHREADS, config->num_threads, FALSE);
+#endif
+
 		SetDlgItemInt(hDlg, IDC_CBR_REACTIONDELAY, config->rc_reaction_delay_factor, FALSE);
 		SetDlgItemInt(hDlg, IDC_CBR_AVERAGINGPERIOD, config->rc_averaging_period, FALSE);
 		SetDlgItemInt(hDlg, IDC_CBR_BUFFER, config->rc_buffer, FALSE);
@@ -849,6 +861,10 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 		config->cpu |= ISDLGSET(IDC_CPU_3DNOW) ? XVID_CPU_3DNOW: 0;
 		config->cpu |= ISDLGSET(IDC_CPU_3DNOWEXT) ? XVID_CPU_3DNOWEXT: 0;
 		config->cpu |= ISDLGSET(IDC_CPU_FORCE) ? XVID_CPU_FORCE : 0;
+
+#ifdef _SMP
+		config->num_threads = config_get_uint(hDlg, IDC_NUMTHREADS, config->num_threads);
+#endif
 
 		config->rc_reaction_delay_factor = config_get_uint(hDlg, IDC_CBR_REACTIONDELAY, config->rc_reaction_delay_factor);
 		config->rc_averaging_period = config_get_uint(hDlg, IDC_CBR_AVERAGINGPERIOD, config->rc_averaging_period);
@@ -1084,6 +1100,13 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SendDlgItemMessage(hDlg, IDC_CURVETYPE, CB_ADDSTRING, 0, (LPARAM)"Medium");
 			SendDlgItemMessage(hDlg, IDC_CURVETYPE, CB_ADDSTRING, 0, (LPARAM)"High");
 		}
+#ifndef _SMP
+		else if (psi->page == DLG_CPU)
+		{
+			EnableWindow(GetDlgItem(hDlg, IDC_NUMTHREADS_STATIC), FALSE);
+			EnableWindow(GetDlgItem(hDlg, IDC_NUMTHREADS), FALSE);
+		}
+#endif
 
 		if (hTooltip)
 		{

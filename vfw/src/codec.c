@@ -23,6 +23,7 @@
  *
  *	History:
  *
+ *	12.07.2002	num_threads
  *	23.06.2002	XVID_CPU_CHKONLY; loading speed up
  *	25.04.2002	ICDECOMPRESS_PREROLL
  *	17.04.2002	re-enabled lumi masking for 1st pass
@@ -293,6 +294,10 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	param.min_quantizer = codec->config.min_pquant;
 	param.max_quantizer = codec->config.max_pquant;
 	param.max_key_interval = codec->config.max_key_interval;
+
+#ifdef _SMP
+	param.num_threads = codec->config.num_threads;
+#endif
 
 #ifdef BFRAMES
 	param.global = 0;
