@@ -21,7 +21,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.32 2003-08-04 17:23:37 chl Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.33 2003-08-09 16:46:46 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -130,6 +130,7 @@ static int NUM_ZONES = 0;
 static int ARG_STATS = 0;
 static int ARG_DUMP = 0;
 static int ARG_LUMIMASKING = 0;
+static int ARG_QUARTERPEL = 0;
 static int ARG_BITRATE = 0;
 static int ARG_SINGLE = 0;
 static char *ARG_PASS1 = 0;
@@ -321,6 +322,8 @@ main(int argc,
 			ARG_DUMP = 1;
 		} else if (strcmp("-lumimasking", argv[i]) == 0) {
 			ARG_LUMIMASKING = 1;
+		} else if (strcmp("-quarterpel", argv[i]) == 0) {
+			ARG_QUARTERPEL = 1;
 		} else if (strcmp("-type", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_INPUTTYPE = atoi(argv[i]);
@@ -682,6 +685,7 @@ usage()
 	fprintf(stderr, "Other options\n");
 	fprintf(stderr, " -asm            : use assembly optmized code\n");
 	fprintf(stderr, " -quality integer: quality ([0..%d])\n", ME_ELEMENTS - 1);
+	fprintf(stderr, " -quarterpel     : use quarterpel refinement\n");
 	fprintf(stderr, " -packed         : packed mode\n");
 	fprintf(stderr, " -lumimasking    : use lumimasking algorithm\n");
 	fprintf(stderr, " -stats          : print stats about encoded frames\n");
@@ -1069,6 +1073,9 @@ enc_main(unsigned char *image,
 	if (ARG_STATS)
 		xvid_enc_frame.vol_flags |= XVID_VOL_EXTRASTATS;
 
+	if (ARG_QUARTERPEL)
+		xvid_enc_frame.vol_flags |= XVID_VOL_QUARTERPEL;
+
 	/* Set up core's general features */
 	xvid_enc_frame.vop_flags = vop_presets[ARG_QUALITY];
     if (ARG_VOPDEBUG) {
@@ -1083,6 +1090,9 @@ enc_main(unsigned char *image,
 
 	/* Set up motion estimation flags */
 	xvid_enc_frame.motion = motion_presets[ARG_QUALITY];
+
+	if (ARG_QUARTERPEL)
+		xvid_enc_frame.motion |= (XVID_ME_QUARTERPELREFINE16 | XVID_ME_QUARTERPELREFINE8); 
 
 	/* We don't use special matrices */
 	xvid_enc_frame.quant_intra_matrix = NULL;
