@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.c,v 1.39.2.21 2003-12-03 02:22:30 Isibaar Exp $
+ * $Id: bitstream.c,v 1.39.2.22 2003-12-03 19:46:50 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1081,6 +1081,7 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	static const unsigned int vol_id = 0;
 	int vol_ver_id = 1;
 	int vol_type_ind = VIDOBJLAY_TYPE_SIMPLE;
+	int vol_profile = pParam->profile;
 
 	if ( (pParam->vol_flags & XVID_VOL_QUARTERPEL) ||
          (pParam->vol_flags & XVID_VOL_GMC) ||
@@ -1106,8 +1107,26 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	 * byte aligned, and that always 1-8 padding bits have been written
 	 */
 
-    BitstreamPutBits(bs, VISOBJSEQ_START_CODE, 32);
-    BitstreamPutBits(bs, pParam->profile, 8);
+    if (!vol_profile) {
+		/* Profile was not set by client app, use the more permissive profile
+		 * compatible with the vol_type_id */
+		switch(vol_type_ind) {
+		case VIDOBJLAY_TYPE_ASP:
+			vol_profile = 0xf5; /* ASP level 5 */
+			break;
+		case VIDOBJLAY_TYPE_ART_SIMPLE:
+			vol_profile = 0x94; /* ARTS level 4 */
+			break;
+		default:
+			vol_profile = 0x03; /* Simple level 3 */
+			break;
+		}
+	}
+
+	/* Write the VOS header */
+	BitstreamPutBits(bs, VISOBJSEQ_START_CODE, 32);
+	BitstreamPutBits(bs, vol_profile, 8); 	/* profile_and_level_indication */
+
 
 	/* visual_object_start_code */
 	BitstreamPad(bs);

@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_bvop.c,v 1.1.2.6 2003-12-03 11:51:28 syskin Exp $
+ * $Id: estimation_bvop.c,v 1.1.2.7 2003-12-03 19:46:50 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -361,7 +361,6 @@ SearchBF(	const IMAGE * const pRef,
 
 	int i;
 	VECTOR pmv[7];
-	MainSearchFunc *MainSearchPtr;
 	*Data->iMinSAD = MV_MAX_ERROR;
 	Data->iFcode = iFcode;
 	Data->qpel_precision = 0;
