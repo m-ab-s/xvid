@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.42 2003-11-09 20:49:21 edgomez Exp $
+ * $Id: xvid.h,v 1.27.2.43 2003-11-19 15:42:38 syskin Exp $
  *
  ****************************************************************************/
 
@@ -313,7 +313,8 @@ typedef struct
 #define XVID_PLG_DESTROY (1<<1)
 #define XVID_PLG_INFO    (1<<2)
 #define XVID_PLG_BEFORE  (1<<3)
-#define XVID_PLG_AFTER   (1<<4)
+#define XVID_PLG_FRAME   (1<<4)
+#define XVID_PLG_AFTER   (1<<5)
 
 /* xvid_plg_info_t.flags */
 #define XVID_REQORIGINAL (1<<0) /* plugin requires a copy of the original (uncompressed) image */

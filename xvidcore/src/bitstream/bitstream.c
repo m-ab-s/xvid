@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.c,v 1.39.2.18 2003-10-01 23:23:01 edgomez Exp $
+ * $Id: bitstream.c,v 1.39.2.19 2003-11-19 15:42:38 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1264,7 +1264,8 @@ BitstreamWriteVopHeader(
 						Bitstream * const bs,
 						const MBParam * pParam,
 						const FRAMEINFO * const frame,
-						int vop_coded)
+						int vop_coded,
+						unsigned int quant)
 {
 	uint32_t i;
 
@@ -1357,10 +1358,10 @@ BitstreamWriteVopHeader(
 
 
 #if 0
-	DPRINTF(XVID_DEBUG_HEADER, "quant = %i\n", frame->quant);
+	DPRINTF(XVID_DEBUG_HEADER, "quant = %i\n", quant);
 #endif
 
-	BitstreamPutBits(bs, frame->quant, 5);	/* quantizer */
+	BitstreamPutBits(bs, quant, 5);	/* quantizer */
 
 	if (frame->coding_type != I_VOP)
 		BitstreamPutBits(bs, frame->fcode, 3);	/* forward_fixed_code */

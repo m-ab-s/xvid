@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: plugin_psnr.c,v 1.1.2.5 2003-10-01 23:23:01 edgomez Exp $
+ * $Id: plugin_psnr.c,v 1.1.2.6 2003-11-19 15:42:38 syskin Exp $
  *
  ****************************************************************************/
 
@@ -43,6 +43,7 @@ int xvid_plugin_psnr(void * handle, int opt, void * param1, void * param2)
     case XVID_PLG_CREATE :
     case XVID_PLG_DESTROY :
     case XVID_PLG_BEFORE :
+	case XVID_PLG_FRAME :
        return 0;
 
     case XVID_PLG_AFTER :

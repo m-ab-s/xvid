@@ -20,7 +20,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_single.c,v 1.1.2.5 2003-10-01 23:23:01 edgomez Exp $
+ * $Id: plugin_single.c,v 1.1.2.6 2003-11-19 15:42:38 syskin Exp $
  *
  ****************************************************************************/
 
@@ -266,6 +266,7 @@ xvid_plugin_single(void *handle,
 {
 	switch (opt) {
 	case XVID_PLG_INFO:
+	case XVID_PLG_FRAME :
 		return 0;
 
 	case XVID_PLG_CREATE:

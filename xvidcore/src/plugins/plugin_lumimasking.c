@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: plugin_lumimasking.c,v 1.1.2.5 2003-10-02 13:54:27 edgomez Exp $
+ * $Id: plugin_lumimasking.c,v 1.1.2.6 2003-11-19 15:42:38 syskin Exp $
  *
  ****************************************************************************/
 
@@ -28,6 +28,7 @@
 
 #include "../xvid.h"
 #include "../portab.h"
+#include "../utils/emms.h"
 
 /*****************************************************************************
  * Private data type
@@ -46,7 +47,7 @@ typedef struct
 static int lumi_plg_info(xvid_plg_info_t *info);
 static int lumi_plg_create(xvid_plg_create_t *create, lumi_data_t **handle);
 static int lumi_plg_destroy(lumi_data_t *handle, xvid_plg_destroy_t * destroy);
-static int lumi_plg_before(lumi_data_t *handle, xvid_plg_data_t *data);
+static int lumi_plg_frame(lumi_data_t *handle, xvid_plg_data_t *data);
 static int lumi_plg_after(lumi_data_t *handle, xvid_plg_data_t *data);
 
 /*****************************************************************************
@@ -64,7 +65,9 @@ xvid_plugin_lumimasking(void * handle, int opt, void * param1, void * param2)
 	case XVID_PLG_DESTROY:
 		return(lumi_plg_destroy((lumi_data_t *)handle, (xvid_plg_destroy_t*)param1));
 	case XVID_PLG_BEFORE :
-		return(lumi_plg_before((lumi_data_t *)handle, (xvid_plg_data_t *)param1));
+		return 0;
+	case XVID_PLG_FRAME :
+		return(lumi_plg_frame((lumi_data_t *)handle, (xvid_plg_data_t *)param1));
 	case XVID_PLG_AFTER :
 		return(lumi_plg_after((lumi_data_t *)handle, (xvid_plg_data_t *)param1));
 	}
@@ -154,36 +157,30 @@ static int normalize_quantizer_field(float *in,
 									 int max_quant);
 
 static int
-lumi_plg_before(lumi_data_t *handle, xvid_plg_data_t *data)
+lumi_plg_frame(lumi_data_t *handle, xvid_plg_data_t *data)
 {
 	int i, j;
 
 	float global = 0.0f;
-	uint32_t mid_range = 0;
 
-	const float DarkAmpl = 14 / 2;
-	const float BrightAmpl = 10 / 2;
-	const float DarkThres = 70;
-	const float BrightThres = 200;
+	const float DarkAmpl = 14 / 4;
+	const float BrightAmpl = 10 / 3;
+	float DarkThres = 90;
+	float BrightThres = 200;
 
 	const float GlobalDarkThres = 60;
 	const float GlobalBrightThres = 170;
 
-	const float MidRangeThres = 20;
-	const float UpperLimit = 200;
-	const float LowerLimit = 25;
+	if (data->type == XVID_TYPE_BVOP) return 0;
 
 	/* Do this for all macroblocks individually  */
 	for (j = 0; j < data->mb_height; j++) {
 		for (i = 0; i < data->mb_width; i++) {
-			int k, l;
+			int k, l, sum = 0;
 			unsigned char *ptr;
 
 			/* Initialize the current quant value to the frame quant */
 			handle->quant[j*data->mb_width + i] = (float)data->quant;
-
-			/* Reset the val value */
-			handle->val[j*data->mb_width + i] = 0.0f;
 
 			/* Next steps compute the luminance-masking */
 
@@ -194,37 +191,33 @@ lumi_plg_before(lumi_data_t *handle, xvid_plg_data_t *data)
 			/* Accumulate luminance */
 			for (k = 0; k < 16; k++)
 				for (l = 0; l < 16; l++)
-					handle->val[j*data->mb_width + i] += ptr[k*data->current.stride[0] + l];
-
-			/* Normalize its value */
-			handle->val[j*data->mb_width + i] /= 256.0f;
+					 sum += ptr[k*data->current.stride[0] + l];
+			
+			handle->val[j*data->mb_width + i] = (float)sum/256.0f;
 
 			/* Accumulate the global frame luminance */
-			global += handle->val[j*data->mb_width + i];
-
-			/* Count the number of middle luminance blocks */
-			if ((handle->val[j*data->mb_width + i] > LowerLimit) &&
-				(handle->val[j*data->mb_width + i] < UpperLimit))
-				mid_range++;
+			global += (float)sum/256.0f;
 		}
 	}
 
 	/* Normalize the global luminance accumulator */
 	global /= data->mb_width*data->mb_height;
 
+	DarkThres = DarkThres*global/127.0;
+	BrightThres = BrightThres*global/127.0;
+
+
 	/* Apply luminance masking only to frames where the global luminance is
-	 * higher than DarkThreshold and lower than Bright Threshold, or where
-	 * "middle" luminance blocks are lower than its corresponding threshold */
-	 if (((global < GlobalBrightThres) && (global > GlobalDarkThres)) ||
-		(mid_range < MidRangeThres)) {
+	 * higher than DarkThreshold and lower than Bright Threshold */
+	 if ((global < GlobalBrightThres) && (global > GlobalDarkThres)) {
 
 		/* Apply the luminance masking formulas to all MBs */
 		for (i = 0; i < data->mb_height; i++) {
 			for (j = 0; j < data->mb_width; j++) {
 				if (handle->val[i*data->mb_width + j] < DarkThres)
-					handle->quant[i*data->mb_width + j] += DarkAmpl * (DarkThres - handle->val[i*data->mb_width + j]) / DarkThres;
+					handle->quant[i*data->mb_width + j] *= 1 + DarkAmpl * (DarkThres - handle->val[i*data->mb_width + j]) / DarkThres;
 				else if (handle->val[i*data->mb_width + j] > BrightThres)
-					handle->quant[i*data->mb_width + j] += BrightAmpl * (handle->val[i*data->mb_width + j] - BrightThres) / (255 - BrightThres);
+					handle->quant[i*data->mb_width + j] *= 1 + BrightAmpl * (handle->val[i*data->mb_width + j] - BrightThres) / (255 - BrightThres);
 			}
 		}
 	}
@@ -234,7 +227,7 @@ lumi_plg_before(lumi_data_t *handle, xvid_plg_data_t *data)
 											 data->dquant,
 											 data->mb_width*data->mb_height,
 											 data->quant,
-											 data->quant*2);
+											 data->quant + data->quant/2);
 
 	 /* Plugin job finished */
 	 return(0);
