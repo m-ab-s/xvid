@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.48 2004-03-22 22:36:23 edgomez Exp $
+ * $Id: xvid.c,v 1.48.2.1 2004-04-07 22:31:39 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -447,7 +447,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		interpolate8x8_halfpel_hv = interpolate8x8_halfpel_hv_3dn;
 	}
 
-	if ((cpu_flags & XVID_CPU_3DNOWEXT)) {
+	if ((cpu_flags & XVID_CPU_3DNOWEXT) && (cpu_flags & XVID_CPU_MMXEXT)) {
 
 		/* Inverse DCT */
 		idct =  idct_3dne;
