@@ -163,6 +163,7 @@ int codec_2pass_init(CODEC* codec)
 					{
 						i_boost_total = twopass->nns2.bytes * codec->config.keyframe_boost / 100;
 						i_total += twopass->nns2.bytes;
+						twopass->keyframe_locations[i_frames] = frames;
 						++i_frames;
 					}
 
@@ -174,6 +175,7 @@ int codec_2pass_init(CODEC* codec)
 
 				++frames;
 			}
+			twopass->keyframe_locations[i_frames] = frames;
 
 			twopass->movie_curve = ((double)(total_ext + i_boost_total) / total_ext);
 			twopass->average_frame = ((double)(total_ext - i_total) / (frames - credits_frames - i_frames) / twopass->movie_curve);
@@ -371,6 +373,7 @@ int codec_2pass_init(CODEC* codec)
 				{
 					i_total += twopass->nns1.bytes + twopass->nns1.bytes * codec->config.keyframe_boost / 100;
 					total += twopass->nns1.bytes * codec->config.keyframe_boost / 100;
+					twopass->keyframe_locations[i_frames] = frames;
 					++i_frames;
 				}
 
@@ -378,6 +381,7 @@ int codec_2pass_init(CODEC* codec)
 
 				++frames;
 			}
+			twopass->keyframe_locations[i_frames] = frames;
 
 			// compensate for avi frame overhead
 			desired -= frames * 24;
@@ -682,6 +686,9 @@ int codec_2pass_init(CODEC* codec)
 		}
 
 		twopass->overflow = 0;
+		twopass->KFoverflow = 0;
+		twopass->KFoverflow_partial = 0;
+		twopass->KF_idx = 1;
 
 		break;
 	}
@@ -1050,7 +1057,7 @@ int codec_2pass_update(CODEC* codec, XVID_ENC_FRAME* frame, XVID_ENC_STATS* stat
 
 	NNSTATS nns1;
 	DWORD wrote;
-	int credits_pos;
+	int credits_pos, tempdiv;
 	char* quant_type;
 
 	if (codec->framenum == 0)
@@ -1097,11 +1104,49 @@ int codec_2pass_update(CODEC* codec, XVID_ENC_FRAME* frame, XVID_ENC_STATS* stat
 
 	case DLG_MODE_2PASS_2_INT :
 	case DLG_MODE_2PASS_2_EXT :
-		codec->twopass.overflow += codec->twopass.desired_bytes2 - frame->length;
-
 		credits_pos = codec_is_in_credits(&codec->config, codec->framenum);
 		if (!credits_pos)
+		{
 			codec->twopass.quant_count[frame->quant]++;
+			if ((codec->twopass.nns1.quant & NNSTATS_KEYFRAME))
+			{
+				codec->twopass.overflow += codec->twopass.KFoverflow;
+				codec->twopass.KFoverflow = codec->twopass.desired_bytes2 - frame->length;
+
+				tempdiv = (codec->twopass.keyframe_locations[codec->twopass.KF_idx] -
+					codec->twopass.keyframe_locations[codec->twopass.KF_idx - 1]);
+
+				if (tempdiv > 1)
+				{
+					// non-consecutive keyframes
+					codec->twopass.KFoverflow_partial = codec->twopass.KFoverflow / (tempdiv - 1);
+				}
+				else
+				{
+					// consecutive keyframes
+					codec->twopass.overflow += codec->twopass.KFoverflow;
+					codec->twopass.KFoverflow = 0;
+					codec->twopass.KFoverflow_partial = 0;
+				}
+				codec->twopass.KF_idx++;
+			}
+			else
+			{
+				codec->twopass.overflow += codec->twopass.desired_bytes2 - frame->length +
+					codec->twopass.KFoverflow_partial;
+				codec->twopass.KFoverflow -= codec->twopass.KFoverflow_partial;
+			}
+		}
+		else
+		{
+			codec->twopass.overflow += codec->twopass.desired_bytes2 - frame->length;
+
+			// ugly fix for credits..
+			codec->twopass.overflow += codec->twopass.KFoverflow;
+			codec->twopass.KFoverflow = 0;
+			codec->twopass.KFoverflow_partial = 0;
+			// end of ugly fix.
+		}
 
 		DEBUG2ND(frame->quant, quant_type, frame->intra, codec->twopass.bytes1, codec->twopass.desired_bytes2, frame->length, codec->twopass.overflow, credits_pos)
 		break;
