@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.35 2003-01-11 14:59:23 chl Exp $
+ *  $Id: encoder.c,v 1.76.2.36 2003-01-11 20:37:46 chl Exp $
  *
  ****************************************************************************/
 
@@ -1713,11 +1713,10 @@ FrameCodeP(Encoder * pEnc,
 		generate_GMCimage(&pEnc->current->gmc_data, &pEnc->reference->image, 
 				pEnc->mbParam.mb_width, pEnc->mbParam.mb_height,
 				pEnc->mbParam.edged_width, pEnc->mbParam.edged_width/2, 
-				pEnc->mbParam.m_fcode, 0, 0, 
+				pEnc->mbParam.m_fcode, pEnc->mbParam.m_quarterpel, 0, 
 				pEnc->current->rounding_type, pEnc->current->mbs, &pEnc->vGMC);
 
 	}
-
 	if (vol_header)
 		BitstreamWriteVolHeader(bs, &pEnc->mbParam, pEnc->current);
 
@@ -1738,7 +1737,6 @@ FrameCodeP(Encoder * pEnc,
 /* Mode decision: Check, if the block should be INTRA / INTER or GMC-coded */
 /* For a start, leave INTRA decision as is, only choose only between INTER/GMC  - gruel, 9.1.2002 */
 
-
 			bIntra = (pMB->mode == MODE_INTRA) || (pMB->mode == MODE_INTRA_Q);
 
 			if (bIntra) {
@@ -1753,6 +1751,7 @@ FrameCodeP(Encoder * pEnc,
 				pEnc->current->sStat.kblks++;
 
 				MBCoding(pEnc->current, pMB, qcoeff, bs, &pEnc->current->sStat);
+				stop_coding_timer();
 				continue;
 			}
 				
@@ -1760,13 +1759,14 @@ FrameCodeP(Encoder * pEnc,
 
 				int32_t iSAD = sad16(pEnc->current->image.y + 16*y*pEnc->mbParam.edged_width + 16*x,
 					pEnc->vGMC.y + 16*y*pEnc->mbParam.edged_width + 16*x, 
-					pEnc->mbParam.edged_width,65536);
-				
+					pEnc->mbParam.edged_width, 65536);
+
 				if (iSAD <= pMB->sad16) {		/* mode decision GMC */
+
 					if (pEnc->mbParam.m_quarterpel)
-						pMB->qmvs[0] = pMB->qmvs[1] =pMB->qmvs[2] =pMB->qmvs[3] = pMB->amv;
+						pMB->qmvs[0] = pMB->qmvs[1] = pMB->qmvs[2] = pMB->qmvs[3] = pMB->amv;
 					else
-						pMB->mvs[0] = pMB->mvs[1] =pMB->mvs[2] =pMB->mvs[3] = pMB->amv;
+						pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = pMB->amv;
 
 					pMB->mode = MODE_INTER;
 					pMB->mcsel = 1;
@@ -1774,8 +1774,7 @@ FrameCodeP(Encoder * pEnc,
 				} else {
 					pMB->mcsel = 0;
 				}
-			} else 
-			{
+			} else {
 				pMB->mcsel = 0;	/* just a precaution */
 			}
 
@@ -1813,7 +1812,6 @@ FrameCodeP(Encoder * pEnc,
 									  dct_codes, qcoeff);
 			}
 
-
 			if (pMB->cbp || pMB->mvs[0].x || pMB->mvs[0].y ||
 				   pMB->mvs[1].x || pMB->mvs[1].y || pMB->mvs[2].x ||
 				   pMB->mvs[2].y || pMB->mvs[3].x || pMB->mvs[3].y) {
@@ -1826,16 +1824,16 @@ FrameCodeP(Encoder * pEnc,
 
 			/* Finished processing the MB, now check if to CODE or SKIP */
 
-			skip_possible = (pMB->cbp == 0) & (pMB->mode == MODE_INTER) &
+			skip_possible = (pMB->cbp == 0) && (pMB->mode == MODE_INTER) &&
 							(pMB->dquant == NO_CHANGE);
 			
 			if (pEnc->current->coding_type == S_VOP)
 				skip_possible &= (pMB->mcsel == 1);
 			else if (pEnc->current->coding_type == P_VOP) {
 				if (pEnc->mbParam.m_quarterpel)
-					skip_possible &= (pMB->qmvs[0].x == 0) & (pMB->qmvs[0].y == 0);
+					skip_possible &= ( (pMB->qmvs[0].x == 0) && (pMB->qmvs[0].y == 0) );
 				else 
-					skip_possible &= (pMB->mvs[0].x == 0) & (pMB->mvs[0].y == 0);
+					skip_possible &= ( (pMB->mvs[0].x == 0) && (pMB->mvs[0].y == 0) );
 			}
 
 			if ( (pMB->mode == MODE_NOT_CODED) || (skip_possible)) {
@@ -1873,6 +1871,7 @@ FrameCodeP(Encoder * pEnc,
 						pMB->cbp = 0;
 						MBCoding(pEnc->current, pMB, qcoeff, bs, &pEnc->current->sStat);
 						stop_coding_timer();
+
 						continue;	/* next MB */
 					}
 				}
@@ -1922,8 +1921,10 @@ FrameCodeP(Encoder * pEnc,
 
 				}
 			}
+			
 			MBCoding(pEnc->current, pMB, qcoeff, bs, &pEnc->current->sStat);
 			stop_coding_timer();
+
 		}
 	}
 

@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.27 2003-01-11 14:59:23 chl Exp $
+ *  $Id: decoder.c,v 1.37.2.28 2003-01-11 20:37:46 chl Exp $
  *
  *************************************************************************/
 
@@ -417,8 +417,7 @@ decoder_mbinter(DECODER * dec,
 				Bitstream * bs,
 				const uint32_t quant,
 				const uint32_t rounding,
-				const int reduced_resolution,
-				const int mcsel)
+				const int reduced_resolution)
 {
 
 	DECLARE_ALIGNED_MATRIX(block, 6, 64, int16_t, CACHE_LINE);
@@ -430,7 +429,6 @@ decoder_mbinter(DECODER * dec,
 	uint32_t i;
 	uint32_t iQuant = pMB->quant;
 	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
-	uint8_t *pY_Ref, *pU_Ref, *pV_Ref;		/* ref for GMC is _not_ pRef itself */
 
 	int uv_dx, uv_dy;
 	VECTOR mv[4];	/* local copy of mvs */
@@ -451,20 +449,6 @@ decoder_mbinter(DECODER * dec,
 			mv[i] = pMB->mvs[i];
 	}
 	
-	if (mcsel) {
-		mv[0].x = mv[0].y = mv[1].x = mv[1].y = mv[2].x = mv[2].y = mv[3].x = mv[3].y = 0;
-			/* position in ref is same as the block, set vector to (0,0) */
-		pY_Ref = dec->gmc.y;
-		pU_Ref = dec->gmc.u;
-		pV_Ref = dec->gmc.v;
-			/* but reference itself isn't. It's warped... */
-			/* Btw., this is too slow! For GMC it should simply be transfer_16to8add() */
-	} else {
-		pY_Ref = dec->refn[0].y;
-		pU_Ref = dec->refn[0].u;
-		pV_Ref = dec->refn[0].v;
-	}
-
 	if (pMB->mode == MODE_INTER || pMB->mode == MODE_INTER_Q) {
 
 		uv_dx = mv[0].x / (1 + dec->quarterpel);
@@ -476,29 +460,29 @@ decoder_mbinter(DECODER * dec,
 		start_timer();
 		if (reduced_resolution)
 		{
-			interpolate32x32_switch(dec->cur.y, pY_Ref , 32*x_pos, 32*y_pos,
+			interpolate32x32_switch(dec->cur.y, dec->refn[0].y, 32*x_pos, 32*y_pos,
 								  mv[0].x, mv[0].y, stride,  rounding);
-			interpolate16x16_switch(dec->cur.u, pU_Ref , 16 * x_pos, 16 * y_pos,
+			interpolate16x16_switch(dec->cur.u, dec->refn[0].u, 16 * x_pos, 16 * y_pos,
 								  uv_dx, uv_dy, stride2, rounding);
-			interpolate16x16_switch(dec->cur.v, pV_Ref , 16 * x_pos, 16 * y_pos,
+			interpolate16x16_switch(dec->cur.v, dec->refn[0].v, 16 * x_pos, 16 * y_pos,
 								  uv_dx, uv_dy, stride2, rounding);
 
 		}
 		else
 		{
 			if(dec->quarterpel) {
-				interpolate16x16_quarterpel(dec->cur.y, pY_Ref , dec->qtmp.y, dec->qtmp.y + 64,
+				interpolate16x16_quarterpel(dec->cur.y, dec->refn[0].y, dec->qtmp.y, dec->qtmp.y + 64,
 	 										dec->qtmp.y + 128, 16*x_pos, 16*y_pos,
 											mv[0].x, mv[0].y, stride, rounding);
 			}
 			else {
-				interpolate16x16_switch(dec->cur.y, pY_Ref , 16*x_pos, 16*y_pos,
+				interpolate16x16_switch(dec->cur.y, dec->refn[0].y, 16*x_pos, 16*y_pos,
 									  mv[0].x, mv[0].y, stride, rounding);
 			}
 
-			interpolate8x8_switch(dec->cur.u, pU_Ref , 8 * x_pos, 8 * y_pos,
+			interpolate8x8_switch(dec->cur.u, dec->refn[0].u, 8 * x_pos, 8 * y_pos,
 								  uv_dx, uv_dy, stride2, rounding);
-			interpolate8x8_switch(dec->cur.v, pV_Ref , 8 * x_pos, 8 * y_pos,
+			interpolate8x8_switch(dec->cur.v, dec->refn[0].v, 8 * x_pos, 8 * y_pos,
 								  uv_dx, uv_dy, stride2, rounding);
 		}
 		stop_comp_timer();
@@ -523,17 +507,17 @@ decoder_mbinter(DECODER * dec,
 		start_timer();
 		if (reduced_resolution)
 		{
-			interpolate16x16_switch(dec->cur.y, pY_Ref , 32*x_pos, 32*y_pos,
+			interpolate16x16_switch(dec->cur.y, dec->refn[0].y, 32*x_pos, 32*y_pos,
 								  mv[0].x, mv[0].y, stride,  rounding);
-			interpolate16x16_switch(dec->cur.y, pY_Ref , 32*x_pos + 16, 32*y_pos,
+			interpolate16x16_switch(dec->cur.y, dec->refn[0].y , 32*x_pos + 16, 32*y_pos,
 								  mv[1].x, mv[1].y, stride,  rounding);
-			interpolate16x16_switch(dec->cur.y, pY_Ref , 32*x_pos, 32*y_pos + 16,
+			interpolate16x16_switch(dec->cur.y, dec->refn[0].y , 32*x_pos, 32*y_pos + 16,
 								  mv[2].x, mv[2].y, stride,  rounding);
-			interpolate16x16_switch(dec->cur.y, pY_Ref , 32*x_pos + 16, 32*y_pos + 16, 
+			interpolate16x16_switch(dec->cur.y, dec->refn[0].y , 32*x_pos + 16, 32*y_pos + 16, 
 								  mv[3].x, mv[3].y, stride,  rounding);
-			interpolate16x16_switch(dec->cur.u, pU_Ref , 16 * x_pos, 16 * y_pos,
+			interpolate16x16_switch(dec->cur.u, dec->refn[0].u , 16 * x_pos, 16 * y_pos,
 								  uv_dx, uv_dy, stride2, rounding);
-			interpolate16x16_switch(dec->cur.v, pV_Ref , 16 * x_pos, 16 * y_pos,
+			interpolate16x16_switch(dec->cur.v, dec->refn[0].v , 16 * x_pos, 16 * y_pos,
 								  uv_dx, uv_dy, stride2, rounding);
 
 			// set_block(pY_Cur, stride, 32, 32, 127);
@@ -541,33 +525,33 @@ decoder_mbinter(DECODER * dec,
 		else
 		{
 			if(dec->quarterpel) {
-				interpolate8x8_quarterpel(dec->cur.y, pY_Ref , dec->qtmp.y, dec->qtmp.y + 64,
+				interpolate8x8_quarterpel(dec->cur.y, dec->refn[0].y , dec->qtmp.y, dec->qtmp.y + 64,
 										  dec->qtmp.y + 128, 16*x_pos, 16*y_pos,
 										  mv[0].x, mv[0].y, stride,  rounding);
-				interpolate8x8_quarterpel(dec->cur.y, pY_Ref , dec->qtmp.y, dec->qtmp.y + 64,
+				interpolate8x8_quarterpel(dec->cur.y, dec->refn[0].y , dec->qtmp.y, dec->qtmp.y + 64,
 										  dec->qtmp.y + 128, 16*x_pos + 8, 16*y_pos,
 										  mv[1].x, mv[1].y, stride,  rounding);
-				interpolate8x8_quarterpel(dec->cur.y, pY_Ref , dec->qtmp.y, dec->qtmp.y + 64,
+				interpolate8x8_quarterpel(dec->cur.y, dec->refn[0].y , dec->qtmp.y, dec->qtmp.y + 64,
 										  dec->qtmp.y + 128, 16*x_pos, 16*y_pos + 8,
 										  mv[2].x, mv[2].y, stride,  rounding);
-				interpolate8x8_quarterpel(dec->cur.y, pY_Ref , dec->qtmp.y, dec->qtmp.y + 64,
+				interpolate8x8_quarterpel(dec->cur.y, dec->refn[0].y , dec->qtmp.y, dec->qtmp.y + 64,
 										  dec->qtmp.y + 128, 16*x_pos + 8, 16*y_pos + 8,
 										  mv[3].x, mv[3].y, stride,  rounding);
 			}
 			else {
-				interpolate8x8_switch(dec->cur.y, pY_Ref , 16*x_pos, 16*y_pos,
+				interpolate8x8_switch(dec->cur.y, dec->refn[0].y , 16*x_pos, 16*y_pos,
 									  mv[0].x, mv[0].y, stride,  rounding);
-				interpolate8x8_switch(dec->cur.y, pY_Ref , 16*x_pos + 8, 16*y_pos,
+				interpolate8x8_switch(dec->cur.y, dec->refn[0].y , 16*x_pos + 8, 16*y_pos,
 									  mv[1].x, mv[1].y, stride,  rounding);
-				interpolate8x8_switch(dec->cur.y, pY_Ref , 16*x_pos, 16*y_pos + 8,
+				interpolate8x8_switch(dec->cur.y, dec->refn[0].y , 16*x_pos, 16*y_pos + 8,
 									  mv[2].x, mv[2].y, stride,  rounding);
-				interpolate8x8_switch(dec->cur.y, pY_Ref , 16*x_pos + 8, 16*y_pos + 8, 
+				interpolate8x8_switch(dec->cur.y, dec->refn[0].y , 16*x_pos + 8, 16*y_pos + 8, 
 									  mv[3].x, mv[3].y, stride,  rounding);
 			}
 
-			interpolate8x8_switch(dec->cur.u, pU_Ref , 8 * x_pos, 8 * y_pos,
+			interpolate8x8_switch(dec->cur.u, dec->refn[0].u , 8 * x_pos, 8 * y_pos,
 								  uv_dx, uv_dy, stride2, rounding);
-			interpolate8x8_switch(dec->cur.v, pV_Ref , 8 * x_pos, 8 * y_pos,
+			interpolate8x8_switch(dec->cur.v, dec->refn[0].v , 8 * x_pos, 8 * y_pos,
 								  uv_dx, uv_dy, stride2, rounding);
 		}
 		stop_comp_timer();
@@ -634,6 +618,89 @@ decoder_mbinter(DECODER * dec,
 		if (cbp & 1)
 			transfer_16to8add(pV_Cur, &data[5 * 64], stride2);
 	}
+	stop_transfer_timer();
+}
+
+
+static void
+decoder_mbgmc(DECODER * dec,
+				MACROBLOCK * const pMB,
+				const uint32_t x_pos,
+				const uint32_t y_pos,
+				const uint32_t acpred_flag,
+				const uint32_t cbp,
+				Bitstream * bs,
+				const uint32_t quant,
+				const uint32_t rounding,
+				const int reduced_resolution)	/* no reduced res support */
+{
+
+	DECLARE_ALIGNED_MATRIX(block, 6, 64, int16_t, CACHE_LINE);
+	DECLARE_ALIGNED_MATRIX(data, 6, 64, int16_t, CACHE_LINE);
+
+	const uint32_t stride = dec->edged_width;
+	const uint32_t stride2 = stride / 2;
+	const uint32_t next_block = stride * (reduced_resolution ? 16 : 8);
+	uint32_t i;
+	const uint32_t iQuant = pMB->quant;
+	uint8_t *const pY_Cur=dec->cur.y + (y_pos << 4) * stride + (x_pos << 4);
+	uint8_t *const pU_Cur=dec->cur.u + (y_pos << 3) * stride2 + (x_pos << 3);
+	uint8_t *const pV_Cur=dec->cur.v + (y_pos << 3) * stride2 + (x_pos << 3);
+
+	pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = pMB->amv;
+
+	start_timer();
+	transfer16x16_copy(pY_Cur, dec->gmc.y + (y_pos << 4)*stride + (x_pos  << 4), stride);
+	transfer8x8_copy(pU_Cur, dec->gmc.u + (y_pos << 3)*stride2 + (x_pos  << 3), stride2);
+	transfer8x8_copy(pV_Cur, dec->gmc.v + (y_pos << 3)*stride2 + (x_pos << 3), stride2);
+	stop_transfer_timer();
+	
+	if (!cbp) return;
+
+	for (i = 0; i < 6; i++) {
+		int direction = dec->alternate_vertical_scan ? 2 : 0;
+
+		if (cbp & (1 << (5 - i)))	// coded
+		{
+			memset(&block[i * 64], 0, 64 * sizeof(int16_t));	// clear
+
+			start_timer();
+			get_inter_block(bs, &block[i * 64], direction);
+			stop_coding_timer();
+
+			start_timer();
+			if (dec->quant_type == 0) {
+				dequant_inter(&data[i * 64], &block[i * 64], iQuant);
+			} else {
+				dequant4_inter(&data[i * 64], &block[i * 64], iQuant);
+			}
+			stop_iquant_timer();
+
+			start_timer();
+			idct(&data[i * 64]);
+			stop_idct_timer();
+		}
+	}
+
+/* interlace + GMC is this possible ??? */
+/*	if (dec->interlacing && pMB->field_dct) {
+		next_block = stride;
+		stride *= 2;
+	}
+*/
+	start_timer();
+	if (cbp & 32)
+		transfer_16to8add(pY_Cur, &data[0 * 64], stride);
+	if (cbp & 16)
+		transfer_16to8add(pY_Cur + 8, &data[1 * 64], stride);
+	if (cbp & 8)
+		transfer_16to8add(pY_Cur + next_block, &data[2 * 64], stride);
+	if (cbp & 4)
+		transfer_16to8add(pY_Cur + 8 + next_block, &data[3 * 64], stride);
+	if (cbp & 2)
+		transfer_16to8add(pU_Cur, &data[4 * 64], stride2);
+	if (cbp & 1)
+		transfer_16to8add(pV_Cur, &data[5 * 64], stride2);
 	stop_transfer_timer();
 }
 
@@ -813,8 +880,7 @@ decoder_pframe(DECODER * dec,
 
 	if (gmc_warp)
 	{	
-		char filename[80];
-		sprintf(filename,"dGMC%05d.pgm",framecount);
+
 		// accuracy:  0==1/2, 1=1/4, 2=1/8, 3=1/16
 		if ( (dec->sprite_warping_accuracy != 3) || (dec->sprite_warping_points != 2) )
 		{	
@@ -830,22 +896,9 @@ decoder_pframe(DECODER * dec,
 		generate_GMCimage(&dec->gmc_data, &dec->refn[0], 
 					mb_width, mb_height, 
 					dec->edged_width, dec->edged_width/2,
-					fcode, 0, 0, 
+					fcode, dec->quarterpel, 0, 
 					rounding, dec->mbs, &dec->gmc);
 
-/*
-		sprintf(filename,"dGMC%05d.pgm",framecount);
-		image_dump_yuvpgm(&dec->gmc,
-					dec->edged_width, dec->width, dec->height, filename);
-
-		sprintf(filename,"dREF%05d.pgm",framecount);
-		image_dump_yuvpgm(&dec->refn[0],
-					dec->edged_width, dec->width, dec->height, filename);
-		sprintf(filename,"dCUR%05d.pgm",framecount);
-		image_dump_yuvpgm(&dec->cur,
-					dec->edged_width, dec->width, dec->height, filename);
-		framecount++;
-*/
 	}
 
 	bound = 0;
@@ -937,15 +990,15 @@ decoder_pframe(DECODER * dec,
 						}
 					}
 				}
+				
+				if (mcsel) {
+					decoder_mbgmc(dec, mb, x, y, 0, cbp, bs, quant,
+								rounding, reduced_resolution);
+					continue;
 
-				if (mb->mode == MODE_INTER || mb->mode == MODE_INTER_Q) {
+				} else if (mb->mode == MODE_INTER || mb->mode == MODE_INTER_Q) {
 
-					if (mcsel)
-					{
-						mb->mvs[0] = mb->mvs[1] = mb->mvs[2] = mb->mvs[3] = mb->amv;
-					   /* already clipped to fcode */
-
-					} else if (dec->interlacing && mb->field_pred) {
+					if (dec->interlacing && mb->field_pred) {
 						get_motion_vector(dec, bs, x, y, 0, &mb->mvs[0],
 										  fcode, bound);
 						get_motion_vector(dec, bs, x, y, 0, &mb->mvs[1],
@@ -972,28 +1025,18 @@ decoder_pframe(DECODER * dec,
 					continue;
 				}
 
-				decoder_mbinter(dec, mb, x, y, acpred_flag, cbp, bs, quant,
-								rounding, reduced_resolution, mcsel);
+				decoder_mbinter(dec, mb, x, y, 0, cbp, bs, quant,
+								rounding, reduced_resolution);
 
 			}
 			else if (gmc_warp)	/* a not coded S(GMC)-VOP macroblock */
 			{
 				mb->mode = MODE_NOT_CODED_GMC;
-				mb->mvs[0] = mb->mvs[1] = mb->mvs[2] = mb->mvs[3] = mb->amv;
 
 				start_timer();
 
-				transfer16x16_copy(dec->cur.y + (16*y)*dec->edged_width + (16*x),
-								 dec->gmc.y + (16*y)*dec->edged_width + (16*x), 
-								 dec->edged_width);
-
-				transfer8x8_copy(dec->cur.u + (8*y)*dec->edged_width/2 + (8*x),
-								dec->gmc.u + (8*y)*dec->edged_width/2 + (8*x),
-								dec->edged_width/2);
-
-				transfer8x8_copy(dec->cur.v + (8*y)*dec->edged_width/2 + (8*x),
-								 dec->gmc.v + (8*y)*dec->edged_width/2 + (8*x),
-								 dec->edged_width/2);
+				decoder_mbgmc(dec, mb, x, y, 0, 0x00, bs, quant,
+								rounding, reduced_resolution);
 
 				stop_transfer_timer();
 
@@ -1551,7 +1594,7 @@ decoder_bframe(DECODER * dec,
 			mb->mvs[0] = mb->mvs[1] = mb->mvs[2] = mb->mvs[3] = zeromv;
 
 			// skip if the co-located P_VOP macroblock is not coded 
-			// note: gmc+not_coded isn't skipped
+			// if not codec in co-located S_VOP macroblock is _not_ automatically skipped
 
 			if (last_mb->mode == MODE_NOT_CODED) {
 				//DEBUG2("Skip MB in B-frame at (X,Y)=!",x,y);
