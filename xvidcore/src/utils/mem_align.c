@@ -33,7 +33,7 @@
  *
  *  - Thu Jun 13 23:50:07 2002 Added legal header
  *
- *  $Id: mem_align.c,v 1.15 2003-02-15 15:22:19 edgomez Exp $
+ *  $Id: mem_align.c,v 1.15.2.1 2003-04-27 20:50:54 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -74,7 +74,7 @@ xvid_malloc(size_t size,
 			*mem_ptr = 1;
 
 			/* Return the mem_ptr pointer */
-			return (void *) mem_ptr++;
+			return (void *)(mem_ptr+1);
 
 		}
 
