@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: image.c,v 1.26.2.7 2003-06-09 13:53:50 edgomez Exp $
+ * $Id: image.c,v 1.26.2.8 2003-08-25 15:01:51 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -131,7 +131,7 @@ image_setedges(IMAGE * image,
 			   uint32_t height)
 {
 	const uint32_t edged_width2 = edged_width / 2;
-	const uint32_t width2 = width / 2;
+	uint32_t width2;
 	uint32_t i;
 	uint8_t *dst;
 	uint8_t *src;
@@ -139,6 +139,12 @@ image_setedges(IMAGE * image,
 
 	dst = image->y - (EDGE_SIZE + EDGE_SIZE * edged_width);
 	src = image->y;
+
+	/* According to the Standard Clause 7.6.4, padding is done starting at 16
+	 * pixel width and height multiples */
+	width  = (width+15)&~15;
+	height = (height+15)&~15;
+	width2 = width/2;
 
 	for (i = 0; i < EDGE_SIZE; i++) {
 		memset(dst, *src, EDGE_SIZE);
