@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion_est.h,v 1.1.2.7 2002-11-04 10:58:24 syskin Exp $
+ *  $Id: motion_est.h,v 1.1.2.8 2002-11-20 15:29:07 syskin Exp $
  *
  ***************************************************************************/
 
@@ -107,7 +107,6 @@ typedef struct
 		int max_dx, min_dx, max_dy, min_dy;
 		uint32_t rounding;
 		VECTOR predMV;
-		VECTOR predQMV;
 		VECTOR *currentMV;
 		VECTOR *currentQMV;
 		int32_t *iMinSAD;
@@ -126,7 +125,7 @@ typedef struct
 		uint32_t iEdgedWidth;
 		uint32_t iFcode;
 		int * temp;
-		int qpel;
+		int qpel, qpel_precision;
 		int chroma;
 //fields for interpolate and direct mode
 		const uint8_t *bRef;
