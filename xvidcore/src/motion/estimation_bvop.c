@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_bvop.c,v 1.1.2.13 2003-12-20 15:30:03 edgomez Exp $
+ * $Id: estimation_bvop.c,v 1.1.2.14 2004-02-28 07:15:39 syskin Exp $
  *
  ****************************************************************************/
 
@@ -672,7 +672,7 @@ SearchDirect(const IMAGE * const f_Ref,
 	CheckCandidate(0, 0, Data, 255);
 
 	/* initial (fast) skip decision */
-	if (*Data->iMinSAD < (int)Data->iQuant * INITIAL_SKIP_THRESH * (Data->chroma?3:2)) {
+	if (*Data->iMinSAD < (int)Data->iQuant * INITIAL_SKIP_THRESH) {
 		/* possible skip */
 		SkipDecisionB(pCur, f_Ref, b_Ref, pMB, x, y, Data);
 		if (pMB->mode == MODE_DIRECT_NONE_MV) return *Data->iMinSAD; /* skipped */
