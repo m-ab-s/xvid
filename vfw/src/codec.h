@@ -4,7 +4,7 @@
 #include <windows.h>
 #include <vfw.h>
 #include "config.h"
-#include "..\..\xvidcore\src\xvid.h"
+#include <xvid.h>
 
 #define DEBUG(X)
 // OutputDebugString(X)

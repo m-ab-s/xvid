@@ -1,7 +1,7 @@
 #ifndef _FILTER_H_
 #define _FILTER_H_
 
-#include "..\..\xvidcore\src\xvid.h"
+#include <xvid.h>
 #include "IXvidDecoder.h"
 
 
