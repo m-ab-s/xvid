@@ -24,7 +24,6 @@ HWND hTooltip;
 
 #define XVID_BUILD		__TIME__ ", " __DATE__
 #define XVID_WEBSITE	"http://www.xvid.org/"
-
 #define XVID_SPECIAL_BUILD	"(Vanilla CVS Build)"
 
 /* constants */
@@ -56,11 +55,19 @@ HWND hTooltip;
 #define QUANT_MODE_MPEG			1
 #define QUANT_MODE_CUSTOM		2
 #define QUANT_MODE_MOD			3
+#define QUANT_MODE_MOD_NEW		4
 
 /* credits modes */
 #define CREDITS_MODE_RATE		0
 #define CREDITS_MODE_QUANT		1
 #define CREDITS_MODE_SIZE		2
+
+/* vhq modes */
+#define VHQ_OFF					0
+#define VHQ_MODE_DECISION		1
+#define VHQ_LIMITED_SEARCH		2
+#define VHQ_MEDIUM_SEARCH		3
+#define VHQ_WIDE_SEARCH			4
 
 #define CREDITS_START			1
 #define CREDITS_END				2
@@ -86,23 +93,24 @@ typedef struct
 	int motion_search;
 	int quant_type;
 	int fourcc_used;
+	int vhq_mode;
 	int max_key_interval;
 	int min_key_interval;
 	int lum_masking;
 	int interlacing;
+	int qpel;
+	int gmc;
+	int chromame;
 //added by koepi for gruel's greyscale_mode
-
 	int greyscale;
-
 // end of koepi's additions
-
-#ifdef BFRAMES
 	int max_bframes;
 	int bquant_ratio;
+	int bquant_offset;
 	int packed;
 	int dx50bvop;
 	int debug;
-#endif
+	int reduced_resolution;
 
 	int min_iquant;
 	int max_iquant;
@@ -146,11 +154,8 @@ typedef struct
 	int credits_end_end;
 
 //added by koepi for gruel's greyscale_mode
-
 	int credits_greyscale;
-
 // end of koepi's additions
-
 	int credits_mode;
 	int credits_rate;
 	int credits_quant_i;
@@ -161,9 +166,14 @@ typedef struct
 #ifdef _SMP
 	int num_threads;
 #endif
-#ifdef BFRAMES
+	int chroma_opt;
+
 	int frame_drop_ratio;
-#endif
+
+	/* decoder */
+
+	int deblock_y;
+	int deblock_uv;
 
 //	char build[50];
 	DWORD cpu;

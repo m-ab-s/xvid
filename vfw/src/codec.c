@@ -54,11 +54,11 @@
 #include "2pass.h"
 
 int pmvfast_presets[7] = {
-	0, PMV_QUICKSTOP16, PMV_EARLYSTOP16, PMV_EARLYSTOP16 | PMV_EARLYSTOP8,
-	PMV_EARLYSTOP16 | PMV_HALFPELREFINE16 | PMV_EARLYSTOP8 | PMV_HALFPELDIAMOND8,
-	PMV_EARLYSTOP16 | PMV_HALFPELREFINE16 | PMV_EARLYSTOP8 | PMV_HALFPELDIAMOND8 |
-	PMV_ADVANCEDDIAMOND16, PMV_EARLYSTOP16 | PMV_HALFPELREFINE16 | PMV_EXTSEARCH16 |
-	PMV_EARLYSTOP8 | PMV_HALFPELREFINE8 | PMV_HALFPELDIAMOND8 | PMV_USESQUARES16
+	0, PMV_QUICKSTOP16, 0, 0,
+	0 | PMV_HALFPELREFINE16 | PMV_HALFPELDIAMOND8,
+	0 | PMV_HALFPELREFINE16 | PMV_HALFPELDIAMOND8 |
+	PMV_ADVANCEDDIAMOND16, PMV_HALFPELREFINE16 | PMV_EXTSEARCH16 |
+	PMV_HALFPELREFINE8 | PMV_HALFPELDIAMOND8 | PMV_USESQUARES16
 };
 
 /*	return xvid compatbile colorspace,
@@ -67,83 +67,87 @@ int pmvfast_presets[7] = {
 
 int get_colorspace(BITMAPINFOHEADER * hdr)
 {
-	if (hdr->biHeight < 0) 
-	{
-		DEBUGERR("colorspace: inverted input format not supported");
-		return XVID_CSP_NULL;
-	}
-	
+	/* rgb only: negative height specifies top down image */
+	int rgb_flip = (hdr->biHeight < 0 ? 0 : XVID_CSP_VFLIP);
+
 	switch(hdr->biCompression)
 	{
 	case BI_RGB :
 		if (hdr->biBitCount == 16)
 		{
 			DEBUG("RGB16 (RGB555)");
-			return XVID_CSP_VFLIP | XVID_CSP_RGB555;
+			return rgb_flip | XVID_CSP_RGB555;
 		}
 		if (hdr->biBitCount == 24) 
 		{
 			DEBUG("RGB24");
-			return XVID_CSP_VFLIP | XVID_CSP_RGB24;
+			return rgb_flip | XVID_CSP_RGB24;
 		}
 		if (hdr->biBitCount == 32) 
 		{
 			DEBUG("RGB32");
-			return XVID_CSP_VFLIP | XVID_CSP_RGB32;
+			return rgb_flip | XVID_CSP_RGB32;
 		}
 
-		DEBUG1("BI_RGB unsupported", hdr->biBitCount);
+		DEBUG1("unsupported BI_RGB biBitCount", hdr->biBitCount);
 		return XVID_CSP_NULL;
 
-// how do these work in BITMAPINFOHEADER ???
-/*	case BI_BITFIELDS :
-		if (hdr->biBitCount == 16
-		if(hdr->biBitCount == 16 &&
-			hdr->bV4RedMask == 0x7c00 &&
-			hdr->bV4GreenMask == 0x3e0 &&
-			hdr->bV4BlueMask == 0x1f)
+	case BI_BITFIELDS :
+		if (hdr->biSize >= sizeof(BITMAPV4HEADER))
 		{
-			DEBUG("RGB555");
-			return XVID_CSP_VFLIP | XVID_CSP_RGB555;
-		}
-		if(hdr->bV4BitCount == 16 &&
-			hdr->bV4RedMask == 0xf800 &&
-			hdr->bV4GreenMask == 0x7e0 &&
-			hdr->bV4BlueMask == 0x1f)
-		{
-			DEBUG("RGB565");
-			return XVID_CSP_VFLIP | XVID_CSP_RGB565;
+			BITMAPV4HEADER * hdr4 = (BITMAPV4HEADER *)hdr;
+
+			if (hdr4->bV4BitCount == 16 &&
+				hdr4->bV4RedMask == 0x7c00 &&
+				hdr4->bV4GreenMask == 0x3e0 &&
+				hdr4->bV4BlueMask == 0x1f)
+			{
+				DEBUG("RGB555");
+				return rgb_flip | XVID_CSP_RGB555;
+			}
+
+			if(hdr4->bV4BitCount == 16 &&
+				hdr4->bV4RedMask == 0xf800 &&
+				hdr4->bV4GreenMask == 0x7e0 &&
+				hdr4->bV4BlueMask == 0x1f)
+			{
+				DEBUG("RGB565");
+				return rgb_flip | XVID_CSP_RGB565;
+			}
+
+			DEBUG("unsupported BI_BITFIELDS mode");
+			return XVID_CSP_NULL;
 		}
 		
-		DEBUG1("BI_FIELDS unsupported", hdr->bV4BitCount);
+		DEBUG("unsupported BI_BITFIELDS/BITMAPHEADER combination");
 		return XVID_CSP_NULL;
-*/
-	case FOURCC_I420:
-	case FOURCC_IYUV:
+
+	case FOURCC_I420 :
+	case FOURCC_IYUV :
 		DEBUG("IYUY");
 		return XVID_CSP_I420;
 
 	case FOURCC_YV12 :
 		DEBUG("YV12");
 		return XVID_CSP_YV12;
-	
+			
 	case FOURCC_YUYV :
 	case FOURCC_YUY2 :
-	case FOURCC_V422 :
 		DEBUG("YUY2");
 		return XVID_CSP_YUY2;
 
-	case FOURCC_YVYU:
+	case FOURCC_YVYU :
 		DEBUG("YVYU");
 		return XVID_CSP_YVYU;
 
-	case FOURCC_UYVY:
+	case FOURCC_UYVY :
 		DEBUG("UYVY");
 		return XVID_CSP_UYVY;
 
+	default :
+		DEBUGFOURCC("unsupported colorspace", hdr->biCompression);
+		return XVID_CSP_NULL;
 	}
-	DEBUGFOURCC("colorspace: unknown", hdr->biCompression);
-	return XVID_CSP_NULL;
 }
 
 
@@ -168,7 +172,7 @@ LRESULT compress_query(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	}
 
 	if (inhdr->biWidth != outhdr->biWidth || inhdr->biHeight != outhdr->biHeight ||
-		(outhdr->biCompression != FOURCC_XVID && outhdr->biCompression != FOURCC_DIVX))
+		(outhdr->biCompression != FOURCC_XVID && outhdr->biCompression != FOURCC_DIVX && outhdr->biCompression != FOURCC_DX50))
 	{
 		return ICERR_BADFORMAT;
 	}
@@ -194,7 +198,6 @@ LRESULT compress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * 
 
 	memcpy(outhdr, inhdr, sizeof(BITMAPINFOHEADER));
 	outhdr->biSize = sizeof(BITMAPINFOHEADER);
-	outhdr->biBitCount = 24;  // or 16
 	outhdr->biSizeImage = compress_get_size(codec, lpbiInput, lpbiOutput);
 	outhdr->biXPelsPerMeter = 0;
 	outhdr->biYPelsPerMeter = 0;
@@ -220,11 +223,7 @@ LRESULT compress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * 
 
 LRESULT compress_get_size(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiOutput)
 {
-	return
-#ifdef BFRAMES
-	 2 *
-#endif
-	lpbiOutput->bmiHeader.biWidth * lpbiOutput->bmiHeader.biHeight * 3;
+	return 2 * lpbiOutput->bmiHeader.biWidth * lpbiOutput->bmiHeader.biHeight * 3;
 }
 
 
@@ -299,15 +298,15 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	param.num_threads = codec->config.num_threads;
 #endif
 
-#ifdef BFRAMES
 	param.global = 0;
 	if (codec->config.packed) param.global |= XVID_GLOBAL_PACKED;
 	if (codec->config.dx50bvop) param.global |= XVID_GLOBAL_DX50BVOP;
 	if (codec->config.debug) param.global |= XVID_GLOBAL_DEBUG;
+	if (codec->config.reduced_resolution) param.global |= XVID_GLOBAL_REDUCED;
 	param.max_bframes = codec->config.max_bframes;
 	param.bquant_ratio = codec->config.bquant_ratio;
+	param.bquant_offset = codec->config.bquant_offset;
 	param.frame_drop_ratio = codec->config.frame_drop_ratio;
-#endif
 
 	switch(xvid_encore(0, XVID_ENC_CREATE, &param, NULL)) 
 	{
@@ -387,6 +386,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	frame.general |= XVID_HALFPEL;
 //	frame.general |= XVID_ME_EPZS;
 
+	frame.general |= XVID_HQACPRED;
 
 	if (codec->config.motion_search > 4)
 		frame.general |= XVID_INTER4V;
@@ -397,8 +397,22 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	if (codec->config.interlacing)
 		frame.general |= XVID_INTERLACING;
 
+	if (codec->config.qpel) {
+		frame.general |= XVID_QUARTERPEL;
+		frame.motion |= PMV_QUARTERPELREFINE16 | PMV_QUARTERPELREFINE8;
+	}
 
+	if (codec->config.gmc)
+		frame.general |= XVID_GMC;
 
+	if (codec->config.chromame)
+		frame.motion |= PMV_CHROMA16 + PMV_CHROMA8;
+
+	if (codec->config.reduced_resolution) 
+		frame.general |= XVID_REDUCED;
+
+	if (codec->config.chroma_opt)
+		frame.general |= XVID_CHROMAOPT;
 // added by koepi for credits greyscale
 
 	check_greyscale_mode(&codec->config, &frame, codec->framenum);
@@ -445,12 +459,51 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		}
 	}
 
-	frame.motion = pmvfast_presets[codec->config.motion_search];
+	frame.motion |= pmvfast_presets[codec->config.motion_search];
+
+	switch (codec->config.vhq_mode)
+	{
+	case VHQ_MODE_DECISION :
+		frame.general |= XVID_MODEDECISION_BITS;
+		break;
+
+	case VHQ_LIMITED_SEARCH :
+		frame.general |= XVID_MODEDECISION_BITS;
+		frame.motion |= HALFPELREFINE16_BITS;
+		frame.motion |= QUARTERPELREFINE16_BITS;
+		break;
+
+	case VHQ_MEDIUM_SEARCH :
+		frame.general |= XVID_MODEDECISION_BITS;
+		frame.motion |= HALFPELREFINE16_BITS;
+		frame.motion |= HALFPELREFINE8_BITS;
+		frame.motion |= QUARTERPELREFINE16_BITS;
+		frame.motion |= QUARTERPELREFINE8_BITS;
+		frame.motion |= CHECKPREDICTION_BITS;
+		break;
+
+	case VHQ_WIDE_SEARCH :
+		frame.general |= XVID_MODEDECISION_BITS;
+		frame.motion |= HALFPELREFINE16_BITS;
+		frame.motion |= HALFPELREFINE8_BITS;
+		frame.motion |= QUARTERPELREFINE16_BITS;
+		frame.motion |= QUARTERPELREFINE8_BITS;
+		frame.motion |= CHECKPREDICTION_BITS;
+		frame.motion |= EXTSEARCH_BITS;
+		break;
+
+	default :
+		break;
+	}
 
 	frame.image = icc->lpInput;
+	frame.stride = (((icc->lpbiInput->biWidth * icc->lpbiInput->biBitCount) + 31) & ~31) >> 3;
 
 	if ((frame.colorspace = get_colorspace(inhdr)) == XVID_CSP_NULL)
 		return ICERR_BADFORMAT;
+
+	if (frame.colorspace == XVID_CSP_I420 || frame.colorspace == XVID_CSP_YV12)
+		frame.stride = (frame.stride*2)/3;
 
 	frame.bitstream = icc->lpOutput;
 	frame.length = icc->lpbiOutput->biSizeImage;
@@ -528,9 +581,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		frame.intra = 0;
 	}
 
-#ifdef BFRAMES
 	frame.bquant = 0;
-#endif
 
 //	OutputDebugString(" ");
 	switch (xvid_encore(codec->ehandle, XVID_ENC_ENCODE, &frame, &stats)) 
@@ -545,7 +596,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		return ICERR_BADFORMAT;	
 	}
 
-	if (frame.intra)
+	if (frame.intra==1)
 	{
 		codec->keyspacing = 0;
 		*icc->lpdwFlags = AVIIF_KEYFRAME;
@@ -584,7 +635,9 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		}
 	}
 
-	codec_2pass_update(codec, &frame, &stats);
+//quick fix for delayed frames
+//	if (frame.intra != 5)
+		codec_2pass_update(codec, &frame, &stats);
 
 	++codec->framenum;
 	++codec->keyspacing;
@@ -606,7 +659,7 @@ LRESULT decompress_query(CODEC * codec, BITMAPINFO *lpbiInput, BITMAPINFO *lpbiO
 		return ICERR_ERROR;
 	}
 
-	if (inhdr->biCompression != FOURCC_XVID && inhdr->biCompression != FOURCC_DIVX)
+	if (inhdr->biCompression != FOURCC_XVID && inhdr->biCompression != FOURCC_DIVX && inhdr->biCompression != FOURCC_DX50 && get_colorspace(inhdr) == XVID_CSP_NULL)
 	{
 		return ICERR_BADFORMAT;
 	}
@@ -638,15 +691,27 @@ LRESULT decompress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO 
 		return sizeof(BITMAPINFOHEADER);
 	}
 
-	result = decompress_query(codec, lpbiInput, lpbiOutput);
+	/* --- yv12 --- */
+
+	if (get_colorspace(inhdr) != XVID_CSP_NULL) {
+		memcpy(outhdr, inhdr, sizeof(BITMAPINFOHEADER));
+		// XXX: should we set outhdr->biSize ??
+		return ICERR_OK;
+	}
+	/* --- yv12 --- */
+
+	result = decompress_query(codec, lpbiInput, NULL);
 	if (result != ICERR_OK) 
 	{
 		return result;
 	}
 
-	memcpy(outhdr, inhdr, sizeof(BITMAPINFOHEADER));
 	outhdr->biSize = sizeof(BITMAPINFOHEADER);
-	outhdr->biCompression = FOURCC_YUY2;
+	outhdr->biWidth = inhdr->biWidth;
+	outhdr->biHeight = inhdr->biHeight;
+	outhdr->biPlanes = 1;
+	outhdr->biBitCount = 24;
+	outhdr->biCompression = BI_RGB;	/* sonic foundry vegas video v3 only supports BI_RGB */
 	outhdr->biSizeImage = outhdr->biWidth * outhdr->biHeight * outhdr->biBitCount;
 	outhdr->biXPelsPerMeter = 0;
 	outhdr->biYPelsPerMeter = 0;
@@ -707,9 +772,48 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 	
 	frame.bitstream = icd->lpInput;
 	frame.length = icd->lpbiInput->biSizeImage;
+	frame.general = XVID_DEC_LOWDELAY;	/* force low_delay_default mode */
+	if (codec->config.deblock_y)
+		frame.general |= XVID_DEC_DEBLOCKY;
+	if (codec->config.deblock_uv)
+		frame.general |= XVID_DEC_DEBLOCKUV;
 
 	frame.image = icd->lpOutput;
-	frame.stride = icd->lpbiOutput->biWidth;
+	frame.stride = (((icd->lpbiOutput->biWidth * icd->lpbiOutput->biBitCount) + 31) & ~31) >> 3;
+
+	/* --- yv12 --- */	
+	if (icd->lpbiInput->biCompression != FOURCC_XVID &&
+		 icd->lpbiInput->biCompression != FOURCC_DIVX &&
+		 icd->lpbiInput->biCompression != FOURCC_DX50)
+	{
+		XVID_INIT_CONVERTINFO convert;
+		DEBUGFOURCC("input", icd->lpbiInput->biCompression);
+		DEBUGFOURCC("output", icd->lpbiOutput->biCompression);
+		convert.input.colorspace = get_colorspace(icd->lpbiInput);
+		convert.input.y = icd->lpInput;
+		convert.input.y_stride = (((icd->lpbiInput->biWidth *icd->lpbiInput->biBitCount) + 31) & ~31) >> 3;  
+		if (convert.input.colorspace == XVID_CSP_I420 || convert.input.colorspace == XVID_CSP_YV12)
+			convert.input.y_stride = (convert.input.y_stride*2)/3;
+
+		convert.output.colorspace = get_colorspace(icd->lpbiOutput);
+		convert.output.y = icd->lpOutput;
+		convert.output.y_stride = (((icd->lpbiOutput->biWidth *icd->lpbiOutput->biBitCount) + 31) & ~31) >> 3;
+		if (convert.output.colorspace == XVID_CSP_I420 || convert.output.colorspace == XVID_CSP_YV12)
+			convert.output.y_stride = (convert.output.y_stride*2)/3;
+
+		convert.width = icd->lpbiInput->biWidth;
+		convert.height = icd->lpbiInput->biHeight;
+		convert.interlacing = 0;
+		if (convert.input.colorspace == XVID_CSP_NULL ||
+			convert.output.colorspace == XVID_CSP_NULL ||
+			xvid_init(NULL, XVID_INIT_CONVERT, &convert, NULL) != XVID_ERR_OK)
+		{
+			 return ICERR_BADFORMAT;
+		}
+		return ICERR_OK;
+	}
+	/* --- yv12 --- */
+	
 
 	if (~((icd->dwFlags & ICDECOMPRESS_HURRYUP) | (icd->dwFlags & ICDECOMPRESS_UPDATE) | (icd->dwFlags & ICDECOMPRESS_PREROLL)))
 	{
@@ -722,6 +826,9 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 	{
 		frame.colorspace = XVID_CSP_NULL;
 	}
+
+	if (frame.colorspace == XVID_CSP_I420 || frame.colorspace == XVID_CSP_YV12)
+		frame.stride = (frame.stride*2)/3;
 
 	switch (xvid_decore(codec->dhandle, XVID_DEC_DECODE, &frame, NULL)) 
 	{
