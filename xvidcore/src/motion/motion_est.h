@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion_est.h,v 1.1.2.14 2003-01-24 11:44:24 syskin Exp $
+ *  $Id: motion_est.h,v 1.1.2.15 2003-02-12 12:57:27 syskin Exp $
  *
  ***************************************************************************/
 
@@ -226,6 +226,7 @@ SearchP(const IMAGE * const pRef,
 		const int x,
 		const int y,
 		const uint32_t MotionFlags,
+		const uint32_t GlobalFlags,
 		const uint32_t iQuant,
 		SearchData * const Data,
 		const MBParam * const pParam,
@@ -245,5 +246,68 @@ GlobalMotionEst(const MACROBLOCK * const pMBs,
 				const IMAGE * const pRefHV	);
 
 #define iDiamondSize 2
+
+static __inline uint32_t
+MakeGoodMotionFlags(const uint32_t MotionFlags, const uint32_t GlobalFlags)
+{
+	uint32_t Flags = MotionFlags;
+
+	if (!(GlobalFlags & XVID_MODEDECISION_BITS))
+		Flags &= ~(QUARTERPELREFINE16_BITS+QUARTERPELREFINE8_BITS+HALFPELREFINE16_BITS+HALFPELREFINE8_BITS+EXTSEARCH_BITS);
+
+	if (Flags & EXTSEARCH_BITS)
+		Flags |= HALFPELREFINE16_BITS;
+	
+	if (Flags & EXTSEARCH_BITS && MotionFlags & PMV_EXTSEARCH8)
+		Flags |= HALFPELREFINE8_BITS;
+
+	if (Flags & HALFPELREFINE16_BITS)
+		Flags |= QUARTERPELREFINE16_BITS;
+
+	if (Flags & HALFPELREFINE8_BITS) {
+		Flags |= QUARTERPELREFINE8_BITS;
+		Flags &= ~PMV_HALFPELREFINE8;
+	}
+
+	if (Flags & QUARTERPELREFINE8_BITS)
+		Flags &= ~PMV_QUARTERPELREFINE8;
+
+	if (!(GlobalFlags & XVID_QUARTERPEL))
+		Flags &= ~(PMV_QUARTERPELREFINE16+PMV_QUARTERPELREFINE8+QUARTERPELREFINE16_BITS+QUARTERPELREFINE8_BITS);
+
+	if (!(GlobalFlags & XVID_HALFPEL))
+		Flags &= ~(PMV_EXTSEARCH16+PMV_HALFPELREFINE16+PMV_HALFPELREFINE8+HALFPELREFINE16_BITS+HALFPELREFINE8_BITS);
+
+	if (GlobalFlags & (XVID_GREYSCALE + XVID_REDUCED))
+		Flags &= ~(PMV_CHROMA16 + PMV_CHROMA8);
+
+	return Flags;
+}
+
+/* BITS mode decision and search */
+
+#include "../bitstream/zigzag.h"
+#include "../quant/quant_mpeg4.h"
+#include "../quant/quant_h263.h"
+#include "../bitstream/vlc_codes.h"
+
+static int
+CountMBBitsInter(SearchData * const Data,
+				const MACROBLOCK * const pMBs, const int x, const int y,
+				const MBParam * const pParam,
+				const uint32_t MotionFlags);
+
+static int
+CountMBBitsInter4v(const SearchData * const Data,
+					MACROBLOCK * const pMB, const MACROBLOCK * const pMBs,
+					const int x, const int y,
+					const MBParam * const pParam, const uint32_t MotionFlags,
+					const VECTOR * const backup);
+
+static int
+CountMBBitsIntra(const SearchData * const Data);
+
+int CodeCoeffIntra_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag);
+int CodeCoeffInter_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag);
 
 #endif							/* _MOTION_EST_H_ */
