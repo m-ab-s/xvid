@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.20 2003-11-13 23:11:24 edgomez Exp $
+ * $Id: xvid.c,v 1.45.2.21 2003-11-29 17:26:12 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -563,7 +563,7 @@ xvid_gbl_info(xvid_gbl_info_t * info)
 		return XVID_ERR_VERSION;
 
 	info->actual_version = XVID_VERSION;
-	info->build = "dev-api-4";
+	info->build = "xvid-1.0.0";
 	info->cpu_flags = detect_cpu_flags();
 
 #if defined(_SMP) && defined(WIN32)
