@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.51.2.1 2004-04-11 08:11:09 syskin Exp $
+ * $Id: decoder.c,v 1.51.2.2 2004-04-19 12:33:34 syskin Exp $
  *
  ****************************************************************************/
 
@@ -222,6 +222,7 @@ decoder_create(xvid_dec_create_t * create)
 	dec->time = dec->time_base = dec->last_time_base = 0;
 	dec->low_delay = 0;
 	dec->packed_mode = 0;
+	dec->time_inc_resolution = 1; /* until VOL header says otherwise */
 
 	dec->fixed_dimensions = (dec->width > 0 && dec->height > 0);
 
@@ -1486,6 +1487,11 @@ repeat:
 			emms();
 			return BitstreamPos(&bs)/8;	/* number of bytes consumed */
 		}
+		goto repeat;
+	}
+
+	if(dec->frames == 0 && coding_type != I_VOP) {
+		/* 1st frame is not an i-vop */
 		goto repeat;
 	}
 
