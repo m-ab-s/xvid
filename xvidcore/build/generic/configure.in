@@ -24,7 +24,7 @@ our_cflags_defaults="$our_cflags_defaults -fstrength-reduce"
 our_cflags_defaults="$our_cflags_defaults -finline-functions"
 our_cflags_defaults="$our_cflags_defaults -freduce-all-givs"
 our_cflags_defaults="$our_cflags_defaults -ffast-math"
-our_cfalgs_defaults="$our_cflags_defaults -fomit-frame-pointer"
+our_cflags_defaults="$our_cflags_defaults -fomit-frame-pointer"
 
 dnl ==========================================================================
 dnl Features - configure options
