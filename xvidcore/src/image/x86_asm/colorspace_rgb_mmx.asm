@@ -1,32 +1,26 @@
-;/**************************************************************************
+;/*****************************************************************************
 ; *
-; *	XVID MPEG-4 VIDEO CODEC
-; *	colorspace rgb
+; *  XVID MPEG-4 VIDEO CODEC
+; *  - RGB colorspace conversions -
 ; *
-; *	This program is free software; you can redistribute it and/or modify
-; *	it under the terms of the GNU General Public License as published by
-; *	the Free Software Foundation; either version 2 of the License, or
-; *	(at your option) any later version.
+; *  Copyright(C) 2002-2003 Michael Militzer <isibaar@xvid.org>
+; *               2002-2003 Peter Ross <pross@xvid.org>
 ; *
-; *	This program is distributed in the hope that it will be useful,
-; *	but WITHOUT ANY WARRANTY; without even the implied warranty of
-; *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-; *	GNU General Public License for more details.
+; *  This program is free software ; you can redistribute it and/or modify
+; *  it under the terms of the GNU General Public License as published by
+; *  the Free Software Foundation ; either version 2 of the License, or
+; *  (at your option) any later version.
 ; *
-; *	You should have received a copy of the GNU General Public License
-; *	along with this program; if not, write to the Free Software
-; *	Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+; *  This program is distributed in the hope that it will be useful,
+; *  but WITHOUT ANY WARRANTY ; without even the implied warranty of
+; *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; *  GNU General Public License for more details.
 ; *
-; *************************************************************************/
-
-;/**************************************************************************
+; *  You should have received a copy of the GNU General Public License
+; *  along with this program ; if not, write to the Free Software
+; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; *	History:
-; *
-; *	10.10.2001	initial version; (c)2002 peter ross <pross@xvid.org>
-; *
-; *************************************************************************/
-
+; ****************************************************************************/
 
 bits 32
 
@@ -86,7 +80,7 @@ VG_MUL		dw  52,  52,  52,  52
 UB_MUL		dw 129, 129, 129, 129
 VR_MUL		dw 102, 102, 102, 102
 
-
+BRIGHT		db	128, 128, 128, 128, 128, 128, 128, 128
 
 section .text
 
@@ -204,7 +198,6 @@ section .text
 		pxor mm7, mm7			; clear mm7
 %endmacro
 
-
 %macro YV12_TO_BGR			2
 %define TEMP_Y1  esp
 %define TEMP_Y2  esp + 8
@@ -212,6 +205,7 @@ section .text
 %define TEMP_G2  esp + 24
 %define TEMP_B1  esp + 32
 %define TEMP_B2  esp + 40
+
 	movd mm2, [ebx]		; u_ptr[0]
 	movd mm3, [ecx]		; v_ptr[0]
 
@@ -385,11 +379,19 @@ section .text
 	psrlq mm0, 32
 
 	movd [edi + 15], mm0
-	movd [edi + 18], mm5	
+	movq mm2, mm5
 
-	psrlq mm5, 32
+	psrlq mm0, 8			; 000000r5g5 -> mm0
+	psllq mm2, 32			; 0r6g6b60000 -> mm2
+		
+	psrlq mm5, 32			; 00000r7g7b7 -> mm5
+	psrlq mm2, 16			; 000r6g6b600 -> mm2
 
-	movd [edi + 21], mm5	
+	por mm0, mm2			; 000r6g6b6r5g5 -> mm0
+	psllq mm5, 40			; r7g7b700000 -> mm5
+	
+	por mm5, mm0			; r7g7b7r6g6b6r5g5 -> mm5
+	movq [edi + 16], mm5
 
 	movq mm0, [TEMP_B2]
 	movq mm1, [TEMP_G2]
@@ -424,11 +426,19 @@ section .text
 	psrlq mm0, 32
 
 	movd [edi+edx + 15], mm0
-	movd [edi+edx + 18], mm5
+	movq mm2, mm5
 
-	psrlq mm5, 32
+	psrlq mm0, 8			; 000000r5g5 -> mm0
+	psllq mm2, 32			; 0r6g6b60000 -> mm2
+		
+	psrlq mm5, 32			; 00000r7g7b7 -> mm5
+	psrlq mm2, 16			; 000r6g6b600 -> mm2
 
-	movd [edi+edx + 21], mm5
+	por mm0, mm2			; 000r6g6b6r5g5 -> mm0
+	psllq mm5, 40			; r7g7b700000 -> mm5
+	
+	por mm5, mm0			; r7g7b7r6g6b6r5g5 -> mm5
+	movq [edi + edx + 16], mm5
 
 %else		; BGRA (32-bit)
 	movq [edi], mm2			
