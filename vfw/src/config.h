@@ -24,7 +24,7 @@ HWND hTooltip;
 
 #define XVID_BUILD		__TIME__ ", " __DATE__
 #define XVID_WEBSITE	"http://www.xvid.org/"
-#define XVID_SPECIAL_BUILD	"(Vanilla CVS Build)"
+#define XVID_SPECIAL_BUILD	"sysKin's build - designed for bugs (tm)"
 
 /* constants */
 #define CONFIG_HINTFILE		"\\hintfile.mvh"
@@ -62,6 +62,13 @@ HWND hTooltip;
 #define CREDITS_MODE_QUANT		1
 #define CREDITS_MODE_SIZE		2
 
+/* vhq modes */
+#define VHQ_OFF					0
+#define VHQ_MODE_DECISION		1
+#define VHQ_LIMITED_SEARCH		2
+#define VHQ_MEDIUM_SEARCH		3
+#define VHQ_WIDE_SEARCH			4
+
 #define CREDITS_START			1
 #define CREDITS_END				2
 
@@ -86,6 +93,7 @@ typedef struct
 	int motion_search;
 	int quant_type;
 	int fourcc_used;
+	int vhq_mode;
 	int max_key_interval;
 	int min_key_interval;
 	int lum_masking;

@@ -247,6 +247,7 @@
 #define IDC_DEBLOCK_Y                   1235
 #define IDC_DEBLOCK_UV                  1236
 #define IDC_REDUCED                     1237
+#define IDC_VHQ                         1238
 
 // Next default values for new objects
 // 
