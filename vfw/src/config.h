@@ -24,6 +24,7 @@ HWND hTooltip;
 
 #define XVID_BUILD		__TIME__ ", " __DATE__
 #define XVID_WEBSITE	"http://www.xvid.org/"
+
 #define XVID_SPECIAL_BUILD	"(Vanilla CVS Build)"
 
 /* constants */
@@ -90,8 +91,11 @@ typedef struct
 	int lum_masking;
 	int interlacing;
 //added by koepi for gruel's greyscale_mode
+
 	int greyscale;
+
 // end of koepi's additions
+
 #ifdef BFRAMES
 	int max_bframes;
 	int bquant_ratio;
@@ -142,8 +146,11 @@ typedef struct
 	int credits_end_end;
 
 //added by koepi for gruel's greyscale_mode
+
 	int credits_greyscale;
+
 // end of koepi's additions
+
 	int credits_mode;
 	int credits_rate;
 	int credits_quant_i;

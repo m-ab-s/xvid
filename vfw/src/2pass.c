@@ -1262,3 +1262,4 @@ void codec_2pass_finish(CODEC* codec)
 		return;
 	}
 }
+
