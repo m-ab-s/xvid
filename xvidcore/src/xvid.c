@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.11 2003-07-16 23:00:08 edgomez Exp $
+ * $Id: xvid.c,v 1.45.2.12 2003-08-02 15:08:30 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -163,7 +163,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 {
 	unsigned int cpu_flags;
 
-	if (XVID_MAJOR(init->version) != 1) /* v1.x.x */
+	if (XVID_VERSION_MAJOR(init->version) != 1) /* v1.x.x */
 		return XVID_ERR_VERSION;
 
 	cpu_flags = (init->cpu_flags & XVID_CPU_FORCE) ? init->cpu_flags : detect_cpu_flags();
@@ -549,7 +549,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 static int
 xvid_gbl_info(xvid_gbl_info_t * info)
 {
-	if (XVID_MAJOR(info->version) != 1) /* v1.x.x */
+	if (XVID_VERSION_MAJOR(info->version) != 1) /* v1.x.x */
 		return XVID_ERR_VERSION;
 
 	info->actual_version = XVID_VERSION;
@@ -575,7 +575,7 @@ xvid_gbl_convert(xvid_gbl_convert_t* convert)
 	int height2;
 	IMAGE img;
 
-	if (XVID_MAJOR(convert->version) != 1)   /* v1.x.x */
+	if (XVID_VERSION_MAJOR(convert->version) != 1)   /* v1.x.x */
 	      return XVID_ERR_VERSION;
 
 #if 0

@@ -21,7 +21,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.29 2003-07-10 17:39:40 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.30 2003-08-02 15:07:59 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -55,7 +55,8 @@
 /*****************************************************************************
  *                            Quality presets
  ****************************************************************************/
-static xvid_motion_t const motion_presets[] = {
+
+static const int motion_presets[] = {
 	/* quality 0 */
 	0,
 
@@ -72,22 +73,22 @@ static xvid_motion_t const motion_presets[] = {
 	/* quality 4 */
 	XVID_ME_ADVANCEDDIAMOND16 | XVID_ME_HALFPELREFINE16 |
 	XVID_ME_ADVANCEDDIAMOND8 | XVID_ME_HALFPELREFINE8 |
-	XVID_ME_CHROMA16 | XVID_ME_CHROMA8,
+	XVID_ME_CHROMA_PVOP | XVID_ME_CHROMA_BVOP,
 
 	/* quality 5 */
 	XVID_ME_ADVANCEDDIAMOND16 | XVID_ME_HALFPELREFINE16 |
 	XVID_ME_ADVANCEDDIAMOND8 | XVID_ME_HALFPELREFINE8 |
-	XVID_ME_CHROMA16 | XVID_ME_CHROMA8,
+	XVID_ME_CHROMA_PVOP | XVID_ME_CHROMA_BVOP,
 
 	/* quality 6 */
 	XVID_ME_ADVANCEDDIAMOND16 | XVID_ME_HALFPELREFINE16 | XVID_ME_EXTSEARCH16 |
 	XVID_ME_ADVANCEDDIAMOND8 | XVID_ME_HALFPELREFINE8 | XVID_ME_EXTSEARCH8 |
-	XVID_ME_CHROMA16 | XVID_ME_CHROMA8 ,
+	XVID_ME_CHROMA_PVOP | XVID_ME_CHROMA_BVOP,
 
 };
 #define ME_ELEMENTS (sizeof(motion_presets)/sizeof(motion_presets[0]))
 
-static xvid_vop_t const vop_presets[] = {
+static const int vop_presets[] = {
 	/* quality 0 */
 	0,
 

@@ -544,7 +544,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 
 	if ((profiles[codec->config.profile].flags & PROFILE_GMC) && codec->config.gmc) {
 		frame.vol_flags |= XVID_VOL_GMC;
-		frame.motion |= XVID_GME_REFINE;
+		frame.motion |= XVID_ME_GME_REFINE;
 	}
 
 	if ((profiles[codec->config.profile].flags & PROFILE_INTERLACE) && codec->config.interlacing)
@@ -566,39 +566,39 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		frame.vop_flags |= XVID_VOP_INTER4V;
 
 	if (codec->config.chromame)
-		frame.motion |= XVID_ME_CHROMA16 + XVID_ME_CHROMA8;
+		frame.motion |= XVID_ME_CHROMA_PVOP + XVID_ME_CHROMA_BVOP;
 
 	frame.motion |= pmvfast_presets[codec->config.motion_search];
 
 	switch (codec->config.vhq_mode)
 	{
 	case VHQ_MODE_DECISION :
-		frame.vop_flags |= XVID_VOP_MODEDECISION_BITS;
+		frame.vop_flags |= XVID_VOP_MODEDECISION_RD;
 		break;
 
 	case VHQ_LIMITED_SEARCH :
-		frame.vop_flags |= XVID_VOP_MODEDECISION_BITS;
-		frame.motion |= XVID_ME_HALFPELREFINE16_BITS;
-		frame.motion |= XVID_ME_QUARTERPELREFINE16_BITS;
+		frame.vop_flags |= XVID_VOP_MODEDECISION_RD;
+		frame.motion |= XVID_ME_HALFPELREFINE16_RD;
+		frame.motion |= XVID_ME_QUARTERPELREFINE16_RD;
 		break;
 
 	case VHQ_MEDIUM_SEARCH :
-		frame.vop_flags |= XVID_VOP_MODEDECISION_BITS;
-		frame.motion |= XVID_ME_HALFPELREFINE16_BITS;
-		frame.motion |= XVID_ME_HALFPELREFINE8_BITS;
-		frame.motion |= XVID_ME_QUARTERPELREFINE16_BITS;
-		frame.motion |= XVID_ME_QUARTERPELREFINE8_BITS;
-		frame.motion |= XVID_ME_CHECKPREDICTION_BITS;
+		frame.vop_flags |= XVID_VOP_MODEDECISION_RD;
+		frame.motion |= XVID_ME_HALFPELREFINE16_RD;
+		frame.motion |= XVID_ME_HALFPELREFINE8_RD;
+		frame.motion |= XVID_ME_QUARTERPELREFINE16_RD;
+		frame.motion |= XVID_ME_QUARTERPELREFINE8_RD;
+		frame.motion |= XVID_ME_CHECKPREDICTION_RD;
 		break;
 
 	case VHQ_WIDE_SEARCH :
-		frame.vop_flags |= XVID_VOP_MODEDECISION_BITS;
-		frame.motion |= XVID_ME_HALFPELREFINE16_BITS;
-		frame.motion |= XVID_ME_HALFPELREFINE8_BITS;
-		frame.motion |= XVID_ME_QUARTERPELREFINE16_BITS;
-		frame.motion |= XVID_ME_QUARTERPELREFINE8_BITS;
-		frame.motion |= XVID_ME_CHECKPREDICTION_BITS;
-		frame.motion |= XVID_ME_EXTSEARCH_BITS;
+		frame.vop_flags |= XVID_VOP_MODEDECISION_RD;
+		frame.motion |= XVID_ME_HALFPELREFINE16_RD;
+		frame.motion |= XVID_ME_HALFPELREFINE8_RD;
+		frame.motion |= XVID_ME_QUARTERPELREFINE16_RD;
+		frame.motion |= XVID_ME_QUARTERPELREFINE8_RD;
+		frame.motion |= XVID_ME_CHECKPREDICTION_RD;
+		frame.motion |= XVID_ME_EXTSEARCH_RD;
 		break;
 
 	default :

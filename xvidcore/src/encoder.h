@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.h,v 1.27.2.11 2003-06-28 15:49:11 chl Exp $
+ * $Id: encoder.h,v 1.27.2.12 2003-08-02 15:08:24 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -64,7 +64,7 @@ typedef struct
 
     int profile;
 
-	xvid_global_t global_flags;
+	int global_flags;
 	int bquant_ratio;
 	int bquant_offset;
 	int frame_drop_ratio;
@@ -89,7 +89,7 @@ typedef struct
 	/* vars that not "quite" frame independant */
 	uint32_t m_rounding_type;
 	uint32_t m_fcode;
-    xvid_vol_t vol_flags;
+    int vol_flags;
 
 	int64_t m_stamp;
 }
@@ -123,9 +123,9 @@ typedef struct
 {
     int frame_num;
     int fincr;
-	xvid_vol_t vol_flags;
-    xvid_vop_t vop_flags;
-	xvid_motion_t motion_flags;
+	int vol_flags;
+    int vop_flags;
+	int motion_flags;
 
 	int coding_type;
 	uint32_t quant;

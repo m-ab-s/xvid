@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.35 2003-07-29 23:02:29 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.36 2003-08-02 15:08:19 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -117,7 +117,7 @@ enc_create(xvid_enc_create_t * create)
 	Encoder *pEnc;
     int n;
 
-	if (XVID_MAJOR(create->version) != 1)	/* v1.x.x */
+	if (XVID_VERSION_MAJOR(create->version) != 1) /* v1.x.x */
 		return XVID_ERR_VERSION;
 
 	if (create->width%2 || create->height%2)
@@ -741,7 +741,7 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
 
             for (j=0; j<pEnc->mbParam.mb_height; j++)
             for (i=0; i<pEnc->mbParam.mb_width; i++) {
-                data.dquant[j*data.dquant_stride + i] = frame->mbs[j*pEnc->mbParam.mb_width + i].dquant;;
+                data.dquant[j*data.dquant_stride + i] = frame->mbs[j*pEnc->mbParam.mb_width + i].dquant;
             }
         }
 
@@ -867,7 +867,7 @@ enc_encode(Encoder * pEnc,
 	int type;
 	Bitstream bs;
 
-	if (XVID_MAJOR(xFrame->version) != 1 || (stats && XVID_MAJOR(stats->version) != 1))	/* v1.x.x */
+	if (XVID_VERSION_MAJOR(xFrame->version) != 1 || (stats && XVID_VERSION_MAJOR(stats->version) != 1))	/* v1.x.x */
 		return XVID_ERR_VERSION;
 
 	xFrame->out_flags = 0;
@@ -1480,7 +1480,7 @@ FrameCodeP(Encoder * pEnc,
 		current->warp = GlobalMotionEst( current->mbs, pParam, current, reference,
 								 &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV);
 		
-		if (current->motion_flags & XVID_GME_REFINE) {
+		if (current->motion_flags & XVID_ME_GME_REFINE) {
 			gmcval = GlobalMotionEstRefine(&current->warp, 
 								current->mbs, pParam, 
 								current, reference, 

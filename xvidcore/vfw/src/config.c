@@ -1599,9 +1599,9 @@ BOOL CALLBACK about_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			info.version = XVID_VERSION;
 			xvid_global(0, XVID_GBL_INFO, &info, NULL);
 			wsprintf(core, "libxvidcore version %d.%d.%d (\"%s\")",
-				XVID_MAJOR(info.actual_version),
-				XVID_MINOR(info.actual_version),
-				XVID_PATCH(info.actual_version),
+				XVID_VERSION_MAJOR(info.actual_version),
+				XVID_VERSION_MINOR(info.actual_version),
+				XVID_VERSION_PATCH(info.actual_version),
 				info.build);
 
 			SetDlgItemText(hDlg, IDC_CORE, core);

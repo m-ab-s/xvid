@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.9 2003-06-28 15:48:39 chl Exp $
+ * $Id: decoder.c,v 1.49.2.10 2003-08-02 15:08:12 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -169,7 +169,7 @@ decoder_create(xvid_dec_create_t * create)
 {
 	DECODER *dec;
 
-	if (XVID_MAJOR(create->version) != 1)	/* v1.x.x */
+	if (XVID_VERSION_MAJOR(create->version) != 1)	/* v1.x.x */
 		return XVID_ERR_VERSION;
 
 	dec = xvid_malloc(sizeof(DECODER), CACHE_LINE);
@@ -1733,7 +1733,7 @@ decoder_decode(DECODER * dec,
 	int success, output, seen_something;
 	idctFuncPtr idct_save;
 
-	if (XVID_MAJOR(frame->version) != 1 || (stats && XVID_MAJOR(stats->version) != 1))	/* v1.x.x */
+	if (XVID_VERSION_MAJOR(frame->version) != 1 || (stats && XVID_VERSION_MAJOR(stats->version) != 1))	/* v1.x.x */
 		return XVID_ERR_VERSION;
 
 	start_global_timer();
