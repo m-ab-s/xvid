@@ -708,6 +708,7 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 		for (i=0 ; i<32 ; ++i)
 		{
 			quant_error[i] = 0.0;
+			twopass->quant_count[i] = 0;
 		}
 
 		curve_comp_error = 0.0;
@@ -1038,6 +1039,7 @@ int codec_2pass_update(CODEC* codec, XVID_ENC_FRAME* frame, XVID_ENC_STATS* stat
 
 	NNSTATS nns1;
 	DWORD wrote;
+	int credits_pos;
 	char* quant_type;
 
 	if (codec->framenum == 0)
@@ -1084,7 +1086,12 @@ int codec_2pass_update(CODEC* codec, XVID_ENC_FRAME* frame, XVID_ENC_STATS* stat
 	case DLG_MODE_2PASS_2_INT :
 	case DLG_MODE_2PASS_2_EXT :
 		codec->twopass.overflow += codec->twopass.desired_bytes2 - frame->length;
-		DEBUG2ND(frame->quant, quant_type, frame->intra, codec->twopass.bytes1, codec->twopass.desired_bytes2, frame->length, codec->twopass.overflow, codec_is_in_credits(&codec->config, codec->framenum))
+
+		credits_pos = codec_is_in_credits(&codec->config, codec->framenum);
+		if (!credits_pos)
+			codec->twopass.quant_count[frame->quant]++;
+
+		DEBUG2ND(frame->quant, quant_type, frame->intra, codec->twopass.bytes1, codec->twopass.desired_bytes2, frame->length, codec->twopass.overflow, credits_pos)
 		break;
 
 	default:
@@ -1094,4 +1101,23 @@ int codec_2pass_update(CODEC* codec, XVID_ENC_FRAME* frame, XVID_ENC_STATS* stat
 	return ICERR_OK;
 }
 
+void codec_2pass_finish(CODEC* codec)
+{
+	int i;
+	char s[100];
+	if (codec->config.mode == DLG_MODE_2PASS_2_EXT || codec->config.mode == DLG_MODE_2PASS_2_INT)
+	{
+		// output the quantizer distribution for this encode.
 
+		OutputDebugString("Quantizer distribution for 2nd pass:");
+		for (i=1; i<=31; i++)
+		{
+			if (codec->twopass.quant_count[i])
+			{
+				wsprintf(s, "Q:%i:%i", i, codec->twopass.quant_count[i]);
+				OutputDebugString(s);
+			}
+		}
+		return;
+	}
+}
