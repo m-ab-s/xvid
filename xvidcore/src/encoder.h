@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.18.2.9 2003-01-11 14:59:23 chl Exp $
+ *  $Id: encoder.h,v 1.18.2.10 2003-01-25 22:44:50 chl Exp $
  *
  ****************************************************************************/
 
@@ -173,9 +173,7 @@ typedef struct
 	FRAMEINFO *current;
 	FRAMEINFO *reference;
 
-#ifdef _DEBUG_PSNR
 	IMAGE sOriginal;
-#endif
 	IMAGE vInterH;
 	IMAGE vInterV;
 	IMAGE vInterVf;

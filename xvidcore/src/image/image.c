@@ -938,6 +938,26 @@ image_psnr(IMAGE * orig_image,
 	return psnr_y;
 }
 
+long plane_sse(uint8_t * orig,
+		   uint8_t * recon,
+		   uint16_t stride,
+		   uint16_t width,
+		   uint16_t height)
+{
+	int diff, x, y;
+	long sse=0;
+
+	for (y = 0; y < height; y++) {
+		for (x = 0; x < width; x++) {
+			diff = *(orig + x) - *(recon + x);
+			sse += diff * diff;
+		}
+		orig += stride;
+		recon += stride;
+	}
+	return sse;
+}
+
 /*
 
 #include <stdio.h>

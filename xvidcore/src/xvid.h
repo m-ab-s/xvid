@@ -28,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.25 2003-01-17 16:07:40 chl Exp $
+*  $Id: xvid.h,v 1.17.2.26 2003-01-25 22:44:50 chl Exp $
 *
 *****************************************************************************/
 
@@ -257,6 +257,9 @@ extern "C" {
 #define XVID_GLOBAL_DEBUG		0x00000004	/* print debug info on each frame */
 #define XVID_GLOBAL_REDUCED		0x04000000	/* reduced resolution vop enable */
 
+#define XVID_GLOBAL_EXTRASTATS	0x00000200	/* generate extra statistics */
+
+
 /* Flags for XVID_ENC_FRAME.general */
 #define XVID_VALID_FLAGS		0x80000000
 
@@ -267,7 +270,6 @@ extern "C" {
 #define XVID_QUARTERPEL			0x02000000
 #define XVID_ADAPTIVEQUANT		0x00000080
 #define XVID_LUMIMASKING		0x00000100
-#define XVID_LATEINTRA			0x00000200
 
 #define XVID_INTERLACING		0x00000400	/* enable interlaced encoding */
 #define XVID_TOPFIELDFIRST		0x00000800	/* set top-field-first flag  */
@@ -291,6 +293,9 @@ extern "C" {
 #define XVID_GMC_TRANSLATIONAL	0x20000000
 
 #define XVID_REDUCED			0x04000000	/* reduced resolution vop */
+
+#define XVID_EXTRASTATS			0x00000200  /* generate extra statistics */
+
 
 /* Flags for XVID_ENC_FRAME.motion */
 #define PMV_ADVANCEDDIAMOND8	0x00004000
@@ -422,6 +427,9 @@ extern "C" {
 		int quant;				/* [out] frame quantizer */
 		int hlength;			/* [out] header length (bytes) */
 		int kblks, mblks, ublks;	/* [out] */
+		long sse_y;				/* [out] SSE of Y */
+		long sse_u;				/* [out] SSE of Cb */
+		long sse_v;				/* [out] SSE of Cr */
 	}
 	XVID_ENC_STATS;
 

@@ -28,15 +28,18 @@ void image_destroy(IMAGE * image,
 
 void image_swap(IMAGE * image1,
 				IMAGE * image2);
+				
 void image_copy(IMAGE * image1,
 				IMAGE * image2,
 				uint32_t edged_width,
 				uint32_t height);
+				
 void image_setedges(IMAGE * image,
 					uint32_t edged_width,
 					uint32_t edged_height,
 					uint32_t width,
 					uint32_t height);
+					
 void image_interpolate(const IMAGE * refn,
 					   IMAGE * refh,
 					   IMAGE * refv,
@@ -52,6 +55,11 @@ float image_psnr(IMAGE * orig_image,
 				 uint16_t width,
 				 uint16_t height);
 
+long plane_sse(uint8_t * orig,
+		   uint8_t * recon,
+		   uint16_t stride,
+		   uint16_t width,
+		   uint16_t height);
 
 void
 image_chroma_optimize(IMAGE * img, int width, int height, int edged_width);

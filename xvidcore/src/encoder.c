@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.40 2003-01-21 22:05:44 edgomez Exp $
+ *  $Id: encoder.c,v 1.76.2.41 2003-01-25 22:44:50 chl Exp $
  *
  ****************************************************************************/
 
@@ -254,9 +254,8 @@ encoder_create(XVID_ENC_PARAM * pParam)
 
 	/* try to allocate image memory */
 
-#ifdef _DEBUG_PSNR
-	image_null(&pEnc->sOriginal);
-#endif
+	if (pParam->global & XVID_GLOBAL_EXTRASTATS)
+		image_null(&pEnc->sOriginal);
 
 	image_null(&pEnc->f_refh);
 	image_null(&pEnc->f_refv);
@@ -270,12 +269,12 @@ encoder_create(XVID_ENC_PARAM * pParam)
 	image_null(&pEnc->vInterHV);
 	image_null(&pEnc->vInterHVf);
 
-#ifdef _DEBUG_PSNR
-	if (image_create
-		(&pEnc->sOriginal, pEnc->mbParam.edged_width,
-		 pEnc->mbParam.edged_height) < 0)
-		goto xvid_err_memory3;
-#endif
+	if (pParam->global & XVID_GLOBAL_EXTRASTATS)
+	{	if (image_create
+			(&pEnc->sOriginal, pEnc->mbParam.edged_width,
+			 pEnc->mbParam.edged_height) < 0)
+			goto xvid_err_memory3;
+	}
 
 	if (image_create
 		(&pEnc->f_refh, pEnc->mbParam.edged_width,
@@ -326,9 +325,10 @@ encoder_create(XVID_ENC_PARAM * pParam)
 		goto xvid_err_memory3;
 
 
-	/* B Frames specific init */
 
 	pEnc->mbParam.global = pParam->global;
+
+	/* B Frames specific init */
 	pEnc->mbParam.max_bframes = pParam->max_bframes;
 	pEnc->mbParam.bquant_ratio = pParam->bquant_ratio;
 	pEnc->mbParam.bquant_offset = pParam->bquant_offset;
@@ -464,10 +464,11 @@ encoder_create(XVID_ENC_PARAM * pParam)
 	}
 
   xvid_err_memory3:
-#ifdef _DEBUG_PSNR
-	image_destroy(&pEnc->sOriginal, pEnc->mbParam.edged_width,
-				  pEnc->mbParam.edged_height);
-#endif
+
+	if (pEnc->mbParam.global & XVID_GLOBAL_EXTRASTATS)
+	{	image_destroy(&pEnc->sOriginal, pEnc->mbParam.edged_width,
+					  pEnc->mbParam.edged_height);
+	}
 
 	image_destroy(&pEnc->f_refh, pEnc->mbParam.edged_width,
 				  pEnc->mbParam.edged_height);
@@ -583,10 +584,10 @@ encoder_destroy(Encoder * pEnc)
 	image_destroy(&pEnc->f_refhv, pEnc->mbParam.edged_width,
 				  pEnc->mbParam.edged_height);
 
-#ifdef _DEBUG_PSNR
-	image_destroy(&pEnc->sOriginal, pEnc->mbParam.edged_width,
-				  pEnc->mbParam.edged_height);
-#endif
+	if (pEnc->mbParam.global & XVID_GLOBAL_EXTRASTATS)
+	{	image_destroy(&pEnc->sOriginal, pEnc->mbParam.edged_width,
+					  pEnc->mbParam.edged_height);
+	}
 
 	/* Encoder structure */
 
@@ -689,10 +690,8 @@ encoder_encode_bframes(Encoder * pEnc,
 	int input_valid = 1;
 	int bframes_count = 0;
 
-#ifdef _DEBUG_PSNR
 	float psnr;
 	char temp[128];
-#endif
 
 	ENC_CHECK(pEnc);
 	ENC_CHECK(pFrame);
@@ -955,10 +954,10 @@ bvop_loop:
 
 		inc_frame_num(pEnc);
 
-#ifdef _DEBUG_PSNR
-		image_copy(&pEnc->sOriginal, &pEnc->current->image,
-			   pEnc->mbParam.edged_width, pEnc->mbParam.height);
-#endif
+		if (pFrame->general & XVID_EXTRASTATS)
+		{	image_copy(&pEnc->sOriginal, &pEnc->current->image,
+				   pEnc->mbParam.edged_width, pEnc->mbParam.height);
+		}
 
 		emms();
 
@@ -1156,19 +1155,26 @@ bvop_loop:
 		pResult->kblks = pEnc->current->sStat.kblks;
 		pResult->mblks = pEnc->current->sStat.mblks;
 		pResult->ublks = pEnc->current->sStat.ublks;
+
+		if (pFrame->general & XVID_EXTRASTATS)
+		{	pResult->sse_y =
+				plane_sse( pEnc->sOriginal.y, pEnc->current->image.y,
+						   pEnc->mbParam.edged_width, pEnc->mbParam.width,
+						   pEnc->mbParam.height);
+
+			pResult->sse_u =
+				plane_sse( pEnc->sOriginal.u, pEnc->current->image.u,
+						   pEnc->mbParam.edged_width/2, pEnc->mbParam.width/2,
+						   pEnc->mbParam.height/2);
+
+			pResult->sse_v =
+				plane_sse( pEnc->sOriginal.v, pEnc->current->image.v,
+						   pEnc->mbParam.edged_width/2, pEnc->mbParam.width/2,
+						   pEnc->mbParam.height/2);		
+		}
 	}
 
 	emms();
-
-#ifdef _DEBUG_PSNR
-	psnr =
-		image_psnr(&pEnc->sOriginal, &pEnc->current->image,
-				   pEnc->mbParam.edged_width, pEnc->mbParam.width,
-				   pEnc->mbParam.height);
-
-	printf("PSNR: %f\n", psnr);
-//	DEBUG(temp);
-#endif
 
 	if (pFrame->quant == 0) {
 		RateControlUpdate(&pEnc->rate_control, pEnc->current->quant,
@@ -1203,10 +1209,8 @@ encoder_encode(Encoder * pEnc,
 	uint32_t bits;
 	uint16_t write_vol_header = 0;
 
-#ifdef _DEBUG_PSNR
 	float psnr;
 	uint8_t temp[128];
-#endif
 
 	start_global_timer();
 
@@ -1237,10 +1241,10 @@ encoder_encode(Encoder * pEnc,
 		return XVID_ERR_FORMAT;
 	stop_conv_timer();
 
-#ifdef _DEBUG_PSNR
-	image_copy(&pEnc->sOriginal, &pEnc->current->image,
-			   pEnc->mbParam.edged_width, pEnc->mbParam.height);
-#endif
+	if (pFrame->general & XVID_EXTRASTATS)
+	{	image_copy(&pEnc->sOriginal, &pEnc->current->image,
+				   pEnc->mbParam.edged_width, pEnc->mbParam.height);
+	}
 
 	emms();
 
@@ -1352,15 +1356,15 @@ encoder_encode(Encoder * pEnc,
 		RateControlUpdate(&pEnc->rate_control, pEnc->current->quant,
 						  pFrame->length, pFrame->intra);
 	}
-#ifdef _DEBUG_PSNR
-	psnr =
-		image_psnr(&pEnc->sOriginal, &pEnc->current->image,
-				   pEnc->mbParam.edged_width, pEnc->mbParam.width,
-				   pEnc->mbParam.height);
-
-	snprintf(temp, 127, "PSNR: %f\n", psnr);
-//	DEBUG(temp);
-#endif
+	if (pFrame->general & XVID_EXTRASTATS)
+	{
+		psnr =
+			image_psnr(&pEnc->sOriginal, &pEnc->current->image,
+					   pEnc->mbParam.edged_width, pEnc->mbParam.width,
+					   pEnc->mbParam.height);
+	
+		snprintf(temp, 127, "PSNR: %f\n", psnr);
+	}
 
 	pEnc->iFrameNum++;
 
