@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_pvop.c,v 1.1.2.3 2003-10-03 12:36:56 syskin Exp $
+ * $Id: estimation_pvop.c,v 1.1.2.4 2003-10-22 16:30:07 syskin Exp $
  *
  ****************************************************************************/
 
@@ -384,17 +384,20 @@ get_pmvdata2(const MACROBLOCK * const mbs,
 		pmv[0] = pmv[1] = pmv[2] = pmv[3] = zeroMV;
 		psad[0] = 0;
 		psad[1] = psad[2] = psad[3] = MV_MAX_ERROR;
+		return;
 	}
 
 	/* if only one valid candidate preictor, the invalid candiates are set to the canidate */
 	if (num_cand == 1) {
 		pmv[0] = pmv[last_cand];
 		psad[0] = psad[last_cand];
+		return;
 	}
 
 	if ((MVequal(pmv[1], pmv[2])) && (MVequal(pmv[1], pmv[3]))) {
 		pmv[0] = pmv[1];
 		psad[0] = MIN(MIN(psad[1], psad[2]), psad[3]);
+		return;
 	}
 
 	/* set median, minimum */
