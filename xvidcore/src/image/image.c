@@ -3,6 +3,15 @@
  *	XVID MPEG-4 VIDEO CODEC
  *	image stuff
  *
+ *	This program is an implementation of a part of one or more MPEG-4
+ *	Video tools as specified in ISO/IEC 14496-2 standard.  Those intending
+ *	to use this software module in hardware or software products are
+ *	advised that its use may infringe existing patents or copyrights, and
+ *	any such use would be at such party's own risk.  The original
+ *	developer of this software module and his/her company, and subsequent
+ *	editors and their companies, will have no liability for use of this
+ *	software or modifications or derivatives thereof.
+ *
  *	This program is free software; you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
  *	the Free Software Foundation; either version 2 of the License, or
@@ -165,18 +174,18 @@ image_setedges(IMAGE * image,
 	src = image->y;
 
 	for (i = 0; i < EDGE_SIZE; i++) {
-/*		// if interlacing, edges contain top-most data from each field
+		// if interlacing, edges contain top-most data from each field
 		if (interlacing && (i & 1)) {
 			memset(dst, *(src + edged_width), EDGE_SIZE);
 			memcpy(dst + EDGE_SIZE, src + edged_width, width);
 			memset(dst + edged_width - EDGE_SIZE,
 				   *(src + edged_width + width - 1), EDGE_SIZE);
-		} else {*/
+		} else {
 			memset(dst, *src, EDGE_SIZE);
 			memcpy(dst + EDGE_SIZE, src, width);
 			memset(dst + edged_width - EDGE_SIZE, *(src + width - 1),
 				   EDGE_SIZE);
-		/*}*/
+		}
 		dst += edged_width;
 	}
 
@@ -189,18 +198,18 @@ image_setedges(IMAGE * image,
 
 	src -= edged_width;
 	for (i = 0; i < EDGE_SIZE; i++) {
-/*		// if interlacing, edges contain bottom-most data from each field
+		// if interlacing, edges contain bottom-most data from each field
 		if (interlacing && !(i & 1)) {
 			memset(dst, *(src - edged_width), EDGE_SIZE);
 			memcpy(dst + EDGE_SIZE, src - edged_width, width);
 			memset(dst + edged_width - EDGE_SIZE,
 				   *(src - edged_width + width - 1), EDGE_SIZE);
-		} else {*/
+		} else {
 			memset(dst, *src, EDGE_SIZE);
 			memcpy(dst + EDGE_SIZE, src, width);
 			memset(dst + edged_width - EDGE_SIZE, *(src + width - 1),
 				   EDGE_SIZE);
-		/*}*/
+		}
 		dst += edged_width;
 	}
 
@@ -261,8 +270,7 @@ image_setedges(IMAGE * image,
 	}
 }
 
-
-// image-based y,u,v interpolation
+// bframe encoding requires image-based u,v interpolation
 void
 image_interpolate(const IMAGE * refn,
 				  IMAGE * refh,
@@ -275,12 +283,12 @@ image_interpolate(const IMAGE * refn,
 	const uint32_t offset = EDGE_SIZE * (edged_width + 1);
 	const uint32_t stride_add = 7 * edged_width;
 
-	/* --- u,v-image-based interpolation ---
+#ifdef BFRAMES
 	const uint32_t edged_width2 = edged_width / 2;
 	const uint32_t edged_height2 = edged_height / 2;
 	const uint32_t offset2 = EDGE_SIZE2 * (edged_width2 + 1);
 	const uint32_t stride_add2 = 7 * edged_width2;
-	*/
+#endif
 
 	uint8_t *n_ptr, *h_ptr, *v_ptr, *hv_ptr;
 	uint32_t x, y;
@@ -296,8 +304,8 @@ image_interpolate(const IMAGE * refn,
 	v_ptr -= offset;
 	hv_ptr -= offset;
 
-	for (y = 0; y < edged_height; y = y + 8) {
-		for (x = 0; x < edged_width; x = x + 8) {
+	for (y = 0; y < edged_height; y += 8) {
+		for (x = 0; x < edged_width; x += 8) {
 			interpolate8x8_halfpel_h(h_ptr, n_ptr, edged_width, rounding);
 			interpolate8x8_halfpel_v(v_ptr, n_ptr, edged_width, rounding);
 			interpolate8x8_halfpel_hv(hv_ptr, n_ptr, edged_width, rounding);
@@ -312,8 +320,8 @@ image_interpolate(const IMAGE * refn,
 		hv_ptr += stride_add;
 		n_ptr += stride_add;
 	}
-
-/* --- u,v-image-based interpolation ---
+/*
+#ifdef BFRAMES
 	n_ptr = refn->u;
 	h_ptr = refh->u;
 	v_ptr = refv->u;
@@ -324,8 +332,8 @@ image_interpolate(const IMAGE * refn,
 	v_ptr -= offset2;
 	hv_ptr -= offset2;
 
-	for (y = 0; y < edged_height2; y = y + 8) {
-		for (x = 0; x < edged_width2; x = x + 8) {
+	for (y = 0; y < edged_height2; y += 8) {
+		for (x = 0; x < edged_width2; x += 8) {
 			interpolate8x8_halfpel_h(h_ptr, n_ptr, edged_width2, rounding);
 			interpolate8x8_halfpel_v(v_ptr, n_ptr, edged_width2, rounding);
 			interpolate8x8_halfpel_hv(hv_ptr, n_ptr, edged_width2, rounding);
@@ -367,7 +375,68 @@ image_interpolate(const IMAGE * refn,
 		hv_ptr += stride_add2;
 		n_ptr += stride_add2;
 	}
+#endif
 */
+	/*
+	   interpolate_halfpel_h(
+	   refh->y - offset,
+	   refn->y - offset, 
+	   edged_width, edged_height,
+	   rounding);
+
+	   interpolate_halfpel_v(
+	   refv->y - offset,
+	   refn->y - offset, 
+	   edged_width, edged_height,
+	   rounding);
+
+	   interpolate_halfpel_hv(
+	   refhv->y - offset,
+	   refn->y - offset,
+	   edged_width, edged_height,
+	   rounding);
+	 */
+
+	/* uv-image-based compensation
+	   offset = EDGE_SIZE2 * (edged_width / 2 + 1);
+
+	   interpolate_halfpel_h(
+	   refh->u - offset,
+	   refn->u - offset, 
+	   edged_width / 2, edged_height / 2,
+	   rounding);
+
+	   interpolate_halfpel_v(
+	   refv->u - offset,
+	   refn->u - offset, 
+	   edged_width / 2, edged_height / 2,
+	   rounding);
+
+	   interpolate_halfpel_hv(
+	   refhv->u - offset,
+	   refn->u - offset, 
+	   edged_width / 2, edged_height / 2,
+	   rounding);
+
+
+	   interpolate_halfpel_h(
+	   refh->v - offset,
+	   refn->v - offset, 
+	   edged_width / 2, edged_height / 2,
+	   rounding);
+
+	   interpolate_halfpel_v(
+	   refv->v - offset,
+	   refn->v - offset, 
+	   edged_width / 2, edged_height / 2,
+	   rounding);
+
+	   interpolate_halfpel_hv(
+	   refhv->v - offset,
+	   refn->v - offset, 
+	   edged_width / 2, edged_height / 2,
+	   rounding);
+	 */
 }
 
 

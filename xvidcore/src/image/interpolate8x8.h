@@ -89,8 +89,54 @@ interpolate8x8_switch(uint8_t * const cur,
 	}
 }
 
+static __inline uint8_t *
+interpolate8x8_switch2(uint8_t * const buffer,
+					  const uint8_t * const refn,
+					  const uint32_t x,
+					  const uint32_t y,
+					  const int32_t dx,
+					  const int dy,
+					  const uint32_t stride,
+					  const uint32_t rounding)
+{
+	int32_t ddx, ddy;
 
-static __inline void interpolate8x8_quarterpel(uint8_t * const cur,
+	switch (((dx & 1) << 1) + (dy & 1))	// ((dx%2)?2:0)+((dy%2)?1:0)
+	{
+	case 0:
+		return (uint8_t *)refn + (int)((y + dy/2) * stride + x + dx/2);
+
+	case 1:
+		ddx = dx / 2;
+		ddy = (dy - 1) / 2;
+		interpolate8x8_halfpel_v(buffer,
+								 refn + (int)((y + ddy) * stride + x + ddx), stride,
+								 rounding);
+		break;
+
+	case 2:
+		ddx = (dx - 1) / 2;
+		ddy = dy / 2;
+		interpolate8x8_halfpel_h(buffer,
+								 refn + (int)((y + ddy) * stride + x + ddx), stride,
+								 rounding);
+		break;
+
+	default:
+		ddx = (dx - 1) / 2;
+		ddy = (dy - 1) / 2;
+		interpolate8x8_halfpel_hv(buffer,
+								 refn + (int)((y + ddy) * stride + x + ddx), stride,
+								  rounding);
+		break;
+	}
+	return buffer;
+}
+
+
+
+static void 
+interpolate8x8_quarterpel(uint8_t * const cur,
 				     uint8_t * const refn,
 				     const uint32_t x, const uint32_t y,
 					 const int32_t dx,  const int dy,

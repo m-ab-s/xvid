@@ -3,6 +3,15 @@
  *	XVID MPEG-4 VIDEO CODEC
  *	sum of absolute difference
  *
+ *	This program is an implementation of a part of one or more MPEG-4
+ *	Video tools as specified in ISO/IEC 14496-2 standard.  Those intending
+ *	to use this software module in hardware or software products are
+ *	advised that its use may infringe existing patents or copyrights, and
+ *	any such use would be at such party's own risk.  The original
+ *	developer of this software module and his/her company, and subsequent
+ *	editors and their companies, will have no liability for use of this
+ *	software or modifications or derivatives thereof.
+ *
  *	This program is free software; you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
  *	the Free Software Foundation; either version 2 of the License, or
@@ -37,53 +46,11 @@ sad8FuncPtr sad8;
 sad16biFuncPtr sad16bi;
 sad8biFuncPtr sad8bi;		// not really sad16, but no difference in prototype
 dev16FuncPtr dev16;
+sad16vFuncPtr sad16v;
 
 sadInitFuncPtr sadInit;
 
 #define ABS(X) (((X)>0)?(X):-(X))
-
-#define MRSAD16_CORRFACTOR 8
-uint32_t
-mrsad16_c(const uint8_t * const cur,
-		  const uint8_t * const ref,
-		  const uint32_t stride,
-		  const uint32_t best_sad)
-{
-
-	uint32_t sad = 0;
-	int32_t mean = 0;
-	uint32_t i, j;
-	uint8_t const *ptr_cur = cur;
-	uint8_t const *ptr_ref = ref;
-
-	for (j = 0; j < 16; j++) {
-		for (i = 0; i < 16; i++) {
-			mean += ((int) *(ptr_cur + i) - (int) *(ptr_ref + i));
-		}
-		ptr_cur += stride;
-		ptr_ref += stride;
-
-	}
-	mean /= 256;
-
-	for (j = 0; j < 16; j++) {
-
-		ptr_cur -= stride;
-		ptr_ref -= stride;
-
-		for (i = 0; i < 16; i++) {
-
-			sad += ABS(*(ptr_cur + i) - *(ptr_ref + i) - mean);
-			if (sad >= best_sad) {
-				return MRSAD16_CORRFACTOR * sad;
-			}
-		}
-	}
-
-	return MRSAD16_CORRFACTOR * sad;
-
-}
-
 
 uint32_t
 sad16_c(const uint8_t * const cur,
@@ -93,33 +60,39 @@ sad16_c(const uint8_t * const cur,
 {
 
 	uint32_t sad = 0;
-	uint32_t i, j;
+	uint32_t j;
 	uint8_t const *ptr_cur = cur;
 	uint8_t const *ptr_ref = ref;
 
 	for (j = 0; j < 16; j++) {
+			sad += ABS(ptr_cur[0] - ptr_ref[0]);
+			sad += ABS(ptr_cur[1] - ptr_ref[1]);
+			sad += ABS(ptr_cur[2] - ptr_ref[2]);
+			sad += ABS(ptr_cur[3] - ptr_ref[3]);
+			sad += ABS(ptr_cur[4] - ptr_ref[4]);
+			sad += ABS(ptr_cur[5] - ptr_ref[5]);
+			sad += ABS(ptr_cur[6] - ptr_ref[6]);
+			sad += ABS(ptr_cur[7] - ptr_ref[7]);
+			sad += ABS(ptr_cur[8] - ptr_ref[8]);
+			sad += ABS(ptr_cur[9] - ptr_ref[9]);
+			sad += ABS(ptr_cur[10] - ptr_ref[10]);
+			sad += ABS(ptr_cur[11] - ptr_ref[11]);
+			sad += ABS(ptr_cur[12] - ptr_ref[12]);
+			sad += ABS(ptr_cur[13] - ptr_ref[13]);
+			sad += ABS(ptr_cur[14] - ptr_ref[14]);
+			sad += ABS(ptr_cur[15] - ptr_ref[15]);
 
-		for (i = 0; i < 16; i++) {
-
-			sad += ABS(*(ptr_cur + i) - *(ptr_ref + i));
-
-			if (sad >= best_sad) {
+			if (sad >= best_sad) 
 				return sad;
-			}
 
-
-		}
-
-		ptr_cur += stride;
-		ptr_ref += stride;
+			ptr_cur += stride;
+			ptr_ref += stride;
 
 	}
 
 	return sad;
 
 }
-
-
 
 uint32_t
 sad16bi_c(const uint8_t * const cur,
@@ -203,16 +176,21 @@ sad8_c(const uint8_t * const cur,
 	   const uint32_t stride)
 {
 	uint32_t sad = 0;
-	uint32_t i, j;
+	uint32_t j;
 	uint8_t const *ptr_cur = cur;
 	uint8_t const *ptr_ref = ref;
 
 	for (j = 0; j < 8; j++) {
 
-		for (i = 0; i < 8; i++) {
-			sad += ABS(*(ptr_cur + i) - *(ptr_ref + i));
-		}
-
+		sad += ABS(ptr_cur[0] - ptr_ref[0]);
+		sad += ABS(ptr_cur[1] - ptr_ref[1]);
+		sad += ABS(ptr_cur[2] - ptr_ref[2]);
+		sad += ABS(ptr_cur[3] - ptr_ref[3]);
+		sad += ABS(ptr_cur[4] - ptr_ref[4]);
+		sad += ABS(ptr_cur[5] - ptr_ref[5]);
+		sad += ABS(ptr_cur[6] - ptr_ref[6]);
+		sad += ABS(ptr_cur[7] - ptr_ref[7]);
+		
 		ptr_cur += stride;
 		ptr_ref += stride;
 
@@ -220,8 +198,6 @@ sad8_c(const uint8_t * const cur,
 
 	return sad;
 }
-
-
 
 
 /* average deviation from mean */
@@ -259,3 +235,61 @@ dev16_c(const uint8_t * const cur,
 
 	return dev;
 }
+
+uint32_t sad16v_c(const uint8_t * const cur, 
+			   const uint8_t * const ref, 
+			   const uint32_t stride, 
+			   int32_t *sad)
+{
+	sad[0] = sad8(cur, ref, stride);
+	sad[1] = sad8(cur + 8, ref + 8, stride);
+	sad[2] = sad8(cur + 8*stride, ref + 8*stride, stride);
+	sad[3] = sad8(cur + 8*stride + 8, ref + 8*stride + 8, stride);
+	
+	return sad[0]+sad[1]+sad[2]+sad[3];
+}
+
+
+#define MRSAD16_CORRFACTOR 8
+uint32_t
+mrsad16_c(const uint8_t * const cur,
+		  const uint8_t * const ref,
+		  const uint32_t stride,
+		  const uint32_t best_sad)
+{
+
+	uint32_t sad = 0;
+	int32_t mean = 0;
+	uint32_t i, j;
+	uint8_t const *ptr_cur = cur;
+	uint8_t const *ptr_ref = ref;
+
+	for (j = 0; j < 16; j++) {
+		for (i = 0; i < 16; i++) {
+			mean += ((int) *(ptr_cur + i) - (int) *(ptr_ref + i));
+		}
+		ptr_cur += stride;
+		ptr_ref += stride;
+
+	}
+	mean /= 256;
+
+	for (j = 0; j < 16; j++) {
+
+		ptr_cur -= stride;
+		ptr_ref -= stride;
+
+		for (i = 0; i < 16; i++) {
+
+			sad += ABS(*(ptr_cur + i) - *(ptr_ref + i) - mean);
+			if (sad >= best_sad) {
+				return MRSAD16_CORRFACTOR * sad;
+			}
+		}
+	}
+
+	return MRSAD16_CORRFACTOR * sad;
+
+}
+
+

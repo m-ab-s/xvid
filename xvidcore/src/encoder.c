@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76 2002-09-03 17:25:18 chl Exp $
+ *  $Id: encoder.c,v 1.76.2.1 2002-09-23 20:36:01 chl Exp $
  *
  ****************************************************************************/
 
@@ -70,9 +70,6 @@
 #include "quant/quant_matrix.h"
 #include "utils/mem_align.h"
 
-#ifdef _SMP
-#include "motion/smp_motion_est.h"
-#endif 
 /*****************************************************************************
  * Local macros
  ****************************************************************************/
@@ -94,12 +91,10 @@ static int FrameCodeP(Encoder * pEnc,
 					  bool force_inter,
 					  bool vol_header);
 
-#ifdef BFRAMES
 static void FrameCodeB(Encoder * pEnc,
 					   FRAMEINFO * frame,
 					   Bitstream * bs,
 					   uint32_t * pBits);
-#endif
 
 /*****************************************************************************
  * Local data
@@ -238,10 +233,6 @@ encoder_create(XVID_ENC_PARAM * pParam)
 
 	pEnc->mbParam.m_quant_type = H263_QUANT;
 
-#ifdef _SMP
-	pEnc->mbParam.num_threads = MIN(pParam->num_threads, MAXNUMTHREADS);
-#endif
-
 	pEnc->sStat.fMvPrevSigma = -1;
 
 	/* Fill rate control parameters */
@@ -276,11 +267,11 @@ encoder_create(XVID_ENC_PARAM * pParam)
 #ifdef _DEBUG_PSNR
 	image_null(&pEnc->sOriginal);
 #endif
-#ifdef BFRAMES
+
 	image_null(&pEnc->f_refh);
 	image_null(&pEnc->f_refv);
 	image_null(&pEnc->f_refhv);
-#endif
+
 	image_null(&pEnc->current->image);
 	image_null(&pEnc->reference->image);
 	image_null(&pEnc->vInterH);
@@ -295,7 +286,7 @@ encoder_create(XVID_ENC_PARAM * pParam)
 		 pEnc->mbParam.edged_height) < 0)
 		goto xvid_err_memory3;
 #endif
-#ifdef BFRAMES
+
 	if (image_create
 		(&pEnc->f_refh, pEnc->mbParam.edged_width,
 		 pEnc->mbParam.edged_height) < 0)
@@ -308,7 +299,7 @@ encoder_create(XVID_ENC_PARAM * pParam)
 		(&pEnc->f_refhv, pEnc->mbParam.edged_width,
 		 pEnc->mbParam.edged_height) < 0)
 		goto xvid_err_memory3;
-#endif
+
 	if (image_create
 		(&pEnc->current->image, pEnc->mbParam.edged_width,
 		 pEnc->mbParam.edged_height) < 0)
@@ -341,7 +332,6 @@ encoder_create(XVID_ENC_PARAM * pParam)
 
 
 	/* B Frames specific init */
-#ifdef BFRAMES
 
 	pEnc->global = pParam->global;
 	pEnc->mbParam.max_bframes = pParam->max_bframes;
@@ -426,7 +416,6 @@ encoder_create(XVID_ENC_PARAM * pParam)
 	pEnc->m_framenum = 0;
 	pEnc->last_pframe = 0;
 	pEnc->last_sync = 0;
-#endif
 
 	pParam->handle = (void *) pEnc;
 
@@ -445,7 +434,7 @@ encoder_create(XVID_ENC_PARAM * pParam)
 	/*
 	 * We handle all XVID_ERR_MEMORY here, this makes the code lighter
 	 */
-#ifdef BFRAMES
+
   xvid_err_memory5:
 
 
@@ -479,22 +468,18 @@ encoder_create(XVID_ENC_PARAM * pParam)
 		xvid_free(pEnc->bframes);
 	}
 
-#endif
-
   xvid_err_memory3:
 #ifdef _DEBUG_PSNR
 	image_destroy(&pEnc->sOriginal, pEnc->mbParam.edged_width,
 				  pEnc->mbParam.edged_height);
 #endif
 
-#ifdef BFRAMES
 	image_destroy(&pEnc->f_refh, pEnc->mbParam.edged_width,
 				  pEnc->mbParam.edged_height);
 	image_destroy(&pEnc->f_refv, pEnc->mbParam.edged_width,
 				  pEnc->mbParam.edged_height);
 	image_destroy(&pEnc->f_refhv, pEnc->mbParam.edged_width,
 				  pEnc->mbParam.edged_height);
-#endif
 
 	image_destroy(&pEnc->current->image, pEnc->mbParam.edged_width,
 				  pEnc->mbParam.edged_height);
@@ -539,14 +524,11 @@ encoder_create(XVID_ENC_PARAM * pParam)
 int
 encoder_destroy(Encoder * pEnc)
 {
-#ifdef BFRAMES
 	int i;
-#endif
 	
 	ENC_CHECK(pEnc);
 
 	/* B Frames specific */
-#ifdef BFRAMES
 	if (pEnc->mbParam.max_bframes > 0) {
 
 		for (i = 0; i < pEnc->mbParam.max_bframes; i++) {
@@ -576,7 +558,6 @@ encoder_destroy(Encoder * pEnc)
 		xvid_free(pEnc->bframes);
 	
 	}
-#endif
 
 	/* All images, reference, current etc ... */
 
@@ -594,14 +575,14 @@ encoder_destroy(Encoder * pEnc)
 				  pEnc->mbParam.edged_height);
 	image_destroy(&pEnc->vInterHVf, pEnc->mbParam.edged_width,
 				  pEnc->mbParam.edged_height);
-#ifdef BFRAMES
+
 	image_destroy(&pEnc->f_refh, pEnc->mbParam.edged_width,
 				  pEnc->mbParam.edged_height);
 	image_destroy(&pEnc->f_refv, pEnc->mbParam.edged_width,
 				  pEnc->mbParam.edged_height);
 	image_destroy(&pEnc->f_refhv, pEnc->mbParam.edged_width,
 				  pEnc->mbParam.edged_height);
-#endif
+
 #ifdef _DEBUG_PSNR
 	image_destroy(&pEnc->sOriginal, pEnc->mbParam.edged_width,
 				  pEnc->mbParam.edged_height);
@@ -621,31 +602,22 @@ encoder_destroy(Encoder * pEnc)
 }
 
 
-void inc_frame_num(Encoder * pEnc)
+static __inline void inc_frame_num(Encoder * pEnc)
 {
 	pEnc->mbParam.m_ticks += pEnc->mbParam.fincr;
 
-#ifdef BFRAMES
 	pEnc->mbParam.m_ticks = pEnc->mbParam.m_ticks % pEnc->mbParam.fbase;
 	if (pEnc->mbParam.m_ticks < pEnc->last_sync) 
-		pEnc->mbParam.m_seconds = 1;		// more than 1 second since last I or P is not supported. 
+		pEnc->mbParam.m_seconds = 1;		
+				// more than 1 second since last I or P is not supported. 
 	else
 		pEnc->mbParam.m_seconds = 0;
-
-	if (pEnc->current->coding_type != B_VOP)
-		pEnc->last_sync = pEnc->mbParam.m_ticks;
-#else
-
-	pEnc->mbParam.m_seconds = pEnc->mbParam.m_ticks / pEnc->mbParam.fbase;
-	pEnc->mbParam.m_ticks = pEnc->mbParam.m_ticks % pEnc->mbParam.fbase;
-	
-#endif
 
 }
 
 
-#ifdef BFRAMES
-void queue_image(Encoder * pEnc, XVID_ENC_FRAME * pFrame)
+static __inline void
+queue_image(Encoder * pEnc, XVID_ENC_FRAME * pFrame)
 {
 	if (pEnc->queue_size >= pEnc->mbParam.max_bframes)
 	{
@@ -668,10 +640,9 @@ void queue_image(Encoder * pEnc, XVID_ENC_FRAME * pFrame)
 	pEnc->queue_size++;
 	pEnc->queue_tail =  (pEnc->queue_tail + 1) % pEnc->mbParam.max_bframes;
 }
-#endif
 
 
-#ifdef BFRAMES
+
 /*****************************************************************************
  * IPB frame encoder entry point
  *
@@ -851,11 +822,6 @@ bvop_loop:
 	}
 
 	pEnc->flush_bframes = 0;
-
-	/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	 * Well there was a separation here so i put it in ANSI C
-	 * comment style :-)
-	 * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
 
 	emms();
 
@@ -1092,8 +1058,6 @@ bvop_loop:
 
 	return XVID_ERR_OK;
 }
-
-#endif
 
 
 
@@ -1515,12 +1479,11 @@ FrameCodeI(Encoder * pEnc,
 	pEnc->current->coding_type = I_VOP;
 
 	BitstreamWriteVolHeader(bs, &pEnc->mbParam, pEnc->current);
-#ifdef BFRAMES
+
 #define DIVX501B481P "DivX501b481p"
 	if ((pEnc->global & XVID_GLOBAL_PACKED)) {
 		BitstreamWriteUserData(bs, DIVX501B481P, strlen(DIVX501B481P));
 	}
-#endif
 	BitstreamWriteVopHeader(bs, &pEnc->mbParam, pEnc->current, 1);
 
 	*pBits = BitstreamPos(bs);
@@ -1561,6 +1524,9 @@ FrameCodeI(Encoder * pEnc,
 	pEnc->sStat.iMvCount = 0;
 	pEnc->mbParam.m_fcode = 2;
 
+	pEnc->last_pframe = pEnc->current->ticks;
+	pEnc->last_sync = pEnc->current->ticks;
+
 	if (pEnc->current->global_flags & XVID_HINTEDME_GET) {
 		HintedMEGet(pEnc, 1);
 	}
@@ -1570,7 +1536,7 @@ FrameCodeI(Encoder * pEnc,
 
 
 #define INTRA_THRESHOLD 0.5
-#define BFRAME_SKIP_THRESHHOLD 16
+#define BFRAME_SKIP_THRESHHOLD 30
 
 static int
 FrameCodeP(Encoder * pEnc,
@@ -1621,27 +1587,20 @@ FrameCodeP(Encoder * pEnc,
 	start_timer();
 	if (pEnc->current->global_flags & XVID_HINTEDME_SET) {
 		HintedMESet(pEnc, &bIntra);
+		if (bIntra == 0) MotionEstimationHinted(&pEnc->mbParam, pEnc->current, pEnc->reference,
+											&pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV);
+
 	} else {
 
-#ifdef _SMP
-	if (pEnc->mbParam.num_threads > 1)
-		bIntra =
-			SMP_MotionEstimation(&pEnc->mbParam, pEnc->current, pEnc->reference,
-						 &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV,
-						 iLimit);
-	else
-#endif
-		bIntra =
-			MotionEstimation(&pEnc->mbParam, pEnc->current, pEnc->reference,
+	bIntra =
+		MotionEstimation(&pEnc->mbParam, pEnc->current, pEnc->reference,
                          &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV,
                          iLimit);
 			
 	}
 	stop_motion_timer();
 
-	if (bIntra == 1) {
-		return FrameCodeI(pEnc, bs, pBits);
-	}
+	if (bIntra == 1) return FrameCodeI(pEnc, bs, pBits);
 
 	pEnc->current->coding_type = P_VOP;
 
@@ -1652,10 +1611,8 @@ FrameCodeP(Encoder * pEnc,
 
 	*pBits = BitstreamPos(bs);
 
-	pEnc->sStat.iTextBits = 0;
-	pEnc->sStat.iMvSum = 0;
-	pEnc->sStat.iMvCount = 0;
-	pEnc->sStat.kblks = pEnc->sStat.mblks = pEnc->sStat.ublks = 0;
+	pEnc->sStat.iTextBits = pEnc->sStat.iMvSum = pEnc->sStat.iMvCount = 
+		pEnc->sStat.kblks = pEnc->sStat.mblks = pEnc->sStat.ublks = 0;
 
 	for (y = 0; y < pEnc->mbParam.mb_height; y++) {
 		for (x = 0; x < pEnc->mbParam.mb_width; x++) {
@@ -1689,9 +1646,10 @@ FrameCodeP(Encoder * pEnc,
 
 				pMB->field_pred = 0;
 
-				pMB->cbp =
-					MBTransQuantInter(&pEnc->mbParam, pEnc->current, pMB, x, y,
-									  dct_codes, qcoeff);
+				if (pMB->mode != MODE_NOT_CODED)
+					pMB->cbp =
+						MBTransQuantInter(&pEnc->mbParam, pEnc->current, pMB, x, y,
+										  dct_codes, qcoeff);
 			} else {
 				CodeIntraMB(pEnc, pMB);
 				MBTransQuantIntra(&pEnc->mbParam, pEnc->current, pMB, x, y,
@@ -1716,43 +1674,37 @@ FrameCodeP(Encoder * pEnc,
 
 			/* Finished processing the MB, now check if to CODE or SKIP */
 
-			if (pMB->cbp == 0 && pMB->mode == MODE_INTER && pMB->mvs[0].x == 0 &&
-				pMB->mvs[0].y == 0) {
+			if ((pMB->mode == MODE_NOT_CODED) ||
+				(pMB->cbp == 0 && pMB->mode == MODE_INTER && pMB->mvs[0].x == 0 &&
+				pMB->mvs[0].y == 0 && pMB->dquant == NO_CHANGE)) {
 
 /* This is a candidate for SKIPping, but check intermediate B-frames first */
 
-#ifdef BFRAMES
-				int iSAD=BFRAME_SKIP_THRESHHOLD;
-				int bSkip=1;
+				int bSkip = 1;
+				pMB->mode = MODE_NOT_CODED;
 				
 				for (k=pEnc->bframenum_head; k< pEnc->bframenum_tail; k++)
 				{		
+					int iSAD;
 					iSAD = sad16(pEnc->reference->image.y + 16*y*pEnc->mbParam.edged_width + 16*x,
 								pEnc->bframes[k]->image.y + 16*y*pEnc->mbParam.edged_width + 16*x,
 								pEnc->mbParam.edged_width,BFRAME_SKIP_THRESHHOLD);
-					if (iSAD >= BFRAME_SKIP_THRESHHOLD)
+					if (iSAD >= BFRAME_SKIP_THRESHHOLD * pMB->quant)
 					{	bSkip = 0; 
 						break;
 					}
 				}
 				if (!bSkip) 
 				{	
-					if (pEnc->current->global_flags & XVID_GREYSCALE)
-					{	pMB->cbp &= 0x3C;		/* keep only bits 5-2 */
-						qcoeff[4*64+0]=0;		/* zero, because DC for INTRA MBs DC value is saved */
-						qcoeff[5*64+0]=0;
-					}
+					VECTOR predMV;
+					predMV = get_pmv2(pEnc->current->mbs, pEnc->mbParam.mb_width, 0, x, y, 0);
+					pMB->pmvs[0].x = -predMV.x; pMB->pmvs[0].y = -predMV.y;
+					pMB->mode = MODE_INTER;
+					pMB->cbp = 0;
 					MBCoding(pEnc->current, pMB, qcoeff, bs, &pEnc->sStat);
-					pMB->cbp = 0x80;		/* trick! so cbp!=0, but still nothing is written to bs */
 				}
-				else 
-					MBSkip(bs);
-
-#else
-					MBSkip(bs);	/* without B-frames, no precautions are needed */
-
-#endif
-
+				else MBSkip(bs);
+			
 			} else {
 				if (pEnc->current->global_flags & XVID_GREYSCALE)
 				{	pMB->cbp &= 0x3C;		/* keep only bits 5-2 */
@@ -1821,18 +1773,15 @@ FrameCodeP(Encoder * pEnc,
 
 	*pBits = BitstreamPos(bs) - *pBits;
 
-#ifdef BFRAMES
 	pEnc->time_pp = ((int32_t)pEnc->mbParam.fbase - (int32_t)pEnc->last_pframe + (int32_t)pEnc->current->ticks) %
 			(int32_t)pEnc->mbParam.fbase;
 	pEnc->last_pframe = pEnc->current->ticks;
-#endif
 
 	return 0;					// inter
 }
 
 
-#ifdef BFRAMES
-static void
+static __inline void
 FrameCodeB(Encoder * pEnc,
 		   FRAMEINFO * frame,
 		   Bitstream * bs,
@@ -1841,8 +1790,6 @@ FrameCodeB(Encoder * pEnc,
 	int16_t dct_codes[6 * 64];
 	int16_t qcoeff[6 * 64];
 	uint32_t x, y;
-	VECTOR forward;
-	VECTOR backward;
 
 	IMAGE *f_ref = &pEnc->reference->image;
 	IMAGE *b_ref = &pEnc->current->image;
@@ -1910,64 +1857,33 @@ FrameCodeB(Encoder * pEnc,
 
 
 	for (y = 0; y < pEnc->mbParam.mb_height; y++) {
-		// reset prediction
-
-		forward.x = 0;
-		forward.y = 0;
-		backward.x = 0;
-		backward.y = 0;
-
 		for (x = 0; x < pEnc->mbParam.mb_width; x++) {
-			MACROBLOCK *f_mb =
-				&pEnc->reference->mbs[x + y * pEnc->mbParam.mb_width];
-			MACROBLOCK *b_mb =
-				&pEnc->current->mbs[x + y * pEnc->mbParam.mb_width];
-			MACROBLOCK *mb = &frame->mbs[x + y * pEnc->mbParam.mb_width];
+			MACROBLOCK * const mb = &frame->mbs[x + y * pEnc->mbParam.mb_width];
 
 			// decoder ignores mb when refence block is INTER(0,0), CBP=0 
 			if (mb->mode == MODE_NOT_CODED) {
-				mb->mvs[0].x = 0;
-				mb->mvs[0].y = 0;
-
-				mb->cbp = 0;
-#ifdef BFRAMES_DEC_DEBUG
-	BFRAME_DEBUG
-#endif
+				//mb->mvs[0].x = mb->mvs[0].y = mb->cbp = 0;
 				continue;
 			}
 
-			MBMotionCompensationBVOP(&pEnc->mbParam, mb, x, y, &frame->image,
+			if (mb->mode != MODE_DIRECT_NONE_MV) {
+				MBMotionCompensationBVOP(&pEnc->mbParam, mb, x, y, &frame->image,
 									 f_ref, &pEnc->f_refh, &pEnc->f_refv,
 									 &pEnc->f_refhv, b_ref, &pEnc->vInterH,
 									 &pEnc->vInterV, &pEnc->vInterHV,
 									 dct_codes);
 
-			mb->quant = frame->quant;
-			mb->cbp =
-				MBTransQuantInterBVOP(&pEnc->mbParam, frame, mb, dct_codes, qcoeff);
-			//mb->cbp = MBTransQuantBVOP(&pEnc->mbParam, x, y, dct_codes, qcoeff, &frame->image, frame->quant);
-
-			if ( (mb->mode == MODE_DIRECT) && (mb->cbp == 0)
-				&& (mb->deltamv.x == 0) && (mb->deltamv.y == 0) ) {
-				mb->mode = MODE_DIRECT_NONE_MV;	// skipped
-			}
-
-/* update predictors for forward and backward vectors */
-			if (mb->mode == MODE_INTERPOLATE || mb->mode == MODE_FORWARD) {
-				mb->pmvs[0].x = mb->mvs[0].x - forward.x;
-				mb->pmvs[0].y = mb->mvs[0].y - forward.y;
-				forward.x = mb->mvs[0].x;
-				forward.y = mb->mvs[0].y;
-			}
-
-			if (mb->mode == MODE_INTERPOLATE || mb->mode == MODE_BACKWARD) {
-				mb->b_pmvs[0].x = mb->b_mvs[0].x - backward.x;
-				mb->b_pmvs[0].y = mb->b_mvs[0].y - backward.y;
-				backward.x = mb->b_mvs[0].x;
-				backward.y = mb->b_mvs[0].y;
-			}
+				if (mb->mode == MODE_DIRECT_NO4V) mb->mode = MODE_DIRECT;
+				mb->quant = frame->quant;
 			
-//			DPRINTF("%05i : [%i %i] M=%i CBP=%i MVS=%i,%i forward=%i,%i", pEnc->m_framenum, x, y, mb->mode, mb->cbp, mb->mvs[0].x, mb->mvs[0].y, forward.x, forward.y);
+				mb->cbp =
+					MBTransQuantInterBVOP(&pEnc->mbParam, frame, mb, dct_codes, qcoeff);
+
+				if ( (mb->mode == MODE_DIRECT) && (mb->cbp == 0)
+					&& (mb->pmvs[3].x == 0) && (mb->pmvs[3].y == 0) ) {
+					mb->mode = MODE_DIRECT_NONE_MV;	// skipped
+				}
+			}
 
 #ifdef BFRAMES_DEC_DEBUG
 	BFRAME_DEBUG
@@ -1993,7 +1909,6 @@ FrameCodeB(Encoder * pEnc,
 	}
 #endif
 }
-#endif
 
 
 /*	in case internal output is needed somewhere... */

@@ -37,7 +37,7 @@
  *  - 22.12.2001  API change: added xvid_init() - Isibaar
  *  - 16.12.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: xvid.c,v 1.33 2002-07-23 12:59:57 suxen_drol Exp $
+ *  $Id: xvid.c,v 1.33.2.1 2002-09-23 20:36:01 chl Exp $
  *
  ****************************************************************************/
 
@@ -249,8 +249,9 @@ xvid_init(void *handle,
 	sad16bi  = sad16bi_c;
 	sad8bi   = sad8bi_c;
 	dev16    = dev16_c;
+	sad16v	 = sad16v_c;
 	
-	Halfpel8_Refine = Halfpel8_Refine_c;
+//	Halfpel8_Refine = Halfpel8_Refine_c;
 
 #ifdef ARCH_X86
 	if ((cpu_flags & XVID_CPU_MMX) > 0) {
@@ -345,6 +346,8 @@ xvid_init(void *handle,
 		sad16bi = sad16bi_xmm;
 		sad8bi  = sad8bi_xmm;
 		dev16 = dev16_xmm;
+		sad16v	 = sad16v_xmm;
+		fprintf(stderr,"sad16v=XMM\n");
 
 	}
 
@@ -391,7 +394,7 @@ xvid_init(void *handle,
 	  sad16bi = sad16bi_ia64;
 	  sad8 = sad8_ia64;
 	  dev16 = dev16_ia64;
-	  Halfpel8_Refine = Halfpel8_Refine_ia64;
+//	  Halfpel8_Refine = Halfpel8_Refine_ia64;
 	  quant_intra = quant_intra_ia64;
 	  dequant_intra = dequant_intra_ia64;
 	  quant_inter = quant_inter_ia64;

@@ -21,7 +21,7 @@ int get_dc_dif(Bitstream * bs,
 int get_dc_size_lum(Bitstream * bs);
 int get_dc_size_chrom(Bitstream * bs);
 
-int get_coeff(Bitstream * bs,
+static int get_coeff(Bitstream * bs,
 			  int *run,
 			  int *last,
 			  int intra,
@@ -41,5 +41,12 @@ void MBCodingBVOP(const MACROBLOCK * mb,
 				  const int32_t bcode,
 				  Bitstream * bs,
 				  Statistics * pStat);
+
+
+static __inline void
+MBSkip(Bitstream * bs)
+{
+	BitstreamPutBit(bs, 1);	// not coded
+}
 
 #endif							/* _MB_CODING_H_ */

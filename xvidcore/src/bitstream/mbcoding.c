@@ -280,7 +280,7 @@ CodeCoeff(Bitstream * bs,
 }
 
 
-static void
+static __inline void
 CodeBlockIntra(const FRAMEINFO * frame,
 			   const MACROBLOCK * pMB,
 			   int16_t qcoeff[6 * 64],
@@ -425,14 +425,14 @@ MBCoding(const FRAMEINFO * frame,
 
 }
 
-
+/*
+// moved to mbcoding.h so that in can be 'static __inline'
 void
 MBSkip(Bitstream * bs)
 {
 	BitstreamPutBit(bs, 1);	// not coded
-	return;
 }
-
+*/
 
 /***************************************************************
  * bframe encoding start
@@ -446,37 +446,22 @@ MBSkip(Bitstream * bs)
 	3	0001b	forward mc+q		dbquant, mvdf
 */
 
-void
+static __inline void
 put_bvop_mbtype(Bitstream * bs,
 				int value)
 {
 	switch (value) {
-	case 0:
-		BitstreamPutBit(bs, 1);
-		return;
-
-	case 1:
-		BitstreamPutBit(bs, 0);
-		BitstreamPutBit(bs, 1);
-		return;
-
-	case 2:
-		BitstreamPutBit(bs, 0);
-		BitstreamPutBit(bs, 0);
-		BitstreamPutBit(bs, 1);
-		return;
-
-	case 3:
-		BitstreamPutBit(bs, 0);
-		BitstreamPutBit(bs, 0);
-		BitstreamPutBit(bs, 0);
-		BitstreamPutBit(bs, 1);
-		return;
-
-	default:;					// invalid!
-
+		case MODE_FORWARD:
+			BitstreamPutBit(bs, 0);
+		case MODE_BACKWARD:
+			BitstreamPutBit(bs, 0);
+		case MODE_INTERPOLATE:
+			BitstreamPutBit(bs, 0);
+		case MODE_DIRECT:
+			BitstreamPutBit(bs, 1);
+		default:
+			break;
 	}
-
 }
 
 /*
@@ -486,7 +471,7 @@ put_bvop_mbtype(Bitstream * bs,
 	+2	11b
 */
 
-void
+static __inline void
 put_bvop_dbquant(Bitstream * bs,
 				 int value)
 {
@@ -519,7 +504,8 @@ MBCodingBVOP(const MACROBLOCK * mb,
 			 Bitstream * bs,
 			 Statistics * pStat)
 {
-	int i;
+	int vcode = fcode;
+	unsigned int i;
 
 /*	------------------------------------------------------------------
 		when a block is skipped it is decoded DIRECT(0,0)
@@ -549,19 +535,20 @@ MBCodingBVOP(const MACROBLOCK * mb,
 		put_bvop_dbquant(bs, 0);	// todo: mb->dquant = 0
 	}
 
-	if (mb->mode == MODE_INTERPOLATE || mb->mode == MODE_FORWARD) {
-		CodeVector(bs, mb->pmvs[0].x, fcode, pStat);
-		CodeVector(bs, mb->pmvs[0].y, fcode, pStat);
-	}
-
-	if (mb->mode == MODE_INTERPOLATE || mb->mode == MODE_BACKWARD) {
-		CodeVector(bs, mb->b_pmvs[0].x, bcode, pStat);
-		CodeVector(bs, mb->b_pmvs[0].y, bcode, pStat);
-	}
-
-	if (mb->mode == MODE_DIRECT) {
-		CodeVector(bs, mb->deltamv.x, 1, pStat);		/* fcode is always 1 for delta vector */
-		CodeVector(bs, mb->deltamv.y, 1, pStat);		/* prediction is always (0,0) */
+	switch (mb->mode) {
+		case MODE_INTERPOLATE:
+			CodeVector(bs, mb->pmvs[1].x, vcode, pStat); //forward vector of interpolate mode
+			CodeVector(bs, mb->pmvs[1].y, vcode, pStat);
+		case MODE_BACKWARD:
+			vcode = bcode;
+		case MODE_FORWARD:
+			CodeVector(bs, mb->pmvs[0].x, vcode, pStat);
+			CodeVector(bs, mb->pmvs[0].y, vcode, pStat);
+			break;
+		case MODE_DIRECT:
+			CodeVector(bs, mb->pmvs[3].x, 1, pStat);	// fcode is always 1 for delta vector
+			CodeVector(bs, mb->pmvs[3].y, 1, pStat);	// prediction is always (0,0)
+		default: break;
 	}
 
 	for (i = 0; i < 6; i++) {
@@ -649,7 +636,7 @@ get_cbpy(Bitstream * bs,
 
 }
 
-int
+static __inline int
 get_mv_data(Bitstream * bs)
 {
 
@@ -766,9 +753,7 @@ get_intra_block(Bitstream * bs,
 {
 
 	const uint16_t *scan = scan_tables[direction];
-	int level;
-	int run;
-	int last;
+	int level, run, last;
 
 	do {
 		level = get_coeff(bs, &run, &last, 1, 0);

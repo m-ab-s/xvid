@@ -21,6 +21,7 @@
 #define MODE_BACKWARD		2
 #define MODE_FORWARD		3
 #define MODE_DIRECT_NONE_MV	4
+#define MODE_DIRECT_NO4V	5
 
 
 typedef struct
@@ -69,12 +70,12 @@ typedef struct
 	// bframe stuff
 
 	VECTOR b_mvs[4];
-	VECTOR b_pmvs[4];
+//	VECTOR b_pmvs[1];
 
 	// bframe direct mode
 
-	VECTOR directmv[4];
-	VECTOR deltamv;
+//	VECTOR directmv[4];
+//	VECTOR deltamv;
 
 	int mb_type;
 	int dbquant;

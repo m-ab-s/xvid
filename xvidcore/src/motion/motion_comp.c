@@ -10,6 +10,7 @@
 #define ABS(X) (((X)>0)?(X):-(X))
 #define SIGN(X) (((X)>0)?1:-1)
 
+
 static __inline void
 compensate8x8_halfpel(int16_t * const dct_codes,
 					  uint8_t * const cur,
@@ -23,41 +24,19 @@ compensate8x8_halfpel(int16_t * const dct_codes,
 					  const int dy,
 					  const uint32_t stride)
 {
-	int32_t ddx, ddy;
+	const uint8_t * reference;
 
 	switch (((dx & 1) << 1) + (dy & 1))	// ((dx%2)?2:0)+((dy%2)?1:0)
 	{
-	case 0:
-		ddx = dx / 2;
-		ddy = dy / 2;
-		transfer_8to16sub(dct_codes, cur + y * stride + x,
-						  ref + (int) ((y + ddy) * stride + x + ddx), stride);
-		break;
-
-	case 1:
-		ddx = dx / 2;
-		ddy = (dy - 1) / 2;
-		transfer_8to16sub(dct_codes, cur + y * stride + x,
-						  refv + (int) ((y + ddy) * stride + x + ddx), stride);
-		break;
-
-	case 2:
-		ddx = (dx - 1) / 2;
-		ddy = dy / 2;
-		transfer_8to16sub(dct_codes, cur + y * stride + x,
-						  refh + (int) ((y + ddy) * stride + x + ddx), stride);
-		break;
-
+	case 0:	reference = ref + ((y + dy / 2) * stride + x + dx / 2); break;
+	case 1:	reference = refv + ((y + (dy-1) / 2) * stride + x + dx / 2); break;
+	case 2: reference = refh + ((y + dy / 2) * stride + x + (dx-1) / 2); break;
 	default:					// case 3:
-		ddx = (dx - 1) / 2;
-		ddy = (dy - 1) / 2;
-		transfer_8to16sub(dct_codes, cur + y * stride + x,
-						  refhv + (int) ((y + ddy) * stride + x + ddx), stride);
-		break;
+		reference = refhv + ((y + (dy-1) / 2) * stride + x + (dx-1) / 2); break;
 	}
+	transfer_8to16sub(dct_codes, cur + y * stride + x,
+						  reference, stride);
 }
-
-
 
 void
 MBMotionCompensation(MACROBLOCK * const mb,
@@ -77,6 +56,28 @@ MBMotionCompensation(MACROBLOCK * const mb,
 	static const uint32_t roundtab[16] =
 		{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2 };
 
+	if (mb->mode == MODE_NOT_CODED) {
+		transfer8x8_copy(cur->y + 16 * (i + j * edged_width),
+							ref->y + 16 * (i + j * edged_width),
+							edged_width);
+		transfer8x8_copy(cur->y + 16 * (i + j * edged_width) + 8,
+							ref->y + 16 * (i + j * edged_width) + 8,
+							edged_width);
+		transfer8x8_copy(cur->y + 16 * (i + j * edged_width) + 8 * edged_width,
+							ref->y + 16 * (i + j * edged_width) + 8 * edged_width,
+							edged_width);
+		transfer8x8_copy(cur->y + 16 * (i + j * edged_width) + 8 * (edged_width+1),
+							ref->y + 16 * (i + j * edged_width) + 8 * (edged_width+1),
+							edged_width);
+
+		transfer8x8_copy(cur->u + 8 * (i + j * edged_width/2),
+							ref->u + 8 * (i + j * edged_width/2),
+							edged_width / 2);
+		transfer8x8_copy(cur->v + 8 * (i + j * edged_width/2),
+							ref->v + 8 * (i + j * edged_width/2),
+							edged_width / 2);
+		return;
+	}
 
 	if (mb->mode == MODE_INTER || mb->mode == MODE_INTER_Q) {
 		int32_t dx = mb->mvs[0].x;
@@ -98,35 +99,20 @@ MBMotionCompensation(MACROBLOCK * const mb,
 		dx = (dx & 3) ? (dx >> 1) | 1 : dx / 2;
 		dy = (dy & 3) ? (dy >> 1) | 1 : dy / 2;
 
-		/* u,v-image-based compensation 
-		compensate8x8_halfpel(&dct_codes[4 * 64], cur->u, ref->u, refh->u,
-							  refv->u, refhv->u, 8 * i, 8 * j, dx, dy,
-							  edged_width / 2);
-		compensate8x8_halfpel(&dct_codes[5 * 64], cur->v, ref->v, refh->v,
-							  refv->v, refhv->v, 8 * i, 8 * j, dx, dy,
-							  edged_width / 2);
-		*/
-
-
-		/* --- u,v-block-based interpolation & compensation --- */
-		
-		interpolate8x8_switch(refv->u, ref->u, 8 * i, 8 * j, dx, dy,
-							  edged_width / 2, rounding);
+		/* uv-block-based compensation */
 		transfer_8to16sub(&dct_codes[4 * 64],
-						  cur->u + 8 * j * edged_width / 2 + 8 * i,
-						  refv->u + 8 * j * edged_width / 2 + 8 * i,
-						  edged_width / 2);
+							cur->u + 8 * j * edged_width / 2 + 8 * i,
+					 		interpolate8x8_switch2(refv->u, ref->u, 8 * i, 8 * j,
+													dx, dy, edged_width / 2, rounding),
+							edged_width / 2);
 
-		interpolate8x8_switch(refv->v, ref->v, 8 * i, 8 * j, dx, dy,
-							  edged_width / 2, rounding);
 		transfer_8to16sub(&dct_codes[5 * 64],
-						  cur->v + 8 * j * edged_width / 2 + 8 * i,
-						  refv->v + 8 * j * edged_width / 2 + 8 * i,
-						  edged_width / 2);
-		/* */
+							cur->v + 8 * j * edged_width / 2 + 8 * i,
+ 					 		interpolate8x8_switch2(refv->u, ref->v, 8 * i, 8 * j,
+													dx, dy, edged_width / 2, rounding),
+							edged_width / 2);
 
-	} else						// mode == MODE_INTER4V
-	{
+	} else {					// mode == MODE_INTER4V
 		int32_t sum, dx, dy;
 
 		compensate8x8_halfpel(&dct_codes[0 * 64], cur->y, ref->y, refh->y,
@@ -150,32 +136,19 @@ MBMotionCompensation(MACROBLOCK * const mb,
 		dy = (sum ? SIGN(sum) *
 			  (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2) : 0);
 
-		/* --- uv-image-based compensation -- -
-		compensate8x8_halfpel(&dct_codes[4 * 64], cur->u, ref->u, refh->u,
-							  refv->u, refhv->u, 8 * i, 8 * j, dx, dy,
-							  edged_width / 2);
-		compensate8x8_halfpel(&dct_codes[5 * 64], cur->v, ref->v, refh->v,
-							  refv->v, refhv->v, 8 * i, 8 * j, dx, dy,
-							  edged_width / 2);
-		*/
-
-		/* --- uv-block-based compensation ---
-		WARNING: these ditry the refv->u and refv->v images   */
-
-		interpolate8x8_switch(refv->u, ref->u, 8 * i, 8 * j, dx, dy,
-							  edged_width / 2, rounding);
+		/* uv-block-based compensation */
 		transfer_8to16sub(&dct_codes[4 * 64],
-						  cur->u + 8 * j * edged_width / 2 + 8 * i,
-						  refv->u + 8 * j * edged_width / 2 + 8 * i,
-						  edged_width / 2);
+							cur->u + 8 * j * edged_width / 2 + 8 * i,
+					  		interpolate8x8_switch2(refv->u, ref->u, 8 * i, 8 * j,
+													dx, dy, edged_width / 2, rounding),
+							edged_width / 2);
 
-		interpolate8x8_switch(refv->v, ref->v, 8 * i, 8 * j, dx, dy,
-							  edged_width / 2, rounding);
 		transfer_8to16sub(&dct_codes[5 * 64],
-						  cur->v + 8 * j * edged_width / 2 + 8 * i,
-						  refv->v + 8 * j * edged_width / 2 + 8 * i,
-						  edged_width / 2);
-		/* */
+							cur->v + 8 * j * edged_width / 2 + 8 * i,
+					  		interpolate8x8_switch2(refv->u, ref->v, 8 * i, 8 * j,
+													dx, dy, edged_width / 2, rounding),
+
+							edged_width / 2);
 	}
 }
 
@@ -212,58 +185,48 @@ MBMotionCompensationBVOP(MBParam * pParam,
 		dx = mb->mvs[0].x;
 		dy = mb->mvs[0].y;
 
-		transfer_8to16sub_c(&dct_codes[0 * 64],
+		transfer_8to16sub(&dct_codes[0 * 64],
 							cur->y + (j * 16) * edged_width + (i * 16),
 							get_ref(f_ref->y, f_refh->y, f_refv->y, f_refhv->y,
 									i * 16, j * 16, 1, dx, dy, edged_width),
 							edged_width);
 
 		transfer_8to16sub(&dct_codes[1 * 64],
-						  cur->y + (j * 16) * edged_width + (i * 16 + 8),
-						  get_ref(f_ref->y, f_refh->y, f_refv->y, f_refhv->y,
+							cur->y + (j * 16) * edged_width + (i * 16 + 8),
+							get_ref(f_ref->y, f_refh->y, f_refv->y, f_refhv->y,
 								  i * 16 + 8, j * 16, 1, dx, dy, edged_width),
-						  edged_width);
+							edged_width);
 
-		transfer_8to16sub_c(&dct_codes[2 * 64],
+		transfer_8to16sub(&dct_codes[2 * 64],
 							cur->y + (j * 16 + 8) * edged_width + (i * 16),
 							get_ref(f_ref->y, f_refh->y, f_refv->y, f_refhv->y,
-									i * 16, j * 16 + 8, 1, dx, dy,
-									edged_width), edged_width);
+									i * 16, j * 16 + 8, 1, dx, dy, edged_width),
+							edged_width);
 
 		transfer_8to16sub(&dct_codes[3 * 64],
-						  cur->y + (j * 16 + 8) * edged_width + (i * 16 + 8),
-						  get_ref(f_ref->y, f_refh->y, f_refv->y, f_refhv->y,
-								  i * 16 + 8, j * 16 + 8, 1, dx, dy,
-								  edged_width), edged_width);
+							cur->y + (j * 16 + 8) * edged_width + (i * 16 + 8),
+							get_ref(f_ref->y, f_refh->y, f_refv->y, f_refhv->y,
+								  i * 16 + 8, j * 16 + 8, 1, dx, dy, edged_width),
+							edged_width);
 
 
 		dx = (dx & 3) ? (dx >> 1) | 1 : dx / 2;
 		dy = (dy & 3) ? (dy >> 1) | 1 : dy / 2;
 
-		/* --- uv-image-based compensation --- 
-		compensate8x8_halfpel(&dct_codes[4 * 64], cur->u, f_ref->u, f_refh->u,
-							  f_refv->u, f_refhv->u, 8 * i, 8 * j, dx, dy,
-							  edged_width / 2);
-		compensate8x8_halfpel(&dct_codes[5 * 64], cur->v, f_ref->v, f_refh->v,
-							  f_refv->v, f_refhv->v, 8 * i, 8 * j, dx, dy,
-							  edged_width / 2);
-		*/
-
-		/* --- u,v-block-based interpolation & compensation --- */
-		interpolate8x8_switch(f_refv->u, f_ref->u, 8 * i, 8 * j, dx, dy,
-							  edged_width / 2, 0);
+		/* uv-block-based compensation */
 		transfer_8to16sub(&dct_codes[4 * 64],
-						  cur->u + 8 * j * edged_width / 2 + 8 * i,
-						  f_refv->u + 8 * j * edged_width / 2 + 8 * i,
+							cur->u + 8 * j * edged_width / 2 + 8 * i,
+							interpolate8x8_switch2(f_refv->u, f_ref->u, 8 * i, 8 * j,
+													dx, dy, edged_width / 2, 0),
+
 						  edged_width / 2);
 
-		interpolate8x8_switch(f_refv->v, f_ref->v, 8 * i, 8 * j, dx, dy,
-							  edged_width / 2, 0);
 		transfer_8to16sub(&dct_codes[5 * 64],
-						  cur->v + 8 * j * edged_width / 2 + 8 * i,
-						  f_refv->v + 8 * j * edged_width / 2 + 8 * i,
+							cur->v + 8 * j * edged_width / 2 + 8 * i,
+ 							interpolate8x8_switch2(f_refv->u, f_ref->v, 8 * i, 8 * j,
+													dx, dy, edged_width / 2, 0),
+
 						  edged_width / 2);
-		/* */
 
 		break;
 
@@ -271,7 +234,7 @@ MBMotionCompensationBVOP(MBParam * pParam,
 		b_dx = mb->b_mvs[0].x;
 		b_dy = mb->b_mvs[0].y;
 
-		transfer_8to16sub_c(&dct_codes[0 * 64],
+		transfer_8to16sub(&dct_codes[0 * 64],
 							cur->y + (j * 16) * edged_width + (i * 16),
 							get_ref(b_ref->y, b_refh->y, b_refv->y, b_refhv->y,
 									i * 16, j * 16, 1, b_dx, b_dy,
@@ -283,7 +246,7 @@ MBMotionCompensationBVOP(MBParam * pParam,
 								  i * 16 + 8, j * 16, 1, b_dx, b_dy,
 								  edged_width), edged_width);
 
-		transfer_8to16sub_c(&dct_codes[2 * 64],
+		transfer_8to16sub(&dct_codes[2 * 64],
 							cur->y + (j * 16 + 8) * edged_width + (i * 16),
 							get_ref(b_ref->y, b_refh->y, b_refv->y, b_refhv->y,
 									i * 16, j * 16 + 8, 1, b_dx, b_dy,
@@ -298,35 +261,26 @@ MBMotionCompensationBVOP(MBParam * pParam,
 		b_dx = (b_dx & 3) ? (b_dx >> 1) | 1 : b_dx / 2;
 		b_dy = (b_dy & 3) ? (b_dy >> 1) | 1 : b_dy / 2;
 
-		/* --- uv-image-based compensation ---
-		compensate8x8_halfpel(&dct_codes[4 * 64], cur->u, b_ref->u, b_refh->u,
-							  b_refv->u, b_refhv->u, 8 * i, 8 * j, b_dx, b_dy,
-							  edged_width / 2);
-		compensate8x8_halfpel(&dct_codes[5 * 64], cur->v, b_ref->v, b_refh->v,
-							  b_refv->v, b_refhv->v, 8 * i, 8 * j, b_dx, b_dy,
-							  edged_width / 2);
-		*/
-
-		/* --- u,v-block-based interpolation & compensation --- */
-		interpolate8x8_switch(b_refv->u, b_ref->u, 8 * i, 8 * j, b_dx, b_dy,
-							  edged_width / 2, 0);
+		/* uv-block-based compensation */
 		transfer_8to16sub(&dct_codes[4 * 64],
-						  cur->u + 8 * j * edged_width / 2 + 8 * i,
-						  b_refv->u + 8 * j * edged_width / 2 + 8 * i,
-						  edged_width / 2);
+							cur->u + 8 * j * edged_width / 2 + 8 * i,
+							interpolate8x8_switch2(f_refv->u, b_ref->u, 8 * i, 8 * j,
+													b_dx, b_dy, edged_width / 2, 0),
 
-		interpolate8x8_switch(b_refv->v, b_ref->v, 8 * i, 8 * j, b_dx, b_dy,
-							  edged_width / 2, 0);
+							edged_width / 2);
+
 		transfer_8to16sub(&dct_codes[5 * 64],
-						  cur->v + 8 * j * edged_width / 2 + 8 * i,
-						  b_refv->v + 8 * j * edged_width / 2 + 8 * i,
-						  edged_width / 2);
-		/* */
+							cur->v + 8 * j * edged_width / 2 + 8 * i,
+					  		interpolate8x8_switch2(f_refv->u, b_ref->v, 8 * i, 8 * j,
+													b_dx, b_dy, edged_width / 2, 0),
+
+							edged_width / 2);
 
 		break;
 
 
 	case MODE_INTERPOLATE:		/* _could_ use DIRECT, but would be overkill (no 4MV there) */
+	case MODE_DIRECT_NO4V:
 
 		dx = mb->mvs[0].x;
 		dy = mb->mvs[0].y;
@@ -334,17 +288,16 @@ MBMotionCompensationBVOP(MBParam * pParam,
 		b_dx = mb->b_mvs[0].x;
 		b_dy = mb->b_mvs[0].y;
 
-		for (k=0;k<4;k++)
-		{
-			transfer_8to16sub2_c(&dct_codes[k * 64],
-							 cur->y + (i * 16+(k&1)*8) + (j * 16+((k>>1)*8)) * edged_width,
-							 get_ref(f_ref->y, f_refh->y, f_refv->y,
-									 f_refhv->y, 2*i + (k&1), 2*j + (k>>1), 8, dx, dy,
-									 edged_width), 
-							 get_ref(b_ref->y, b_refh->y, b_refv->y,
-									 b_refhv->y, 2*i + (k&1), 2 * j+(k>>1), 8, b_dx, b_dy, 
-									 edged_width),
-							 edged_width);
+		for (k = 0; k < 4; k++) {
+			transfer_8to16sub2(&dct_codes[k * 64],
+							cur->y + (i * 16+(k&1)*8) + (j * 16+((k>>1)*8)) * edged_width,
+							get_ref(f_ref->y, f_refh->y, f_refv->y,
+									f_refhv->y, 2*i + (k&1), 2*j + (k>>1), 8, dx, dy,
+									edged_width), 
+							get_ref(b_ref->y, b_refh->y, b_refv->y,
+									b_refhv->y, 2*i + (k&1), 2 * j+(k>>1), 8, b_dx, b_dy, 
+									edged_width),
+							edged_width);
 		}
 
 		dx = (dx & 3) ? (dx >> 1) | 1 : dx / 2;
@@ -353,46 +306,22 @@ MBMotionCompensationBVOP(MBParam * pParam,
 		b_dx = (b_dx & 3) ? (b_dx >> 1) | 1 : b_dx / 2;
 		b_dy = (b_dy & 3) ? (b_dy >> 1) | 1 : b_dy / 2;
 
-		/* --- uv-image-based compensation --- 
-
-		transfer_8to16sub2_c(&dct_codes[4 * 64],
-							 cur->u + (y * 8) * edged_width / 2 + (x * 8),
-							 get_ref(f_ref->u, f_refh->u, f_refv->u,
-									 f_refhv->u, i, j, 8, dx, dy,
-									 edged_width / 2), 
-							 get_ref(b_ref->u, b_refh->u, b_refv->u,
-									 b_refhv->u, i, j, 8, b_dx, b_dy,
-									 edged_width / 2),
-							 edged_width / 2);
-
-		transfer_8to16sub2_c(&dct_codes[5 * 64],
-							 cur->v + (y * 8) * edged_width / 2 + (x * 8),
-							 get_ref(f_ref->v, f_refh->v, f_refv->v,
-									 f_refhv->v, 8 * i, 8 * j, 1, dx, dy,
-									 edged_width / 2), 
-							 get_ref(b_ref->v, b_refh->v, b_refv->v, 
-							 		 b_refhv->v, 8 * i, 8 * j, 1, b_dx, b_dy,
-									 edged_width / 2),
-							 edged_width / 2);
-		 */
-
-		/* --- u,v-block-based interpolation & compensation ---  */
-		interpolate8x8_switch(f_refv->u, f_ref->u, 8 * i, 8 * j,   dx,   dy, edged_width / 2, 0);
-		interpolate8x8_switch(b_refv->u, b_ref->u, 8 * i, 8 * j, b_dx, b_dy, edged_width / 2, 0);
-		transfer_8to16sub2_c(&dct_codes[4 * 64],
-							   cur->u + 8 * y * edged_width / 2 + 8 * x,
-							f_refv->u + 8 * j * edged_width / 2 + 8 * i,
-							b_refv->u + 8 * j * edged_width / 2 + 8 * i,
+		transfer_8to16sub2(&dct_codes[4 * 64],
+							cur->u + (y * 8) * edged_width / 2 + (x * 8),
+							interpolate8x8_switch2(f_refv->u, b_ref->u, 8 * i, 8 * j,
+													b_dx, b_dy, edged_width / 2, 0),
+							interpolate8x8_switch2(f_refv->u + 8, f_ref->u, 8 * i, 8 * j,
+													dx, dy, edged_width / 2, 0),
 							edged_width / 2);
 
-		interpolate8x8_switch(f_refv->v, f_ref->v, 8 * i, 8 * j,   dx,   dy, edged_width / 2, 0);
-		interpolate8x8_switch(b_refv->v, b_ref->v, 8 * i, 8 * j, b_dx, b_dy, edged_width / 2, 0);
-		transfer_8to16sub2_c(&dct_codes[5 * 64],
-							   cur->v + 8 * y * edged_width / 2 + 8 * x,
-							f_refv->v + 8 * j * edged_width / 2 + 8 * i,
-							b_refv->v + 8 * j * edged_width / 2 + 8 * i,
+		transfer_8to16sub2(&dct_codes[5 * 64],
+							cur->v + (y * 8) * edged_width / 2 + (x * 8),
+							interpolate8x8_switch2(f_refv->u, b_ref->v, 8 * i, 8 * j,
+													b_dx, b_dy, edged_width / 2, 0),
+							interpolate8x8_switch2(f_refv->u + 8, f_ref->v, 8 * i, 8 * j,
+													dx, dy, edged_width / 2, 0),
 							edged_width / 2);
-		 /* */
+ 
 		break;
 	
 	case MODE_DIRECT:
@@ -407,15 +336,15 @@ MBMotionCompensationBVOP(MBParam * pParam,
 
 //		fprintf(stderr,"Direct Vector %d -- %d:%d    %d:%d\n",k,dx,dy,b_dx,b_dy);
 
-			transfer_8to16sub2_c(&dct_codes[k * 64],
-							 cur->y + (i*16 + (k&1)*8) + (j*16 + (k>>1)*8 ) * edged_width,
-							 get_ref(f_ref->y, f_refh->y, f_refv->y, f_refhv->y, 
-							 		 2*i + (k&1), 2*j + (k>>1), 8, dx, dy,
-									 edged_width), 
-							 get_ref(b_ref->y, b_refh->y, b_refv->y, b_refhv->y, 
-							 		 2*i + (k&1), 2*j + (k>>1), 8, b_dx, b_dy, 
-									 edged_width),
-							 edged_width);
+			transfer_8to16sub2(&dct_codes[k * 64],
+							cur->y + (i*16 + (k&1)*8) + (j*16 + (k>>1)*8 ) * edged_width,
+							get_ref(f_ref->y, f_refh->y, f_refv->y, f_refhv->y, 
+							 		2*i + (k&1), 2*j + (k>>1), 8, dx, dy,
+									edged_width), 
+							get_ref(b_ref->y, b_refh->y, b_refv->y, b_refhv->y, 
+							 		2*i + (k&1), 2*j + (k>>1), 8, b_dx, b_dy, 
+									edged_width),
+							edged_width);
 		}
 
 		sum = mb->mvs[0].x + mb->mvs[1].x + mb->mvs[2].x + mb->mvs[3].x;
@@ -434,49 +363,25 @@ MBMotionCompensationBVOP(MBParam * pParam,
 /*		// for QPel don't forget to always do
 
 		if (quarterpel)
-			sum /= 2;		
+			sum /= 2;
 */
-
-		/* --- uv-image-based compensation --- 
-		transfer_8to16sub2_c(&dct_codes[4 * 64],
-							 cur->u + (y * 8) * edged_width / 2 + (x * 8),
-							 get_ref(f_ref->u, f_refh->u, f_refv->u,
-									 f_refhv->u, i, j, 8, dx, dy,
-									 edged_width / 2), 
-							 get_ref(b_ref->u, b_refh->u, b_refv->u,
-									 b_refhv->u, i, j, 8, b_dx, b_dy,
-									 edged_width / 2),
-							 edged_width / 2);
-
-		transfer_8to16sub2_c(&dct_codes[5 * 64],
-							 cur->v + (y * 8) * edged_width / 2 + (x * 8),
-							 get_ref(f_ref->v, f_refh->v, f_refv->v,
-									 f_refhv->v, i, j, 8, dx, dy,
-									 edged_width / 2), 
-							 get_ref(b_ref->v, b_refh->v, b_refv->v, 
-							 		 b_refhv->v, i, j, 8, b_dx, b_dy,
-									 edged_width / 2),
-							 edged_width / 2);
-		*/
-
-
-		/* --- uv-block-based compensation */
-		interpolate8x8_switch(f_refv->u, f_ref->u, 8 * i, 8 * j,   dx,   dy, edged_width / 2, 0);
-		interpolate8x8_switch(b_refv->u, b_ref->u, 8 * i, 8 * j, b_dx, b_dy, edged_width / 2, 0);
-		transfer_8to16sub2_c(&dct_codes[4 * 64],
-							   cur->u + 8 * y * edged_width / 2 + 8 * x,
-							f_refv->u + 8 * j * edged_width / 2 + 8 * i,
-							b_refv->u + 8 * j * edged_width / 2 + 8 * i,
+		transfer_8to16sub2(&dct_codes[4 * 64],
+							cur->u + (y * 8) * edged_width / 2 + (x * 8),
+							interpolate8x8_switch2(f_refv->u, b_ref->u, 8 * i, 8 * j,
+													b_dx, b_dy, edged_width / 2, 0),
+							interpolate8x8_switch2(f_refv->u + 8, f_ref->u, 8 * i, 8 * j, dx, dy,
+							  edged_width / 2, 0),
 							edged_width / 2);
 
-		interpolate8x8_switch(f_refv->v, f_ref->v, 8 * i, 8 * j,   dx,   dy, edged_width / 2, 0);
-		interpolate8x8_switch(b_refv->v, b_ref->v, 8 * i, 8 * j, b_dx, b_dy, edged_width / 2, 0);
-		transfer_8to16sub2_c(&dct_codes[5 * 64],
-							   cur->v + 8 * y * edged_width / 2 + 8 * x,
-							f_refv->v + 8 * j * edged_width / 2 + 8 * i,
-							b_refv->v + 8 * j * edged_width / 2 + 8 * i,
+		transfer_8to16sub2(&dct_codes[5 * 64],
+							cur->v + (y * 8) * edged_width / 2 + (x * 8),
+							interpolate8x8_switch2(f_refv->u, b_ref->v, 8 * i, 8 * j,
+													b_dx, b_dy, edged_width / 2, 0),
+							interpolate8x8_switch2(f_refv->u + 8, f_ref->v, 8 * i, 8 * j,
+													dx, dy, edged_width / 2, 0),
 							edged_width / 2);
-		/* */
+
+
 		break;
 	}
 }

@@ -3,6 +3,15 @@
 ; *	XVID MPEG-4 VIDEO CODEC
 ; *	xmm sum of absolute difference
 ; *
+; *	This program is an implementation of a part of one or more MPEG-4
+; *	Video tools as specified in ISO/IEC 14496-2 standard.  Those intending
+; *	to use this software module in hardware or software products are
+; *	advised that its use may infringe existing patents or copyrights, and
+; *	any such use would be at such party's own risk.  The original
+; *	developer of this software module and his/her company, and subsequent
+; *	editors and their companies, will have no liability for use of this
+; *	software or modifications or derivatives thereof.
+; *
 ; *	This program is free software; you can redistribute it and/or modify
 ; *	it under the terms of the GNU General Public License as published by
 ; *	the Free Software Foundation; either version 2 of the License, or
@@ -348,6 +357,7 @@ dev16_xmm:
 
     mov eax, [esp+ 4] ; Src
 
+
     pxor mm5, mm5 ; sums
     pxor mm6, mm6
 
@@ -376,3 +386,57 @@ dev16_xmm:
 
     movd eax, mm6
     ret
+
+cglobal sad16v_xmm
+
+;===========================================================================
+;int sad16v_xmm(const uint8_t * const cur,
+;               const uint8_t * const ref,
+;               const uint32_t stride,
+;               int* sad8);
+;===========================================================================
+align 16
+sad16v_xmm:
+    push ebx
+    mov eax, [esp+4+ 4] ; Src1
+    mov edx, [esp+4+ 8] ; Src2
+    mov ecx, [esp+4+12] ; Stride
+    mov ebx, [esp+4+16] ; sad ptr
+
+    pxor mm5, mm5 ; accum1
+    pxor mm6, mm6 ; accum2
+    pxor mm7, mm7 ; total
+    SAD_16x16_SSE
+    SAD_16x16_SSE
+    SAD_16x16_SSE
+    SAD_16x16_SSE
+    SAD_16x16_SSE
+    SAD_16x16_SSE
+    SAD_16x16_SSE
+    SAD_16x16_SSE
+    paddusw mm7, mm5
+    paddusw mm7, mm6
+    movd [ebx], mm5
+    movd [ebx+4], mm6
+
+    pxor mm5, mm5 ; accum1
+    pxor mm6, mm6 ; accum2
+    SAD_16x16_SSE
+    SAD_16x16_SSE
+    SAD_16x16_SSE
+    SAD_16x16_SSE
+    SAD_16x16_SSE
+    SAD_16x16_SSE
+    SAD_16x16_SSE
+    SAD_16x16_SSE
+    paddusw mm7, mm5
+    paddusw mm7, mm6
+    movd [ebx+8], mm5
+    movd [ebx+12], mm6
+
+    movd eax, mm7
+    pop ebx
+    ret
+;--------
+
+

@@ -26,7 +26,6 @@ sad16Func sad16_ia64;
 
 sad16Func mrsad16_c;
 
-
 typedef uint32_t(sad8Func) (const uint8_t * const cur,
 							const uint8_t * const ref,
 							const uint32_t stride);
@@ -75,51 +74,21 @@ dev16Func dev16_sse2;
 dev16Func dev16_altivec;
 dev16Func dev16_ia64;
 
-/* plain c */
-/*
+typedef uint32_t (sad16vFunc)(	const uint8_t * const cur,
+								const uint8_t * const ref,
+								const uint32_t stride, int32_t *sad8);
+typedef sad16vFunc *sad16vFuncPtr;
+extern sad16vFuncPtr sad16v;
+sad16vFunc sad16v_xmm;
+sad16vFunc sad16v_c;
+sad16vFunc mrsad16v;
+sad16vFunc mrsad16v_c;
 
-uint32_t sad16(const uint8_t * const cur,
-				const uint8_t * const ref,
-				const uint32_t stride,
-				const uint32_t best_sad);
+int32_t sad8x8mean_mmx(	const uint8_t * const current,
+						const uint8_t * const reference,
+						const uint32_t stride,
+						const int mean);
 
-uint32_t sad8(const uint8_t * const cur,
-				const uint8_t * const ref,
-				const uint32_t stride);
-
-uint32_t dev16(const uint8_t * const cur,
-				const uint32_t stride);
-*/
-/* mmx */
-/*
-
-uint32_t sad16_mmx(const uint8_t * const cur,
-				const uint8_t * const ref,
-				const uint32_t stride,
-				const uint32_t best_sad);
-
-uint32_t sad8_mmx(const uint8_t * const cur,
-				const uint8_t * const ref,
-				const uint32_t stride);
-
-
-uint32_t dev16_mmx(const uint8_t * const cur,
-				const uint32_t stride);
-
-*/
-/* xmm */
-/*
-uint32_t sad16_xmm(const uint8_t * const cur,
-				const uint8_t * const ref,
-				const uint32_t stride,
-				const uint32_t best_sad);
-
-uint32_t sad8_xmm(const uint8_t * const cur,
-				const uint8_t * const ref,
-				const uint32_t stride);
-
-uint32_t dev16_xmm(const uint8_t * const cur,
-				const uint32_t stride);
-*/
+void sad16x8total_mmx(const uint8_t *, const uint32_t, int32_t[]);
 
 #endif							/* _ENCODER_SAD_H_ */
