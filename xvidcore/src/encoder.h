@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.27.2.5 2003-03-16 12:04:14 suxen_drol Exp $
+ *  $Id: encoder.h,v 1.27.2.6 2003-03-26 11:01:03 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -260,7 +260,7 @@ get_fcode(uint16_t sr)
 
 void init_encoder(uint32_t cpu_flags);
 
-int enc_create(xvid_enc_create_t * create, xvid_enc_rc_t * rc);
+int enc_create(xvid_enc_create_t * create);
 int enc_destroy(Encoder * pEnc);
 int enc_encode(Encoder * pEnc,
 				   xvid_enc_frame_t * pFrame,

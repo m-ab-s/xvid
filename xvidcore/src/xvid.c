@@ -17,7 +17,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.1 2003-02-22 08:49:44 suxen_drol Exp $
+ * $Id: xvid.c,v 1.45.2.2 2003-03-26 11:01:03 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -1055,7 +1055,7 @@ xvid_encore(void *handle,
 							  (xvid_enc_stats_t *) param2);
 
 	case XVID_ENC_CREATE:
-		return enc_create((xvid_enc_create_t *) param1, (xvid_enc_rc_t*)param2);
+		return enc_create((xvid_enc_create_t *) param1);
 
 	case XVID_ENC_DESTROY:
 		return enc_destroy((Encoder *) handle);

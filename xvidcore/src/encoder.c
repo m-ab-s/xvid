@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.13 2003-03-25 10:32:48 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.95.2.14 2003-03-26 11:01:03 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -116,12 +116,12 @@ simplify_time(int *inc, int *base)
 
 
 int
-enc_create(xvid_enc_create_t * create, xvid_enc_rc_t * rc)
+enc_create(xvid_enc_create_t * create)
 {
 	Encoder *pEnc;
     int n;
 
-	if (XVID_MAJOR(create->version) != 1 || (rc && XVID_MAJOR(rc->version) != 1))	/* v1.x.x */
+	if (XVID_MAJOR(create->version) != 1)	/* v1.x.x */
 		return XVID_ERR_VERSION;
 
 	if (create->width%2 || create->height%2)

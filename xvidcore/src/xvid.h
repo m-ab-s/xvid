@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.11 2003-03-25 10:57:02 suxen_drol Exp $
+ * $Id: xvid.h,v 1.27.2.12 2003-03-26 11:01:03 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -573,33 +573,6 @@ typedef struct {
 	void *handle;			/* [out] encoder instance handle */
 }
 xvid_enc_create_t;
-
-
-typedef struct {
-	int version;	
-	int type;				/* [in] rate control type: XVID_RC_xxx */
-
-	/* common stuff */
-	int min_iquant;		/* [in:opt] ivop quantizer upper/lower limit */
-	int max_iquant;		/* [in:opt] */
-	int min_pquant;		/* [in:opt] psvop quantizer upper/lower limit */
-	int max_pquant;		/* [in:opt]  */
-	int min_bquant;		/* [in:opt] bvop quantizer upper/lower limit */
-	int max_bquant;		/* [in:opt] */
-	
-	union {
-		struct {	/* XVID_RC_FQUANT */
-			float quant;				/* [in] quantizer */
-		} fquant;
-		struct {	/* XVID_RC_CBR */
-			int bitrate;				/* [in] the bitrate of the target encoded stream, in bits/second */
-			int reaction_delay_factor;	/* [in] how fast the rate control reacts - lower values are faster */
-			int averaging_period;		/* [in] */
-			int buffer;					/* [in] */
-		} cbr;
-	} data;
-} xvid_enc_rc_t;
-
 
 
 #define XVID_KEYFRAME	0x00000001
