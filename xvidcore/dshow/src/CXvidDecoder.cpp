@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.1.2.9 2004-01-07 13:50:28 syskin Exp $
+ * $Id: CXvidDecoder.cpp,v 1.1.2.10 2004-01-09 04:37:59 syskin Exp $
  *
  ****************************************************************************/
 
@@ -339,8 +339,10 @@ HRESULT CXvidDecoder::CheckInputType(const CMediaType * mtIn)
 	{
 		VIDEOINFOHEADER * vih = (VIDEOINFOHEADER *) mtIn->Format();
 		hdr = &vih->bmiHeader;
-		ar_x = vih->bmiHeader.biXPelsPerMeter*hdr->biWidth;
-		ar_y = vih->bmiHeader.biYPelsPerMeter*hdr->biHeight;
+		/* PAR (x:y) is (1/ppm_X):(1/ppm_Y) where ppm is pixels-per-meter
+		   which is equal to ppm_Y:ppm_X */
+		ar_x = vih->bmiHeader.biYPelsPerMeter*hdr->biWidth;
+		ar_y = vih->bmiHeader.biXPelsPerMeter*hdr->biHeight;
 	}
 	else if (*mtIn->FormatType() == FORMAT_VideoInfo2)
 	{
