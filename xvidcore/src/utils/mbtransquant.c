@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbtransquant.c,v 1.21.2.15 2003-07-24 13:09:14 Isibaar Exp $
+ * $Id: mbtransquant.c,v 1.21.2.16 2003-09-10 00:54:27 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -123,20 +123,28 @@ MBQuantIntra(const MBParam * pParam,
 			 int16_t qcoeff[6 * 64],
 			 int16_t data[6*64])
 {
-	int i;
+	int mpeg;
+	int scaler_lum, scaler_chr;
 
-	for (i = 0; i < 6; i++) {
-		uint32_t iDcScaler = get_dc_scaler(pMB->quant, i < 4);
+	quanth263_intraFuncPtr const quant[2] =
+		{
+			(quanth263_intraFuncPtr)quant_intra,
+			(quanth263_intraFuncPtr)quant4_intra
+		};
 
-		/* Quantize the block */
-		start_timer();
-		if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT)) {
-			quant_intra(&data[i * 64], &qcoeff[i * 64], pMB->quant, iDcScaler);
-		} else {
-			quant4_intra(&data[i * 64], &qcoeff[i * 64], pMB->quant, iDcScaler);
-		}
-		stop_quant_timer();
-	}
+	mpeg = !!(pParam->vol_flags & XVID_VOL_MPEGQUANT);
+	scaler_lum = get_dc_scaler(pMB->quant, 1);
+	scaler_chr = get_dc_scaler(pMB->quant, 0);
+
+	/* Quantize the block */
+	start_timer();
+	quant[mpeg](&data[0 * 64], &qcoeff[0 * 64], pMB->quant, scaler_lum);
+	quant[mpeg](&data[1 * 64], &qcoeff[1 * 64], pMB->quant, scaler_lum);
+	quant[mpeg](&data[2 * 64], &qcoeff[2 * 64], pMB->quant, scaler_lum);
+	quant[mpeg](&data[3 * 64], &qcoeff[3 * 64], pMB->quant, scaler_lum);
+	quant[mpeg](&data[4 * 64], &qcoeff[4 * 64], pMB->quant, scaler_chr);
+	quant[mpeg](&data[5 * 64], &qcoeff[5 * 64], pMB->quant, scaler_chr);
+	stop_quant_timer();
 }
 
 /* DeQuantize all blocks -- Intra mode */
@@ -146,20 +154,35 @@ MBDeQuantIntra(const MBParam * pParam,
 			   int16_t qcoeff[6 * 64],
 			   int16_t data[6*64])
 {
-	int i;
+	int mpeg;
+	int scaler_lum, scaler_chr;
 
-	for (i = 0; i < 6; i++) {
-		uint32_t iDcScaler = get_dc_scaler(iQuant, i < 4);
+	quanth263_intraFuncPtr const dequant[2] =
+		{
+			(quanth263_intraFuncPtr)dequant_intra,
+			(quanth263_intraFuncPtr)dequant4_intra
+		};
 
-		start_timer();
-		if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT))
-			dequant_intra(&qcoeff[i * 64], &data[i * 64], iQuant, iDcScaler);
-		else
-			dequant4_intra(&qcoeff[i * 64], &data[i * 64], iQuant, iDcScaler);
-		stop_iquant_timer();
-	}
+	mpeg = !!(pParam->vol_flags & XVID_VOL_MPEGQUANT);
+	scaler_lum = get_dc_scaler(iQuant, 1);
+	scaler_chr = get_dc_scaler(iQuant, 0);
+
+	start_timer();
+	dequant[mpeg](&qcoeff[0 * 64], &data[0 * 64], iQuant, scaler_lum);
+	dequant[mpeg](&qcoeff[1 * 64], &data[1 * 64], iQuant, scaler_lum);
+	dequant[mpeg](&qcoeff[2 * 64], &data[2 * 64], iQuant, scaler_lum);
+	dequant[mpeg](&qcoeff[3 * 64], &data[3 * 64], iQuant, scaler_lum);
+	dequant[mpeg](&qcoeff[4 * 64], &data[4 * 64], iQuant, scaler_chr);
+	dequant[mpeg](&qcoeff[5 * 64], &data[5 * 64], iQuant, scaler_chr);
+	stop_iquant_timer();
 }
 
+
+typedef int (*trellis_func_ptr_t)(int16_t *const Out,
+								  const int16_t *const In,
+								  int Q,
+								  const uint16_t * const Zigzag,
+								  int Non_Zero);
 
 static int 
 dct_quantize_trellis_h263_c(int16_t *const Out,
@@ -168,14 +191,12 @@ dct_quantize_trellis_h263_c(int16_t *const Out,
 							const uint16_t * const Zigzag,
 							int Non_Zero);
 
-#if 0
 static int 
 dct_quantize_trellis_mpeg_c(int16_t *const Out,
 							const int16_t *const In,
 							int Q,
 							const uint16_t * const Zigzag,
 							int Non_Zero);
-#endif
 
 /* Quantize all blocks -- Inter mode */
 static __inline uint8_t
@@ -191,24 +212,31 @@ MBQuantInter(const MBParam * pParam,
 	int i;
 	uint8_t cbp = 0;
 	int sum;
-	int code_block;
+	int code_block, mpeg;
+
+	quanth263_interFuncPtr const quant[2] =
+		{
+			(quanth263_interFuncPtr)quant_inter,
+			(quanth263_interFuncPtr)quant4_inter
+		};
+
+	trellis_func_ptr_t const trellis[2] =
+		{
+			(trellis_func_ptr_t)dct_quantize_trellis_h263_c,
+			(trellis_func_ptr_t)dct_quantize_trellis_mpeg_c
+		};
+
+	mpeg = !!(pParam->vol_flags & XVID_VOL_MPEGQUANT);
 
 	for (i = 0; i < 6; i++) {
 
 		/* Quantize the block */
 		start_timer();
-		if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT)) {
-			sum = quant_inter(&qcoeff[i*64], &data[i*64], pMB->quant);
-			if ( (sum) && (frame->vop_flags & XVID_VOP_TRELLISQUANT) ) {
-				sum = dct_quantize_trellis_h263_c(&qcoeff[i*64], &data[i*64], pMB->quant, &scan_tables[0][0], 63)+1;
-/*				limit = 1; // Isibaar: why? deactivated so far - so please complain! ;-) */
-			}
-		} else {
-			sum = quant4_inter(&qcoeff[i * 64], &data[i * 64], pMB->quant);
-#if 0
-			if ( (sum) && (frame->vop_flags & XVID_VOP_TRELLISQUANT) )
-				sum = dct_quantize_trellis_mpeg_c (&qcoeff[i*64], &data[i*64], pMB->quant)+1;	
-#endif
+
+		sum = quant[mpeg](&qcoeff[i*64], &data[i*64], pMB->quant);
+
+		if(sum && (frame->vop_flags & XVID_VOP_TRELLISQUANT)) {
+			sum = trellis[mpeg](&qcoeff[i*64], &data[i*64], pMB->quant, &scan_tables[0][0], 63);
 		}
 		stop_quant_timer();
 
@@ -247,18 +275,24 @@ MBDeQuantInter(const MBParam * pParam,
 			   int16_t qcoeff[6 * 64],
 			   const uint8_t cbp)
 {
-	int i;
+	int mpeg;
 
-	for (i = 0; i < 6; i++) {
-		if (cbp & (1 << (5 - i))) {
-			start_timer();
-			if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT))
-				dequant_inter(&data[i * 64], &qcoeff[i * 64], iQuant);
-			else
-				dequant4_inter(&data[i * 64], &qcoeff[i * 64], iQuant);
-			stop_iquant_timer();
-		}
-	}
+	quanth263_interFuncPtr const dequant[2] =
+		{
+			(quanth263_interFuncPtr)dequant_inter,
+			(quanth263_interFuncPtr)dequant4_inter
+		};
+
+	mpeg = !!(pParam->vol_flags & XVID_VOL_MPEGQUANT);
+
+	start_timer();
+	if(cbp & (1 << (5 - 0))) dequant[mpeg](&data[0 * 64], &qcoeff[0 * 64], iQuant);
+	if(cbp & (1 << (5 - 1))) dequant[mpeg](&data[1 * 64], &qcoeff[1 * 64], iQuant);
+	if(cbp & (1 << (5 - 2))) dequant[mpeg](&data[2 * 64], &qcoeff[2 * 64], iQuant);
+	if(cbp & (1 << (5 - 3))) dequant[mpeg](&data[3 * 64], &qcoeff[3 * 64], iQuant);
+	if(cbp & (1 << (5 - 4))) dequant[mpeg](&data[4 * 64], &qcoeff[4 * 64], iQuant);
+	if(cbp & (1 << (5 - 5))) dequant[mpeg](&data[5 * 64], &qcoeff[5 * 64], iQuant);
+	stop_iquant_timer();
 }
 
 typedef void (transfer_operation_8to16_t) (int16_t *Dst, const uint8_t *Src, int BpS);
@@ -277,35 +311,28 @@ MBTrans8to16(const MBParam * const pParam,
 	uint32_t stride2 = stride / 2;
 	uint32_t next_block = stride * 8;
 	int32_t cst;
+	int vop_reduced;
 	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
 	const IMAGE * const pCurrent = &frame->image;
+	transfer_operation_8to16_t * const functions[2] =
+		{
+			(transfer_operation_8to16_t *)transfer_8to16copy,
+			(transfer_operation_8to16_t *)filter_18x18_to_8x8
+		};
 	transfer_operation_8to16_t *transfer_op = NULL;
 
-	if ((frame->vop_flags & XVID_VOP_REDUCED)) {
+	vop_reduced = !!(frame->vop_flags & XVID_VOP_REDUCED);
 
-		/* Image pointers */
-		pY_Cur = pCurrent->y + (y_pos << 5) * stride  + (x_pos << 5);
-		pU_Cur = pCurrent->u + (y_pos << 4) * stride2 + (x_pos << 4);
-		pV_Cur = pCurrent->v + (y_pos << 4) * stride2 + (x_pos << 4);
+	/* Image pointers */
+	pY_Cur = pCurrent->y + (y_pos << (4+vop_reduced)) * stride  + (x_pos << (4+vop_reduced));
+	pU_Cur = pCurrent->u + (y_pos << (3+vop_reduced)) * stride2 + (x_pos << (3+vop_reduced));
+	pV_Cur = pCurrent->v + (y_pos << (3+vop_reduced)) * stride2 + (x_pos << (3+vop_reduced));
 
-		/* Block size */
-		cst = 16;
+	/* Block size */
+	cst = 8<<vop_reduced;
 
-		/* Operation function */
-		transfer_op = (transfer_operation_8to16_t*)filter_18x18_to_8x8;
-	} else {
-
-		/* Image pointers */
-		pY_Cur = pCurrent->y + (y_pos << 4) * stride  + (x_pos << 4);
-		pU_Cur = pCurrent->u + (y_pos << 3) * stride2 + (x_pos << 3);
-		pV_Cur = pCurrent->v + (y_pos << 3) * stride2 + (x_pos << 3);
-
-		/* Block size */
-		cst = 8;
-
-		/* Operation function */
-		transfer_op = (transfer_operation_8to16_t*)transfer_8to16copy;
-	}
+	/* Operation function */
+	transfer_op = functions[vop_reduced];
 
 	/* Do the transfer */
 	start_timer();
@@ -325,7 +352,7 @@ MBTrans16to8(const MBParam * const pParam,
 			 const uint32_t x_pos,
 			 const uint32_t y_pos,
 			 int16_t data[6 * 64],
-			 const uint32_t add,
+			 const uint32_t add, /* Must be 1 or 0 */
 			 const uint8_t cbp)
 {
 	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
@@ -333,7 +360,17 @@ MBTrans16to8(const MBParam * const pParam,
 	uint32_t stride2 = stride / 2;
 	uint32_t next_block = stride * 8;
 	uint32_t cst;
+	int vop_reduced;
 	const IMAGE * const pCurrent = &frame->image;
+	/* Array of function pointers, indexed by [vop_reduced<<1+add] */
+	transfer_operation_16to8_t  * const functions[4] =
+		{
+			(transfer_operation_16to8_t*)transfer_16to8copy,
+			(transfer_operation_16to8_t*)transfer_16to8add,
+			(transfer_operation_16to8_t*)copy_upsampled_8x8_16to8,
+			(transfer_operation_16to8_t*)add_upsampled_8x8_16to8
+		};
+		
 	transfer_operation_16to8_t *transfer_op = NULL;
 
 	if (pMB->field_dct) {
@@ -341,46 +378,28 @@ MBTrans16to8(const MBParam * const pParam,
 		stride *= 2;
 	}
 
-	if ((frame->vop_flags & XVID_VOP_REDUCED)) {
+	/* Makes this vars booleans */
+	vop_reduced = !!(frame->vop_flags & XVID_VOP_REDUCED);
 
-		/* Image pointers */
-		pY_Cur = pCurrent->y + (y_pos << 5) * stride  + (x_pos << 5);
-		pU_Cur = pCurrent->u + (y_pos << 4) * stride2 + (x_pos << 4);
-		pV_Cur = pCurrent->v + (y_pos << 4) * stride2 + (x_pos << 4);
+	/* Image pointers */
+	pY_Cur = pCurrent->y + (y_pos << (4+vop_reduced)) * stride  + (x_pos << (4+vop_reduced));
+	pU_Cur = pCurrent->u + (y_pos << (3+vop_reduced)) * stride2 + (x_pos << (3+vop_reduced));
+	pV_Cur = pCurrent->v + (y_pos << (3+vop_reduced)) * stride2 + (x_pos << (3+vop_reduced));
 
-		/* Block size */
-		cst = 16;
+	/* Block size */
+	cst = 8<<vop_reduced;
 
-		/* Operation function */
-		if(add)
-			transfer_op = (transfer_operation_16to8_t*)add_upsampled_8x8_16to8;
-		else
-			transfer_op = (transfer_operation_16to8_t*)copy_upsampled_8x8_16to8;
-	} else {
-
-		/* Image pointers */
-		pY_Cur = pCurrent->y + (y_pos << 4) * stride  + (x_pos << 4);
-		pU_Cur = pCurrent->u + (y_pos << 3) * stride2 + (x_pos << 3);
-		pV_Cur = pCurrent->v + (y_pos << 3) * stride2 + (x_pos << 3);
-
-		/* Block size */
-		cst = 8;
-
-		/* Operation function */
-		if(add)
-			transfer_op = (transfer_operation_16to8_t*)transfer_16to8add;
-		else
-			transfer_op = (transfer_operation_16to8_t*)transfer_16to8copy;
-	}
+	/* Operation function */
+	transfer_op = functions[(vop_reduced<<1) + add];
 
 	/* Do the operation */
 	start_timer();
-	if (cbp&32) transfer_op(pY_Cur, &data[0 * 64], stride);
-	if (cbp&16) transfer_op(pY_Cur + cst, &data[1 * 64], stride);
-	if (cbp& 8) transfer_op(pY_Cur + next_block, &data[2 * 64], stride);
+	if (cbp&32) transfer_op(pY_Cur,                    &data[0 * 64], stride);
+	if (cbp&16) transfer_op(pY_Cur + cst,              &data[1 * 64], stride);
+	if (cbp& 8) transfer_op(pY_Cur + next_block,       &data[2 * 64], stride);
 	if (cbp& 4) transfer_op(pY_Cur + next_block + cst, &data[3 * 64], stride);
-	if (cbp& 2) transfer_op(pU_Cur, &data[4 * 64], stride2);
-	if (cbp& 1) transfer_op(pV_Cur, &data[5 * 64], stride2);
+	if (cbp& 2) transfer_op(pU_Cur,                    &data[4 * 64], stride2);
+	if (cbp& 1) transfer_op(pV_Cur,                    &data[5 * 64], stride2);
 	stop_transfer_timer();
 }
 
@@ -461,12 +480,12 @@ MBTransQuantInter(const MBParam * const pParam,
 
 uint8_t
 MBTransQuantInterBVOP(const MBParam * pParam,
-				  FRAMEINFO * frame,
-				  MACROBLOCK * pMB,
-				  const uint32_t x_pos,
-				  const uint32_t y_pos,
-				  int16_t data[6 * 64],
-				  int16_t qcoeff[6 * 64])
+					  FRAMEINFO * frame,
+					  MACROBLOCK * pMB,
+					  const uint32_t x_pos,
+					  const uint32_t y_pos,
+					  int16_t data[6 * 64],
+					  int16_t qcoeff[6 * 64])
 {
 	uint8_t cbp;
 	uint32_t limit;
@@ -664,118 +683,129 @@ dct_quantize_trellis_mpeg_c(int16_t *const Out,
 
 /* Codes lengths for relevant levels. */
 
-  /* let's factorize: */
+/* let's factorize: */
 static const uint8_t Code_Len0[64] = {
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len1[64] = {
-  20,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	20,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len2[64] = {
-  19,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	19,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len3[64] = {
-  18,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	18,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len4[64] = {
-  17,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	17,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len5[64] = {
-  16,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	16,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len6[64] = {
-  15,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	15,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len7[64] = {
-  13,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	13,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len8[64] = {
-  11,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	11,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len9[64] = {
-  12,21,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	12,21,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len10[64] = {
-  12,20,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	12,20,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len11[64] = {
-  12,19,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	12,19,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len12[64] = {
-  11,17,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	11,17,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len13[64] = {
-  11,15,21,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	11,15,21,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len14[64] = {
-  10,12,19,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	10,12,19,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len15[64] = {
-  10,13,17,19,21,21,21,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	10,13,17,19,21,21,21,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len16[64] = {
-   9,12,13,18,18,19,19,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30};
+	9,12,13,18,18,19,19,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30};
 static const uint8_t Code_Len17[64] = {
-   8,11,13,14,14,14,15,19,19,19,21,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	8,11,13,14,14,14,15,19,19,19,21,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len18[64] = {
-   7, 9,11,11,13,13,13,15,15,15,16,22,22,22,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	7, 9,11,11,13,13,13,15,15,15,16,22,22,22,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len19[64] = {
-   5, 7, 9,10,10,11,11,11,11,11,13,14,16,17,17,18,18,18,18,18,18,18,18,20,20,21,21,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
+	5, 7, 9,10,10,11,11,11,11,11,13,14,16,17,17,18,18,18,18,18,18,18,18,20,20,21,21,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30 };
 static const uint8_t Code_Len20[64] = {
-   3, 4, 5, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 9, 9,10,10,10,10,10,10,10,10,12,12,13,13,12,13,14,15,15,
-  15,16,16,16,16,17,17,17,18,18,19,19,19,19,19,19,19,19,21,21,22,22,30,30,30,30,30,30,30,30,30,30 };
+	3, 4, 5, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 9, 9,10,10,10,10,10,10,10,10,12,12,13,13,12,13,14,15,15,
+	15,16,16,16,16,17,17,17,18,18,19,19,19,19,19,19,19,19,21,21,22,22,30,30,30,30,30,30,30,30,30,30 };
 
-  /* a few more table for LAST table: */
+/* a few more table for LAST table: */
 static const uint8_t Code_Len21[64] = {
-  13,20,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30};
+	13,20,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30};
 static const uint8_t Code_Len22[64] = {
-  12,15,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
-  30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30};
+	12,15,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,
+	30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30};
 static const uint8_t Code_Len23[64] = {
-  10,12,15,15,15,16,16,16,16,17,17,17,17,17,17,17,17,18,18,18,18,18,18,18,18,19,19,19,19,20,20,20,
-  20,21,21,21,21,21,21,21,21,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30};
+	10,12,15,15,15,16,16,16,16,17,17,17,17,17,17,17,17,18,18,18,18,18,18,18,18,19,19,19,19,20,20,20,
+	20,21,21,21,21,21,21,21,21,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30};
 static const uint8_t Code_Len24[64] = {
-   5, 7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9,10,10,10,10,10,10,10,10,11,11,11,11,12,12,12,
-  12,13,13,13,13,13,13,13,13,14,16,16,16,16,17,17,17,17,18,18,18,18,18,18,18,18,19,19,19,19,19,19};
+	5, 7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9,10,10,10,10,10,10,10,10,11,11,11,11,12,12,12,
+	12,13,13,13,13,13,13,13,13,14,16,16,16,16,17,17,17,17,18,18,18,18,18,18,18,18,19,19,19,19,19,19};
 
 
 static const uint8_t * const B16_17_Code_Len[24] = { /* levels [1..24] */
-  Code_Len20,Code_Len19,Code_Len18,Code_Len17,
-  Code_Len16,Code_Len15,Code_Len14,Code_Len13,
-  Code_Len12,Code_Len11,Code_Len10,Code_Len9,
-  Code_Len8, Code_Len7 ,Code_Len6 ,Code_Len5,
-  Code_Len4, Code_Len3, Code_Len3 ,Code_Len2,
-  Code_Len2, Code_Len1, Code_Len1, Code_Len1,
+	Code_Len20,Code_Len19,Code_Len18,Code_Len17,
+	Code_Len16,Code_Len15,Code_Len14,Code_Len13,
+	Code_Len12,Code_Len11,Code_Len10,Code_Len9,
+	Code_Len8, Code_Len7 ,Code_Len6 ,Code_Len5,
+	Code_Len4, Code_Len3, Code_Len3 ,Code_Len2,
+	Code_Len2, Code_Len1, Code_Len1, Code_Len1,
 };
 
 static const uint8_t * const B16_17_Code_Len_Last[6] = { /* levels [1..6] */
-  Code_Len24,Code_Len23,Code_Len22,Code_Len21, Code_Len3, Code_Len1, 
+	Code_Len24,Code_Len23,Code_Len22,Code_Len21, Code_Len3, Code_Len1, 
 };
 
 #define TL(q) 0xfe00/(q*q)
 
 static const int Trellis_Lambda_Tabs[31] = {
-         TL( 1),TL( 2),TL( 3),TL( 4),TL( 5),TL( 6), TL( 7),
-  TL( 8),TL( 9),TL(10),TL(11),TL(12),TL(13),TL(14), TL(15),
-  TL(16),TL(17),TL(18),TL(19),TL(20),TL(21),TL(22), TL(23),
-  TL(24),TL(25),TL(26),TL(27),TL(28),TL(29),TL(30), TL(31)
+	TL( 1),TL( 2),TL( 3),TL( 4),TL( 5),TL( 6), TL( 7),
+	TL( 8),TL( 9),TL(10),TL(11),TL(12),TL(13),TL(14), TL(15),
+	TL(16),TL(17),TL(18),TL(19),TL(20),TL(21),TL(22), TL(23),
+	TL(24),TL(25),TL(26),TL(27),TL(28),TL(29),TL(30), TL(31)
 };
 #undef TL
 
-static __inline int Find_Last(const int16_t *C, const uint16_t *Zigzag, int i)
+static int __inline
+Find_Last(const int16_t *C, const uint16_t *Zigzag, int i)
 {
-  while(i>=0)
-    if (C[Zigzag[i]])
-      return i;
-    else i--;
-  return -1;
+	while(i>=0)
+		if (C[Zigzag[i]])
+			return i;
+		else i--;
+	return -1;
 }
 
+static int __inline
+Compute_Sum(const int16_t *C, int last)
+{
+	int sum = 0;
+
+	while(last--)
+		sum += abs(C[last]);
+
+	return(sum);
+}
 /* this routine has been strippen of all debug code */
 
 static int 
@@ -788,204 +818,203 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
 	 * slightly (~0.01dB), whereas speed drops to crawling level :)
 	 * Well, actually, taking 1 more coeff past Non_Zero into account sometimes helps.
 	 */
-  typedef struct { int16_t Run, Level; } NODE;
+	typedef struct { int16_t Run, Level; } NODE;
   
-  NODE Nodes[65], Last;
-  uint32_t Run_Costs0[64+1];
-  uint32_t * const Run_Costs = Run_Costs0 + 1;
-  const int Mult = 2*Q;
-  const int Bias = (Q-1) | 1;
-  const int Lev0 = Mult + Bias;
-  const int Lambda = Trellis_Lambda_Tabs[Q-1];    /* it's 1/lambda, actually */
+	NODE Nodes[65], Last;
+	uint32_t Run_Costs0[64+1];
+	uint32_t * const Run_Costs = Run_Costs0 + 1;
+	const int Mult = 2*Q;
+	const int Bias = (Q-1) | 1;
+	const int Lev0 = Mult + Bias;
+	const int Lambda = Trellis_Lambda_Tabs[Q-1];    /* it's 1/lambda, actually */
 
-  int Run_Start = -1;
-  uint32_t Min_Cost = 2<<16;
+	int Run_Start = -1;
+	uint32_t Min_Cost = 2<<16;
 
-  int Last_Node = -1;
-  uint32_t Last_Cost = 0;
+	int Last_Node = -1;
+	uint32_t Last_Cost = 0;
 
-  int i, j;
-  Run_Costs[-1] = 2<<16;                          /* source (w/ CBP penalty) */
+	int i, j, sum;
+	Run_Costs[-1] = 2<<16;                          /* source (w/ CBP penalty) */
 
-  Non_Zero = Find_Last(Out, Zigzag, Non_Zero);
-  if (Non_Zero<0)
-      return -1;  
+	Non_Zero = Find_Last(Out, Zigzag, Non_Zero);
+	if (Non_Zero<0)
+		return 0; /* Sum is zero if there are only zero coeffs */
 
-  for(i=0; i<=Non_Zero; i++)
-  {
-    const int AC = In[Zigzag[i]];
-    const int Level1 = Out[Zigzag[i]];
-    const int Dist0 = Lambda* AC*AC;
-    uint32_t Best_Cost = 0xf0000000;
-    Last_Cost += Dist0;
+	for(i=0; i<=Non_Zero; i++) {
+		const int AC = In[Zigzag[i]];
+		const int Level1 = Out[Zigzag[i]];
+		const int Dist0 = Lambda* AC*AC;
+		uint32_t Best_Cost = 0xf0000000;
+		Last_Cost += Dist0;
 
-    if ((uint32_t)(Level1+1)<3)                 /* very specialized loop for -1,0,+1 */
-    {
-    	int dQ;
-	  	int Run;
-      uint32_t Cost0;
+		/* very specialized loop for -1,0,+1 */
+		if ((uint32_t)(Level1+1)<3) {
+			int dQ;
+			int Run;
+			uint32_t Cost0;
 
-      if (AC<0) {
-        Nodes[i].Level = -1;
-        dQ = Lev0 + AC;
-      } else {
-        Nodes[i].Level = 1;
-        dQ = Lev0 - AC;
-      }
-		Cost0 = Lambda*dQ*dQ;
+			if (AC<0) {
+				Nodes[i].Level = -1;
+				dQ = Lev0 + AC;
+			} else {
+				Nodes[i].Level = 1;
+				dQ = Lev0 - AC;
+			}
+			Cost0 = Lambda*dQ*dQ;
 		
-      Nodes[i].Run = 1;
-      Best_Cost = (Code_Len20[0]<<16) + Run_Costs[i-1]+Cost0;
-      for(Run=i-Run_Start; Run>0; --Run)
-      {
-        const uint32_t Cost_Base = Cost0 + Run_Costs[i-Run];
-        const uint32_t Cost = Cost_Base + (Code_Len20[Run-1]<<16);
-        const uint32_t lCost = Cost_Base + (Code_Len24[Run-1]<<16);
+			Nodes[i].Run = 1;
+			Best_Cost = (Code_Len20[0]<<16) + Run_Costs[i-1]+Cost0;
+			for(Run=i-Run_Start; Run>0; --Run) {
+				const uint32_t Cost_Base = Cost0 + Run_Costs[i-Run];
+				const uint32_t Cost = Cost_Base + (Code_Len20[Run-1]<<16);
+				const uint32_t lCost = Cost_Base + (Code_Len24[Run-1]<<16);
 
-          /*
-		   * TODO: what about tie-breaks? Should we favor short runs or
-		   * long runs? Although the error is the same, it would not be
-		   * spread the same way along high and low frequencies...
-		   */
+				/*
+				 * TODO: what about tie-breaks? Should we favor short runs or
+				 * long runs? Although the error is the same, it would not be
+				 * spread the same way along high and low frequencies...
+				 */
 
-			/* (I'd say: favour short runs => hifreq errors (HVS) -- gruel ) */
+				/* (I'd say: favour short runs => hifreq errors (HVS) -- gruel ) */
 
-        if (Cost<Best_Cost) {
-          Best_Cost    = Cost;
-          Nodes[i].Run = Run;
-        }
+				if (Cost<Best_Cost) {
+					Best_Cost    = Cost;
+					Nodes[i].Run = Run;
+				}
 
-        if (lCost<Last_Cost) {
-          Last_Cost  = lCost;
-          Last.Run   = Run;
-          Last_Node  = i;
-        }
-      }
-      if (Last_Node==i) 
-			Last.Level = Nodes[i].Level;
-    }
-    else                      /* "big" levels */
-    {
-      const uint8_t *Tbl_L1, *Tbl_L2, *Tbl_L1_Last, *Tbl_L2_Last;
-      int Level2;
-      int dQ1, dQ2;
-      int Run;
-		uint32_t Dist1,Dist2;
-		int dDist21;
+				if (lCost<Last_Cost) {
+					Last_Cost  = lCost;
+					Last.Run   = Run;
+					Last_Node  = i;
+				}
+			}
+			if (Last_Node==i) 
+				Last.Level = Nodes[i].Level;
+		} else { /* "big" levels */
+			const uint8_t *Tbl_L1, *Tbl_L2, *Tbl_L1_Last, *Tbl_L2_Last;
+			int Level2;
+			int dQ1, dQ2;
+			int Run;
+			uint32_t Dist1,Dist2;
+			int dDist21;
 		
-	  if (Level1>1) {
-        dQ1 = Level1*Mult-AC + Bias;
-        dQ2 = dQ1 - Mult;
-        Level2 = Level1-1;
-        Tbl_L1      = (Level1<=24) ? B16_17_Code_Len[Level1-1]     : Code_Len0;
-        Tbl_L2      = (Level2<=24) ? B16_17_Code_Len[Level2-1]     : Code_Len0;
-        Tbl_L1_Last = (Level1<=6) ? B16_17_Code_Len_Last[Level1-1] : Code_Len0;
-        Tbl_L2_Last = (Level2<=6) ? B16_17_Code_Len_Last[Level2-1] : Code_Len0;
-      } else { /* Level1<-1 */
-        dQ1 = Level1*Mult-AC - Bias;
-        dQ2 = dQ1 + Mult;
-        Level2 = Level1 + 1;
-        Tbl_L1      = (Level1>=-24) ? B16_17_Code_Len[Level1^-1]      : Code_Len0;
-        Tbl_L2      = (Level2>=-24) ? B16_17_Code_Len[Level2^-1]      : Code_Len0;
-        Tbl_L1_Last = (Level1>=- 6) ? B16_17_Code_Len_Last[Level1^-1] : Code_Len0;
-        Tbl_L2_Last = (Level2>=- 6) ? B16_17_Code_Len_Last[Level2^-1] : Code_Len0;
-      }
-      Dist1 = Lambda*dQ1*dQ1;
-      Dist2 = Lambda*dQ2*dQ2;
-      dDist21 = Dist2-Dist1;
+			if (Level1>1) {
+				dQ1 = Level1*Mult-AC + Bias;
+				dQ2 = dQ1 - Mult;
+				Level2 = Level1-1;
+				Tbl_L1      = (Level1<=24) ? B16_17_Code_Len[Level1-1]     : Code_Len0;
+				Tbl_L2      = (Level2<=24) ? B16_17_Code_Len[Level2-1]     : Code_Len0;
+				Tbl_L1_Last = (Level1<=6) ? B16_17_Code_Len_Last[Level1-1] : Code_Len0;
+				Tbl_L2_Last = (Level2<=6) ? B16_17_Code_Len_Last[Level2-1] : Code_Len0;
+			} else { /* Level1<-1 */
+				dQ1 = Level1*Mult-AC - Bias;
+				dQ2 = dQ1 + Mult;
+				Level2 = Level1 + 1;
+				Tbl_L1      = (Level1>=-24) ? B16_17_Code_Len[Level1^-1]      : Code_Len0;
+				Tbl_L2      = (Level2>=-24) ? B16_17_Code_Len[Level2^-1]      : Code_Len0;
+				Tbl_L1_Last = (Level1>=- 6) ? B16_17_Code_Len_Last[Level1^-1] : Code_Len0;
+				Tbl_L2_Last = (Level2>=- 6) ? B16_17_Code_Len_Last[Level2^-1] : Code_Len0;
+			}
 
-      for(Run=i-Run_Start; Run>0; --Run)
-      {
-        const uint32_t Cost_Base = Dist1 + Run_Costs[i-Run];
-        uint32_t Cost1, Cost2;
-        int bLevel;
+			Dist1 = Lambda*dQ1*dQ1;
+			Dist2 = Lambda*dQ2*dQ2;
+			dDist21 = Dist2-Dist1;
 
-/*
- * for sub-optimal (but slightly worth it, speed-wise) search, uncomment the following:
- *      if (Cost_Base>=Best_Cost) continue;
- * (? doesn't seem to have any effect -- gruel )
- */
+			for(Run=i-Run_Start; Run>0; --Run)
+			{
+				const uint32_t Cost_Base = Dist1 + Run_Costs[i-Run];
+				uint32_t Cost1, Cost2;
+				int bLevel;
 
-        Cost1 = Cost_Base + (Tbl_L1[Run-1]<<16);
-        Cost2 = Cost_Base + (Tbl_L2[Run-1]<<16) + dDist21;
+				/*
+				 * for sub-optimal (but slightly worth it, speed-wise) search, uncomment the following:
+				 *      if (Cost_Base>=Best_Cost) continue;
+				 * (? doesn't seem to have any effect -- gruel )
+				 */
 
-        if (Cost2<Cost1) { 
-			 Cost1 = Cost2; 
-			 bLevel = Level2; 
-		  } else 
-		  	 bLevel = Level1;
+				Cost1 = Cost_Base + (Tbl_L1[Run-1]<<16);
+				Cost2 = Cost_Base + (Tbl_L2[Run-1]<<16) + dDist21;
 
-        if (Cost1<Best_Cost) {
-          Best_Cost = Cost1;
-          Nodes[i].Run   = Run;
-          Nodes[i].Level = bLevel;
-        }
+				if (Cost2<Cost1) { 
+					Cost1 = Cost2; 
+					bLevel = Level2; 
+				} else {
+					bLevel = Level1;
+				}
 
-        Cost1 = Cost_Base + (Tbl_L1_Last[Run-1]<<16);
-        Cost2 = Cost_Base + (Tbl_L2_Last[Run-1]<<16) + dDist21;
+				if (Cost1<Best_Cost) {
+					Best_Cost = Cost1;
+					Nodes[i].Run   = Run;
+					Nodes[i].Level = bLevel;
+				}
 
-        if (Cost2<Cost1) { 
-		  	 Cost1 = Cost2; 
-			 bLevel = Level2; 
-		  } else 
-		  	 bLevel = Level1;
+				Cost1 = Cost_Base + (Tbl_L1_Last[Run-1]<<16);
+				Cost2 = Cost_Base + (Tbl_L2_Last[Run-1]<<16) + dDist21;
+
+				if (Cost2<Cost1) { 
+					Cost1 = Cost2; 
+					bLevel = Level2; 
+				} else {
+					bLevel = Level1;
+				}
 			 
-        if (Cost1<Last_Cost) {
-          Last_Cost  = Cost1;
-          Last.Run   = Run;
-          Last.Level = bLevel;
-          Last_Node  = i;
-        }
-      } /* end of "for Run" */
+				if (Cost1<Last_Cost) {
+					Last_Cost  = Cost1;
+					Last.Run   = Run;
+					Last.Level = bLevel;
+					Last_Node  = i;
+				}
+			} /* end of "for Run" */
 
-    }
+		}
 
-    Run_Costs[i] = Best_Cost;
+		Run_Costs[i] = Best_Cost;
 
-    if (Best_Cost < Min_Cost + Dist0) {
-      Min_Cost = Best_Cost;
-      Run_Start = i;
-    }
-    else
-    {
-        /*
-		 * as noticed by Michael Niedermayer (michaelni at gmx.at), there's
-		 * a code shorter by 1 bit for a larger run (!), same level. We give
-		 * it a chance by not moving the left barrier too much.
-		 */
+		if (Best_Cost < Min_Cost + Dist0) {
+			Min_Cost = Best_Cost;
+			Run_Start = i;
+		} else {
+			/*
+			 * as noticed by Michael Niedermayer (michaelni at gmx.at), there's
+			 * a code shorter by 1 bit for a larger run (!), same level. We give
+			 * it a chance by not moving the left barrier too much.
+			 */
 
-      while( Run_Costs[Run_Start]>Min_Cost+(1<<16) )
-        Run_Start++;
+			while( Run_Costs[Run_Start]>Min_Cost+(1<<16) )
+				Run_Start++;
 
-        /* spread on preceding coeffs the cost incurred by skipping this one */
-      for(j=Run_Start; j<i; ++j) Run_Costs[j] += Dist0;
-      Min_Cost += Dist0;
-    }
-  }
+			/* spread on preceding coeffs the cost incurred by skipping this one */
+			for(j=Run_Start; j<i; ++j) Run_Costs[j] += Dist0;
+			Min_Cost += Dist0;
+		}
+	}
 
-  if (Last_Node<0)
-    return -1;
+	/* It seems trellis doesn't give good results... just compute the Out sum and
+	 * quit (even if we did not modify it, upperlayer relies on this data) */
+	if (Last_Node<0)
+		return Compute_Sum(Out, Non_Zero);
 
-       /* reconstruct optimal sequence backward with surviving paths */
-  memset(Out, 0x00, 64*sizeof(*Out));
-  Out[Zigzag[Last_Node]] = Last.Level;
-  i = Last_Node - Last.Run;
-  while(i>=0) {
-    Out[Zigzag[i]] = Nodes[i].Level;
-    i -= Nodes[i].Run;
-  }
-  return Last_Node;
+	/* reconstruct optimal sequence backward with surviving paths */
+	memset(Out, 0x00, 64*sizeof(*Out));
+	Out[Zigzag[Last_Node]] = Last.Level;
+	i = Last_Node - Last.Run;
+	sum = 0;
+	while(i>=0) {
+		Out[Zigzag[i]] = Nodes[i].Level;
+		sum += abs(Nodes[i].Level);
+		i -= Nodes[i].Run;
+	}
+
+	return sum;
 }
 
-
-
-
-
-
-
-
-
-
+static int 
+dct_quantize_trellis_mpeg_c(int16_t *const Out, const int16_t *const In, int Q, const uint16_t * const Zigzag, int Non_Zero)
+{
+	/* ToDo: Ok ok it's just a place holder for Gruel -- damn write this one :-) */
+	return Compute_Sum(Out, 63);
+}
 
 /* original version including heavy debugging info */
 
@@ -994,62 +1023,62 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
 #define DBG 0
 
 static __inline uint32_t Evaluate_Cost(const int16_t *C, int Mult, int Bias,
-                                const uint16_t * Zigzag, int Max, int Lambda)
+									   const uint16_t * Zigzag, int Max, int Lambda)
 {
 #if (DBG>0)
-  const int16_t * const Ref = C + 6*64;
-  int Last = Max;
-  int Bits = 0;
-  int Dist = 0;
-  int i; 
-  uint32_t Cost;
+	const int16_t * const Ref = C + 6*64;
+	int Last = Max;
+	int Bits = 0;
+	int Dist = 0;
+	int i; 
+	uint32_t Cost;
   
-  while(Last>=0 && C[Zigzag[Last]]==0) 
-  	Last--;
+	while(Last>=0 && C[Zigzag[Last]]==0) 
+		Last--;
 	
-  if (Last>=0) {
-    int j=0, j0=0;
-    int Run, Level;
+	if (Last>=0) {
+		int j=0, j0=0;
+		int Run, Level;
 
-    Bits = 2;   /* CBP */
-    while(j<Last) {
-      while(!C[Zigzag[j]]) 
-			j++;
-      if (j==Last) 
-			break;
-      Level=C[Zigzag[j]];
-      Run = j - j0;
-      j0 = ++j;
-      if (Level>=-24 && Level<=24) 
-			Bits += B16_17_Code_Len[(Level<0) ? -Level-1 : Level-1][Run];
-      else 
+		Bits = 2;   /* CBP */
+		while(j<Last) {
+			while(!C[Zigzag[j]]) 
+				j++;
+			if (j==Last) 
+				break;
+			Level=C[Zigzag[j]];
+			Run = j - j0;
+			j0 = ++j;
+			if (Level>=-24 && Level<=24) 
+				Bits += B16_17_Code_Len[(Level<0) ? -Level-1 : Level-1][Run];
+			else 
+				Bits += 30;
+		}
+		Level = C[Zigzag[Last]];
+		Run = j - j0;
+		if (Level>=-6 && Level<=6) 
+			Bits += B16_17_Code_Len_Last[(Level<0) ? -Level-1 : Level-1][Run];
+		else 
 			Bits += 30;
-    }
-    Level = C[Zigzag[Last]];
-    Run = j - j0;
-    if (Level>=-6 && Level<=6) 
-	 	Bits += B16_17_Code_Len_Last[(Level<0) ? -Level-1 : Level-1][Run];
-    else 
-	 	Bits += 30;
-  }
+	}
 
-  for(i=0; i<=Last; ++i) {
-    int V = C[Zigzag[i]]*Mult;
-    if (V>0) 
-	 	V += Bias;
-    else 
-	 	if (V<0) 
-			V -= Bias;
-    V -= Ref[Zigzag[i]];
-    Dist += V*V;
-  }
-  Cost = Lambda*Dist + (Bits<<16);
-  if (DBG==1)
-    printf( " Last:%2d/%2d Cost = [(Bits=%5.0d) + Lambda*(Dist=%6.0d) = %d ] >>12= %d ", Last,Max, Bits, Dist, Cost, Cost>>12 );
-  return Cost;
+	for(i=0; i<=Last; ++i) {
+		int V = C[Zigzag[i]]*Mult;
+		if (V>0) 
+			V += Bias;
+		else 
+			if (V<0) 
+				V -= Bias;
+		V -= Ref[Zigzag[i]];
+		Dist += V*V;
+	}
+	Cost = Lambda*Dist + (Bits<<16);
+	if (DBG==1)
+		printf( " Last:%2d/%2d Cost = [(Bits=%5.0d) + Lambda*(Dist=%6.0d) = %d ] >>12= %d ", Last,Max, Bits, Dist, Cost, Cost>>12 );
+	return Cost;
 
 #else
-  return 0;
+	return 0;
 #endif
 }
 
@@ -1064,240 +1093,240 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
 	 * slightly (~0.01dB), whereas speed drops to crawling level :)
 	 * Well, actually, taking 1 more coeff past Non_Zero into account sometimes helps.
 	 */
-  typedef struct { int16_t Run, Level; } NODE;
+	typedef struct { int16_t Run, Level; } NODE;
   
-  NODE Nodes[65], Last;
-  uint32_t Run_Costs0[64+1];
-  uint32_t * const Run_Costs = Run_Costs0 + 1;
-  const int Mult = 2*Q;
-  const int Bias = (Q-1) | 1;
-  const int Lev0 = Mult + Bias;
-  const int Lambda = Trellis_Lambda_Tabs[Q-1];    /* it's 1/lambda, actually */
+	NODE Nodes[65], Last;
+	uint32_t Run_Costs0[64+1];
+	uint32_t * const Run_Costs = Run_Costs0 + 1;
+	const int Mult = 2*Q;
+	const int Bias = (Q-1) | 1;
+	const int Lev0 = Mult + Bias;
+	const int Lambda = Trellis_Lambda_Tabs[Q-1];    /* it's 1/lambda, actually */
 
-  int Run_Start = -1;
-  Run_Costs[-1] = 2<<16;                          /* source (w/ CBP penalty) */
-  uint32_t Min_Cost = 2<<16;
+	int Run_Start = -1;
+	Run_Costs[-1] = 2<<16;                          /* source (w/ CBP penalty) */
+	uint32_t Min_Cost = 2<<16;
 
-  int Last_Node = -1;
-  uint32_t Last_Cost = 0;
+	int Last_Node = -1;
+	uint32_t Last_Cost = 0;
 
-  int i, j;
+	int i, j;
 
 #if (DBG>0)
-  Last.Level = 0; Last.Run = -1; /* just initialize to smthg */
+	Last.Level = 0; Last.Run = -1; /* just initialize to smthg */
 #endif
 
-  Non_Zero = Find_Last(Out, Zigzag, Non_Zero);
-  if (Non_Zero<0)
-      return -1;  
+	Non_Zero = Find_Last(Out, Zigzag, Non_Zero);
+	if (Non_Zero<0)
+		return -1;  
 
-  for(i=0; i<=Non_Zero; i++)
-  {
-    const int AC = In[Zigzag[i]];
-    const int Level1 = Out[Zigzag[i]];
-    const int Dist0 = Lambda* AC*AC;
-    uint32_t Best_Cost = 0xf0000000;
-    Last_Cost += Dist0;
+	for(i=0; i<=Non_Zero; i++)
+	{
+		const int AC = In[Zigzag[i]];
+		const int Level1 = Out[Zigzag[i]];
+		const int Dist0 = Lambda* AC*AC;
+		uint32_t Best_Cost = 0xf0000000;
+		Last_Cost += Dist0;
 
-    if ((uint32_t)(Level1+1)<3)                 /* very specialized loop for -1,0,+1 */
-    {
-    	int dQ;
-	  	int Run;
-      uint32_t Cost0;
+		if ((uint32_t)(Level1+1)<3)                 /* very specialized loop for -1,0,+1 */
+		{
+			int dQ;
+			int Run;
+			uint32_t Cost0;
 
-      if (AC<0) {
-        Nodes[i].Level = -1;
-        dQ = Lev0 + AC;
-      } else {
-        Nodes[i].Level = 1;
-        dQ = Lev0 - AC;
-      }
-		Cost0 = Lambda*dQ*dQ;
+			if (AC<0) {
+				Nodes[i].Level = -1;
+				dQ = Lev0 + AC;
+			} else {
+				Nodes[i].Level = 1;
+				dQ = Lev0 - AC;
+			}
+			Cost0 = Lambda*dQ*dQ;
 		
-      Nodes[i].Run = 1;
-      Best_Cost = (Code_Len20[0]<<16) + Run_Costs[i-1]+Cost0;
-      for(Run=i-Run_Start; Run>0; --Run)
-      {
-        const uint32_t Cost_Base = Cost0 + Run_Costs[i-Run];
-        const uint32_t Cost = Cost_Base + (Code_Len20[Run-1]<<16);
-        const uint32_t lCost = Cost_Base + (Code_Len24[Run-1]<<16);
+			Nodes[i].Run = 1;
+			Best_Cost = (Code_Len20[0]<<16) + Run_Costs[i-1]+Cost0;
+			for(Run=i-Run_Start; Run>0; --Run)
+			{
+				const uint32_t Cost_Base = Cost0 + Run_Costs[i-Run];
+				const uint32_t Cost = Cost_Base + (Code_Len20[Run-1]<<16);
+				const uint32_t lCost = Cost_Base + (Code_Len24[Run-1]<<16);
 
-          /*
-		   * TODO: what about tie-breaks? Should we favor short runs or
-		   * long runs? Although the error is the same, it would not be
-		   * spread the same way along high and low frequencies...
-		   */
-        if (Cost<Best_Cost) {
-          Best_Cost    = Cost;
-          Nodes[i].Run = Run;
-        }
+				/*
+				 * TODO: what about tie-breaks? Should we favor short runs or
+				 * long runs? Although the error is the same, it would not be
+				 * spread the same way along high and low frequencies...
+				 */
+				if (Cost<Best_Cost) {
+					Best_Cost    = Cost;
+					Nodes[i].Run = Run;
+				}
 
-        if (lCost<Last_Cost) {
-          Last_Cost  = lCost;
-          Last.Run   = Run;
-          Last_Node  = i;
-        }
-      }
-      if (Last_Node==i) 
-			Last.Level = Nodes[i].Level;
+				if (lCost<Last_Cost) {
+					Last_Cost  = lCost;
+					Last.Run   = Run;
+					Last_Node  = i;
+				}
+			}
+			if (Last_Node==i) 
+				Last.Level = Nodes[i].Level;
 
-      if (DBG==1) {
-        Run_Costs[i] = Best_Cost;
-        printf( "Costs #%2d: ", i);
-        for(j=-1;j<=Non_Zero;++j) {
-          if (j==Run_Start)            printf( " %3.0d|", Run_Costs[j]>>12 );
-          else if (j>Run_Start && j<i) printf( " %3.0d|", Run_Costs[j]>>12 );
-          else if (j==i)               printf( "(%3.0d)", Run_Costs[j]>>12 );
-          else                         printf( "  - |" );
-        }
-        printf( "<%3.0d %2d %d>", Min_Cost>>12, Nodes[i].Level, Nodes[i].Run );
-        printf( "  Last:#%2d {%3.0d %2d %d}", Last_Node, Last_Cost>>12, Last.Level, Last.Run );
-        printf( " AC:%3.0d Dist0:%3d Dist(%d)=%d", AC, Dist0>>12, Nodes[i].Level, Cost0>>12 );
-        printf( "\n" );
-      }
-    }
-    else                      /* "big" levels */
-    {
-      const uint8_t *Tbl_L1, *Tbl_L2, *Tbl_L1_Last, *Tbl_L2_Last;
-      int Level2;
-      int dQ1, dQ2;
-      int Run;
-		uint32_t Dist1,Dist2;
-		int dDist21;
+			if (DBG==1) {
+				Run_Costs[i] = Best_Cost;
+				printf( "Costs #%2d: ", i);
+				for(j=-1;j<=Non_Zero;++j) {
+					if (j==Run_Start)            printf( " %3.0d|", Run_Costs[j]>>12 );
+					else if (j>Run_Start && j<i) printf( " %3.0d|", Run_Costs[j]>>12 );
+					else if (j==i)               printf( "(%3.0d)", Run_Costs[j]>>12 );
+					else                         printf( "  - |" );
+				}
+				printf( "<%3.0d %2d %d>", Min_Cost>>12, Nodes[i].Level, Nodes[i].Run );
+				printf( "  Last:#%2d {%3.0d %2d %d}", Last_Node, Last_Cost>>12, Last.Level, Last.Run );
+				printf( " AC:%3.0d Dist0:%3d Dist(%d)=%d", AC, Dist0>>12, Nodes[i].Level, Cost0>>12 );
+				printf( "\n" );
+			}
+		}
+		else                      /* "big" levels */
+		{
+			const uint8_t *Tbl_L1, *Tbl_L2, *Tbl_L1_Last, *Tbl_L2_Last;
+			int Level2;
+			int dQ1, dQ2;
+			int Run;
+			uint32_t Dist1,Dist2;
+			int dDist21;
 		
-	  if (Level1>1) {
-        dQ1 = Level1*Mult-AC + Bias;
-        dQ2 = dQ1 - Mult;
-        Level2 = Level1-1;
-        Tbl_L1      = (Level1<=24) ? B16_17_Code_Len[Level1-1]     : Code_Len0;
-        Tbl_L2      = (Level2<=24) ? B16_17_Code_Len[Level2-1]     : Code_Len0;
-        Tbl_L1_Last = (Level1<=6) ? B16_17_Code_Len_Last[Level1-1] : Code_Len0;
-        Tbl_L2_Last = (Level2<=6) ? B16_17_Code_Len_Last[Level2-1] : Code_Len0;
-      } else { /* Level1<-1 */
-        dQ1 = Level1*Mult-AC - Bias;
-        dQ2 = dQ1 + Mult;
-        Level2 = Level1 + 1;
-        Tbl_L1      = (Level1>=-24) ? B16_17_Code_Len[Level1^-1]      : Code_Len0;
-        Tbl_L2      = (Level2>=-24) ? B16_17_Code_Len[Level2^-1]      : Code_Len0;
-        Tbl_L1_Last = (Level1>=- 6) ? B16_17_Code_Len_Last[Level1^-1] : Code_Len0;
-        Tbl_L2_Last = (Level2>=- 6) ? B16_17_Code_Len_Last[Level2^-1] : Code_Len0;
-      }
-      Dist1 = Lambda*dQ1*dQ1;
-      Dist2 = Lambda*dQ2*dQ2;
-      dDist21 = Dist2-Dist1;
+			if (Level1>1) {
+				dQ1 = Level1*Mult-AC + Bias;
+				dQ2 = dQ1 - Mult;
+				Level2 = Level1-1;
+				Tbl_L1      = (Level1<=24) ? B16_17_Code_Len[Level1-1]     : Code_Len0;
+				Tbl_L2      = (Level2<=24) ? B16_17_Code_Len[Level2-1]     : Code_Len0;
+				Tbl_L1_Last = (Level1<=6) ? B16_17_Code_Len_Last[Level1-1] : Code_Len0;
+				Tbl_L2_Last = (Level2<=6) ? B16_17_Code_Len_Last[Level2-1] : Code_Len0;
+			} else { /* Level1<-1 */
+				dQ1 = Level1*Mult-AC - Bias;
+				dQ2 = dQ1 + Mult;
+				Level2 = Level1 + 1;
+				Tbl_L1      = (Level1>=-24) ? B16_17_Code_Len[Level1^-1]      : Code_Len0;
+				Tbl_L2      = (Level2>=-24) ? B16_17_Code_Len[Level2^-1]      : Code_Len0;
+				Tbl_L1_Last = (Level1>=- 6) ? B16_17_Code_Len_Last[Level1^-1] : Code_Len0;
+				Tbl_L2_Last = (Level2>=- 6) ? B16_17_Code_Len_Last[Level2^-1] : Code_Len0;
+			}
+			Dist1 = Lambda*dQ1*dQ1;
+			Dist2 = Lambda*dQ2*dQ2;
+			dDist21 = Dist2-Dist1;
 
-      for(Run=i-Run_Start; Run>0; --Run)
-      {
-        const uint32_t Cost_Base = Dist1 + Run_Costs[i-Run];
-        uint32_t Cost1, Cost2;
-        int bLevel;
+			for(Run=i-Run_Start; Run>0; --Run)
+			{
+				const uint32_t Cost_Base = Dist1 + Run_Costs[i-Run];
+				uint32_t Cost1, Cost2;
+				int bLevel;
 
 /*
  * for sub-optimal (but slightly worth it, speed-wise) search, uncomment the following:
  *        if (Cost_Base>=Best_Cost) continue;
  */
-        Cost1 = Cost_Base + (Tbl_L1[Run-1]<<16);
-        Cost2 = Cost_Base + (Tbl_L2[Run-1]<<16) + dDist21;
+				Cost1 = Cost_Base + (Tbl_L1[Run-1]<<16);
+				Cost2 = Cost_Base + (Tbl_L2[Run-1]<<16) + dDist21;
 
-        if (Cost2<Cost1) { 
-			 Cost1 = Cost2; 
-			 bLevel = Level2; 
-		  } else 
-		  	 bLevel = Level1;
+				if (Cost2<Cost1) { 
+					Cost1 = Cost2; 
+					bLevel = Level2; 
+				} else 
+					bLevel = Level1;
 
-        if (Cost1<Best_Cost) {
-          Best_Cost = Cost1;
-          Nodes[i].Run   = Run;
-          Nodes[i].Level = bLevel;
-        }
+				if (Cost1<Best_Cost) {
+					Best_Cost = Cost1;
+					Nodes[i].Run   = Run;
+					Nodes[i].Level = bLevel;
+				}
 
-        Cost1 = Cost_Base + (Tbl_L1_Last[Run-1]<<16);
-        Cost2 = Cost_Base + (Tbl_L2_Last[Run-1]<<16) + dDist21;
+				Cost1 = Cost_Base + (Tbl_L1_Last[Run-1]<<16);
+				Cost2 = Cost_Base + (Tbl_L2_Last[Run-1]<<16) + dDist21;
 
-        if (Cost2<Cost1) { 
-		  	 Cost1 = Cost2; 
-			 bLevel = Level2; 
-		  } else 
-		  	 bLevel = Level1;
+				if (Cost2<Cost1) { 
+					Cost1 = Cost2; 
+					bLevel = Level2; 
+				} else 
+					bLevel = Level1;
 			 
-        if (Cost1<Last_Cost) {
-          Last_Cost  = Cost1;
-          Last.Run   = Run;
-          Last.Level = bLevel;
-          Last_Node  = i;
-        }
-      } /* end of "for Run" */
+				if (Cost1<Last_Cost) {
+					Last_Cost  = Cost1;
+					Last.Run   = Run;
+					Last.Level = bLevel;
+					Last_Node  = i;
+				}
+			} /* end of "for Run" */
 
-      if (DBG==1) {
-        Run_Costs[i] = Best_Cost;
-        printf( "Costs #%2d: ", i);
-        for(j=-1;j<=Non_Zero;++j) {
-          if (j==Run_Start)            printf( " %3.0d|", Run_Costs[j]>>12 );
-          else if (j>Run_Start && j<i) printf( " %3.0d|", Run_Costs[j]>>12 );
-          else if (j==i)               printf( "(%3.0d)", Run_Costs[j]>>12 );
-          else                         printf( "  - |" );
-        }
-        printf( "<%3.0d %2d %d>", Min_Cost>>12, Nodes[i].Level, Nodes[i].Run );
-        printf( "  Last:#%2d {%3.0d %2d %d}", Last_Node, Last_Cost>>12, Last.Level, Last.Run );
-        printf( " AC:%3.0d Dist0:%3d Dist(%2d):%3d Dist(%2d):%3d", AC, Dist0>>12, Level1, Dist1>>12, Level2, Dist2>>12 );
-        printf( "\n" );
-      }
-    }
+			if (DBG==1) {
+				Run_Costs[i] = Best_Cost;
+				printf( "Costs #%2d: ", i);
+				for(j=-1;j<=Non_Zero;++j) {
+					if (j==Run_Start)            printf( " %3.0d|", Run_Costs[j]>>12 );
+					else if (j>Run_Start && j<i) printf( " %3.0d|", Run_Costs[j]>>12 );
+					else if (j==i)               printf( "(%3.0d)", Run_Costs[j]>>12 );
+					else                         printf( "  - |" );
+				}
+				printf( "<%3.0d %2d %d>", Min_Cost>>12, Nodes[i].Level, Nodes[i].Run );
+				printf( "  Last:#%2d {%3.0d %2d %d}", Last_Node, Last_Cost>>12, Last.Level, Last.Run );
+				printf( " AC:%3.0d Dist0:%3d Dist(%2d):%3d Dist(%2d):%3d", AC, Dist0>>12, Level1, Dist1>>12, Level2, Dist2>>12 );
+				printf( "\n" );
+			}
+		}
 
-    Run_Costs[i] = Best_Cost;
+		Run_Costs[i] = Best_Cost;
 
-    if (Best_Cost < Min_Cost + Dist0) {
-      Min_Cost = Best_Cost;
-      Run_Start = i;
-    }
-    else
-    {
-        /*
-		 * as noticed by Michael Niedermayer (michaelni at gmx.at), there's
-		 * a code shorter by 1 bit for a larger run (!), same level. We give
-		 * it a chance by not moving the left barrier too much.
-		 */
+		if (Best_Cost < Min_Cost + Dist0) {
+			Min_Cost = Best_Cost;
+			Run_Start = i;
+		}
+		else
+		{
+			/*
+			 * as noticed by Michael Niedermayer (michaelni at gmx.at), there's
+			 * a code shorter by 1 bit for a larger run (!), same level. We give
+			 * it a chance by not moving the left barrier too much.
+			 */
 
-      while( Run_Costs[Run_Start]>Min_Cost+(1<<16) )
-        Run_Start++;
+			while( Run_Costs[Run_Start]>Min_Cost+(1<<16) )
+				Run_Start++;
 
-        /* spread on preceding coeffs the cost incurred by skipping this one */
-      for(j=Run_Start; j<i; ++j) Run_Costs[j] += Dist0;
-      Min_Cost += Dist0;
-    }
-  }
+			/* spread on preceding coeffs the cost incurred by skipping this one */
+			for(j=Run_Start; j<i; ++j) Run_Costs[j] += Dist0;
+			Min_Cost += Dist0;
+		}
+	}
 
-  if (DBG) {
-    Last_Cost = Evaluate_Cost(Out,Mult,Bias, Zigzag,Non_Zero, Lambda);
-    if (DBG==1) {
-      printf( "=> " );
-      for(i=0; i<=Non_Zero; ++i) printf( "[%3.0d] ", Out[Zigzag[i]] );
-      printf( "\n" );
-   }
-  }
+	if (DBG) {
+		Last_Cost = Evaluate_Cost(Out,Mult,Bias, Zigzag,Non_Zero, Lambda);
+		if (DBG==1) {
+			printf( "=> " );
+			for(i=0; i<=Non_Zero; ++i) printf( "[%3.0d] ", Out[Zigzag[i]] );
+			printf( "\n" );
+		}
+	}
 
-  if (Last_Node<0)
-    return -1;
+	if (Last_Node<0)
+		return -1;
 
-       /* reconstruct optimal sequence backward with surviving paths */
-  memset(Out, 0x00, 64*sizeof(*Out));
-  Out[Zigzag[Last_Node]] = Last.Level;
-  i = Last_Node - Last.Run;
-  while(i>=0) {
-    Out[Zigzag[i]] = Nodes[i].Level;
-    i -= Nodes[i].Run;
-  }
+	/* reconstruct optimal sequence backward with surviving paths */
+	memset(Out, 0x00, 64*sizeof(*Out));
+	Out[Zigzag[Last_Node]] = Last.Level;
+	i = Last_Node - Last.Run;
+	while(i>=0) {
+		Out[Zigzag[i]] = Nodes[i].Level;
+		i -= Nodes[i].Run;
+	}
 
-  if (DBG) {
-    uint32_t Cost = Evaluate_Cost(Out,Mult,Bias, Zigzag,Non_Zero, Lambda);
-    if (DBG==1) {
-      printf( "<= " ); 
-      for(i=0; i<=Last_Node; ++i) printf( "[%3.0d] ", Out[Zigzag[i]] );
-      printf( "\n--------------------------------\n" );
-    }
-    if (Cost>Last_Cost) printf( "!!! %u > %u\n", Cost, Last_Cost );
-  }
-  return Last_Node;
+	if (DBG) {
+		uint32_t Cost = Evaluate_Cost(Out,Mult,Bias, Zigzag,Non_Zero, Lambda);
+		if (DBG==1) {
+			printf( "<= " ); 
+			for(i=0; i<=Last_Node; ++i) printf( "[%3.0d] ", Out[Zigzag[i]] );
+			printf( "\n--------------------------------\n" );
+		}
+		if (Cost>Last_Cost) printf( "!!! %u > %u\n", Cost, Last_Cost );
+	}
+	return Last_Node;
 }
 
 #undef DBG
