@@ -1524,23 +1524,6 @@ dct_quantize_trellis_inter_h263_c (int16_t *qcoeff, const int16_t *data, int qua
   
   } // end of (i=0;i<=last_non_zero;i++) 
   
-
-  last_score = 256 * 256 * 256 * 120;
-  for (i = left_limit; i <= last_non_zero + 1; i++)
-	{
-	  int score = score_tab[i];
-	  if (i)
-	    score += 2*lambda;	/* coded block means 2 extra bits (roughly) */
-
-	  if (score < last_score)
-	    {
-	      last_score = score;
-	      last_i = i;
-	      last_level = level_tab[i];
-	      last_run = run_tab[i];
-	    }
-	}
-
   last_non_zero = last_i - 1;
   if (last_non_zero < 0)
     return last_non_zero;
