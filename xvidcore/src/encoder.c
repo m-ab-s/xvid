@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.50 2003-11-13 22:35:30 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.51 2003-11-15 14:43:38 syskin Exp $
  *
  ****************************************************************************/
 
@@ -188,7 +188,9 @@ enc_create(xvid_enc_create_t * create)
         pcreate.zones = pEnc->zones;
         pcreate.width = pEnc->mbParam.width;
         pcreate.height = pEnc->mbParam.height;
-        pcreate.fincr = pEnc->mbParam.fincr;
+        pcreate.mb_width = pEnc->mbParam.mb_width;
+        pcreate.mb_height = pEnc->mbParam.mb_height;
+	pcreate.fincr = pEnc->mbParam.fincr;
         pcreate.fbase = pEnc->mbParam.fbase;
         pcreate.param = create->plugins[n].param;
 
