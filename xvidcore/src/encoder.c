@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.48 2003-11-09 20:47:14 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.49 2003-11-09 20:49:21 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -648,6 +648,8 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
     data.mb_height = pEnc->mbParam.mb_height;
     data.fincr = frame->fincr;
     data.fbase = pEnc->mbParam.fbase;
+	data.bquant_ratio = pEnc->mbParam.bquant_ratio;
+	data.bquant_offset = pEnc->mbParam.bquant_offset;
 
     for (i=0; i<3; i++) {
         data.min_quant[i] = pEnc->mbParam.min_quant[i];

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: config.h,v 1.1.2.10 2003-10-28 23:42:09 edgomez Exp $
+ * $Id: config.h,v 1.1.2.11 2003-11-09 20:49:21 edgomez Exp $
  *
  ****************************************************************************/
 #ifndef _CONFIG_H_
@@ -142,10 +142,9 @@ typedef struct
 	int kfreduction;
 	int curve_compression_high;
 	int curve_compression_low;
+	int overflow_control_strength;
 	int twopass_max_overflow_improvement;
 	int twopass_max_overflow_degradation;
-	int bitrate_payback_delay;
-	int bitrate_payback_method;
 
     /* motion */
 	int motion_search;

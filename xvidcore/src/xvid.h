@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.41 2003-10-09 18:50:22 edgomez Exp $
+ * $Id: xvid.h,v 1.27.2.42 2003-11-09 20:49:21 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -392,6 +392,8 @@ typedef struct
 	int sse_y;              /* [out] Y plane's sse */
 	int sse_u;              /* [out] U plane's sse */
 	int sse_v;              /* [out] V plane's sse */
+	int bquant_ratio;       /* [in] */
+	int bquant_offset;      /* [in] */
 } xvid_plg_data_t;
 
 
@@ -464,14 +466,12 @@ typedef struct {
 	char * filename;              /* [in] first pass stats filename */
 
 	int keyframe_boost;           /* [in] keyframe boost percentage: [0..100] */
-	int payback_method;           /* [in] Payback method: see XVID_PAYBACK flags */
-	int bitrate_payback_delay;    /* [in] Payback delay expressed in number of frames */
 	int curve_compression_high;   /* [in] percentage of compression performed on the high part of the curve (above average) */
 	int curve_compression_low;    /* [in] percentage of compression performed on the low  part of the curve (below average) */
-	int max_overflow_improvement; /* [in] */
-	int max_overflow_degradation; /* [in] */
+	int overflow_control_strength;/* [in] Payback delay expressed in number of frames */
+	int max_overflow_improvement; /* [in] percentage of allowed range for a frame that gets bigger because of overflow bonus */
+	int max_overflow_degradation; /* [in] percentage of allowed range for a frame that gets smaller because of overflow penalty */
 
-	int kftreshold;               /* [in] */
 	int kfreduction;              /* [in] */
 	int min_key_interval;         /* [in] Minimum interval of frames between two IFrames */
 

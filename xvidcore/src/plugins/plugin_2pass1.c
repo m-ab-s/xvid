@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass1.c,v 1.1.2.7 2003-10-01 23:23:01 edgomez Exp $
+ * $Id: plugin_2pass1.c,v 1.1.2.8 2003-11-09 20:49:21 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -60,18 +60,17 @@ static int rc_2pass1_create(xvid_plg_create_t * create, rc_2pass1_t ** handle)
     rc->stat_file = NULL;
 
 	/* Open the 1st pass file */
-	if((rc->stat_file = fopen(param->filename, "w+")) == NULL)
+	if((rc->stat_file = fopen(param->filename, "w+b")) == NULL)
 		return(XVID_ERR_FAIL);
 
 	/*
 	 * The File Header
 	 */
-#if 0
-	fprintf(rc->stat_file, "# XviD 2pass stat file\n");
-    fprintf(rc->stat_file, "version %i.%i.%i\n",XVID_MAJOR(XVID_VERSION), XVID_MINOR(XVID_VERSION), XVID_PATCH(XVID_VERSION));
-	fprintf(rc->stat_file, "start\n");
-    fprintf(rc->stat_file, "type quantizer length kblocks mblocks ublocks\n");
-#endif
+	fprintf(rc->stat_file, "# XviD 2pass stat file (core version %d.%d.%d)\n",
+			XVID_VERSION_MAJOR(XVID_VERSION),
+			XVID_VERSION_MINOR(XVID_VERSION),
+			XVID_VERSION_PATCH(XVID_VERSION));
+	fprintf(rc->stat_file, "# Please do not modify this file\n\n");
 
     rc->fq_error = 0;
 
@@ -83,7 +82,6 @@ static int rc_2pass1_create(xvid_plg_create_t * create, rc_2pass1_t ** handle)
 static int rc_2pass1_destroy(rc_2pass1_t * rc, xvid_plg_destroy_t * destroy)
 {
 	fclose(rc->stat_file);
-
 	free(rc);
 	return(0);
 }
