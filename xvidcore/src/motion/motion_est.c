@@ -753,7 +753,6 @@ MotionEstimation(MBParam * const pParam,
 	uint32_t x, y;
 	uint32_t iIntra = 0;
 	int32_t InterBias, quant = current->quant, sad00;
-	uint8_t *qimage;
 
 	// some pre-initialized thingies for SearchP
 	int32_t temp[8];
@@ -779,11 +778,7 @@ MotionEstimation(MBParam * const pParam,
 		Data.qpel = Data.chroma = 0;
 	}
 
-	if((qimage = (uint8_t *) malloc(32 * pParam->edged_width)) == NULL)
-		return 1; // allocate some mem for qpel interpolated blocks
-				  // somehow this is dirty since I think we shouldn't use malloc outside
-				  // encoder_create() - so please fix me!
-	Data.RefQ = qimage;
+	Data.RefQ = pRefV->u; // a good place, also used in MC (for similar purpose)
 	if (sadInit) (*sadInit) ();
 
 	for (y = 0; y < mb_height; y++)	{
@@ -875,7 +870,7 @@ MotionEstimation(MBParam * const pParam,
 						  pParam->edged_width);
 
 					if (deviation < (pMB->sad16 - InterBias)) {
-					if (++iIntra >= iLimit) { free(qimage); return 1; }
+					if (++iIntra >= iLimit) return 1;
 					pMB->mode = MODE_INTRA;
 					pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] =
 							pMB->mvs[3] = zeroMV;
@@ -887,7 +882,6 @@ MotionEstimation(MBParam * const pParam,
 			}
 		}
 	}
-	free(qimage);
 
 	if (current->coding_type == S_VOP)	/* first GMC step only for S(GMC)-VOPs */
 		current->GMC_MV = GlobalMotionEst( pMBs, pParam, current->fcode );
@@ -1760,7 +1754,6 @@ MotionEstimationBVOP(MBParam * const pParam,
 
 	const int32_t TRB = time_pp - time_bp;
 	const int32_t TRD = time_pp;
-	uint8_t * qimage;
 
 // some pre-inintialized data for the rest of the search
 
@@ -1777,12 +1770,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 	Data.qpel = pParam->m_quarterpel;
 	Data.rounding = 0;
 
-	if((qimage = (uint8_t *) malloc(32 * pParam->edged_width)) == NULL)
-		return; // allocate some mem for qpel interpolated blocks
-				  // somehow this is dirty since I think we shouldn't use malloc outside
-				  // encoder_create() - so please fix me!
-	Data.RefQ = qimage;
-
+	Data.RefQ = f_refV->u; // a good place, also used in MC (for similar purpose)
 	// note: i==horizontal, j==vertical
 	for (j = 0; j < pParam->mb_height; j++) {
 
@@ -1879,7 +1867,6 @@ MotionEstimationBVOP(MBParam * const pParam,
 			}
 		}
 	}
-	free(qimage);
 }
 
 static __inline void
