@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.12 2003-08-02 15:08:30 edgomez Exp $
+ * $Id: xvid.c,v 1.45.2.13 2003-08-22 15:52:35 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -46,6 +46,7 @@
 #include "utils/emms.h"
 #include "utils/timer.h"
 #include "bitstream/mbcoding.h"
+#include "image/qpel.h"
 
 #if defined(_DEBUG)
 unsigned int xvid_debug = 0; /* xvid debug mask */
@@ -182,6 +183,11 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	/* Restore FPU context : emms_c is a nop functions */
 	emms = emms_c;
 
+	/* Qpel stuff */
+	xvid_QP_Funcs = &xvid_QP_Funcs_C;
+	xvid_QP_Add_Funcs = &xvid_QP_Add_Funcs_C;
+	xvid_Init_QP_mmx();
+
 	/* Quantization functions */
 	quant_intra   = quant_intra_c;
 	dequant_intra = dequant_intra_c;
@@ -306,6 +312,10 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		/* Forward and Inverse Discrete Cosine Transformation functions */
 		fdct = fdct_mmx;
 		idct = idct_mmx;
+
+		/* Qpel stuff */
+		xvid_QP_Funcs = &xvid_QP_Funcs_mmx;
+		xvid_QP_Add_Funcs = &xvid_QP_Add_Funcs_mmx;
 
 		/* Quantization related functions */
 		quant_intra   = quant_intra_mmx;
@@ -470,7 +480,8 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		interpolate8x8_halfpel_hv = interpolate8x8_halfpel_hv_3dne;
 	}
 
-
+#if defined(EXPERIMENTAL_SSE2_CODE) /* mark the whole SSE2 stuff as experimental. At least on
+									   my P4, it crashes... */
 	if ((cpu_flags & XVID_CPU_SSE2)) {
 
 		calc_cbp = calc_cbp_sse2;
@@ -481,17 +492,16 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		quant_inter   = quant_inter_sse2;
 		dequant_inter = dequant_inter_sse2;
 
-#if defined(EXPERIMENTAL_SSE2_CODE)
 		/* ME; slower than xmm */
 		sad16    = sad16_sse2;
 		dev16    = dev16_sse2;
-#endif
 		/* Forward and Inverse DCT */
 #if 0 /* Both function are known to be unprecise, better keep them deactivated */
 		idct  = idct_sse2;
 		fdct = fdct_sse2;
 #endif
 	}
+#endif
 #endif
 
 #if defined(ARCH_IS_IA64)
