@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.22 2003-12-10 01:01:07 Isibaar Exp $
+ * $Id: decoder.c,v 1.49.2.23 2003-12-10 12:09:34 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1460,6 +1460,7 @@ repeat:
 			/* XXX: not_coded vops are not used for forward prediction */
 			/* we should not swap(last_mbs,mbs) */
 			image_copy(&dec->cur, &dec->refn[0], dec->edged_width, dec->height);
+			SWAP(MACROBLOCK *, dec->mbs, dec->last_mbs); /* it will be swapped back */
 			break;
 		}
 
