@@ -12,8 +12,13 @@
 #define DPRINTF_MV			0x00000040
 #define DPRINTF_DEBUG		0x80000000
 
+
+#ifdef _DEBUG
 // debug level
-#define DPRINTF_LEVEL		0
+#define DPRINTF_LEVEL		0x00000000
+#else
+#define DPRINTF_LEVEL		0x0
+#endif
 
 
 #define DPRINTF_BUF_SZ  1024
@@ -295,6 +300,8 @@ read_counter()
 
 #else							// OTHER OS
 
+#define DECLARE_ALIGNED_MATRIX(name,sizex,sizey,type,alignment) \
+	__declspec(align(alignment)) type name[(sizex)*(sizey)]
 
 #include <stdio.h>
 #include <stdarg.h>
