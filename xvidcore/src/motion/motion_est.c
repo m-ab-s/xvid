@@ -53,7 +53,7 @@
 (*CheckCandidate)((const int)(X),(const int)(Y), (D), &iDirection, data ); }
 
 #define GET_REFERENCE(X, Y, REF) { \
-	switch ( ((X&1)<<1) + (Y&1) ) \
+	switch ( (((X)&1)<<1) + ((Y)&1) ) \
 	{ \
 		case 0 : REF = data->Ref + (X)/2 + ((Y)/2)*(data->iEdgedWidth); break; \
 		case 1 : REF = data->RefV + (X)/2 + (((Y)-1)/2)*(data->iEdgedWidth); break; \
