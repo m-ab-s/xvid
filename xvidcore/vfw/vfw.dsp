@@ -44,7 +44,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\src" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\src" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc09 /d "NDEBUG"
@@ -152,6 +152,10 @@ SOURCE=.\src\config.c
 
 SOURCE=.\src\driverproc.c
 # End Source File
+# Begin Source File
+
+SOURCE=.\src\status.c
+# End Source File
 # End Group
 # Begin Group "Header Files"
 
@@ -167,6 +171,10 @@ SOURCE=.\src\config.h
 # Begin Source File
 
 SOURCE=.\src\debug.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\status.h
 # End Source File
 # Begin Source File
 

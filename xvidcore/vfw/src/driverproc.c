@@ -35,6 +35,7 @@
 #include "debug.h"
 #include "codec.h"
 #include "config.h"
+#include "status.h"
 #include "resource.h"
 
 
@@ -87,7 +88,9 @@ BOOL WINAPI DllMain(
 				}
 				return 0;
 			}
-
+            
+            
+            codec->status.hDlg = NULL;
             codec->config.ci_valid = 0;
             codec->ehandle = codec->dhandle = NULL;
             codec->fbase = 25;
@@ -114,6 +117,7 @@ BOOL WINAPI DllMain(
 		/* compress_end/decompress_end don't always get called */
 		compress_end(codec);
 		decompress_end(codec);
+        status_destroy_always(&codec->status);
 		free(codec);
 		return DRV_OK;
 
@@ -304,7 +308,7 @@ void WINAPI Configure(HWND hwnd, HINSTANCE hinst, LPTSTR lpCmdLine, int nCmdShow
 	dwDriverId = DriverProc(0, 0, DRV_OPEN, 0, 0);
 	if (dwDriverId != (DWORD)NULL)
 	{
-		DriverProc(dwDriverId, 0, ICM_CONFIGURE, 0, 0);
+		DriverProc(dwDriverId, 0, ICM_CONFIGURE, (LPARAM)GetDesktopWindow(), 0);
 		DriverProc(dwDriverId, 0, DRV_CLOSE, 0, 0);
 	}
 }

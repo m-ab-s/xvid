@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: config.h,v 1.1.2.7 2003-06-09 13:55:56 edgomez Exp $
+ * $Id: config.h,v 1.1.2.8 2003-06-10 10:07:03 suxen_drol Exp $
  *
  ****************************************************************************/
 #ifndef _CONFIG_H_
@@ -42,7 +42,6 @@ extern HINSTANCE g_hInst;
 /* min/max bitrate when not specified by profile */
 #define DEFAULT_MIN_KBPS    16
 #define DEFAULT_MAX_KBPS    10000
-
 
 /* registry stuff */
 #define XVID_REG_KEY	HKEY_CURRENT_USER
@@ -87,7 +86,7 @@ typedef struct
     int mode;
     int weight;
     int quant;
-    /* overrides: when ==MODIFIER_USE_DEFAULT use default/global setting */
+
     unsigned int greyscale;
     unsigned int chroma_opt;
     unsigned int bvop_threshold;
@@ -102,6 +101,7 @@ typedef struct
 	int desired_size;			/* please try to avoid modifications here */
 	char stats[MAX_PATH];		
 /*******************************/
+    int use_2pass_bitrate;        /* use bitrate for 2pass2 (instead of desired size) */
 
     /* profile  */
     char profile_name[MAX_PATH];
@@ -132,11 +132,13 @@ typedef struct
 	int rc_averaging_period;
 	int rc_buffer;
 
+    /* 2pass1 */
+	int discard1pass;
+
     /* 2pass2 */
 	int keyframe_boost;
 	int kftreshold;
 	int kfreduction;
-	int discard1pass;
 	int curve_compression_high;
 	int curve_compression_low;
 	int twopass_max_overflow_improvement;
@@ -166,6 +168,7 @@ typedef struct
     int fourcc_used;
     int vop_debug;
     int debug;
+    int display_status;
 
 	DWORD cpu;
 

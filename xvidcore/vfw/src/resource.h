@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: resource.h,v 1.1.2.5 2003-06-09 13:55:56 edgomez Exp $
+ * $Id: resource.h,v 1.1.2.6 2003-06-10 10:07:03 suxen_drol Exp $
  *
  ****************************************************************************/
 //{{NO_DEPENDENCIES}}
@@ -47,6 +47,7 @@
 #define IDD_ZONE                        121
 #define IDD_LEVEL                       122
 #define IDD_CALC                        124
+#define IDD_STATUS                      125
 #define WIZ_CYDLG                       140
 #define PROP_MIN_CYDLG                  144
 #define PROP_SM_CYDLG                   188
@@ -360,14 +361,47 @@
 #define IDC_TRELLISQUANT                1306
 #define IDC_BITRATE_S                   1307
 #define IDC_VOPDEBUG                    1308
+#define IDC_STATUS_GRAPH                1311
+#define IDC_STATUS_IQ_MIN               1312
+#define IDC_STATUS_IQ_MAX               1313
+#define IDC_STATUS_PQ_MIN               1314
+#define IDC_STATUS_PQ_MAX               1315
+#define IDC_STATUS_BQ_MIN               1316
+#define IDC_STATUS_BQ_MAX               1317
+#define IDC_STATUS_Q_MIN                1318
+#define IDC_STATUS_Q_MAX                1319
+#define IDC_STATUS_IL_MIN               1320
+#define IDC_STATUS_IL_MAX               1321
+#define IDC_STATUS_IL_TOT               1322
+#define IDC_STATUS_PL_MIN               1323
+#define IDC_STATUS_PL_MAX               1324
+#define IDC_STATUS_PL_TOT               1325
+#define IDC_STATUS_BL_MIN               1326
+#define IDC_STATUS_BL_MAX               1327
+#define IDC_STATUS_BL_TOT               1328
+#define IDC_STATUS_L_MIN                1329
+#define IDC_STATUS_L_MAX                1330
+#define IDC_STATUS_L_TOT                1331
+#define IDC_STATUS_DESTROY              1332
+#define IDC_STATUS_KBPS                 1333
+#define IDC_STATUS_IL_AVG               1334
+#define IDC_DISPLAY_STATUS              1334
+#define IDC_STATUS_PL_AVG               1335
+#define IDC_STATUS_BL_AVG               1336
+#define IDC_CHECK1                      1336
+#define IDC_STATUS_L_AVG                1337
+#define IDC_STATUS_I_NUM                1338
+#define IDC_STATUS_P_NUM                1339
+#define IDC_STATUS_B_NUM                1340
+#define IDC_STATUS_NUM                  1341
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        125
+#define _APS_NEXT_RESOURCE_VALUE        126
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1309
+#define _APS_NEXT_CONTROL_VALUE         1337
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -54,6 +54,7 @@
 #include <xvid.h>
 #include "debug.h"
 #include "codec.h"
+#include "status.h"
 
 
 static const int pmvfast_presets[7] = {
@@ -362,7 +363,11 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	case RC_MODE_2PASS2 :
     	memset(&pass2, 0, sizeof(pass2));
 	    pass2.version = XVID_VERSION;
-        pass2.bitrate = codec->config.bitrate * CONFIG_KBPS;
+        if (codec->config.use_2pass_bitrate) {
+            pass2.bitrate = codec->config.bitrate * CONFIG_KBPS;
+        }else{
+            pass2.bitrate = -codec->config.desired_size;    /* kilobytes */
+        }
 		pass2.filename = codec->config.stats;
 
         pass2.keyframe_boost = codec->config.keyframe_boost;   /* keyframe boost percentage: [0..100...]; */
@@ -451,17 +456,24 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	codec->framenum = 0;
 	codec->keyspacing = 0;
 
+    if (codec->config.display_status) {
+        status_destroy_always(&codec->status);
+        status_create(&codec->status, codec->fincr, codec->fbase);
+    }
+
 	return ICERR_OK;
 }
 
 
 LRESULT compress_end(CODEC * codec)
 {
-	if (codec->ehandle != NULL)
-	{
+    if (codec->ehandle != NULL) {
 		xvid_encore(codec->ehandle, XVID_ENC_DESTROY, NULL, NULL);
 		codec->ehandle = NULL;
 	}
+
+    if (codec->config.display_status)
+        status_destroy(&codec->status);
 
 	return ICERR_OK;
 }
@@ -643,6 +655,10 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	case XVID_ERR_VERSION :
 		return ICERR_UNSUPPORTED;
 	}
+
+    if (codec->config.display_status && stats.type>0) {
+        status_update(&codec->status, stats.type, stats.length, stats.quant);
+    }
 
 	DPRINTF("{type=%i len=%i} length=%i", stats.type, stats.length, length);
 

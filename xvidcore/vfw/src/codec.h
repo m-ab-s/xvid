@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: codec.h,v 1.1.2.4 2003-06-09 13:55:56 edgomez Exp $
+ * $Id: codec.h,v 1.1.2.5 2003-06-10 10:07:03 suxen_drol Exp $
  *
  ****************************************************************************/
 #ifndef _CODEC_H_
@@ -27,6 +27,7 @@
 
 #include <vfw.h>
 #include "config.h"
+#include "status.h"
 
 #define XVID_NAME_L		L"XVID"
 #define XVID_DESC_L		L"XviD MPEG-4 Codec"
@@ -57,8 +58,9 @@ typedef struct
 
 	// encoder
 	void * ehandle;
-	int fincr;
-	int fbase;
+	unsigned int fincr;
+	unsigned int fbase;
+    status_t status;
     
     /* encoder min keyframe internal */
 	int framenum;   
