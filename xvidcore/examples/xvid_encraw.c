@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.6 2003-03-15 14:32:56 suxen_drol Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.7 2003-03-15 16:41:32 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -423,6 +423,14 @@ int main(int argc, char *argv[])
 	        }
 
             printf(" | type=%s quant=%2d, length=%7d", type, stats_quant, stats_length);
+
+             if(ARG_STATS) {
+ 		        printf(", psnr y = %2.2f, psnr u = %2.2f, psnr v = %2.2f",
+ 			           (stats[0] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[0]/((float)(XDIM)*(YDIM))),
+ 			           (stats[1] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[1]/((float)(XDIM)*(YDIM)/4)),
+ 			           (stats[2] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[2]/((float)(XDIM)*(YDIM)/4)));
+             }
+
 		}
 
 		printf("\n");
@@ -556,7 +564,7 @@ static void usage()
 	fprintf(stderr, " -t integer     : input data type (yuv=0, pgm=1)\n");
 	fprintf(stderr, " -n integer     : number of frames to encode\n");
 	fprintf(stderr, " -q integer     : quality ([0..5])\n");
-	fprintf(stderr, " -d boolean     : save decoder output (0 False*, !=0 True)\n");
+	fprintf(stderr, " -dump          : save decoder output\n");
 	fprintf(stderr, " -m             : save mpeg4 raw stream\n");
 	fprintf(stderr, " -o string      : output container filename (only usefull when -m 1 is used) :\n");
 	fprintf(stderr, "                  When this option is not used : one file per encoded frame\n");
@@ -675,7 +683,7 @@ static int enc_init(int use_assembler)
 {
 	int xerr;
 
-    xvid_enc_plugin_t plugins[2];
+    xvid_enc_plugin_t plugins[1];
 	
 	xvid_gbl_init_t   xvid_gbl_init;
 	xvid_enc_create_t xvid_enc_create;
@@ -721,11 +729,6 @@ static int enc_init(int use_assembler)
 
     xvid_enc_create.plugins = plugins;
     xvid_enc_create.num_plugins = 0;
-    if (ARG_STATS) {
-        plugins[xvid_enc_create.num_plugins].func = xvid_plugin_psnr;
-        plugins[xvid_enc_create.num_plugins].param = NULL;
-        xvid_enc_create.num_plugins++;
-    }
     if (ARG_DUMP) {
         plugins[xvid_enc_create.num_plugins].func = xvid_plugin_dump;
         plugins[xvid_enc_create.num_plugins].param = NULL;
@@ -758,6 +761,7 @@ static int enc_init(int use_assembler)
 	/* Global encoder options */
 	xvid_enc_create.global = 0;
     if (ARG_PACKED) xvid_enc_create.global |= XVID_PACKED;
+    if (ARG_STATS) xvid_enc_create.global |= XVID_EXTRASTATS_ENABLE;
 
 	/* I use a small value here, since will not encode whole movies, but short clips */
 	xerr = xvid_encore(NULL, XVID_ENC_CREATE, &xvid_enc_create, NULL);
@@ -813,6 +817,7 @@ static int enc_main(unsigned char* image,
 
 	/* Set up core's general features */
 	xvid_enc_frame.vol_flags = vol_presets[ARG_QUALITY];
+    if (ARG_STATS) xvid_enc_frame.vol_flags |= XVID_EXTRASTATS;
 
 	/* Set up core's general features */
 	xvid_enc_frame.vop_flags = vop_presets[ARG_QUALITY];
