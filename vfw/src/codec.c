@@ -375,7 +375,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		frame.hint.rawhints = 0;
 		frame.general |= XVID_HINTEDME_GET;
 	}
-	else if (codec->config.mode == DLG_MODE_2PASS_2_EXT || codec->config.mode == DLG_MODE_2PASS_2_INT)
+	else if (codec->config.hinted_me && (codec->config.mode == DLG_MODE_2PASS_2_EXT || codec->config.mode == DLG_MODE_2PASS_2_INT))
 	{
 		DWORD read;
 		DWORD blocksize;
