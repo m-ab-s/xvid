@@ -1,0 +1,6 @@
+EXPORTS
+	xvid_decore; 
+	xvid_encore; 
+	xvid_init; 
+	decore; 
+	encore; 

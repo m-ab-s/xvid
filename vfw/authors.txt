@@ -1,5 +1,0 @@
-authors
-
-
-Peter Ross <pross@cs.rmit.edu.au>
-Daniel Smith <danielsmith@astroboymail.com>
