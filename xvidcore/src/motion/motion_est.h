@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion_est.h,v 1.1.2.5 2002-10-17 13:27:22 Isibaar Exp $
+ *  $Id: motion_est.h,v 1.1.2.6 2002-10-17 13:50:23 syskin Exp $
  *
  ***************************************************************************/
 
@@ -49,7 +49,7 @@
 
 /* vector map (vlc delta size) smoother parameters ! float !*/
 #define NEIGH_TEND_16X16	4.0
-#define NEIGH_TEND_8X8		7.0
+#define NEIGH_TEND_8X8		6.0
 
 static const int lambda_vec16[32] =
 	{     0    ,(int)(1.00235 * NEIGH_TEND_16X16 + 0.5),
@@ -105,7 +105,6 @@ typedef struct
 // general fields
 		int max_dx, min_dx, max_dy, min_dy;
 		uint32_t rounding;
-		uint32_t quarterpel;
 		VECTOR predMV;
 		VECTOR predQMV;
 		VECTOR *currentMV;
@@ -117,7 +116,8 @@ typedef struct
 		const uint8_t * RefHV;
 		const uint8_t * RefQ;
 		const uint8_t * Cur;
-		uint32_t iQuant;
+		uint32_t lambda16; //weights of motion vectors
+		uint32_t lambda8;
 		uint32_t iEdgedWidth;
 		uint32_t iFcode;
 		int * temp;
