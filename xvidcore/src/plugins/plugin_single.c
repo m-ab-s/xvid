@@ -20,7 +20,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_single.c,v 1.1.2.9 2003-12-05 14:44:35 edgomez Exp $
+ * $Id: plugin_single.c,v 1.1.2.10 2003-12-17 13:15:33 chl Exp $
  *
  ****************************************************************************/
 
@@ -30,7 +30,7 @@
 #include "../xvid.h"
 #include "../image/image.h"
 
-#define DEFAULT_INITIAL_QUANTIZER 8
+#define DEFAULT_INITIAL_QUANTIZER 4
 
 #define DEFAULT_BITRATE 900000	/* 900kbps */
 #define DEFAULT_DELAY_FACTOR 16
