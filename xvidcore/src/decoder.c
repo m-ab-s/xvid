@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.29 2003-01-11 21:22:24 chl Exp $
+ *  $Id: decoder.c,v 1.37.2.30 2003-01-12 13:11:50 chl Exp $
  *
  *************************************************************************/
 
@@ -625,7 +625,7 @@ static __inline int gmc_sanitize(int value, int quarterpel, int fcode)
 {
 	int length = 1 << (fcode+4);
 
-	if (quarterpel) value *= 2;
+//	if (quarterpel) value *= 2;
 
 	if (value < -length) 
 		return -length;
@@ -674,7 +674,6 @@ decoder_mbgmc(DECODER * dec,
 		pMB->amv.y = gmc_sanitize(pMB->amv.y, dec->quarterpel, fcode);
 	}
 	pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = pMB->amv;
-	
 	
 /*	transfer16x16_copy(pY_Cur, dec->gmc.y + (y_pos << 4)*stride + (x_pos  << 4), stride);
 	transfer8x8_copy(pU_Cur, dec->gmc.u + (y_pos << 3)*stride2 + (x_pos  << 3), stride2);
