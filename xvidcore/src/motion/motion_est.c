@@ -845,11 +845,11 @@ MotionEstimation(MBParam * const pParam,
 /* finally, intra decision */
 
 			InterBias = MV16_INTER_BIAS;
-			if (pMB->quant > 8)  InterBias += 80 * (pMB->quant - 8); // to make high quants work
+			if (pMB->quant > 8)  InterBias += 100 * (pMB->quant - 8); // to make high quants work
 			if (y != 0)
-				if ((pMB - pParam->mb_width)->mode == MODE_INTER ) InterBias -= 80;
+				if ((pMB - pParam->mb_width)->mode == MODE_INTRA ) InterBias -= 80;
 			if (x != 0)
-				if ((pMB - 1)->mode == MODE_INTER ) InterBias -= 80;
+				if ((pMB - 1)->mode == MODE_INTRA ) InterBias -= 80;
 			
 			if (Data.chroma) InterBias += 50; // to compensate bigger SAD
 
