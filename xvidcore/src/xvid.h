@@ -28,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.28 2003-02-12 12:03:30 syskin Exp $
+*  $Id: xvid.h,v 1.17.2.29 2003-02-12 12:16:50 syskin Exp $
 *
 *****************************************************************************/
 
@@ -297,7 +297,7 @@ extern "C" {
 
 #define XVID_EXTRASTATS			0x00000200  /* generate extra statistics */
 
-#define XVID_MODEDECISION_DCT	0x00400000	/* enable DCT-ME and use it for mode decision */
+#define XVID_MODEDECISION_BITS	0x00400000	/* enable DCT-ME and use it for mode decision */
 
 
 /* Flags for XVID_ENC_FRAME.motion */
@@ -321,14 +321,14 @@ extern "C" {
 #define PMV_CHROMA8				0x10000000	/* also use chroma for B_VOP ME */
 
 /* Motion search using DCT. use XVID_MODEDECISION_DCT to enable */
-#define HALFPELREFINE16_DCT		0x00000100	/* perform DCT-based halfpel refinement */
-#define HALFPELREFINE8_DCT		0x00000200	/* perform DCT-based halfpel refinement for 8x8 mode */
-#define QUARTERPELREFINE16_DCT	0x00000400	/* perform DCT-based qpel refinement */
-#define QUARTERPELREFINE8_DCT	0x00000800	/* perform DCT-based qpel refinement for 8x8 mode */
+#define HALFPELREFINE16_BITS	0x00000100	/* perform DCT-based halfpel refinement */
+#define HALFPELREFINE8_BITS		0x00000200	/* perform DCT-based halfpel refinement for 8x8 mode */
+#define QUARTERPELREFINE16_BITS	0x00000400	/* perform DCT-based qpel refinement */
+#define QUARTERPELREFINE8_BITS	0x00000800	/* perform DCT-based qpel refinement for 8x8 mode */
 
-#define EXTSEARCH_DCT			0x00001000	/* perform DCT-based search using square pattern */
+#define EXTSEARCH_BITS			0x00001000	/* perform DCT-based search using square pattern */
 											/* enable PMV_EXTSEARCH8 to do this in 8x8 search as well */
-#define CHECKPREDICTION_DCT		0x00002000	/* always check vector equal to prediction */
+#define CHECKPREDICTION_BITS	0x00002000	/* always check vector equal to prediction */
 
 
 /* note: old and deprecated - or never implemented */
