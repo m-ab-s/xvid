@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.c,v 1.58.2.28 2003-08-25 15:10:13 syskin Exp $
+ * $Id: motion_est.c,v 1.58.2.29 2003-08-28 11:06:15 syskin Exp $
  *
  ****************************************************************************/
 
@@ -70,7 +70,7 @@ const uint32_t roundtab_79[4] =
 #define MAX_CHROMA_SAD_FOR_SKIP	(22)
 
 #define CHECK_CANDIDATE(X,Y,D) { \
-CheckCandidate((X),(Y), (D), &iDirection, data ); }
+CheckCandidate((X),(Y), data, (D) ); }
 
 
 /*****************************************************************************
@@ -156,6 +156,7 @@ ChromaSAD(const int dx, const int dy, const SearchData * const data)
 	int sad;
 	const uint32_t stride = data->iEdgedWidth/2;
 	int offset = (dx>>1) + (dy>>1)*stride;
+	int next = 1;
 
 	if (dx == data->temp[5] && dy == data->temp[6]) return data->temp[7]; /* it has been checked recently */
 	data->temp[5] = dx; data->temp[6] = dy; /* backup */
@@ -166,12 +167,10 @@ ChromaSAD(const int dx, const int dy, const SearchData * const data)
 			sad += sad8(data->CurV, data->RefP[5] + offset, stride);
 			break;
 		case 1:
-			sad = sad8bi(data->CurU, data->RefP[4] + offset, data->RefP[4] + offset + stride, stride);
-			sad += sad8bi(data->CurV, data->RefP[5] + offset, data->RefP[5] + offset + stride, stride);
-			break;
+			next = stride;
 		case 2:
-			sad = sad8bi(data->CurU, data->RefP[4] + offset, data->RefP[4] + offset + 1, stride);
-			sad += sad8bi(data->CurV, data->RefP[5] + offset, data->RefP[5] + offset + 1, stride);
+			sad = sad8bi(data->CurU, data->RefP[4] + offset, data->RefP[4] + offset + next, stride);
+			sad += sad8bi(data->CurV, data->RefP[5] + offset, data->RefP[5] + offset + next, stride);
 			break;
 		default:
 			interpolate8x8_halfpel_hv(data->RefQ, data->RefP[4] + offset, stride, data->rounding);
@@ -301,7 +300,7 @@ Interpolate16x16qpel(const int x, const int y, const uint32_t dir, const SearchD
 /* CHECK_CANDIATE FUNCTIONS START */
 
 static void
-CheckCandidate16(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
+CheckCandidate16(const int x, const int y, const SearchData * const data, const int Direction)
 {
 	int xc, yc;
 	const uint8_t * Reference;
@@ -321,11 +320,11 @@ CheckCandidate16(const int x, const int y, const int Direction, int * const dir,
 		current = data->currentQMV;
 	}
 
-	sad = sad16v(data->Cur, Reference, data->iEdgedWidth, data->temp + 1);
+	sad = sad16v(data->Cur, Reference, data->iEdgedWidth, data->temp);
 	t = d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
 
 	sad += (data->lambda16 * t * sad)>>10;
-	data->temp[1] += (data->lambda8 * t * (data->temp[1] + NEIGH_8X8_BIAS))>>10;
+	data->temp[0] += (data->lambda8 * t * (data->temp[0] + NEIGH_8X8_BIAS))>>10;
 
 	if (data->chroma && sad < data->iMinSAD[0])
 		sad += ChromaSAD((xc >> 1) + roundtab_79[xc & 0x3],
@@ -334,21 +333,21 @@ CheckCandidate16(const int x, const int y, const int Direction, int * const dir,
 	if (sad < data->iMinSAD[0]) {
 		data->iMinSAD[0] = sad;
 		current[0].x = x; current[0].y = y;
-		*dir = Direction;
+		*data->dir = Direction;
 	}
 
-	if (data->temp[1] < data->iMinSAD[1]) {
-		data->iMinSAD[1] = data->temp[1]; current[1].x = x; current[1].y = y; }
-	if (data->temp[2] < data->iMinSAD[2]) {
-		data->iMinSAD[2] = data->temp[2]; current[2].x = x; current[2].y = y; }
-	if (data->temp[3] < data->iMinSAD[3]) {
-		data->iMinSAD[3] = data->temp[3]; current[3].x = x; current[3].y = y; }
-	if (data->temp[4] < data->iMinSAD[4]) {
-		data->iMinSAD[4] = data->temp[4]; current[4].x = x; current[4].y = y; }
+	if (data->temp[0] < data->iMinSAD[1]) {
+		data->iMinSAD[1] = data->temp[0]; current[1].x = x; current[1].y = y; }
+	if (data->temp[1] < data->iMinSAD[2]) {
+		data->iMinSAD[2] = data->temp[1]; current[2].x = x; current[2].y = y; }
+	if (data->temp[2] < data->iMinSAD[3]) {
+		data->iMinSAD[3] = data->temp[2]; current[3].x = x; current[3].y = y; }
+	if (data->temp[3] < data->iMinSAD[4]) {
+		data->iMinSAD[4] = data->temp[3]; current[4].x = x; current[4].y = y; }
 }
 
 static void
-CheckCandidate8(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
+CheckCandidate8(const int x, const int y, const SearchData * const data, const int Direction)
 {
 	int32_t sad; uint32_t t;
 	const uint8_t * Reference;
@@ -373,15 +372,16 @@ CheckCandidate8(const int x, const int y, const int Direction, int * const dir, 
 	if (sad < *(data->iMinSAD)) {
 		*(data->iMinSAD) = sad;
 		current->x = x; current->y = y;
-		*dir = Direction;
+		*data->dir = Direction;
 	}
 }
 
 static void
-CheckCandidate32(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
+CheckCandidate32(const int x, const int y, const SearchData * const data, const int Direction)
 {
 	uint32_t t;
 	const uint8_t * Reference;
+	int sad;
 
 	if ( (!(x&1) && x !=0) || (!(y&1) && y !=0) || /* non-zero even value */
 		(x > data->max_dx) || (x < data->min_dx)
@@ -390,28 +390,29 @@ CheckCandidate32(const int x, const int y, const int Direction, int * const dir,
 	Reference = GetReference(x, y, data);
 	t = d_mv_bits(x, y, data->predMV, data->iFcode, 0, 1);
 
-	data->temp[0] = sad32v_c(data->Cur, Reference, data->iEdgedWidth, data->temp + 1);
+	sad = sad32v_c(data->Cur, Reference, data->iEdgedWidth, data->temp);
 
-	data->temp[0] += (data->lambda16 * t * data->temp[0]) >> 10;
-	data->temp[1] += (data->lambda8 * t * (data->temp[1] + NEIGH_8X8_BIAS))>>10;
+	sad += (data->lambda16 * t * sad) >> 10;
+	data->temp[0] += (data->lambda8 * t * (data->temp[0] + NEIGH_8X8_BIAS))>>10;
 
-	if (data->temp[0] < data->iMinSAD[0]) {
-		data->iMinSAD[0] = data->temp[0];
+	if (sad < data->iMinSAD[0]) {
+		data->iMinSAD[0] = sad;
 		data->currentMV[0].x = x; data->currentMV[0].y = y;
-		*dir = Direction; }
+		*data->dir = Direction; 
+	}
 
-	if (data->temp[1] < data->iMinSAD[1]) {
-		data->iMinSAD[1] = data->temp[1]; data->currentMV[1].x = x; data->currentMV[1].y = y; }
-	if (data->temp[2] < data->iMinSAD[2]) {
-		data->iMinSAD[2] = data->temp[2]; data->currentMV[2].x = x; data->currentMV[2].y = y; }
-	if (data->temp[3] < data->iMinSAD[3]) {
-		data->iMinSAD[3] = data->temp[3]; data->currentMV[3].x = x; data->currentMV[3].y = y; }
-	if (data->temp[4] < data->iMinSAD[4]) {
-		data->iMinSAD[4] = data->temp[4]; data->currentMV[4].x = x; data->currentMV[4].y = y; }
+	if (data->temp[0] < data->iMinSAD[1]) {
+		data->iMinSAD[1] = data->temp[0]; data->currentMV[1].x = x; data->currentMV[1].y = y; }
+	if (data->temp[1] < data->iMinSAD[2]) {
+		data->iMinSAD[2] = data->temp[1]; data->currentMV[2].x = x; data->currentMV[2].y = y; }
+	if (data->temp[2] < data->iMinSAD[3]) {
+		data->iMinSAD[3] = data->temp[2]; data->currentMV[3].x = x; data->currentMV[3].y = y; }
+	if (data->temp[3] < data->iMinSAD[4]) {
+		data->iMinSAD[4] = data->temp[3]; data->currentMV[4].x = x; data->currentMV[4].y = y; }
 }
 
 static void
-CheckCandidate16no4v(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
+CheckCandidate16no4v(const int x, const int y, const SearchData * const data, const int Direction)
 {
 	int32_t sad, xc, yc;
 	const uint8_t * Reference;
@@ -445,12 +446,12 @@ CheckCandidate16no4v(const int x, const int y, const int Direction, int * const 
 	if (sad < *(data->iMinSAD)) {
 		*(data->iMinSAD) = sad;
 		current->x = x; current->y = y;
-		*dir = Direction;
+		*data->dir = Direction;
 	}
 }
 
 static void
-CheckCandidate16I(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
+CheckCandidate16I(const int x, const int y, const SearchData * const data, const int Direction)
 {
 	int sad;
 //	int xc, yc;
@@ -473,12 +474,12 @@ CheckCandidate16I(const int x, const int y, const int Direction, int * const dir
 	if (sad < data->iMinSAD[0]) {
 		data->iMinSAD[0] = sad;
 		data->currentMV[0].x = x; data->currentMV[0].y = y;
-		*dir = Direction;
+		*data->dir = Direction;
 	}
 }
 
 static void
-CheckCandidate32I(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
+CheckCandidate32I(const int x, const int y, const SearchData * const data, const int Direction)
 {
 	/* maximum speed - for P/B/I decision */
 	int32_t sad;
@@ -487,26 +488,26 @@ CheckCandidate32I(const int x, const int y, const int Direction, int * const dir
 		|| (y > data->max_dy) || (y < data->min_dy) ) return;
 
 	sad = sad32v_c(data->Cur, data->RefP[0] + (x>>1) + (y>>1)*((int)data->iEdgedWidth),
-					data->iEdgedWidth, data->temp+1);
+					data->iEdgedWidth, data->temp);
 
 	if (sad < *(data->iMinSAD)) {
 		*(data->iMinSAD) = sad;
 		data->currentMV[0].x = x; data->currentMV[0].y = y;
-		*dir = Direction;
+		*data->dir = Direction;
 	}
-	if (data->temp[1] < data->iMinSAD[1]) {
-		data->iMinSAD[1] = data->temp[1]; data->currentMV[1].x = x; data->currentMV[1].y = y; }
-	if (data->temp[2] < data->iMinSAD[2]) {
-		data->iMinSAD[2] = data->temp[2]; data->currentMV[2].x = x; data->currentMV[2].y = y; }
-	if (data->temp[3] < data->iMinSAD[3]) {
-		data->iMinSAD[3] = data->temp[3]; data->currentMV[3].x = x; data->currentMV[3].y = y; }
-	if (data->temp[4] < data->iMinSAD[4]) {
-		data->iMinSAD[4] = data->temp[4]; data->currentMV[4].x = x; data->currentMV[4].y = y; }
+	if (data->temp[0] < data->iMinSAD[1]) {
+		data->iMinSAD[1] = data->temp[0]; data->currentMV[1].x = x; data->currentMV[1].y = y; }
+	if (data->temp[1] < data->iMinSAD[2]) {
+		data->iMinSAD[2] = data->temp[1]; data->currentMV[2].x = x; data->currentMV[2].y = y; }
+	if (data->temp[2] < data->iMinSAD[3]) {
+		data->iMinSAD[3] = data->temp[2]; data->currentMV[3].x = x; data->currentMV[3].y = y; }
+	if (data->temp[3] < data->iMinSAD[4]) {
+		data->iMinSAD[4] = data->temp[3]; data->currentMV[4].x = x; data->currentMV[4].y = y; }
 
 }
 
 static void
-CheckCandidateInt(const int xf, const int yf, const int Direction, int * const dir, const SearchData * const data)
+CheckCandidateInt(const int xf, const int yf, const SearchData * const data, const int Direction)
 {
 	int32_t sad, xb, yb, xcf, ycf, xcb, ycb;
 	uint32_t t;
@@ -548,12 +549,12 @@ CheckCandidateInt(const int xf, const int yf, const int Direction, int * const d
 	if (sad < *(data->iMinSAD)) {
 		*(data->iMinSAD) = sad;
 		current->x = xf; current->y = yf;
-		*dir = Direction;
+		*data->dir = Direction;
 	}
 }
 
 static void
-CheckCandidateDirect(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
+CheckCandidateDirect(const int x, const int y, const SearchData * const data, const int Direction)
 {
 	int32_t sad = 0, xcf = 0, ycf = 0, xcb = 0, ycb = 0;
 	uint32_t k;
@@ -609,12 +610,12 @@ CheckCandidateDirect(const int x, const int y, const int Direction, int * const 
 	if (sad < *(data->iMinSAD)) {
 		*(data->iMinSAD) = sad;
 		data->currentMV->x = x; data->currentMV->y = y;
-		*dir = Direction;
+		*data->dir = Direction;
 	}
 }
 
 static void
-CheckCandidateDirectno4v(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
+CheckCandidateDirectno4v(const int x, const int y, const SearchData * const data, const int Direction)
 {
 	int32_t sad, xcf, ycf, xcb, ycb;
 	const uint8_t *ReferenceF;
@@ -662,13 +663,13 @@ CheckCandidateDirectno4v(const int x, const int y, const int Direction, int * co
 	if (sad < *(data->iMinSAD)) {
 		*(data->iMinSAD) = sad;
 		data->currentMV->x = x; data->currentMV->y = y;
-		*dir = Direction;
+		*data->dir = Direction;
 	}
 }
 
 
 static void
-CheckCandidateRD16(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
+CheckCandidateRD16(const int x, const int y, const SearchData * const data, const int Direction)
 {
 
 	int16_t *in = data->dctSpace, *coeff = data->dctSpace + 64;
@@ -731,13 +732,13 @@ CheckCandidateRD16(const int x, const int y, const int Direction, int * const di
 	if (rd < data->iMinSAD[0]) {
 		data->iMinSAD[0] = rd;
 		current[0].x = x; current[0].y = y;
-		*dir = Direction;
+		*data->dir = Direction;
 		*data->cbp = cbp;
 	}
 }
 
 static void
-CheckCandidateRD8(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
+CheckCandidateRD8(const int x, const int y, const SearchData * const data, const int Direction)
 {
 
 	int16_t *in = data->dctSpace, *coeff = data->dctSpace + 64;
@@ -765,7 +766,7 @@ CheckCandidateRD8(const int x, const int y, const int Direction, int * const dir
 		*data->cbp = cbp;
 		data->iMinSAD[0] = rd;
 		current[0].x = x; current[0].y = y;
-		*dir = Direction;
+		*data->dir = Direction;
 	}
 }
 
@@ -774,15 +775,15 @@ CheckCandidateRD8(const int x, const int y, const int Direction, int * const dir
 /* MAINSEARCH FUNCTIONS START */
 
 static void
-AdvDiamondSearch(int x, int y, const SearchData * const data, int bDirection)
+AdvDiamondSearch(int x, int y, const SearchData * const data, int bDirection, CheckFunc * const CheckCandidate)
 {
 
 /* directions: 1 - left (x-1); 2 - right (x+1), 4 - up (y-1); 8 - down (y+1) */
 
-	int iDirection;
+	unsigned int * const iDirection = data->dir;
 
 	for(;;) { /* forever */
-		iDirection = 0;
+		*iDirection = 0;
 		if (bDirection & 1) CHECK_CANDIDATE(x - iDiamondSize, y, 1);
 		if (bDirection & 2) CHECK_CANDIDATE(x + iDiamondSize, y, 2);
 		if (bDirection & 4) CHECK_CANDIDATE(x, y - iDiamondSize, 4);
@@ -790,9 +791,9 @@ AdvDiamondSearch(int x, int y, const SearchData * const data, int bDirection)
 
 		/* now we're doing diagonal checks near our candidate */
 
-		if (iDirection) {		/* if anything found */
-			bDirection = iDirection;
-			iDirection = 0;
+		if (*iDirection) {		/* if anything found */
+			bDirection = *iDirection;
+			*iDirection = 0;
 			x = data->currentMV->x; y = data->currentMV->y;
 			if (bDirection & 3) {	/* our candidate is left or right */
 				CHECK_CANDIDATE(x, y + iDiamondSize, 8);
@@ -802,8 +803,8 @@ AdvDiamondSearch(int x, int y, const SearchData * const data, int bDirection)
 				CHECK_CANDIDATE(x - iDiamondSize, y, 1);
 			}
 
-			if (iDirection) {
-				bDirection += iDirection;
+			if (*iDirection) {
+				bDirection += *iDirection;
 				x = data->currentMV->x; y = data->currentMV->y;
 			}
 		} else {				/* about to quit, eh? not so fast.... */
@@ -851,20 +852,20 @@ AdvDiamondSearch(int x, int y, const SearchData * const data, int bDirection)
 				CHECK_CANDIDATE(x + iDiamondSize, y + iDiamondSize, 2 + 8);
 				break;
 			}
-			if (!iDirection) break;		/* ok, the end. really */
-			bDirection = iDirection;
+			if (!*iDirection) break;		/* ok, the end. really */
+			bDirection = *iDirection;
 			x = data->currentMV->x; y = data->currentMV->y;
 		}
 	}
 }
 
 static void
-SquareSearch(int x, int y, const SearchData * const data, int bDirection)
+SquareSearch(int x, int y, const SearchData * const data, int bDirection, CheckFunc * const CheckCandidate)
 {
-	int iDirection;
+	unsigned int * const iDirection = data->dir;
 
 	do {
-		iDirection = 0;
+		*iDirection = 0;
 		if (bDirection & 1) CHECK_CANDIDATE(x - iDiamondSize, y, 1+16+64);
 		if (bDirection & 2) CHECK_CANDIDATE(x + iDiamondSize, y, 2+32+128);
 		if (bDirection & 4) CHECK_CANDIDATE(x, y - iDiamondSize, 4+16+32);
@@ -874,21 +875,21 @@ SquareSearch(int x, int y, const SearchData * const data, int bDirection)
 		if (bDirection & 64) CHECK_CANDIDATE(x - iDiamondSize, y + iDiamondSize, 1+8+16+64+128);
 		if (bDirection & 128) CHECK_CANDIDATE(x + iDiamondSize, y + iDiamondSize, 2+8+32+64+128);
 
-		bDirection = iDirection;
+		bDirection = *iDirection;
 		x = data->currentMV->x; y = data->currentMV->y;
-	} while (iDirection);
+	} while (*iDirection);
 }
 
 static void
-DiamondSearch(int x, int y, const SearchData * const data, int bDirection)
+DiamondSearch(int x, int y, const SearchData * const data, int bDirection, CheckFunc * const CheckCandidate)
 {
 
 /* directions: 1 - left (x-1); 2 - right (x+1), 4 - up (y-1); 8 - down (y+1) */
 
-	int iDirection;
+	unsigned int * const iDirection = data->dir;
 
 	do {
-		iDirection = 0;
+		*iDirection = 0;
 		if (bDirection & 1) CHECK_CANDIDATE(x - iDiamondSize, y, 1);
 		if (bDirection & 2) CHECK_CANDIDATE(x + iDiamondSize, y, 2);
 		if (bDirection & 4) CHECK_CANDIDATE(x, y - iDiamondSize, 4);
@@ -896,9 +897,9 @@ DiamondSearch(int x, int y, const SearchData * const data, int bDirection)
 
 		/* now we're doing diagonal checks near our candidate */
 
-		if (iDirection) {		/* checking if anything found */
-			bDirection = iDirection;
-			iDirection = 0;
+		if (*iDirection) {		/* checking if anything found */
+			bDirection = *iDirection;
+			*iDirection = 0;
 			x = data->currentMV->x; y = data->currentMV->y;
 			if (bDirection & 3) {	/* our candidate is left or right */
 				CHECK_CANDIDATE(x, y + iDiamondSize, 8);
@@ -907,21 +908,20 @@ DiamondSearch(int x, int y, const SearchData * const data, int bDirection)
 				CHECK_CANDIDATE(x + iDiamondSize, y, 2);
 				CHECK_CANDIDATE(x - iDiamondSize, y, 1);
 			}
-			bDirection += iDirection;
+			bDirection += *iDirection;
 			x = data->currentMV->x; y = data->currentMV->y;
 		}
 	}
-	while (iDirection);
+	while (*iDirection);
 }
 
 /* MAINSEARCH FUNCTIONS END */
 
 static void
-SubpelRefine(const SearchData * const data)
+SubpelRefine(const SearchData * const data, CheckFunc * const CheckCandidate)
 {
 /* Do a half-pel or q-pel refinement */
 	const VECTOR centerMV = data->qpel_precision ? *data->currentQMV : *data->currentMV;
-	int iDirection; /* only needed because macro expects it */
 
 	CHECK_CANDIDATE(centerMV.x, centerMV.y - 1, 0);
 	CHECK_CANDIDATE(centerMV.x + 1, centerMV.y - 1, 0);
@@ -1171,7 +1171,7 @@ MotionEstimation(MBParam * const pParam,
 		(current->vop_flags & XVID_VOP_MODEDECISION_RD ? 2:1);
 
 	/* some pre-initialized thingies for SearchP */
-	int32_t temp[8];
+	int32_t temp[8]; uint32_t dir;
 	VECTOR currentMV[5];
 	VECTOR currentQMV[5];
 	int32_t iMinSAD[5];
@@ -1183,6 +1183,7 @@ MotionEstimation(MBParam * const pParam,
 	Data.currentQMV = currentQMV;
 	Data.iMinSAD = iMinSAD;
 	Data.temp = temp;
+	Data.dir = &dir;
 	Data.iFcode = current->fcode;
 	Data.rounding = pParam->m_rounding_type;
 	Data.qpel = (current->vol_flags & XVID_VOL_QUARTERPEL ? 1:0);
@@ -1257,20 +1258,30 @@ MotionEstimation(MBParam * const pParam,
 	return 0;
 }
 
-
+/* check if given vector is equal to any vector checked before */
 static __inline int
-make_mask(const VECTOR * const pmv, const int i)
+vector_repeats(const VECTOR * const pmv, const int i)
 {
-	int mask = 255, j;
+	unsigned int j;
+	for (j = 0; j < i; j++)
+		if (MVequal(pmv[i], pmv[j])) return 1; /* same vector has been checked already */
+	return 0;
+}
+
+/*	make a binary mask that prevents diamonds/squares 
+	from checking a vector which has been checked as a prediction */
+static __inline int
+make_mask(const VECTOR * const pmv, const int i, const int current)
+{
+	unsigned int mask = 255, j;
 	for (j = 0; j < i; j++) {
-		if (MVequal(pmv[i], pmv[j])) return 0; /* same vector has been checked already */
-		if (pmv[i].x == pmv[j].x) {
-			if (pmv[i].y == pmv[j].y + iDiamondSize) mask &= ~4;
-			else if (pmv[i].y == pmv[j].y - iDiamondSize) mask &= ~8;
+		if (pmv[current].x == pmv[j].x) {
+			if (pmv[current].y == pmv[j].y + iDiamondSize) mask &= ~4;
+			else if (pmv[current].y == pmv[j].y - iDiamondSize) mask &= ~8;
 		} else
-			if (pmv[i].y == pmv[j].y) {
-				if (pmv[i].x == pmv[j].x + iDiamondSize) mask &= ~1;
-				else if (pmv[i].x == pmv[j].x - iDiamondSize) mask &= ~2;
+			if (pmv[current].y == pmv[j].y) {
+				if (pmv[current].x == pmv[j].x + iDiamondSize) mask &= ~1;
+				else if (pmv[current].x == pmv[j].x - iDiamondSize) mask &= ~2;
 			}
 	}
 	return mask;
@@ -1334,9 +1345,10 @@ SearchP(const IMAGE * const pRef,
 		MACROBLOCK * const pMB)
 {
 
-	int i, iDirection = 255, mask, threshA;
+	int i, threshA;
 	VECTOR pmv[7];
 	int inter4v = (VopFlags & XVID_VOP_INTER4V) && (pMB->dquant == 0);
+	CheckFunc * CheckCandidate;
 
 	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
 						pParam->width, pParam->height, Data->iFcode - Data->qpel, 1, Data->rrv);
@@ -1359,6 +1371,7 @@ SearchP(const IMAGE * const pRef,
 	Data->lambda16 = lambda_vec16[pMB->quant];
 	Data->lambda8 = lambda_vec8[pMB->quant];
 	Data->qpel_precision = 0;
+	*Data->dir = 0;
 
 	memset(Data->currentMV, 0, 5*sizeof(VECTOR));
 
@@ -1383,17 +1396,17 @@ SearchP(const IMAGE * const pRef,
 					prevMBs + x + y * pParam->mb_width, Data->rrv);
 
 	if (!Data->rrv) {
-		if (inter4v | Data->chroma) CheckCandidate = CheckCandidate16;
+		if (inter4v) CheckCandidate = CheckCandidate16;
 			else CheckCandidate = CheckCandidate16no4v; /* for extra speed */
 	} else CheckCandidate = CheckCandidate32;
 
 /* main loop. checking all predictions (but first, which is 0,0 and has been checked in MotionEstimation())*/
 
-	for (i = 1; i < 7; i++) {
-		if (!(mask = make_mask(pmv, i)) ) continue;
-		CheckCandidate(pmv[i].x, pmv[i].y, mask, &iDirection, Data);
-		if (Data->iMinSAD[0] <= threshA) break;
-	}
+	for (i = 1; i < 7; i++)
+		if (!vector_repeats(pmv, i)) {
+			CheckCandidate(pmv[i].x, pmv[i].y, Data, i);
+			if (Data->iMinSAD[0] <= threshA) { i++; break; }
+		}
 
 	if ((Data->iMinSAD[0] <= threshA) ||
 			(MVequal(Data->currentMV[0], (prevMBs+x+y*pParam->mb_width)->mvs[0]) &&
@@ -1402,11 +1415,13 @@ SearchP(const IMAGE * const pRef,
 	else {
 
 		MainSearchFunc * MainSearchPtr;
+		int mask = make_mask(pmv, i, *Data->dir); // all vectors pmv[0..i-1] have been checked
+
 		if (MotionFlags & XVID_ME_USESQUARES16) MainSearchPtr = SquareSearch;
 		else if (MotionFlags & XVID_ME_ADVANCEDDIAMOND16) MainSearchPtr = AdvDiamondSearch;
 			else MainSearchPtr = DiamondSearch;
 
-		MainSearchPtr(Data->currentMV->x, Data->currentMV->y, Data, iDirection);
+		MainSearchPtr(Data->currentMV->x, Data->currentMV->y, Data, mask, CheckCandidate);
 
 /* extended search, diamond starting in 0,0 and in prediction.
 	note that this search is/might be done in halfpel positions,
@@ -1422,8 +1437,8 @@ SearchP(const IMAGE * const pRef,
 			if (!(MVequal(startMV, backupMV))) {
 				bSAD = Data->iMinSAD[0]; Data->iMinSAD[0] = MV_MAX_ERROR;
 
-				CheckCandidate(startMV.x, startMV.y, 255, &iDirection, Data);
-				MainSearchPtr(startMV.x, startMV.y, Data, 255);
+				CheckCandidate(startMV.x, startMV.y, Data, 255);
+				MainSearchPtr(startMV.x, startMV.y, Data, 255, CheckCandidate);
 				if (bSAD < Data->iMinSAD[0]) {
 					Data->currentMV[0] = backupMV;
 					Data->iMinSAD[0] = bSAD; }
@@ -1434,17 +1449,18 @@ SearchP(const IMAGE * const pRef,
 			if (!(MVequal(startMV, backupMV))) {
 				bSAD = Data->iMinSAD[0]; Data->iMinSAD[0] = MV_MAX_ERROR;
 
-				CheckCandidate(startMV.x, startMV.y, 255, &iDirection, Data);
-				MainSearchPtr(startMV.x, startMV.y, Data, 255);
+				CheckCandidate(startMV.x, startMV.y, Data, 255);
+				MainSearchPtr(startMV.x, startMV.y, Data, 255, CheckCandidate);
 				if (bSAD < Data->iMinSAD[0]) {
 					Data->currentMV[0] = backupMV;
-					Data->iMinSAD[0] = bSAD; }
+					Data->iMinSAD[0] = bSAD; 
+				}
 			}
 		}
 	}
 
 	if (MotionFlags & XVID_ME_HALFPELREFINE16)
-			SubpelRefine(Data);
+			SubpelRefine(Data, CheckCandidate);
 
 	for(i = 0; i < 5; i++) {
 		Data->currentQMV[i].x = 2 * Data->currentMV[i].x; /* initialize qpel vectors */
@@ -1456,7 +1472,7 @@ SearchP(const IMAGE * const pRef,
 				pParam->width, pParam->height, Data->iFcode, 2, 0);
 		Data->qpel_precision = 1;
 		if (MotionFlags & XVID_ME_QUARTERPELREFINE16)
-			SubpelRefine(Data);
+			SubpelRefine(Data, CheckCandidate);
 	}
 
 	if (Data->iMinSAD[0] < (int32_t)pMB->quant * 30)
@@ -1503,6 +1519,7 @@ Search8(const SearchData * const OldData,
 		SearchData * const Data)
 {
 	int i = 0;
+	CheckFunc * CheckCandidate;
 	Data->iMinSAD = OldData->iMinSAD + 1 + block;
 	Data->currentMV = OldData->currentMV + 1 + block;
 	Data->currentQMV = OldData->currentQMV + 1 + block;
@@ -1545,7 +1562,7 @@ Search8(const SearchData * const OldData,
 				else if (MotionFlags & XVID_ME_ADVANCEDDIAMOND8) MainSearchPtr = AdvDiamondSearch;
 					else MainSearchPtr = DiamondSearch;
 
-			MainSearchPtr(Data->currentMV->x, Data->currentMV->y, Data, 255);
+			MainSearchPtr(Data->currentMV->x, Data->currentMV->y, Data, 255, CheckCandidate);
 
 			if(*(Data->iMinSAD) < temp_sad) {
 					Data->currentQMV->x = 2 * Data->currentMV->x; /* update our qpel vector */
@@ -1556,7 +1573,7 @@ Search8(const SearchData * const OldData,
 		if (MotionFlags & XVID_ME_HALFPELREFINE8) {
 			int32_t temp_sad = *(Data->iMinSAD); /* store current MinSAD */
 
-			SubpelRefine(Data); /* perform halfpel refine of current best vector */
+			SubpelRefine(Data, CheckCandidate); /* perform halfpel refine of current best vector */
 
 			if(*(Data->iMinSAD) < temp_sad) { /* we have found a better match */
 				Data->currentQMV->x = 2 * Data->currentMV->x; /* update our qpel vector */
@@ -1568,7 +1585,7 @@ Search8(const SearchData * const OldData,
 				Data->qpel_precision = 1;
 				get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 3,
 					pParam->width, pParam->height, Data->iFcode, 2, 0);
-				SubpelRefine(Data);
+				SubpelRefine(Data, CheckCandidate);
 		}
 	}
 
@@ -1654,7 +1671,7 @@ SearchBF(	const IMAGE * const pRef,
 			SearchData * const Data)
 {
 
-	int i, iDirection = 255, mask;
+	int i, mask;
 	VECTOR pmv[7];
 	MainSearchFunc *MainSearchPtr;
 	*Data->iMinSAD = MV_MAX_ERROR;
@@ -1680,21 +1697,21 @@ SearchBF(	const IMAGE * const pRef,
 	PreparePredictionsBF(pmv, x, y, pParam->mb_width, pMB, mode_current);
 
 	Data->currentMV->x = Data->currentMV->y = 0;
-	CheckCandidate = CheckCandidate16no4v;
 
 	/* main loop. checking all predictions */
-	for (i = 0; i < 7; i++) {
-		if (!(mask = make_mask(pmv, i)) ) continue;
-		CheckCandidate16no4v(pmv[i].x, pmv[i].y, mask, &iDirection, Data);
-	}
+	for (i = 0; i < 7; i++)
+		if (!vector_repeats(pmv, i) )
+			CheckCandidate16no4v(pmv[i].x, pmv[i].y, Data, i);
 
 	if (MotionFlags & XVID_ME_USESQUARES16) MainSearchPtr = SquareSearch;
 	else if (MotionFlags & XVID_ME_ADVANCEDDIAMOND16) MainSearchPtr = AdvDiamondSearch;
 		else MainSearchPtr = DiamondSearch;
 
-	MainSearchPtr(Data->currentMV->x, Data->currentMV->y, Data, iDirection);
+	mask = make_mask(pmv, 7, *Data->dir);
 
-	SubpelRefine(Data);
+	MainSearchPtr(Data->currentMV->x, Data->currentMV->y, Data, mask, CheckCandidate16no4v);
+
+	SubpelRefine(Data, CheckCandidate16no4v);
 
 	if (Data->qpel && *Data->iMinSAD < *best_sad + 300) {
 		Data->currentQMV->x = 2*Data->currentMV->x;
@@ -1702,7 +1719,7 @@ SearchBF(	const IMAGE * const pRef,
 		Data->qpel_precision = 1;
 		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
 					pParam->width, pParam->height, iFcode, 2, 0);
-		SubpelRefine(Data);
+		SubpelRefine(Data, CheckCandidate16no4v);
 	}
 
 	/* three bits are needed to code backward mode. four for forward */
@@ -1803,6 +1820,7 @@ SearchDirect(const IMAGE * const f_Ref,
 	int32_t skip_sad;
 	int k = (x + Data->iEdgedWidth*y) * 16;
 	MainSearchFunc *MainSearchPtr;
+	CheckFunc * CheckCandidate;
 
 	*Data->iMinSAD = 256*4096;
 	Data->RefP[0] = f_Ref->y + k;
@@ -1852,7 +1870,7 @@ SearchDirect(const IMAGE * const f_Ref,
 
 	CheckCandidate = b_mb->mode == MODE_INTER4V ? CheckCandidateDirect : CheckCandidateDirectno4v;
 
-	CheckCandidate(0, 0, 255, &k, Data);
+	CheckCandidate(0, 0, Data, 255);
 
 	/* initial (fast) skip decision */
 	if (*Data->iMinSAD < pMB->quant * INITIAL_SKIP_THRESH * (Data->chroma?3:2)) {
@@ -1878,9 +1896,9 @@ SearchDirect(const IMAGE * const f_Ref,
 		else if (MotionFlags & XVID_ME_ADVANCEDDIAMOND16) MainSearchPtr = AdvDiamondSearch;
 			else MainSearchPtr = DiamondSearch;
 
-	MainSearchPtr(0, 0, Data, 255);
+	MainSearchPtr(0, 0, Data, 255, CheckCandidate);
 
-	SubpelRefine(Data);
+	SubpelRefine(Data, CheckCandidate);
 
 	*best_sad = *Data->iMinSAD;
 
@@ -1939,7 +1957,7 @@ SearchInterpolate(const IMAGE * const f_Ref,
 
 {
 
-	int iDirection, i, j;
+	int i, j;
 	SearchData bData;
 
 	fData->qpel_precision = 0;
@@ -1962,6 +1980,7 @@ SearchInterpolate(const IMAGE * const f_Ref,
 	bData.b_RefP[5] = fData->RefP[5] = f_Ref->v + (x + (fData->iEdgedWidth/2) * y) * 8;
 	bData.RefP[4] = fData->b_RefP[4] = b_Ref->u + (x + (fData->iEdgedWidth/2) * y) * 8;
 	bData.RefP[5] = fData->b_RefP[5] = b_Ref->v + (x + (fData->iEdgedWidth/2) * y) * 8;
+	bData.dir = fData->dir;
 
 	bData.bpredMV = fData->predMV = *f_predMV;
 	fData->bpredMV = bData.predMV = *b_predMV;
@@ -1980,33 +1999,32 @@ SearchInterpolate(const IMAGE * const f_Ref,
 	if (fData->currentMV[1].y > bData.max_dy) fData->currentMV[1].y = bData.max_dy;
 	if (fData->currentMV[1].y < bData.min_dy) fData->currentMV[1].y = bData.min_dy;
 
-	CheckCandidateInt(fData->currentMV[0].x, fData->currentMV[0].y, 255, &iDirection, fData);
+	CheckCandidateInt(fData->currentMV[0].x, fData->currentMV[0].y, fData, 255);
 
 	/* diamond */
 	do {
-		iDirection = 255;
+		*fData->dir = 255;
 		/* forward MV moves */
 		i = fData->currentMV[0].x; j = fData->currentMV[0].y;
 
-		CheckCandidateInt(i + 1, j, 0, &iDirection, fData);
-		CheckCandidateInt(i, j + 1, 0, &iDirection, fData);
-		CheckCandidateInt(i - 1, j, 0, &iDirection, fData);
-		CheckCandidateInt(i, j - 1, 0, &iDirection, fData);
+		CheckCandidateInt(i + 1, j, fData, 0);
+		CheckCandidateInt(i, j + 1, fData, 0);
+		CheckCandidateInt(i - 1, j, fData, 0);
+		CheckCandidateInt(i, j - 1, fData, 0);
 
 		/* backward MV moves */
 		i = fData->currentMV[1].x; j = fData->currentMV[1].y;
 		fData->currentMV[2] = fData->currentMV[0];
-		CheckCandidateInt(i + 1, j, 0, &iDirection, &bData);
-		CheckCandidateInt(i, j + 1, 0, &iDirection, &bData);
-		CheckCandidateInt(i - 1, j, 0, &iDirection, &bData);
-		CheckCandidateInt(i, j - 1, 0, &iDirection, &bData);
+		CheckCandidateInt(i + 1, j, &bData, 0);
+		CheckCandidateInt(i, j + 1, &bData, 0);
+		CheckCandidateInt(i - 1, j, &bData, 0);
+		CheckCandidateInt(i, j - 1, &bData, 0);
 
-	} while (!(iDirection));
+	} while (!(*fData->dir));
 
 	/* qpel refinement */
 	if (fData->qpel) {
 		if (*fData->iMinSAD > *best_sad + 500) return;
-		CheckCandidate = CheckCandidateInt;
 		fData->qpel_precision = bData.qpel_precision = 1;
 		get_range(&fData->min_dx, &fData->max_dx, &fData->min_dy, &fData->max_dy, x, y, 4, pParam->width, pParam->height, fcode, 2, 0);
 		get_range(&bData.min_dx, &bData.max_dx, &bData.min_dy, &bData.max_dy, x, y, 4, pParam->width, pParam->height, bcode, 2, 0);
@@ -2014,10 +2032,10 @@ SearchInterpolate(const IMAGE * const f_Ref,
 		fData->currentQMV[2].y = fData->currentQMV[0].y = 2 * fData->currentMV[0].y;
 		fData->currentQMV[1].x = 2 * fData->currentMV[1].x;
 		fData->currentQMV[1].y = 2 * fData->currentMV[1].y;
-		SubpelRefine(fData);
+		SubpelRefine(fData, CheckCandidateInt);
 		if (*fData->iMinSAD > *best_sad + 300) return;
 		fData->currentQMV[2] = fData->currentQMV[0];
-		SubpelRefine(&bData);
+		SubpelRefine(&bData, CheckCandidateInt);
 	}
 
 	*fData->iMinSAD += (2+3) * fData->lambda16; /* two bits are needed to code interpolate mode. */
@@ -2076,6 +2094,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 
 	SearchData Data;
 	int32_t iMinSAD;
+	uint32_t dir;
 	VECTOR currentMV[3];
 	VECTOR currentQMV[3];
 	int32_t temp[8];
@@ -2088,6 +2107,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 	Data.rounding = 0;
 	Data.chroma = frame->motion_flags & XVID_ME_CHROMA_BVOP;
 	Data.temp = temp;
+	Data.dir = &dir;
 
 	Data.RefQ = f_refV->u; /* a good place, also used in MC (for similar purpose) */
 
@@ -2194,8 +2214,7 @@ MEanalyzeMB (	const uint8_t * const pRef,
 				SearchData * const Data)
 {
 
-	int i, mask;
-	int quarterpel = (pParam->vol_flags & XVID_VOL_QUARTERPEL)? 1: 0;
+	int i;
 	VECTOR pmv[3];
 	MACROBLOCK * const pMB = &pMBs[x + y * pParam->mb_width];
 
@@ -2211,7 +2230,7 @@ MEanalyzeMB (	const uint8_t * const pRef,
 			else Data->predMV = get_pmv2(pMBs, pParam->mb_width, 0, x, y, 0); /* else median */
 
 	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
-			pParam->width, pParam->height, Data->iFcode - quarterpel, 1, 0);
+			pParam->width, pParam->height, Data->iFcode - Data->qpel, 1, 0);
 
 	Data->Cur = pCur + (x + y * pParam->edged_width) * 16;
 	Data->RefP[0] = pRef + (x + y * pParam->edged_width) * 16;
@@ -2222,17 +2241,19 @@ MEanalyzeMB (	const uint8_t * const pRef,
 	pmv[2].y = EVEN(Data->predMV.y);
 	pmv[0].x = pmv[0].y = 0;
 
-	CheckCandidate32I(0, 0, 255, &i, Data);
+	CheckCandidate32I(0, 0, Data, 0);
 
 	if (*Data->iMinSAD > 4 * MAX_SAD00_FOR_SKIP) {
 
-		if (!(mask = make_mask(pmv, 1)))
-			CheckCandidate32I(pmv[1].x, pmv[1].y, mask, &i, Data);
-		if (!(mask = make_mask(pmv, 2)))
-			CheckCandidate32I(pmv[2].x, pmv[2].y, mask, &i, Data);
+//		if (!vector_repeats(pmv, 1))
+			CheckCandidate32I(pmv[1].x, pmv[1].y, Data, 1);
+//		if (!vector_repeats(pmv, 2))
+			CheckCandidate32I(pmv[2].x, pmv[2].y, Data, 2);
 
-		if (*Data->iMinSAD > 4 * MAX_SAD00_FOR_SKIP) /* diamond only if needed */
-			DiamondSearch(Data->currentMV->x, Data->currentMV->y, Data, i);
+		if (*Data->iMinSAD > 4 * MAX_SAD00_FOR_SKIP) { /* diamond only if needed */
+//			unsigned int mask = make_mask(pmv, 3, *Data->dir);
+			DiamondSearch(Data->currentMV->x, Data->currentMV->y, Data, 255/*mask*/, CheckCandidate32I);
+		}
 	}
 
 	for (i = 0; i < 4; i++) {
@@ -2265,6 +2286,7 @@ MEanalysis(	const IMAGE * const pRef,
 	int complexity = 0;
 
 	int32_t iMinSAD[5], temp[5];
+	uint32_t dir;
 	VECTOR currentMV[5];
 	SearchData Data;
 	Data.iEdgedWidth = pParam->edged_width;
@@ -2272,7 +2294,8 @@ MEanalysis(	const IMAGE * const pRef,
 	Data.iMinSAD = iMinSAD;
 	Data.iFcode = Current->fcode;
 	Data.temp = temp;
-	CheckCandidate = CheckCandidate32I;
+	Data.dir = &dir;
+	Data.qpel = (pParam->vol_flags & XVID_VOL_QUARTERPEL)? 1: 0;
 
 	if (intraCount != 0) {
 		if (intraCount < 10) // we're right after an I frame
@@ -2341,10 +2364,8 @@ findRDinter(SearchData * const Data,
 			const MBParam * const pParam,
 			const uint32_t MotionFlags)
 {
-	int i, iDirection;
+	int i;
 	int32_t bsad[5];
-
-	CheckCandidate = CheckCandidateRD16;
 
 	if (Data->qpel) {
 		for(i = 0; i < 5; i++) {
@@ -2352,7 +2373,7 @@ findRDinter(SearchData * const Data,
 			Data->currentMV[i].y = Data->currentQMV[i].y/2;
 		}
 		Data->qpel_precision = 1;
-		CheckCandidateRD16(Data->currentQMV[0].x, Data->currentQMV[0].y, 255, &iDirection, Data);
+		CheckCandidateRD16(Data->currentQMV[0].x, Data->currentQMV[0].y, Data, 255);
 
 		if (MotionFlags & (XVID_ME_HALFPELREFINE16_RD | XVID_ME_EXTSEARCH_RD)) { /* we have to prepare for halfpixel-precision search */
 			for(i = 0; i < 5; i++) bsad[i] = Data->iMinSAD[i];
@@ -2360,17 +2381,19 @@ findRDinter(SearchData * const Data,
 						pParam->width, pParam->height, Data->iFcode - Data->qpel, 1, Data->rrv);
 			Data->qpel_precision = 0;
 			if (Data->currentQMV->x & 1 || Data->currentQMV->y & 1)
-				CheckCandidateRD16(Data->currentMV[0].x, Data->currentMV[0].y, 255, &iDirection, Data);
+				CheckCandidateRD16(Data->currentMV[0].x, Data->currentMV[0].y, Data, 255);
 		}
 
 	} else { /* not qpel */
 
-		CheckCandidateRD16(Data->currentMV[0].x, Data->currentMV[0].y, 255, &iDirection, Data);
+		CheckCandidateRD16(Data->currentMV[0].x, Data->currentMV[0].y, Data, 255);
 	}
 
-	if (MotionFlags&XVID_ME_EXTSEARCH_RD) SquareSearch(Data->currentMV->x, Data->currentMV->y, Data, iDirection);
+	if (MotionFlags&XVID_ME_EXTSEARCH_RD) 
+		SquareSearch(Data->currentMV->x, Data->currentMV->y, Data, 255, CheckCandidateRD16);
 
-	if (MotionFlags&XVID_ME_HALFPELREFINE16_RD) SubpelRefine(Data);
+	if (MotionFlags&XVID_ME_HALFPELREFINE16_RD) 
+		SubpelRefine(Data, CheckCandidateRD16);
 
 	if (Data->qpel) {
 		if (MotionFlags&(XVID_ME_EXTSEARCH_RD | XVID_ME_HALFPELREFINE16_RD)) { /* there was halfpel-precision search */
@@ -2384,13 +2407,14 @@ findRDinter(SearchData * const Data,
 			get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
 					pParam->width, pParam->height, Data->iFcode, 2, 0);
 		}
-		if (MotionFlags&XVID_ME_QUARTERPELREFINE16_RD) SubpelRefine(Data);
+		if (MotionFlags&XVID_ME_QUARTERPELREFINE16_RD) 
+			SubpelRefine(Data, CheckCandidateRD16);
 	}
 
 	if (MotionFlags&XVID_ME_CHECKPREDICTION_RD) { /* let's check vector equal to prediction */
 		VECTOR * v = Data->qpel ? Data->currentQMV : Data->currentMV;
 		if (!(Data->predMV.x == v->x && Data->predMV.y == v->y))
-			CheckCandidateRD16(Data->predMV.x, Data->predMV.y, 255, &iDirection, Data);
+			CheckCandidateRD16(Data->predMV.x, Data->predMV.y, Data, 255);
 	}
 	return Data->iMinSAD[0];
 }
@@ -2403,15 +2427,14 @@ findRDinter4v(const SearchData * const Data,
 				const VECTOR * const backup)
 {
 
-	int cbp = 0, bits = 0, t = 0, i, iDirection;
+	int cbp = 0, bits = 0, t = 0, i;
 	SearchData Data2, *Data8 = &Data2;
 	int sumx = 0, sumy = 0;
 	int16_t *in = Data->dctSpace, *coeff = Data->dctSpace + 64;
 	uint8_t * ptr;
 
 	memcpy(Data8, Data, sizeof(SearchData));
-	CheckCandidate = CheckCandidateRD8;
-
+	
 	for (i = 0; i < 4; i++) { /* for all luma blocks */
 
 		Data8->iMinSAD = Data->iMinSAD + i + 1;
@@ -2444,7 +2467,7 @@ findRDinter4v(const SearchData * const Data,
 		{
 			VECTOR *v = Data8->qpel ? Data8->currentQMV : Data8->currentMV;
 			if (!MVequal (*v, backup[i+1]) )
-				CheckCandidateRD8(backup[i+1].x, backup[i+1].y, 255, &iDirection, Data8);
+				CheckCandidateRD8(backup[i+1].x, backup[i+1].y, Data8, 255);
 		}
 
 		if (Data8->qpel) {
@@ -2457,13 +2480,13 @@ findRDinter4v(const SearchData * const Data,
 							pParam->width, pParam->height, Data8->iFcode - 1, 1, 0);
 
 				if (Data8->currentQMV->x & 1 || Data8->currentQMV->y & 1)
-					CheckCandidateRD8(Data8->currentMV->x, Data8->currentMV->y, 255, &iDirection, Data8);
+					CheckCandidateRD8(Data8->currentMV->x, Data8->currentMV->y, Data8, 255);
 
 				if (MotionFlags & XVID_ME_EXTSEARCH8 && MotionFlags & XVID_ME_EXTSEARCH_RD)
-					SquareSearch(Data8->currentMV->x, Data8->currentMV->x, Data8, 255);
+					SquareSearch(Data8->currentMV->x, Data8->currentMV->x, Data8, 255, CheckCandidateRD8);
 
 				if (MotionFlags & XVID_ME_HALFPELREFINE8_RD)
-					SubpelRefine(Data8);
+					SubpelRefine(Data8, CheckCandidateRD8);
 
 				if(s > *Data8->iMinSAD) { /* we have found a better match */
 					Data8->currentQMV->x = 2*Data8->currentMV->x;
@@ -2475,22 +2498,23 @@ findRDinter4v(const SearchData * const Data,
 							pParam->width, pParam->height, Data8->iFcode, 2, 0);
 
 			}
-			if (MotionFlags & XVID_ME_QUARTERPELREFINE8_RD) SubpelRefine(Data8);
+			if (MotionFlags & XVID_ME_QUARTERPELREFINE8_RD) 
+				SubpelRefine(Data8, CheckCandidateRD8);
 
 		} else { /* not qpel */
 
 			if (MotionFlags & XVID_ME_EXTSEARCH8 && MotionFlags & XVID_ME_EXTSEARCH_RD) /* extsearch */
-				SquareSearch(Data8->currentMV->x, Data8->currentMV->x, Data8, 255);
+				SquareSearch(Data8->currentMV->x, Data8->currentMV->x, Data8, 255, CheckCandidateRD8);
 
 			if (MotionFlags & XVID_ME_HALFPELREFINE8_RD)
-				SubpelRefine(Data8); /* halfpel refinement */
+				SubpelRefine(Data8, CheckCandidateRD8); /* halfpel refinement */
 		}
 
 		/* checking vector equal to predicion */
 		if (i != 0 && MotionFlags & XVID_ME_CHECKPREDICTION_RD) {
 			const VECTOR * v = Data->qpel ? Data8->currentQMV : Data8->currentMV;
 			if (!MVequal(*v, Data8->predMV))
-				CheckCandidateRD8(Data8->predMV.x, Data8->predMV.y, 255, &iDirection, Data8);
+				CheckCandidateRD8(Data8->predMV.x, Data8->predMV.y, Data8, 255);
 		}
 
 		bits += *Data8->iMinSAD;
@@ -2637,14 +2661,14 @@ GMEanalyzeMB (	const uint8_t * const pCur,
 	Data->RefP[3] = pRefHV + 16*(x + y * pParam->edged_width);
 
 	Data->currentMV[0].x = Data->currentMV[0].y = 0;
-	CheckCandidate16I(0, 0, 255, &i, Data);
+	CheckCandidate16I(0, 0, Data, 255);
 
 	if ( (Data->predMV.x !=0) || (Data->predMV.y != 0) )
-		CheckCandidate16I(Data->predMV.x, Data->predMV.y, 255, &i, Data);
+		CheckCandidate16I(Data->predMV.x, Data->predMV.y, Data, 255);
 
-	AdvDiamondSearch(Data->currentMV[0].x, Data->currentMV[0].y, Data, 255);
+	DiamondSearch(Data->currentMV[0].x, Data->currentMV[0].y, Data, 255, CheckCandidate16I);
 
-	SubpelRefine(Data);
+	SubpelRefine(Data, CheckCandidate16I);
 
 
 	/* for QPel halfpel positions are worse than in halfpel mode :( */
@@ -2680,6 +2704,7 @@ GMEanalysis(const MBParam * const pParam,
 
 	int32_t iMinSAD[5], temp[5];
 	VECTOR currentMV[5];
+	uint32_t dir;
 	SearchData Data;
 	memset(&Data, 0, sizeof(SearchData));
 
@@ -2690,14 +2715,12 @@ GMEanalysis(const MBParam * const pParam,
 	Data.iMinSAD = &iMinSAD[0];
 	Data.iFcode = current->fcode;
 	Data.temp = temp;
-
-	CheckCandidate = CheckCandidate16I;
+	Data.dir = &dir;
 
 	if (sadInit) (*sadInit) ();
 
 	for (y = 0; y < pParam->mb_height; y ++) {
 		for (x = 0; x < pParam->mb_width; x ++) {
-
 			GMEanalyzeMB(pCurrent->y, pReference->y, pRefH->y, pRefV->y, pRefHV->y, x, y, pParam, pMBs, &Data);
 		}
 	}

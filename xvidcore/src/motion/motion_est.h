@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.h,v 1.3.2.17 2003-08-26 09:25:25 edgomez Exp $
+ * $Id: motion_est.h,v 1.3.2.18 2003-08-28 11:06:16 syskin Exp $
  *
  ****************************************************************************/
 
@@ -121,6 +121,7 @@ typedef struct
 	uint32_t iEdgedWidth;
 	uint32_t iFcode;
 	int * temp;
+	int * dir;
 	int qpel, qpel_precision;
 	int chroma;
 	int rrv;
@@ -145,9 +146,8 @@ typedef struct
 
 
 typedef void(CheckFunc)(const int x, const int y,
-						const int Direction, int * const dir,
-						const SearchData * const Data);
-CheckFunc *CheckCandidate;
+						const SearchData * const Data,
+						const int Direction);
 
 /*
  * Calculate the min/max range
@@ -189,7 +189,9 @@ get_range(int32_t * const min_dx,
 	*min_dy = MAX(low, k);
 }
 
-typedef void MainSearchFunc(int x, int y, const SearchData * const Data, int bDirection);
+typedef void 
+MainSearchFunc(int x, int y, const SearchData * const Data, 
+			   int bDirection, CheckFunc * const CheckCandidate);
 
 static MainSearchFunc DiamondSearch, AdvDiamondSearch, SquareSearch;
 
