@@ -102,7 +102,7 @@ BEGIN
                     SS_CENTERIMAGE
     COMBOBOX        IDC_MOTION,112,16,76,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
-    GROUPBOX        "Global settings",IDC_STATIC,4,4,192,96
+    GROUPBOX        "Global settings",IDC_STATIC,4,4,192,108
     LTEXT           "Quantization type:",IDC_STATIC,12,32,80,12,
                     SS_CENTERIMAGE
     COMBOBOX        IDC_QUANTTYPE,112,32,76,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
@@ -115,6 +115,8 @@ BEGIN
                     SS_CENTERIMAGE
     CONTROL         "Enable lumi masking",IDC_LUMMASK,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,16,84,80,10
+    CONTROL         "Enable interlacing",IDC_INTERLACING,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,96,72,10
 END
 
 IDD_QUANT DIALOG DISCARDABLE  0, 0, 200, 217
@@ -151,37 +153,41 @@ STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Two Pass"
 FONT 8, "MS Sans Serif"
 BEGIN
-    GROUPBOX        "Two-pass tuning",IDC_STATIC,4,4,192,72
-    LTEXT           "Bitrate payback delay (frames):",IDC_STATIC,12,128,100,
+    GROUPBOX        "Two-pass tuning",IDC_STATIC,4,4,192,60
+    LTEXT           "Bitrate payback delay (frames):",IDC_STATIC,12,112,100,
                     12,SS_CENTERIMAGE
-    EDITTEXT        IDC_PAYBACK,112,128,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "High bitrate scenes %:",IDC_STATIC,12,96,100,12,
+    EDITTEXT        IDC_PAYBACK,112,112,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "High bitrate scenes %:",IDC_STATIC,12,80,100,12,
                     SS_CENTERIMAGE
-    EDITTEXT        IDC_CURVECOMPH,112,96,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "Low bitrate scenes %:",IDC_STATIC,12,112,100,12,
+    EDITTEXT        IDC_CURVECOMPH,112,80,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Low bitrate scenes %:",IDC_STATIC,12,96,100,12,
                     SS_CENTERIMAGE
-    EDITTEXT        IDC_CURVECOMPL,112,112,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    GROUPBOX        "Curve compression",IDC_STATIC,4,84,192,88
+    EDITTEXT        IDC_CURVECOMPL,112,96,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    GROUPBOX        "Curve compression",IDC_STATIC,4,68,192,88
     LTEXT           "I-frame boost %:",IDC_STATIC,12,16,100,12,
                     SS_CENTERIMAGE
     EDITTEXT        IDC_KFBOOST,112,16,76,12,ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "Payback with bias",IDC_PAYBACKBIAS,"Button",
-                    BS_AUTORADIOBUTTON | WS_GROUP,16,144,96,12
+                    BS_AUTORADIOBUTTON | WS_GROUP,16,128,96,12
     CONTROL         "Payback proportionally",IDC_PAYBACKPROP,"Button",
-                    BS_AUTORADIOBUTTON,16,155,96,12
+                    BS_AUTORADIOBUTTON,16,139,96,12
     LTEXT           "Min I-frame interval:",IDC_STATIC,12,32,100,12,
                     SS_CENTERIMAGE
     EDITTEXT        IDC_MINKEY,112,32,76,12,ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "Discard first pass",IDC_DISCARD1PASS,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,16,48,69,10
     CONTROL         "Dummy 2nd pass",IDC_DUMMY2PASS,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,16,60,70,10
+                    WS_TABSTOP,100,48,70,10
     EDITTEXT        IDC_STATS2,64,196,112,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_STATS2_BROWSE,180,196,16,11
-    LTEXT           "2nd pass stats:",IDC_STATIC,4,196,48,12,SS_CENTERIMAGE
-    LTEXT           "1st pass stats:",IDC_STATIC,4,182,48,12,SS_CENTERIMAGE
+    LTEXT           "2nd pass stats:",IDC_STATIC,4,196,52,12,SS_CENTERIMAGE
+    LTEXT           "1st pass stats:",IDC_STATIC,4,180,52,12,SS_CENTERIMAGE
     EDITTEXT        IDC_STATS1,64,180,112,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_STATS1_BROWSE,180,180,16,11
+    EDITTEXT        IDC_HINTFILE,64,164,112,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_HINT_BROWSE,180,164,16,11
+    CONTROL         "Hinted ME:",IDC_HINTEDME,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,4,164,52,12
 END
 
 IDD_CREDITS DIALOG DISCARDABLE  0, 0, 200, 217

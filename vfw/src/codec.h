@@ -91,8 +91,11 @@ typedef struct
 
 typedef struct
 {
+	HANDLE hints;
 	HANDLE stats1;
 	HANDLE stats2;
+
+	void * hintstream;
 
 	int bytes1;
 	int bytes2;
@@ -155,10 +158,7 @@ LRESULT decompress_begin(CODEC *, BITMAPINFO *, BITMAPINFO *);
 LRESULT decompress_end(CODEC *);
 LRESULT decompress(CODEC *, ICDECOMPRESS *);
 
-int codec_2pass_init(CODEC *);
 int codec_get_quant(CODEC *, XVID_ENC_FRAME *);
-int codec_2pass_get_quant(CODEC *, XVID_ENC_FRAME *);
-int codec_2pass_update(CODEC *, XVID_ENC_FRAME *, XVID_ENC_STATS *);
 int codec_is_in_credits(CONFIG *, int);
 int codec_get_vbr_quant(CONFIG *, int);
 
