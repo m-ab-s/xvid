@@ -33,7 +33,7 @@
  *
  *  - Mon Jun 17 00:10:09 2002 Added legal header
  *
- *  $Id: emms.c,v 1.3.2.1 2003-01-04 06:14:33 suxen_drol Exp $
+ *  $Id: emms.c,v 1.3.2.2 2003-01-05 03:31:26 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -60,21 +60,4 @@ emmsFuncPtr emms;
 void
 emms_c()
 {
-}
-
-/* The real mmx emms wrapper */
-void
-emms_mmx()
-{
-	/* the EMMS macro is defined according to the compiler in portab.h */
-	EMMS();
-
-}
-
-/* 3dnow fast-emms */
-void
-emms_3dn()
-{
-	/* the FEMMS macro is defined according to the compiler in portab.h */
-	FEMMS();
 }

@@ -33,11 +33,9 @@
  *
  *  - Mon Jun 17 00:16:13 2002 Added legal header
  *
- *  $Id: emms.h,v 1.7.2.1 2003-01-04 06:14:33 suxen_drol Exp $
+ *  $Id: emms.h,v 1.7.2.2 2003-01-05 03:31:26 suxen_drol Exp $
  *
  ****************************************************************************/
-
-#include "../xvid.h"
 
 #ifndef _EMMS_H_
 #define _EMMS_H_
@@ -64,6 +62,7 @@ emmsFunc emms_3dn;
  ****************************************************************************/
 
 #ifdef ARCH_X86
+/* cpu_flag detection helper functions */
 extern int check_cpu_features(void);
 extern void sse_os_trigger(void);
 extern void sse2_os_trigger(void);

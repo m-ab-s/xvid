@@ -199,3 +199,19 @@ sse2_os_trigger:
 	xorpd xmm0, xmm0
 	ret
 
+
+; enter/exit mmx state
+
+cglobal emms_mmx
+align 16
+emms_mmx:
+	emms
+	ret
+
+; faster enter/exit mmx state
+
+cglobal emms_3dn
+align 16
+emms_3dn:
+	femms
+	ret
