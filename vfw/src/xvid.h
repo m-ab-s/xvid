@@ -37,7 +37,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.6 2002-07-12 12:26:55 suxen_drol Exp $
+*  $Id: xvid.h,v 1.7 2002-07-21 03:46:13 suxen_drol Exp $
 *
 *****************************************************************************/
 
@@ -73,6 +73,7 @@ extern "C" {
 #define XVID_CSP_RGB555	10
 #define XVID_CSP_RGB565	11
 #define XVID_CSP_USER	12
+#define XVID_CSP_EXTERN      1004  // per slice rendering
 #define XVID_CSP_YVYU	1002
 #define XVID_CSP_RGB32 	1000
 #define XVID_CSP_NULL 	9999
@@ -154,6 +155,14 @@ extern "C" {
 		int colorspace;
 	}
 	XVID_DEC_FRAME;
+
+
+	// This struct is used for per slice rendering
+	typedef struct 
+	{
+		void *y,*u,*v;
+		int stride_y, stride_u,stride_v;
+	} XVID_DEC_PICTURE;
 
 
 /*****************************************************************************
@@ -256,6 +265,7 @@ extern "C" {
 								 * eg. 200 = x2 multiplier
 								 * quant = ((past_quant + future_quant) * bquant_ratio)/200
 								 */
+		int frame_drop_ratio;   /* frame dropping: 0=drop none... 100=drop all */
 #endif
 		void *handle;			/* [out] encoder instance handle */
 	}

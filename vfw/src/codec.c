@@ -306,6 +306,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	if (codec->config.debug) param.global |= XVID_GLOBAL_DEBUG;
 	param.max_bframes = codec->config.max_bframes;
 	param.bquant_ratio = codec->config.bquant_ratio;
+	param.frame_drop_ratio = codec->config.frame_drop_ratio;
 #endif
 
 	switch(xvid_encore(0, XVID_ENC_CREATE, &param, NULL)) 
@@ -519,7 +520,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	frame.bquant = 0;
 #endif
 
-	OutputDebugString(" ");
+//	OutputDebugString(" ");
 	switch (xvid_encore(codec->ehandle, XVID_ENC_ENCODE, &frame, &stats)) 
 	{
 	case XVID_ERR_FAIL :	

@@ -143,6 +143,9 @@ typedef struct
 #ifdef _SMP
 	int num_threads;
 #endif
+#ifdef BFRAMES
+	int frame_drop_ratio;
+#endif
 
 //	char build[50];
 	DWORD cpu;
