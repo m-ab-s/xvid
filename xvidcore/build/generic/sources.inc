@@ -45,8 +45,8 @@ SRC_IA32 = \
 	utils/x86_asm/cpuid.asm \
 	\
 	bitstream/x86_asm/cbp_mmx.asm \
-	dct/x86_asm/fdct_mmx.asm \
-	dct/x86_asm/fdct_xmm.asm \
+	dct/x86_asm/fdct_mmx_ffmpeg.asm \
+	dct/x86_asm/fdct_mmx_skal.asm \
 	dct/x86_asm/idct_mmx.asm \
 	dct/x86_asm/simple_idct_mmx.asm \
 	image/x86_asm/interpolate8x8_mmx.asm \

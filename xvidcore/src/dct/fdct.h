@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: fdct.h,v 1.7.2.2 2003-08-13 11:43:51 edgomez Exp $
+ * $Id: fdct.h,v 1.7.2.3 2003-10-27 01:03:06 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -34,10 +34,10 @@ extern fdctFuncPtr fdct;
 fdctFunc fdct_int32;
 
 #ifdef ARCH_IS_IA32
-fdctFunc fdct_mmx;		/* AP-992, Royce Shih-Wea Liao */
-fdctFunc fdct_sse2;		/* Dmitry Rozhdestvensky, Vladimir G. Ivanov */
-fdctFunc xvid_fdct_mmx;	/* Pascal Massimino */
-fdctFunc xvid_fdct_sse;	/* Pascal Massimino */
+fdctFunc fdct_mmx_ffmpeg;
+fdctFunc fdct_xmm_ffmpeg;
+fdctFunc fdct_mmx_skal;
+fdctFunc fdct_xmm_skal;
 #endif
 
 #ifdef ARCH_IS_ALTIVEC

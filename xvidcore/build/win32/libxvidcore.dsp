@@ -274,13 +274,13 @@ SOURCE=..\..\src\bitstream\mbcoding.c
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\src\dct\x86_asm\fdct_mmx.asm
+SOURCE=..\..\src\dct\x86_asm\fdct_mmx_ffmpeg.asm
 
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Release
-InputPath=..\..\src\dct\x86_asm\fdct_mmx.asm
+InputPath=..\..\src\dct\x86_asm\fdct_mmx_ffmpeg.asm
 InputName=fdct_mmx
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -292,7 +292,7 @@ InputName=fdct_mmx
 
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Debug
-InputPath=..\..\src\dct\x86_asm\fdct_mmx.asm
+InputPath=..\..\src\dct\x86_asm\fdct_mmx_ffmpeg.asm
 InputName=fdct_mmx
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -305,13 +305,13 @@ InputName=fdct_mmx
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\src\dct\x86_asm\fdct_xmm.asm
+SOURCE=..\..\src\dct\x86_asm\fdct_mmx_skal.asm
 
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Release
-InputPath=..\..\src\dct\x86_asm\fdct_xmm.asm
+InputPath=..\..\src\dct\x86_asm\fdct_mmx_skal.asm
 InputName=fdct_xmm
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
@@ -323,7 +323,7 @@ InputName=fdct_xmm
 
 # Begin Custom Build - Assembling $(InputPath)
 IntDir=.\Debug
-InputPath=..\..\src\dct\x86_asm\fdct_xmm.asm
+InputPath=..\..\src\dct\x86_asm\fdct_mmx_skal.asm
 InputName=fdct_xmm
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
