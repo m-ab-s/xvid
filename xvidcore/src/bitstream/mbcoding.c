@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbcoding.c,v 1.44.2.15 2003-10-03 13:47:00 syskin Exp $
+ * $Id: mbcoding.c,v 1.44.2.16 2003-10-03 14:01:59 syskin Exp $
  *
  ****************************************************************************/
 
@@ -717,16 +717,16 @@ CodeBlockInter(const FRAMEINFO * const frame,
 			DPRINTF(XVID_DEBUG_MB,"codep: field_dct: %i\n", pMB->field_dct);
 		}
 
-		/* if inter block, write field ME flag */
-		if (pMB->mode == MODE_INTER || pMB->mode == MODE_INTER_Q) {
-			BitstreamPutBit(bs, pMB->field_pred);
+		/* if inter block, write field ME flag ** not implemented yet */
+		if ((pMB->mode == MODE_INTER || pMB->mode == MODE_INTER_Q) && (pMB->mcsel == 0)) {
+			BitstreamPutBit(bs, 0 /*pMB->field_pred*/);
 			DPRINTF(XVID_DEBUG_MB,"codep: field_pred: %i\n", pMB->field_pred);
 
 			/* write field prediction references */
-			if (pMB->field_pred) {
+		/*	if (pMB->field_pred) {
 				BitstreamPutBit(bs, pMB->field_for_top);
 				BitstreamPutBit(bs, pMB->field_for_bot);
-			}
+			} */
 		}
 	}
 	/* code motion vector(s) if motion is local  */
