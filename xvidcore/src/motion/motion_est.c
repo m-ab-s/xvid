@@ -359,7 +359,7 @@ CheckCandidate8(const int x, const int y, const int Direction, int * const dir, 
 		|| (y > data->max_dy) || (y < data->min_dy) ) return;
 
 	if (!data->qpel_precision) Reference = GetReference(x, y, data);
-	else Reference = Interpolate16x16qpel(x, y, 0, data);
+	else Reference = Interpolate8x8qpel(x, y, 0, 0, data);
 
 	sad = sad8(data->Cur, Reference, data->iEdgedWidth);
 	t = d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
