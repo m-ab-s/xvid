@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbtransquant.c,v 1.21.2.7 2003-04-10 13:05:54 edgomez Exp $
+ * $Id: mbtransquant.c,v 1.21.2.8 2003-04-13 16:18:09 syskin Exp $
  *
  ****************************************************************************/
 
@@ -69,13 +69,13 @@ MBDecideFieldDCT(int16_t data[6 * 64])
 
 /* Performs Forward DCT on all blocks */
 static __inline void
-MBfDCT(const MBParam * pParam,
-	   FRAMEINFO * frame,
-	   MACROBLOCK * pMB,
+MBfDCT(const MBParam * const pParam,
+	   const FRAMEINFO * const frame,
+	   MACROBLOCK * const pMB,
 	   uint32_t x_pos,
 	   uint32_t y_pos,
 	   int16_t data[6 * 64])
-{	
+{
 	/* Handles interlacing */
 	start_timer();
 	pMB->field_dct = 0;
@@ -116,7 +116,7 @@ MBiDCT(int16_t data[6 * 64],
 static __inline void
 MBQuantIntra(const MBParam * pParam,
 			 const MACROBLOCK * pMB,
-		     int16_t qcoeff[6 * 64],
+			 int16_t qcoeff[6 * 64],
 			 int16_t data[6*64])
 {
 	int i;
@@ -171,7 +171,7 @@ MBQuantInter(const MBParam * pParam,
 	int code_block;
 
 	for (i = 0; i < 6; i++) {
-	
+
 		/* Quantize the block */
 		start_timer();
 		if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT))
@@ -209,7 +209,7 @@ MBQuantInter(const MBParam * pParam,
 }
 
 /* DeQuantize all blocks -- Inter mode */
-static __inline void 
+static __inline void
 MBDeQuantInter(const MBParam * pParam,
 			   const int iQuant,
 			   int16_t data[6 * 64],
@@ -219,7 +219,7 @@ MBDeQuantInter(const MBParam * pParam,
 	int i;
 
 	for (i = 0; i < 6; i++) {
-		if (cbp & (1 << (5 - i))) {	
+		if (cbp & (1 << (5 - i))) {
 			start_timer();
 			if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT))
 				dequant_inter(&data[i * 64], &qcoeff[i * 64], iQuant);
@@ -235,9 +235,9 @@ typedef void (transfer_operation_16to8_t) (uint8_t *Dst, const int16_t *Src, int
 
 
 static __inline void
-MBTrans8to16(const MBParam * pParam,
-			 FRAMEINFO * frame,
-			 MACROBLOCK * pMB,
+MBTrans8to16(const MBParam * const pParam,
+			 const FRAMEINFO * const frame,
+			 const MACROBLOCK * const pMB,
 			 const uint32_t x_pos,
 			 const uint32_t y_pos,
 			 int16_t data[6 * 64])
@@ -245,9 +245,9 @@ MBTrans8to16(const MBParam * pParam,
 	uint32_t stride = pParam->edged_width;
 	uint32_t stride2 = stride / 2;
 	uint32_t next_block = stride * 8;
-	int32_t cst; 
+	int32_t cst;
 	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
-	IMAGE *pCurrent = &frame->image;
+	const IMAGE * const pCurrent = &frame->image;
 	transfer_operation_8to16_t *transfer_op = NULL;
 
 	if ((frame->vop_flags & XVID_VOP_REDUCED)) {
@@ -285,12 +285,12 @@ MBTrans8to16(const MBParam * pParam,
 	transfer_op(&data[4 * 64], pU_Cur, stride2);
 	transfer_op(&data[5 * 64], pV_Cur, stride2);
 	stop_transfer_timer();
-}	
+}
 
 static __inline void
-MBTrans16to8(const MBParam * pParam,
-			 FRAMEINFO * frame,
-			 MACROBLOCK * pMB,
+MBTrans16to8(const MBParam * const pParam,
+			 const FRAMEINFO * const frame,
+			 const MACROBLOCK * const pMB,
 			 const uint32_t x_pos,
 			 const uint32_t y_pos,
 			 int16_t data[6 * 64],
@@ -301,8 +301,8 @@ MBTrans16to8(const MBParam * pParam,
 	uint32_t stride = pParam->edged_width;
 	uint32_t stride2 = stride / 2;
 	uint32_t next_block = stride * 8;
-	uint32_t cst; 
-	IMAGE *pCurrent = &frame->image;
+	uint32_t cst;
+	const IMAGE * const pCurrent = &frame->image;
 	transfer_operation_16to8_t *transfer_op = NULL;
 
 	if (pMB->field_dct) {
@@ -357,10 +357,10 @@ MBTrans16to8(const MBParam * pParam,
  * Module functions
  ****************************************************************************/
 
-void 
-MBTransQuantIntra(const MBParam * pParam,
-				  FRAMEINFO * frame,
-				  MACROBLOCK * pMB,
+void
+MBTransQuantIntra(const MBParam * const pParam,
+				  const FRAMEINFO * const frame,
+				  MACROBLOCK * const pMB,
 				  const uint32_t x_pos,
 				  const uint32_t y_pos,
 				  int16_t data[6 * 64],
@@ -388,9 +388,9 @@ MBTransQuantIntra(const MBParam * pParam,
 
 
 uint8_t
-MBTransQuantInter(const MBParam * pParam,
-				  FRAMEINFO * frame,
-				  MACROBLOCK * pMB,
+MBTransQuantInter(const MBParam * const pParam,
+				  const FRAMEINFO * const frame,
+				  MACROBLOCK * const pMB,
 				  const uint32_t x_pos,
 				  const uint32_t y_pos,
 				  int16_t data[6 * 64],
@@ -421,7 +421,7 @@ MBTransQuantInter(const MBParam * pParam,
 
  	/* Transfer back the data -- Add the data */
 	MBTrans16to8(pParam, frame, pMB, x_pos, y_pos, data, 1, cbp);
-	
+
 	return(cbp);
 }
 
@@ -436,7 +436,7 @@ MBTransQuantInterBVOP(const MBParam * pParam,
 {
 	uint8_t cbp;
 	uint32_t limit;
-	
+
 	/*
 	 * There is no MBTrans8to16 for Inter block, that's done in motion compensation
 	 * already
@@ -517,7 +517,7 @@ MBFieldTest_c(int16_t data[6 * 64])
 /* deinterlace Y blocks vertically */
 
 #define MOVLINE(X,Y) memcpy(X, Y, sizeof(tmp))
-#define LINE(X,Y)    &data[X*64 + Y*8]
+#define LINE(X,Y)	&data[X*64 + Y*8]
 
 void
 MBFrameToField(int16_t data[6 * 64])

@@ -52,7 +52,7 @@ MBMotionCompensation(MACROBLOCK * const mb,
 
 
 void MBTransQuantIntra(const MBParam * const pParam,
-					FRAMEINFO * const frame,
+					const FRAMEINFO * const frame,
 					MACROBLOCK * const pMB,
 					const uint32_t x_pos,	/* <-- The x position of the MB to be searched */
 					const uint32_t y_pos,	/* <-- The y position of the MB to be searched */
@@ -60,7 +60,7 @@ void MBTransQuantIntra(const MBParam * const pParam,
 					int16_t qcoeff[6 * 64]);	/* <-> the quantized DCT coefficients */
 
 uint8_t MBTransQuantInter(const MBParam * const pParam,
-						FRAMEINFO * const frame,
+						const FRAMEINFO * const frame,
 						MACROBLOCK * const pMB,
 						const uint32_t x_pos,
 						const uint32_t y_pos,
