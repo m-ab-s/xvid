@@ -37,7 +37,8 @@ AS = $(CC)
 AFLAGS = -c
 
 %.o: %.s
-	$(AS) $(AFLAGS) $< -o $@
+	$(AS) $(AFLAGS) -I$(<D) $< -o $@
+
 
 RM = rm -rf
 

@@ -1,8 +1,11 @@
 #/**************************************************************************
 # *
-# * djgpp makefile
+# * DJGPP/MinGW makefile
 # *
 # * treat "deltree /y" with care
+# *
+# *
+# * $Id: Makefile.dj,v 1.2.2.2 2002-12-14 08:14:37 suxen_drol Exp $
 # *
 # *************************************************************************/
 
@@ -11,12 +14,34 @@ include Makefile.inc
 
 
 CC = gcc
-CFLAGS = -Wall -DARCH_X86 -DBFRAMES
+CFLAGS = -Wall -DARCH_X86
+
 # CFLAGS += -funroll-loops -ffast-math -fstrict-aliasing -fomit-frame-pointer
 # CFLAGS += -fPIC
-# CFLAGS += -m486
+
+# Architecture options : Valid for every gcc version
+# Uncomment the one which you want to compile for
+
+# CFLAGS += -march=i386 -mcpu=i386
+# CFLAGS += -march=i486 -mcpu=i486
+# CFLAGS += -march=i586 -mcpu=i586
+# CFLAGS += -march=i686 -mcpu=i686
 # CFLAGS += -march=pentium -mcpu=pentium
 # CFLAGS += -march=pentiumpro -mcpu=pentiumpro
+
+# Architecture options : Valid for every gcc >= 3.1
+# Uncomment the one which you want to compile for
+
+# CFLAGS += -march=pentium-mmx -mcpu=pentium-mmx
+# CFLAGS += -march=pentium3 -mcpu=pentium3
+# CFLAGS += -march=pentium4 -mcpu=pentium4
+# CFLAGS += -march=athlon -mcpu=athlon
+# CFLAGS += -march=k6 -mcpu=k6
+# CFLAGS += -march=k6-2 -mcpu=k6-2
+# CFLAGS += -march=k6-3 -mcpu=k6-3
+# CFLAGS += -march=athlon-tbird -mcpu=athlon-tbird
+# CFLAGS += -march=athlon-xp -mcpu=athlon-xp
+# CFLAGS += -march=athlon-mp -mcpu=athlon-mp
 
 
 AS = nasm
