@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_bench.c,v 1.9.2.7 2003-11-03 19:58:16 edgomez Exp $
+ * $Id: xvid_bench.c,v 1.9.2.8 2003-11-19 21:27:25 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -490,13 +490,11 @@ void test_transfer()
 		s = 0; for(i=0; i<8*32; ++i) { s += (Src8[i]-Ref1[i])&i; }
 		printf( "crc2=%d\n", s);
 		if (s!=16256) printf( "*** CRC ERROR! ***\n" );
-#if 1
+
 		TEST_TRANSFER3(transfer_8to16sub2, Dst16, Src8, Ref1, Ref2);
 		printf( "%s - 8to16sub2 %.3f usec       crc=%d\n", cpu->name, t, s );
-		if (s!=20384) printf( "*** CRC ERROR! ***\n" );
-//    for(i=0; i<64; ++i) printf( "[%d]", Dst16[i]);
-//    printf("\n");
-#endif
+		if (s!=22368) printf( "*** CRC ERROR! ***\n" );
+
 		printf( " --- \n" );
 	}
 }
@@ -1358,129 +1356,194 @@ int main(int argc, char *argv[])
 }
 
 /*********************************************************************
- * 'Reference' output (except for timing) on a PIII 1.13Ghz/linux
+ * 'Reference' output (except for timing) on an Athlon XP 2200+
  *********************************************************************/
 
-/* as of 07/01/2002, there's a problem with mpeg4-quantization */
+/* as of 07/01/2002, there's a problem with MMX mpeg4-quantization */
 /*
 
-===== test fdct/idct =====
-PLAINC -  3.312 usec       PSNR=13.291  MSE=3.000
-MMX    -  0.591 usec       PSNR=13.291  MSE=3.000
-MMXEXT -  0.577 usec       PSNR=13.291  MSE=3.000
-SSE2   -  0.588 usec       PSNR=13.291  MSE=3.000
-3DNOW  - skipped...
-3DNOWE - skipped...
+ ===== test fdct/idct =====
+PLAINC -  1.446 usec       PSNR=13.291  MSE=3.000
+MMX    -  -0.260 usec       PSNR=9.611  MSE=7.000
+MMXEXT -  -0.293 usec       PSNR=9.611  MSE=7.000
+3DNOW  -  1.535 usec       PSNR=13.291  MSE=3.000
+3DNOWE -  0.376 usec       PSNR=13.291  MSE=3.000
 
-===  test block motion ===
-PLAINC - interp- h-round0 0.911 usec       iCrc=8107
-PLAINC -           round1 0.863 usec       iCrc=8100
-PLAINC - interp- v-round0 0.860 usec       iCrc=8108
-PLAINC -           round1 0.857 usec       iCrc=8105
-PLAINC - interp-hv-round0 2.103 usec       iCrc=8112
-PLAINC -           round1 2.050 usec       iCrc=8103
---- 
-MMX    - interp- h-round0 0.105 usec       iCrc=8107
-MMX    -           round1 0.106 usec       iCrc=8100
-MMX    - interp- v-round0 0.106 usec       iCrc=8108
-MMX    -           round1 0.106 usec       iCrc=8105
-MMX    - interp-hv-round0 0.145 usec       iCrc=8112
-MMX    -           round1 0.145 usec       iCrc=8103
---- 
-MMXEXT - interp- h-round0 0.028 usec       iCrc=8107
-MMXEXT -           round1 0.041 usec       iCrc=8100
-MMXEXT - interp- v-round0 0.027 usec       iCrc=8108
-MMXEXT -           round1 0.041 usec       iCrc=8105
-MMXEXT - interp-hv-round0 0.066 usec       iCrc=8112
-MMXEXT -           round1 0.065 usec       iCrc=8103
---- 
-SSE2   - interp- h-round0 0.109 usec       iCrc=8107
-SSE2   -           round1 0.105 usec       iCrc=8100
-SSE2   - interp- v-round0 0.106 usec       iCrc=8108
-SSE2   -           round1 0.109 usec       iCrc=8105
-SSE2   - interp-hv-round0 0.145 usec       iCrc=8112
-SSE2   -           round1 0.145 usec       iCrc=8103
---- 
-3DNOW  - skipped...
-3DNOWE - skipped...
+ ===  test block motion ===
+PLAINC - interp- h-round0 0.126 usec       iCrc=8107
+PLAINC -           round1 0.136 usec       iCrc=8100
+PLAINC - interp- v-round0 0.121 usec       iCrc=8108
+PLAINC -           round1 0.127 usec       iCrc=8105
+PLAINC - interp-hv-round0 0.192 usec       iCrc=8112
+PLAINC -           round1 0.213 usec       iCrc=8103
+ --- 
+MMX    - interp- h-round0 0.048 usec       iCrc=8107
+MMX    -           round1 0.048 usec       iCrc=8100
+MMX    - interp- v-round0 0.046 usec       iCrc=8108
+MMX    -           round1 0.047 usec       iCrc=8105
+MMX    - interp-hv-round0 0.074 usec       iCrc=8112
+MMX    -           round1 0.074 usec       iCrc=8103
+ --- 
+MMXEXT - interp- h-round0 0.019 usec       iCrc=8107
+MMXEXT -           round1 0.025 usec       iCrc=8100
+MMXEXT - interp- v-round0 0.015 usec       iCrc=8108
+MMXEXT -           round1 0.024 usec       iCrc=8105
+MMXEXT - interp-hv-round0 0.039 usec       iCrc=8112
+MMXEXT -           round1 0.037 usec       iCrc=8103
+ --- 
+3DNOW  - interp- h-round0 0.019 usec       iCrc=8107
+3DNOW  -           round1 0.023 usec       iCrc=8100
+3DNOW  - interp- v-round0 0.015 usec       iCrc=8108
+3DNOW  -           round1 0.024 usec       iCrc=8105
+3DNOW  - interp-hv-round0 0.037 usec       iCrc=8112
+3DNOW  -           round1 0.038 usec       iCrc=8103
+ --- 
+3DNOWE - interp- h-round0 0.022 usec       iCrc=8107
+3DNOWE -           round1 0.023 usec       iCrc=8100
+3DNOWE - interp- v-round0 0.016 usec       iCrc=8108
+3DNOWE -           round1 0.021 usec       iCrc=8105
+3DNOWE - interp-hv-round0 0.036 usec       iCrc=8112
+3DNOWE -           round1 0.036 usec       iCrc=8103
+ --- 
 
-======  test SAD ======
-PLAINC - sad8    0.251 usec       sad=3776
-PLAINC - sad16   1.601 usec       sad=27214
-PLAINC - sad16bi 2.371 usec       sad=26274
-PLAINC - dev16   1.564 usec       sad=3344
---- 
-MMX    - sad8    0.057 usec       sad=3776
-MMX    - sad16   0.182 usec       sad=27214
-MMX    - sad16bi 2.462 usec       sad=26274
-MMX    - dev16   0.311 usec       sad=3344
---- 
-MMXEXT - sad8    0.036 usec       sad=3776
-MMXEXT - sad16   0.109 usec       sad=27214
-MMXEXT - sad16bi 0.143 usec       sad=26274
-MMXEXT - dev16   0.192 usec       sad=3344
---- 
-SSE2   - sad8    0.057 usec       sad=3776
-SSE2   - sad16   0.179 usec       sad=27214
-SSE2   - sad16bi 2.456 usec       sad=26274
-SSE2   - dev16   0.321 usec       sad=3344
---- 
-3DNOW  - skipped...
-3DNOWE - skipped...
+ ======  test SAD ======
+PLAINC - sad8    0.165 usec       sad=3776
+PLAINC - sad16   0.587 usec       sad=27214
+PLAINC - sad16bi 1.290 usec       sad=26274
+PLAINC - dev16   1.535 usec       sad=3344
+ --- 
+MMX    - sad8    0.036 usec       sad=3776
+MMX    - sad16   0.113 usec       sad=27214
+MMX    - sad16bi 0.250 usec       sad=26274
+MMX    - dev16   0.187 usec       sad=3344
+ --- 
+MMXEXT - sad8    0.015 usec       sad=3776
+MMXEXT - sad16   0.046 usec       sad=27214
+MMXEXT - sad16bi 0.059 usec       sad=26274
+MMXEXT - dev16   0.088 usec       sad=3344
+ --- 
+3DNOW  - sad8    0.165 usec       sad=3776
+3DNOW  - sad16   0.589 usec       sad=27214
+3DNOW  - sad16bi 0.119 usec       sad=26274
+3DNOW  - dev16   1.541 usec       sad=3344
+ --- 
+3DNOWE - sad8    0.018 usec       sad=3776
+3DNOWE - sad16   0.039 usec       sad=27214
+3DNOWE - sad16bi 0.051 usec       sad=26274
+3DNOWE - dev16   0.070 usec       sad=3344
+ --- 
 
-===  test transfer ===
-PLAINC - 8to16     0.151 usec       crc=28288
-PLAINC - 16to8     1.113 usec       crc=28288
-PLAINC - 8to8      0.043 usec       crc=20352
-PLAINC - 16to8add  1.069 usec       crc=25536
-PLAINC - 8to16sub  0.631 usec       crc1=28064 crc2=16256
-PLAINC - 8to16sub2 0.597 usec       crc=20384
---- 
-MMX    - 8to16     0.032 usec       crc=28288
-MMX    - 16to8     0.024 usec       crc=28288
-MMX    - 8to8      0.020 usec       crc=20352
-MMX    - 16to8add  0.043 usec       crc=25536
-MMX    - 8to16sub  0.066 usec       crc1=28064 crc2=16256
-MMX    - 8to16sub2 0.111 usec       crc=20384
---- 
+ ===  test transfer ===
+PLAINC - 8to16     0.207 usec       crc=28288
+PLAINC - 16to8     0.357 usec       crc=28288
+PLAINC - 8to8      0.154 usec       crc=20352
+PLAINC - 16to8add  0.391 usec       crc=25536
+PLAINC - 8to16sub  0.562 usec       crc1=28064 crc2=16256
+PLAINC - 8to16sub2 0.519 usec       crc=22368
+ --- 
+MMX    - 8to16     0.048 usec       crc=28288
+MMX    - 16to8     0.205 usec       crc=28288
+MMX    - 8to8      -0.158 usec       crc=20352
+MMX    - 16to8add  0.015 usec       crc=25536
+MMX    - 8to16sub  0.203 usec       crc1=28064 crc2=16256
+MMX    - 8to16sub2 0.087 usec       crc=22368
+ --- 
+MMXEXT - 8to16     0.013 usec       crc=28288
+MMXEXT - 16to8     0.011 usec       crc=28288
+MMXEXT - 8to8      -0.023 usec       crc=20352
+MMXEXT - 16to8add  0.023 usec       crc=25536
+MMXEXT - 8to16sub  0.072 usec       crc1=28064 crc2=16256
+MMXEXT - 8to16sub2 0.093 usec       crc=22368
+ --- 
+3DNOW  - 8to16     0.192 usec       crc=28288
+3DNOW  - 16to8     0.367 usec       crc=28288
+3DNOW  - 8to8      0.132 usec       crc=20352
+3DNOW  - 16to8add  0.440 usec       crc=25536
+3DNOW  - 8to16sub  0.557 usec       crc1=28064 crc2=16256
+3DNOW  - 8to16sub2 0.691 usec       crc=22368
+ --- 
+3DNOWE - 8to16     0.004 usec       crc=28288
+3DNOWE - 16to8     0.019 usec       crc=28288
+3DNOWE - 8to8      -0.294 usec       crc=20352
+3DNOWE - 16to8add  0.028 usec       crc=25536
+3DNOWE - 8to16sub  0.065 usec       crc1=28064 crc2=16256
+3DNOWE - 8to16sub2 0.027 usec       crc=22368
+ --- 
 
-=====  test quant =====
-PLAINC -   quant4_intra 74.248 usec       crc=29809
-PLAINC -   quant4_inter 70.850 usec       crc=12574
-PLAINC - dequant4_intra 40.628 usec       crc=24052
-PLAINC - dequant4_inter 45.691 usec       crc=63847
-PLAINC -    quant_intra 43.357 usec       crc=25662
-PLAINC -    quant_inter 33.410 usec       crc=23972
-PLAINC -  dequant_intra 36.384 usec       crc=49900
-PLAINC -  dequant_inter 48.930 usec       crc=48899
---- 
-MMX    -   quant4_intra 7.445 usec       crc=3459
+ =====  test quant =====
+PLAINC -   quant_mpeg_intra 67.757 usec       crc=29809
+PLAINC -   quant_mpeg_inter 68.482 usec       crc=12574
+PLAINC - dequant_mpeg_intra 20.764 usec       crc=24052
+PLAINC - dequant_mpeg_inter 24.413 usec       crc=63847
+PLAINC -   quant_h263_intra 16.446 usec       crc=25662
+PLAINC -   quant_h263_inter 14.499 usec       crc=23972
+PLAINC - dequant_h263_intra 16.419 usec       crc=49900
+PLAINC - dequant_h263_inter 18.679 usec       crc=48899
+ --- 
+MMX    -   quant_mpeg_intra 8.299 usec       crc=3459
 *** CRC ERROR! ***
-MMX    -   quant4_inter 5.384 usec       crc=51072
+MMX    -   quant_mpeg_inter 7.078 usec       crc=13247
 *** CRC ERROR! ***
-MMX    - dequant4_intra 5.515 usec       crc=24052
-MMX    - dequant4_inter 7.745 usec       crc=63847
-MMX    -    quant_intra 4.661 usec       crc=25662
-MMX    -    quant_inter 4.406 usec       crc=23972
-MMX    -  dequant_intra 4.928 usec       crc=49900
-MMX    -  dequant_inter 4.532 usec       crc=48899
---- 
+MMX    - dequant_mpeg_intra 3.455 usec       crc=24052
+MMX    - dequant_mpeg_inter 4.483 usec       crc=63847
+MMX    -   quant_h263_intra 2.597 usec       crc=25662
+MMX    -   quant_h263_inter 2.151 usec       crc=23972
+MMX    - dequant_h263_intra 2.684 usec       crc=49900
+MMX    - dequant_h263_inter 2.647 usec       crc=48899
+ --- 
+MMXEXT -   quant_mpeg_intra 3.878 usec       crc=29809
+MMXEXT -   quant_mpeg_inter 4.112 usec       crc=12574
+MMXEXT - dequant_mpeg_intra 3.452 usec       crc=24052
+MMXEXT - dequant_mpeg_inter 4.473 usec       crc=63847
+MMXEXT -   quant_h263_intra 2.608 usec       crc=25662
+MMXEXT -   quant_h263_inter 2.145 usec       crc=23972
+MMXEXT - dequant_h263_intra 2.478 usec       crc=49900
+MMXEXT - dequant_h263_inter 2.450 usec       crc=48899
+ --- 
+3DNOW  -   quant_mpeg_intra 66.051 usec       crc=29809
+3DNOW  -   quant_mpeg_inter 73.494 usec       crc=12574
+3DNOW  - dequant_mpeg_intra 20.374 usec       crc=24052
+3DNOW  - dequant_mpeg_inter 23.645 usec       crc=63847
+3DNOW  -   quant_h263_intra 16.292 usec       crc=25662
+3DNOW  -   quant_h263_inter 14.322 usec       crc=23972
+3DNOW  - dequant_h263_intra 16.613 usec       crc=49900
+3DNOW  - dequant_h263_inter 18.382 usec       crc=48899
+ --- 
+3DNOWE -   quant_mpeg_intra 66.140 usec       crc=29809
+3DNOWE -   quant_mpeg_inter 68.454 usec       crc=12574
+3DNOWE - dequant_mpeg_intra 2.881 usec       crc=24052
+3DNOWE - dequant_mpeg_inter 4.155 usec       crc=63847
+3DNOWE -   quant_h263_intra 1.451 usec       crc=25662
+3DNOWE -   quant_h263_inter 1.849 usec       crc=23972
+3DNOWE - dequant_h263_intra 2.101 usec       crc=49900
+3DNOWE - dequant_h263_inter 2.109 usec       crc=48899
+ --- 
 
-=====  test cbp =====
-PLAINC -   calc_cbp#1 0.371 usec       cbp=0x15
-PLAINC -   calc_cbp#2 0.432 usec       cbp=0x38
-PLAINC -   calc_cbp#3 0.339 usec       cbp=0xf
-PLAINC -   calc_cbp#4 0.506 usec       cbp=0x5
---- 
-MMX    -   calc_cbp#1 0.136 usec       cbp=0x15
-MMX    -   calc_cbp#2 0.134 usec       cbp=0x38
-MMX    -   calc_cbp#3 0.138 usec       cbp=0xf
-MMX    -   calc_cbp#4 0.135 usec       cbp=0x5
---- 
-SSE2   -   calc_cbp#1 0.136 usec       cbp=0x15
-SSE2   -   calc_cbp#2 0.133 usec       cbp=0x38
-SSE2   -   calc_cbp#3 0.133 usec       cbp=0xf
-SSE2   -   calc_cbp#4 0.141 usec       cbp=0x5
---- 
+ =====  test cbp =====
+PLAINC -   calc_cbp#1 0.090 usec       cbp=0x15
+PLAINC -   calc_cbp#2 0.086 usec       cbp=0x38
+PLAINC -   calc_cbp#3 0.087 usec       cbp=0xf
+PLAINC -   calc_cbp#4 0.114 usec       cbp=0x5
+ --- 
+MMX    -   calc_cbp#1 0.061 usec       cbp=0x15
+MMX    -   calc_cbp#2 0.063 usec       cbp=0x38
+MMX    -   calc_cbp#3 0.061 usec       cbp=0xf
+MMX    -   calc_cbp#4 0.060 usec       cbp=0x5
+ --- 
+MMXEXT -   calc_cbp#1 0.062 usec       cbp=0x15
+MMXEXT -   calc_cbp#2 0.060 usec       cbp=0x38
+MMXEXT -   calc_cbp#3 0.062 usec       cbp=0xf
+MMXEXT -   calc_cbp#4 0.061 usec       cbp=0x5
+ --- 
+3DNOW  -   calc_cbp#1 0.089 usec       cbp=0x15
+3DNOW  -   calc_cbp#2 0.087 usec       cbp=0x38
+3DNOW  -   calc_cbp#3 0.087 usec       cbp=0xf
+3DNOW  -   calc_cbp#4 0.116 usec       cbp=0x5
+ --- 
+3DNOWE -   calc_cbp#1 0.050 usec       cbp=0x15
+3DNOWE -   calc_cbp#2 0.051 usec       cbp=0x38
+3DNOWE -   calc_cbp#3 0.050 usec       cbp=0xf
+3DNOWE -   calc_cbp#4 0.049 usec       cbp=0x5
+ --- 
 
 */
