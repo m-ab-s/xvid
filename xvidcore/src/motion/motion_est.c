@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.c,v 1.58.2.29 2003-08-28 11:06:15 syskin Exp $
+ * $Id: motion_est.c,v 1.58.2.30 2003-08-28 11:14:04 syskin Exp $
  *
  ****************************************************************************/
 
@@ -2245,13 +2245,13 @@ MEanalyzeMB (	const uint8_t * const pRef,
 
 	if (*Data->iMinSAD > 4 * MAX_SAD00_FOR_SKIP) {
 
-//		if (!vector_repeats(pmv, 1))
+		if (!vector_repeats(pmv, 1))
 			CheckCandidate32I(pmv[1].x, pmv[1].y, Data, 1);
-//		if (!vector_repeats(pmv, 2))
+		if (!vector_repeats(pmv, 2))
 			CheckCandidate32I(pmv[2].x, pmv[2].y, Data, 2);
 
 		if (*Data->iMinSAD > 4 * MAX_SAD00_FOR_SKIP) { /* diamond only if needed */
-//			unsigned int mask = make_mask(pmv, 3, *Data->dir);
+			unsigned int mask = make_mask(pmv, 3, *Data->dir);
 			DiamondSearch(Data->currentMV->x, Data->currentMV->y, Data, 255/*mask*/, CheckCandidate32I);
 		}
 	}
