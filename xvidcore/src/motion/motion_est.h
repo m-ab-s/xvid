@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion_est.h,v 1.1.2.4 2002-10-05 21:37:44 Isibaar Exp $
+ *  $Id: motion_est.h,v 1.1.2.5 2002-10-17 13:27:22 Isibaar Exp $
  *
  ***************************************************************************/
 
@@ -105,6 +105,7 @@ typedef struct
 // general fields
 		int max_dx, min_dx, max_dy, min_dy;
 		uint32_t rounding;
+		uint32_t quarterpel;
 		VECTOR predMV;
 		VECTOR predQMV;
 		VECTOR *currentMV;
