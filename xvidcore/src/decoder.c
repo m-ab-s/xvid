@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.19 2002-12-12 10:37:44 suxen_drol Exp $
+ *  $Id: decoder.c,v 1.37.2.20 2002-12-13 11:26:41 suxen_drol Exp $
  *
  *************************************************************************/
 
@@ -1722,7 +1722,7 @@ xxx:
 
 		if (reduced_resolution)
 		{
-			image_deblock_rrv(&dec->refn[0], dec->edged_width, dec->mbs,
+			image_deblock_rrv(&dec->cur, dec->edged_width, dec->mbs,
 				(dec->width + 31) / 32, (dec->height + 31) / 32, dec->mb_width);
 		}
 
