@@ -731,23 +731,29 @@ BEGIN
     GROUPBOX        "",IDC_STATIC,7,81,197,53,BS_CENTER
     CONTROL         "Pixel Aspect Ratio",IDC_PAR,"Button",BS_AUTORADIOBUTTON,
                     13,7,73,10,WS_EX_TRANSPARENT
-    COMBOBOX        IDC_ASPECT_RATIO,27,33,151,55,CBS_DROPDOWNLIST | 
+    COMBOBOX        IDC_ASPECT_RATIO,25,33,111,55,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
-    EDITTEXT        IDC_PARX,48,58,36,12,ES_NUMBER
-    EDITTEXT        IDC_PARY,114,58,36,12,ES_NUMBER
-    CTEXT           "X :",IDC_STATIC,33,60,10,10
-    EDITTEXT        IDC_ARX,48,110,36,12,ES_NUMBER
-    EDITTEXT        IDC_ARY,114,110,36,12,ES_NUMBER
+    EDITTEXT        IDC_PARX,39,58,36,12,ES_NUMBER
+    EDITTEXT        IDC_PARY,100,58,36,12,ES_NUMBER
+    CTEXT           "X :",IDC_STATIC,25,60,10,10
+    EDITTEXT        IDC_ARX,39,110,36,12,ES_NUMBER
+    EDITTEXT        IDC_ARY,100,110,36,12,ES_NUMBER
     LTEXT           "Aspect Ratio is written to mpeg-4 bitstream, but unfortunately is likely to be ignored if video stream is encapsulated in a general-purpose container (like .avi, .ogm., .mkv).",
                     IDC_STATIC,7,138,197,27
     LTEXT           "Therefore, be aware that using different aspect ratio than default might be ignored by some players, especially when decoded on Windows.\n\nUse at your own risk.",
                     IDC_STATIC,7,168,197,41
     LTEXT           "Select the shape of a pixel...",IDC_STATIC,25,18,104,10
-    CTEXT           "Y :",IDC_STATIC,100,60,10,10
-    CTEXT           "Y :",IDC_STATIC,100,112,10,10
-    CTEXT           "X :",IDC_STATIC,33,112,10,10
+    CTEXT           "Y :",IDC_STATIC,86,60,10,10
+    CTEXT           "Y :",IDC_STATIC,86,112,10,10
+    CTEXT           "X :",IDC_STATIC,25,112,10,10
     LTEXT           "Select the shape of the image...",IDC_STATIC,25,93,110,
                     11
+    GROUPBOX        "Quick Setting",IDC_STATIC,148,7,56,127,0,
+                    WS_EX_TRANSPARENT
+    PUSHBUTTON      "Default",IDC_AR_DEFAULT,158,21,37,11
+    PUSHBUTTON      "4:3",IDC_AR_4_3,158,88,37,11
+    PUSHBUTTON      "16:9",IDC_AR_16_9,158,102,37,11
+    PUSHBUTTON      "2,35:1",IDC_AR_235_100,158,116,37,11
 END
 
 

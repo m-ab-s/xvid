@@ -742,8 +742,10 @@ void adv_mode(HWND hDlg, int idd, CONFIG * config)
 		}
 		
 		ar_mode = IsDlgChecked(hDlg, IDC_AR);
-		SetDlgItemInt(hDlg, IDC_ARX, config->ar_x, FALSE);
-		SetDlgItemInt(hDlg, IDC_ARY, config->ar_y, FALSE);
+
+		config->ar_x = config_get_uint(hDlg, IDC_ARX, config->ar_x);
+		config->ar_y = config_get_uint(hDlg, IDC_ARY, config->ar_y);
+
 		EnableDlgWindow(hDlg, IDC_ARX, ar_mode);
 		EnableDlgWindow(hDlg, IDC_ARY, ar_mode);
 		break;
@@ -822,6 +824,8 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
 	case IDD_AR:
 		CheckRadioButton(hDlg, IDC_AR, IDC_PAR, config->ar_mode == 0 ? IDC_PAR : IDC_AR);
 		SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_SETCURSEL, (config->display_aspect_ratio), 0);
+		SetDlgItemInt(hDlg, IDC_ARX, config->ar_x, FALSE);
+		SetDlgItemInt(hDlg, IDC_ARY, config->ar_y, FALSE);
 		break;
 
     case IDD_LEVEL :
@@ -1127,7 +1131,31 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 SetDlgItemInt(hDlg, IDC_ZONE_FRAME, psi->config->ci.ciActiveFrame, FALSE);
                 break;
 
-            default :
+			case IDC_AR_DEFAULT:
+				CheckRadioButton(hDlg, IDC_AR, IDC_PAR, IDC_PAR);
+				SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_SETCURSEL, 0, 0);
+				adv_mode(hDlg, psi->idd, psi->config);
+				break;
+			case IDC_AR_4_3:
+				SetDlgItemInt(hDlg, IDC_ARX, 4, FALSE);
+				SetDlgItemInt(hDlg, IDC_ARY, 3, FALSE);
+				CheckRadioButton(hDlg, IDC_AR, IDC_PAR, IDC_AR);
+				adv_mode(hDlg, psi->idd, psi->config);
+				break;
+			case IDC_AR_16_9:
+				SetDlgItemInt(hDlg, IDC_ARX, 16, FALSE);
+				SetDlgItemInt(hDlg, IDC_ARY, 9, FALSE);
+				CheckRadioButton(hDlg, IDC_AR, IDC_PAR, IDC_AR);
+				adv_mode(hDlg, psi->idd, psi->config);
+				break;
+			case IDC_AR_235_100:
+				SetDlgItemInt(hDlg, IDC_ARX, 235, FALSE);
+				SetDlgItemInt(hDlg, IDC_ARY, 100, FALSE);
+				CheckRadioButton(hDlg, IDC_AR, IDC_PAR, IDC_AR);
+				adv_mode(hDlg, psi->idd, psi->config);
+				break;
+
+			default :
                 return TRUE;
             }
 		}else if (HIWORD(wParam) == LBN_SELCHANGE &&

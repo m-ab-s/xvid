@@ -381,6 +381,10 @@
 #define IDC_PARY                        1356
 #define IDC_ARX                         1357
 #define IDC_ARY                         1358
+#define IDC_AR_DEFAULT                  1364
+#define IDC_AR_4_3                      1365
+#define IDC_AR_16_9                     1366
+#define IDC_AR_235_100                  1368
 
 // Next default values for new objects
 // 
@@ -388,7 +392,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        128
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1364
+#define _APS_NEXT_CONTROL_VALUE         1368
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
