@@ -2012,7 +2012,7 @@ SearchInterpolate(const uint8_t * const f_Ref,
 	bData.bpredMV = fData->predMV = *f_predMV;
 	fData->bpredMV = bData.predMV = *b_predMV;
 
-	fData->currentMV[0] = fData->currentMV[3];
+	fData->currentMV[0] = fData->currentMV[2];
 	get_range(&fData->min_dx, &fData->max_dx, &fData->min_dy, &fData->max_dy, x, y, 16, pParam->width, pParam->height, fcode, pParam->m_quarterpel);
 	get_range(&bData.min_dx, &bData.max_dx, &bData.min_dy, &bData.max_dy, x, y, 16, pParam->width, pParam->height, bcode, pParam->m_quarterpel);
 
@@ -2060,9 +2060,9 @@ SearchInterpolate(const uint8_t * const f_Ref,
 		fData->currentQMV[2].y = fData->currentQMV[0].y = 2 * fData->currentMV[0].y;
 		fData->currentQMV[1].x = 2 * fData->currentMV[1].x;
 		fData->currentQMV[1].y = 2 * fData->currentMV[1].y;
-		QuarterpelRefine(fData);
+//		QuarterpelRefine(fData);
 		fData->currentQMV[2] = fData->currentQMV[0];
-		QuarterpelRefine(&bData);
+//		QuarterpelRefine(&bData);
 	}
 
 	if (*fData->iMinSAD < *best_sad) {
@@ -2185,7 +2185,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 						MODE_BACKWARD, &Data);
 
 			// interpolate search comes last, because it uses data from forward and backward as prediction
-
+/*
 			SearchInterpolate(f_ref->y, f_refH->y, f_refV->y, f_refHV->y,
 						b_ref->y, b_refH->y, b_refV->y, b_refHV->y,
 						&frame->image,
@@ -2196,7 +2196,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 						&f_predMV, &b_predMV,
 						pMB, &best_sad,
 						&Data);
-
+*/
 			switch (pMB->mode) {
 				case MODE_FORWARD:
 					f_count++;
