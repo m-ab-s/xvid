@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.41 2003-01-25 22:44:50 chl Exp $
+ *  $Id: encoder.c,v 1.76.2.42 2003-01-26 05:09:00 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -689,9 +689,6 @@ encoder_encode_bframes(Encoder * pEnc,
 
 	int input_valid = 1;
 	int bframes_count = 0;
-
-	float psnr;
-	char temp[128];
 
 	ENC_CHECK(pEnc);
 	ENC_CHECK(pFrame);

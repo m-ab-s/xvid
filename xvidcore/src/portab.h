@@ -52,7 +52,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: portab.h,v 1.26.2.6 2003-01-11 14:59:23 chl Exp $
+ * $Id: portab.h,v 1.26.2.7 2003-01-26 05:09:00 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -166,6 +166,10 @@
 
 #include <windows.h>
 #include <stdio.h>
+
+	/* non-ansi function mapping */
+#	define snprintf _snprintf
+#	define vsnprintf _vsnprintf
 
     /*
      * This function must be declared/defined all the time because MSVC does
