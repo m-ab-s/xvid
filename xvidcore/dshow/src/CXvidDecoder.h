@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.h,v 1.1.2.3 2003-11-15 02:51:41 suxen_drol Exp $
+ * $Id: CXvidDecoder.h,v 1.1.2.4 2003-12-12 15:09:01 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -46,6 +46,16 @@ DPRINTF(char *fmt, ...)
 static __inline void 
 DPRINTF(char *fmt, ...) { }
 #endif
+
+/* registry stuff */
+#define XVID_REG_KEY	HKEY_CURRENT_USER
+#define XVID_REG_SUBKEY	"Software\\GNU\\XviD"
+#define XVID_REG_CLASS	"config"
+
+#define REG_GET_N(X, Y, Z) size=sizeof(int);if(RegQueryValueEx(hKey, X, 0, 0, (LPBYTE)&Y, &size) != ERROR_SUCCESS) {Y=Z;}
+#define REG_GET_S(X, Y, Z) size=MAX_PATH;if(RegQueryValueEx(hKey, X, 0, 0, Y, &size) != ERROR_SUCCESS) {lstrcpy(Y, Z);}
+#define REG_SET_N(X, Y) RegSetValueEx(hKey, X, 0, REG_DWORD, (LPBYTE)&Y, sizeof(int))
+#define REG_SET_S(X, Y) RegSetValueEx(hKey, X, 0, REG_SZ, Y, lstrlen(Y)+1)
 
 #define XVID_NAME_L		L"XviD MPEG-4 Video Decoder"
 

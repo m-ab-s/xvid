@@ -19,7 +19,15 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.1.2.4 2003-12-09 14:32:52 syskin Exp $
+ * $Id: CXvidDecoder.cpp,v 1.1.2.5 2003-12-12 15:09:01 Isibaar Exp $
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ *
+ * 2003/12/11 - added some additional options, mainly to make the deblocking
+ *              code from xvidcore available. Most of the new code is taken
+ *              from Nic's dshow filter, (C) Nic, http://nic.dnsalias.com
  *
  ****************************************************************************/
 
@@ -53,7 +61,20 @@
 #include "CXvidDecoder.h"
 #include "CAbout.h"
 
+// Externs defined here
+PostProcessing_Settings PPSettings;
 
+int rgb_flip;
+
+bool USE_IYUV;
+bool USE_YV12;
+bool USE_YUY2;
+bool USE_YVYU;
+bool USE_UYVY;
+bool USE_RGB32;
+bool USE_RGB24;
+bool USE_RG555;
+bool USE_RG565;
 
 const AMOVIESETUP_MEDIATYPE sudInputPinTypes[] =
 {
@@ -132,8 +153,6 @@ CFactoryTemplate g_Templates[] =
 int g_cTemplates = sizeof(g_Templates) / sizeof(CFactoryTemplate);
 
 
-
-
 STDAPI DllRegisterServer()
 {
     return AMovieDllRegisterServer2( TRUE );
@@ -180,7 +199,6 @@ STDMETHODIMP CXvidDecoder::NonDelegatingQueryInterface(REFIID riid, void **ppv)
 
 
 
-
 /* constructor */
 
 CXvidDecoder::CXvidDecoder(LPUNKNOWN punk, HRESULT *phr) :
@@ -203,6 +221,56 @@ CXvidDecoder::CXvidDecoder(LPUNKNOWN punk, HRESULT *phr) :
 
 	memset(&m_frame, 0, sizeof(m_frame));
 	m_frame.version = XVID_VERSION;
+
+	HKEY hKey;
+	DWORD size;
+	RegOpenKeyEx(XVID_REG_KEY, XVID_REG_SUBKEY, 0, KEY_READ, &hKey);
+
+	// Set the default post-processing settings
+	REG_GET_N("Brightness", PPSettings.nBrightness, 25)
+	REG_GET_N("Deblock_Y",  PPSettings.bDeblock_Y, 0)
+	REG_GET_N("Deblock_UV", PPSettings.bDeblock_UV, 0)
+	REG_GET_N("ForceColorspace", PPSettings.nForceColorspace, 0)
+
+	RegCloseKey(hKey);
+
+	USE_IYUV = false;
+	USE_YV12 = false;
+	USE_YUY2 = false;
+	USE_YVYU = false;
+	USE_UYVY = false;
+	USE_RGB32 = false;
+	USE_RGB24 = false;
+	USE_RG555 = false;
+	USE_RG565 = false;
+
+	switch ( PPSettings.nForceColorspace )
+	{
+	case FORCE_NONE:
+		USE_IYUV = true;
+		USE_YV12 = true;
+		USE_YUY2 = true;
+		USE_YVYU = true;
+		USE_UYVY = true;
+		USE_RGB32 = true;
+		USE_RGB24 = true;
+		USE_RG555 = true;
+		USE_RG565 = true;
+		break;
+	case FORCE_YV12:
+		USE_IYUV = true;
+		USE_YV12 = true;
+		break;
+	case FORCE_YUY2:
+		USE_YUY2 = true;
+		break;
+	case FORCE_RGB24:
+		USE_RGB24 = true;
+		break;
+	case FORCE_RGB32:
+		USE_RGB32 = true;
+		break;
+	}
 }
 
 
@@ -280,16 +348,6 @@ HRESULT CXvidDecoder::CheckInputType(const CMediaType * mtIn)
 }
 
 
-#define USE_IYUV
-#define USE_YV12
-#define USE_YUY2
-#define USE_YVYU
-#define USE_UYVY
-#define USE_RGB32
-#define USE_RGB24
-#define USE_RG555
-#define USE_RG565
-
 /* get list of supported output colorspaces */
 
 
@@ -322,68 +380,77 @@ HRESULT CXvidDecoder::GetMediaType(int iPosition, CMediaType *mtOut)
 	switch(iPosition)
 	{
 	case 0	:
-#ifdef USE_IYUV
+if ( USE_IYUV )
+{
 		vih->bmiHeader.biCompression = CLSID_MEDIASUBTYPE_IYUV.Data1;
 		vih->bmiHeader.biBitCount = 12;
 		mtOut->SetSubtype(&CLSID_MEDIASUBTYPE_IYUV);
 		break;
-#endif
+}
 	case 1	:
-#ifdef USE_YV12
+if ( USE_YV12 )
+{
 		vih->bmiHeader.biCompression = MEDIASUBTYPE_YV12.Data1;
 		vih->bmiHeader.biBitCount = 12;
 		mtOut->SetSubtype(&MEDIASUBTYPE_YV12);
 		break;
-#endif
+}
 	case 2:
-#ifdef USE_YUY2
+if ( USE_YUY2 )
+{
 		vih->bmiHeader.biCompression = MEDIASUBTYPE_YUY2.Data1;
 		vih->bmiHeader.biBitCount = 16;
 		mtOut->SetSubtype(&MEDIASUBTYPE_YUY2);
 		break;
-#endif
+}
 	case 3 :
-#ifdef USE_YVYU
+if ( USE_YVYU )
+{
 		vih->bmiHeader.biCompression = MEDIASUBTYPE_YVYU.Data1;
 		vih->bmiHeader.biBitCount = 16;
 		mtOut->SetSubtype(&MEDIASUBTYPE_YVYU);
 		break;
-#endif
+}
 	case 4 :
-#ifdef USE_UYVY
+if ( USE_UYVY )
+{
 		vih->bmiHeader.biCompression = MEDIASUBTYPE_UYVY.Data1;
 		vih->bmiHeader.biBitCount = 16;
 		mtOut->SetSubtype(&MEDIASUBTYPE_UYVY);
 		break;
-#endif
+}
 	case 5 :
-#ifdef USE_RGB32
+if ( USE_RGB32 )
+{
 		vih->bmiHeader.biCompression = BI_RGB;
 		vih->bmiHeader.biBitCount = 32;
 		mtOut->SetSubtype(&MEDIASUBTYPE_RGB32);
 		break;
-#endif
+}
 	case 6 :
-#ifdef USE_RGB24
+if ( USE_RGB24 )
+{
 		vih->bmiHeader.biCompression = BI_RGB;
 		vih->bmiHeader.biBitCount = 24;	
 		mtOut->SetSubtype(&MEDIASUBTYPE_RGB24);
 		break;
-#endif
+}
 	case 7 :
-#ifdef USE_RG555
+if ( USE_RG555 )
+{
 		vih->bmiHeader.biCompression = BI_RGB;
 		vih->bmiHeader.biBitCount = 16;	
 		mtOut->SetSubtype(&MEDIASUBTYPE_RGB555);
 		break;
-#endif
+}
 	case 8 :
-#ifdef USE_RG565
+if ( USE_RG565 )
+{
 		vih->bmiHeader.biCompression = BI_RGB;
 		vih->bmiHeader.biBitCount = 16;	
 		mtOut->SetSubtype(&MEDIASUBTYPE_RGB565);
 		break;
-#endif	
+}	
 	default :
 		return VFW_S_NO_MORE_ITEMS;
 	}
@@ -403,8 +470,6 @@ HRESULT CXvidDecoder::GetMediaType(int iPosition, CMediaType *mtOut)
 
 HRESULT CXvidDecoder::ChangeColorspace(GUID subtype, GUID formattype, void * format)
 {
-	int rgb_flip;
-
 	if (formattype == FORMAT_VideoInfo)
 	{
 		VIDEOINFOHEADER * vih = (VIDEOINFOHEADER * )format;
@@ -588,8 +653,28 @@ HRESULT CXvidDecoder::Transform(IMediaSample *pIn, IMediaSample *pOut)
 	}
 
 	m_frame.general = XVID_LOWDELAY;
+
 	if (pIn->IsDiscontinuity() == S_OK)
 		m_frame.general = XVID_DISCONTINUITY;
+
+	if (PPSettings.bDeblock_Y)
+		m_frame.general |= XVID_DEBLOCKY;
+
+	if (PPSettings.bDeblock_UV)
+		m_frame.general |= XVID_DEBLOCKUV;
+	
+	if (PPSettings.bFlipVideo) {
+		if (rgb_flip)
+			m_frame.output.csp &= ~XVID_CSP_VFLIP;
+		else
+			m_frame.output.csp |= XVID_CSP_VFLIP;
+	}
+	else {
+		if (rgb_flip)
+			m_frame.output.csp |= XVID_CSP_VFLIP;
+		else
+			m_frame.output.csp &= ~XVID_CSP_VFLIP;
+	}
 
 repeat :
 
