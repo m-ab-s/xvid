@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.31 2003-06-28 15:49:40 chl Exp $
+ * $Id: encoder.c,v 1.95.2.32 2003-07-02 13:15:01 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1196,6 +1196,7 @@ repeat:
 			image_printf(&pEnc->current->image, pEnc->mbParam.edged_width, pEnc->mbParam.height, 5, 200, "IVOP");
 		}
 
+		pEnc->iFrameNum = 1;
 
 		/* ---- update vol flags at IVOP ----------- */
 		pEnc->current->vol_flags = pEnc->mbParam.vol_flags = frame->vol_flags;
