@@ -510,6 +510,10 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		frame.intra = 0;
 	}
 
+#ifdef BFRAMES
+	frame.bquant = 0;
+#endif
+
 	OutputDebugString(" ");
 	switch (xvid_encore(codec->ehandle, XVID_ENC_ENCODE, &frame, &stats)) 
 	{
