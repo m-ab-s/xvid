@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CAbout.h,v 1.1.2.3 2003-12-12 15:09:01 Isibaar Exp $
+ * $Id: CAbout.h,v 1.1.2.4 2003-12-17 17:08:29 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -43,6 +43,8 @@ struct PostProcessing_Settings
 	int  nBrightness;
 	bool bDeblock_Y;
 	bool bDeblock_UV;
+	bool bDering;
+	bool bFilmEffect;
 	bool bFlipVideo;
 	int  nForceColorspace;
 };

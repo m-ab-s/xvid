@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.1.2.5 2003-12-12 15:09:01 Isibaar Exp $
+ * $Id: CXvidDecoder.cpp,v 1.1.2.6 2003-12-17 17:08:29 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -230,6 +230,8 @@ CXvidDecoder::CXvidDecoder(LPUNKNOWN punk, HRESULT *phr) :
 	REG_GET_N("Brightness", PPSettings.nBrightness, 25)
 	REG_GET_N("Deblock_Y",  PPSettings.bDeblock_Y, 0)
 	REG_GET_N("Deblock_UV", PPSettings.bDeblock_UV, 0)
+	REG_GET_N("Dering",  PPSettings.bDering, 0)
+	REG_GET_N("FilmEffect", PPSettings.bFilmEffect, 0)
 	REG_GET_N("ForceColorspace", PPSettings.nForceColorspace, 0)
 
 	RegCloseKey(hKey);
@@ -662,7 +664,13 @@ HRESULT CXvidDecoder::Transform(IMediaSample *pIn, IMediaSample *pOut)
 
 	if (PPSettings.bDeblock_UV)
 		m_frame.general |= XVID_DEBLOCKUV;
-	
+/*
+	if (PPSettings.bDering)
+		m_frame.general |= XVID_DERING;
+*/
+	if (PPSettings.bFilmEffect)
+		m_frame.general |= XVID_FILMEFFECT;
+
 	if (PPSettings.bFlipVideo) {
 		if (rgb_flip)
 			m_frame.output.csp &= ~XVID_CSP_VFLIP;

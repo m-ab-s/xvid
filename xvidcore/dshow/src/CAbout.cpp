@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CAbout.cpp,v 1.1.2.3 2003-12-12 15:09:01 Isibaar Exp $
+ * $Id: CAbout.cpp,v 1.1.2.4 2003-12-17 17:08:29 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -60,6 +60,8 @@ void SaveRegistryInfo()
 	REG_SET_N("Brightness", PPSettings.nBrightness);
 	REG_SET_N("Deblock_Y",  PPSettings.bDeblock_Y);
 	REG_SET_N("Deblock_UV", PPSettings.bDeblock_UV);
+	REG_SET_N("Dering", PPSettings.bDering);
+	REG_SET_N("FilmEffect", PPSettings.bFilmEffect);
 	REG_SET_N("ForceColorspace", PPSettings.nForceColorspace);
 
 	RegCloseKey(hKey);
@@ -123,6 +125,8 @@ BOOL CAbout::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		// Load Buttons
 		SendMessage(GetDlgItem(hwnd, IDC_DEBLOCK_Y), BM_SETCHECK, (BOOL)PPSettings.bDeblock_Y, 0);
 		SendMessage(GetDlgItem(hwnd, IDC_DEBLOCK_UV), BM_SETCHECK, (BOOL)PPSettings.bDeblock_UV, 0);
+		SendMessage(GetDlgItem(hwnd, IDC_DERING), BM_SETCHECK, (BOOL)PPSettings.bDering, 0);
+		SendMessage(GetDlgItem(hwnd, IDC_FILMEFFECT), BM_SETCHECK, (BOOL)PPSettings.bFilmEffect, 0);
 		SendMessage(GetDlgItem(hwnd, IDC_FLIPVIDEO), BM_SETCHECK, (BOOL)PPSettings.bFlipVideo, 0);
 
 		// Set Date & Time of Compilation
@@ -140,6 +144,8 @@ BOOL CAbout::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			// Load Buttons
 			SendMessage(GetDlgItem(hwnd, IDC_DEBLOCK_Y), BM_SETCHECK, (BOOL)PPSettings.bDeblock_Y, 0);
 			SendMessage(GetDlgItem(hwnd, IDC_DEBLOCK_UV), BM_SETCHECK, (BOOL)PPSettings.bDeblock_UV, 0);
+			SendMessage(GetDlgItem(hwnd, IDC_DERING), BM_SETCHECK, (BOOL)PPSettings.bDering, 0);
+			SendMessage(GetDlgItem(hwnd, IDC_FILMEFFECT), BM_SETCHECK, (BOOL)PPSettings.bFilmEffect, 0);
 			SendMessage(GetDlgItem(hwnd, IDC_FLIPVIDEO), BM_SETCHECK, (BOOL)PPSettings.bFlipVideo, 0);
 			PPSettings.nForceColorspace = 0;
 			SendMessage(GetDlgItem(hwnd, IDC_COLORSPACE), CB_SETCURSEL, PPSettings.nForceColorspace, 0); 
@@ -152,6 +158,14 @@ BOOL CAbout::OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			break;
 		case IDC_DEBLOCK_UV:
 			PPSettings.bDeblock_UV = !PPSettings.bDeblock_UV;
+			SaveRegistryInfo();
+			break;
+		case IDC_DERING:
+			PPSettings.bDering = !PPSettings.bDering;
+			SaveRegistryInfo();
+			break;
+		case IDC_FILMEFFECT:
+			PPSettings.bFilmEffect = !PPSettings.bFilmEffect;
 			SaveRegistryInfo();
 			break;
 		case IDC_FLIPVIDEO:

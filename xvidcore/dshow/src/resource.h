@@ -15,6 +15,8 @@
 #define IDC_FLIPVIDEO                   1005
 #define IDC_COLORSPACE                  1006
 #define IDC_RESET                       1007
+#define IDC_FILMEFFECT                  1008
+#define IDC_DERING                      1009
 #define VERSION_RES_LANGUAGE            0x409
 #define VERSION_RES_CHARSET             1252
 #define IDC_STATIC                      -1
