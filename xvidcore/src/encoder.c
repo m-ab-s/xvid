@@ -52,7 +52,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: encoder.c,v 1.90 2003-02-04 22:00:44 edgomez Exp $
+ * $Id: encoder.c,v 1.90.2.1 2003-03-17 23:09:27 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -543,8 +543,13 @@ encoder_encode(Encoder * pEnc,
 
 	}
 
-	BitstreamPutBits(&bs, 0xFFFF, 16);
-	BitstreamPutBits(&bs, 0xFFFF, 16);
+	/* Fix from CVS_HEAD (2003-03-17)
+	 *
+	 * Relic from OpenDivX - now disabled
+	 *
+	 * BitstreamPutBits(&bs, 0xFFFF, 16);
+	 * BitstreamPutBits(&bs, 0xFFFF, 16);
+	 */
 	BitstreamPad(&bs);
 	pFrame->length = BitstreamLength(&bs);
 
