@@ -219,6 +219,7 @@ static const REG_INT reg_ints[] = {
 
 	/* 2pass1 */
 	{"discard1pass",			&reg.discard1pass,				1},
+	{"full1pass",				&reg.full1pass,					0},
 
 	/* 2pass2 */
 	{"keyframe_boost",			&reg.keyframe_boost,			10},
@@ -1027,6 +1028,7 @@ static void adv_upload(HWND hDlg, int idd, CONFIG * config)
 	case IDD_RC_2PASS1 :
 		SetDlgItemText(hDlg, IDC_STATS, config->stats);
 		CheckDlg(hDlg, IDC_DISCARD1PASS, config->discard1pass);
+		CheckDlg(hDlg, IDC_FULL1PASS, config->full1pass);
 		break;
 
 	case IDD_RC_2PASS2 :
@@ -1173,6 +1175,7 @@ static void adv_download(HWND hDlg, int idd, CONFIG * config)
 		if (GetDlgItemText(hDlg, IDC_STATS, config->stats, MAX_PATH) == 0)
 			lstrcpy(config->stats, CONFIG_2PASS_FILE);
 		config->discard1pass = IsDlgChecked(hDlg, IDC_DISCARD1PASS);
+		config->full1pass = IsDlgChecked(hDlg, IDC_FULL1PASS);
 		break;
 
 	case IDD_RC_2PASS2 :

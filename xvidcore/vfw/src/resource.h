@@ -360,7 +360,7 @@
 #define IDC_DISPLAY_STATUS              1335
 #define IDC_STATUS_PL_AVG               1336
 #define IDC_STATUS_BL_AVG               1337
-#define IDC_CHECK1                      1338
+#define IDC_FULL1PASS                   1338
 #define IDC_DEC_DY                      1339
 #define IDC_STATUS_L_AVG                1340
 #define IDC_ZONE_FORCEIVOP              1341

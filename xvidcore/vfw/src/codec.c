@@ -346,7 +346,7 @@ static int init_dll()
 	return 0;
 }
 
-
+/* constant-quant zones for fixed quant encoding */
 static void
 prepare_cquant_zones(CONFIG * config) {
 	
@@ -375,6 +375,38 @@ prepare_cquant_zones(CONFIG * config) {
 		if (config->zones[i].mode == RC_ZONE_WEIGHT) {
 			config->zones[i].mode = RC_ZONE_QUANT;
 			config->zones[i].quant = (100*config->desired_quant) / config->zones[i].weight;
+		}
+}
+
+/* full first pass zones */
+static void
+prepare_full1pass_zones(CONFIG * config) {
+	
+	int i = 0;
+	if (config->num_zones == 0 || config->zones[0].frame != 0) {
+		/* first zone does not start at frame 0 or doesn't exist */
+
+		if (config->num_zones >= MAX_ZONES) config->num_zones--; /* we scrifice last zone */
+
+		config->zones[config->num_zones].frame = 0;
+		config->zones[config->num_zones].mode = RC_ZONE_QUANT;
+		config->zones[config->num_zones].weight = 100;
+		config->zones[config->num_zones].quant = 200;
+		config->zones[config->num_zones].type = XVID_TYPE_AUTO;
+		config->zones[config->num_zones].greyscale = 0;
+		config->zones[config->num_zones].chroma_opt = 0;
+		config->zones[config->num_zones].bvop_threshold = 0;
+		config->num_zones++;
+
+		sort_zones(config->zones, config->num_zones, &i);
+	}
+
+	/* step 2: let's change all weight zones into quant zones */
+	
+	for(i = 0; i < config->num_zones; i++)
+		if (config->zones[i].mode == RC_ZONE_WEIGHT) {
+			config->zones[i].mode = RC_ZONE_QUANT;
+			config->zones[i].quant = 200;
 		}
 }
 
@@ -431,7 +463,8 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 		memset(&pass1, 0, sizeof(pass1));
 		pass1.version = XVID_VERSION;
 		pass1.filename = codec->config.stats;
-
+		if (codec->config.full1pass)
+			prepare_full1pass_zones(&tmpCfg);
 		plugins[create.num_plugins].func = xvid_plugin_2pass1_func;
 		plugins[create.num_plugins].param = &pass1;
 		create.num_plugins++;
