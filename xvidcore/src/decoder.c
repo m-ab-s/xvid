@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.33 2004-02-16 03:40:47 syskin Exp $
+ * $Id: decoder.c,v 1.49.2.34 2004-02-29 12:57:58 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1526,7 +1526,9 @@ repeat:
 		dec->frames++;
 	}
 
-	/* BitstreamByteAlign(&bs); */
+#if 0 /* Avoids to read to much data because of 32bit reads in our BS functions */
+	 BitstreamByteAlign(&bs);
+#endif
 
 	/* low_delay_default mode: repeat in packed_mode */
 	if (dec->low_delay_default && dec->packed_mode && output == 0 && success == 0) {
