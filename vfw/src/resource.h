@@ -231,6 +231,8 @@
 #define IDC_DEBUG                       1220
 #define IDC_NUMTHREADS                  1221
 #define IDC_NUMTHREADS_STATIC           1223
+#define IDC_FRAMEDROP                   1224
+#define IDC_FRAMEDROP_STATIC            1225
 
 // Next default values for new objects
 // 
@@ -238,7 +240,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1224
+#define _APS_NEXT_CONTROL_VALUE         1226
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

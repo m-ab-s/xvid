@@ -269,7 +269,7 @@ BEGIN
                     WS_TABSTOP,20,88,42,10
     CONTROL         "3DNow! 2",IDC_CPU_3DNOWEXT,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,20,100,48,10
-    GROUPBOX        "Performance optimizations",IDC_STATIC,4,4,192,140
+    GROUPBOX        "Performance optimizations",IDC_STATIC,4,4,192,124
     GROUPBOX        "CBR options",IDC_STATIC,4,148,192,64
     EDITTEXT        IDC_CBR_REACTIONDELAY,112,161,76,12,ES_AUTOHSCROLL | 
                     ES_NUMBER
@@ -281,8 +281,10 @@ BEGIN
                     SS_CENTERIMAGE
     EDITTEXT        IDC_CBR_BUFFER,112,193,76,12,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "Smoother:",IDC_STATIC,12,193,80,12,SS_CENTERIMAGE
-    EDITTEXT        IDC_NUMTHREADS,113,126,75,12,ES_AUTOHSCROLL
-    LTEXT           "Number of threads:",IDC_NUMTHREADS_STATIC,12,126,61,8
+    EDITTEXT        IDC_NUMTHREADS,112,112,75,12,ES_AUTOHSCROLL
+    LTEXT           "Number of threads:",IDC_NUMTHREADS_STATIC,7,114,61,8
+    LTEXT           "Frame drop ratio:",IDC_FRAMEDROP_STATIC,7,135,68,10
+    EDITTEXT        IDC_FRAMEDROP,111,135,75,11,ES_AUTOHSCROLL
 END
 
 IDD_QUANTMATRIX DIALOG DISCARDABLE  0, 0, 288, 149
@@ -777,6 +779,7 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     IDC_DX50BVOP            "Generate DivX 5.x compatible B-frames. DivX 5.x fails to decode B-frames where the future reference frame is an I-frame."
+    IDC_FRAMEDROP           "Frame dropping ratio [0-100]. 0 = no frame dropping .. 100 = drop all frames."
 END
 
 #endif    // English (Australia) resources
