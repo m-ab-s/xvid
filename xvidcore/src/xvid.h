@@ -28,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.29 2003-02-12 12:16:50 syskin Exp $
+*  $Id: xvid.h,v 1.17.2.30 2003-02-15 05:57:15 suxen_drol Exp $
 *
 *****************************************************************************/
 
@@ -285,6 +285,8 @@ extern "C" {
 #define XVID_ME_FULLSEARCH		0x00040000
 #define XVID_ME_PMVFAST			0x00080000
 #define XVID_ME_EPZS			0x00100000
+
+#define XVID_CHROMAOPT			0x00200000	/* enable chroma optimization pre-filter */
 
 #define XVID_GREYSCALE			0x01000000	/* enable greyscale only mode (even for */
 											/* color input material chroma is ignored) */
