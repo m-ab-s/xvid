@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.c,v 1.58.2.25 2003-08-03 10:10:08 syskin Exp $
+ * $Id: motion_est.c,v 1.58.2.26 2003-08-06 09:08:37 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1773,14 +1773,14 @@ SkipDecisionB(const IMAGE * const pCur,
 					b_Ref->u + (y*8 + b_dy/2) * stride + x*8 + b_dx/2,
 					stride);
 
-	if (sum >= 2 * MAX_CHROMA_SAD_FOR_SKIP * pMB->quant) return; /* no skip */
+	if (sum >= MAX_CHROMA_SAD_FOR_SKIP * pMB->quant) return; /* no skip */
 
 	sum += sad8bi(pCur->v + 8*x + 8 * y * stride,
 					f_Ref->v + (y*8 + dy/2) * stride + x*8 + dx/2,
 					b_Ref->v + (y*8 + b_dy/2) * stride + x*8 + b_dx/2,
 					stride);
 
-	if (sum < 2 * MAX_CHROMA_SAD_FOR_SKIP * pMB->quant) {
+	if (sum < MAX_CHROMA_SAD_FOR_SKIP * pMB->quant) {
 		pMB->mode = MODE_DIRECT_NONE_MV; /* skipped */
 		for (k = 0; k < 4; k++) {
 			pMB->qmvs[k] = pMB->mvs[k];
@@ -2093,7 +2093,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 	Data.currentMV = currentMV; Data.currentQMV = currentQMV;
 	Data.iMinSAD = &iMinSAD;
 	Data.lambda16 = lambda_vec16[frame->quant];
-	Data.qpel = pParam->vol_flags & XVID_VOL_QUARTERPEL;
+	Data.qpel = pParam->vol_flags & XVID_VOL_QUARTERPEL ? 1 : 0;
 	Data.rounding = 0;
 	Data.chroma = frame->motion_flags & XVID_ME_CHROMA_BVOP;
 	Data.temp = temp;
