@@ -189,9 +189,5 @@ SOURCE=.\src\XviD_logo.bmp
 SOURCE=.\src\driverproc.def
 # End Source File
 # End Group
-# Begin Source File
-
-SOURCE=.\src\credits.txt
-# End Source File
 # End Target
 # End Project
