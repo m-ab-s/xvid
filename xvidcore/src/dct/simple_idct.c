@@ -244,6 +244,7 @@ static const uint8_t simple_mmx_permutation[64]={
 	0x32, 0x3A, 0x36, 0x3B, 0x33, 0x3E, 0x37, 0x3F,
 };
 
+#if defined(ARCH_X86)
 /* wrapper function, as simple_idct_mmx expects data to be permutated */
 void simple_idct_mmx2(int16_t * const block)
 {
@@ -254,3 +255,4 @@ void simple_idct_mmx2(int16_t * const block)
     simple_idct_mmx(tmp);
     for(i=0;i<64;i++) block[i] = tmp[i];
 }
+#endif
