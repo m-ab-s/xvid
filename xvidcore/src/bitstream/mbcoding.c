@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbcoding.c,v 1.44.2.17 2003-10-03 16:57:55 edgomez Exp $
+ * $Id: mbcoding.c,v 1.44.2.18 2003-12-14 03:32:01 syskin Exp $
  *
  ****************************************************************************/
 
@@ -692,6 +692,7 @@ MBCodingBVOP(const FRAMEINFO * const frame,
 	const uint16_t *scan_table =
 		frame->vop_flags & XVID_VOP_ALTERNATESCAN ?
 		scan_tables[2] : scan_tables[0];
+	int bits;
 
 
 /*	------------------------------------------------------------------
@@ -759,11 +760,13 @@ MBCodingBVOP(const FRAMEINFO * const frame,
 		default: break;
 	}
 
+	bits = BitstreamPos(bs);
 	for (i = 0; i < 6; i++) {
 		if (mb->cbp & (1 << (5 - i))) {
 			CodeCoeffInter(bs, &qcoeff[i * 64], scan_table);
 		}
 	}
+	pStat->iTextBits += BitstreamPos(bs) - bits;
 }
 
 
