@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: config.h,v 1.1.2.15 2003-12-21 16:15:04 Isibaar Exp $
+ * $Id: config.h,v 1.1.2.16 2004-01-02 13:18:28 syskin Exp $
  *
  ****************************************************************************/
 #ifndef _CONFIG_H_
@@ -27,6 +27,7 @@
 
 #include <windows.h>
 #include "vfwext.h"
+#include <xvid.h>
 
 extern HINSTANCE g_hInst;
 
@@ -255,6 +256,5 @@ void config_reg_set(CONFIG * config);
 
 BOOL CALLBACK main_proc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK about_proc(HWND, UINT, WPARAM, LPARAM);
-
 
 #endif /* _CONFIG_H_ */

@@ -19,14 +19,13 @@ CFG=vfw - Win32 Debug
 !MESSAGE 
 !MESSAGE "vfw - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "vfw - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "vfw - Win32 Release _SMP" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
 # PROP Scc_ProjName ""
 # PROP Scc_LocalPath ""
-CPP=cl.exe
+CPP=xicl6.exe
 MTL=midl.exe
 RSC=rc.exe
 
@@ -43,8 +42,8 @@ RSC=rc.exe
 # PROP Intermediate_Dir "Release"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /ML /W3 /GX /O2 /I "..\src" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FR /YX /FD /c
+# ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /W3 /GX /O2 /I "..\src" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc09 /d "NDEBUG"
@@ -52,9 +51,13 @@ RSC=rc.exe
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-LINK32=link.exe
+LINK32=xilink6.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 user32.lib comdlg32.lib comctl32.lib advapi32.lib gdi32.lib shell32.lib winmm.lib ..\build\win32\bin\libxvidcore.lib /nologo /dll /machine:I386 /out:"bin\xvid.dll"
+# ADD LINK32 user32.lib comdlg32.lib comctl32.lib advapi32.lib gdi32.lib shell32.lib winmm.lib /nologo /dll /machine:I386 /out:"bin\xvidvfw.dll"
+# Begin Special Build Tool
+SOURCE="$(InputPath)"
+PostBuild_Cmds=copy "..\build\win32\bin\xvidcore.dll" ".\bin"
+# End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "vfw - Win32 Debug"
 
@@ -69,8 +72,8 @@ LINK32=link.exe
 # PROP Intermediate_Dir "Debug"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MLd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /GZ /c
-# ADD CPP /nologo /MLd /W3 /Gm /GX /ZI /Od /I "..\src" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /FR /YX /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I "..\src" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc09 /d "_DEBUG"
@@ -78,37 +81,14 @@ LINK32=link.exe
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-LINK32=link.exe
+LINK32=xilink6.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
 # ADD LINK32 user32.lib comdlg32.lib comctl32.lib advapi32.lib gdi32.lib shell32.lib winmm.lib ..\build\win32\bin\libxvidcore.lib /nologo /dll /incremental:no /debug /machine:I386 /out:"bin\xvid.dll" /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none
-
-!ELSEIF  "$(CFG)" == "vfw - Win32 Release _SMP"
-
-# PROP BASE Use_MFC 0
-# PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "vfw___Win32_Release__SMP"
-# PROP BASE Intermediate_Dir "vfw___Win32_Release__SMP"
-# PROP BASE Ignore_Export_Lib 0
-# PROP BASE Target_Dir ""
-# PROP Use_MFC 0
-# PROP Use_Debug_Libraries 0
-# PROP Output_Dir "Release_SMP"
-# PROP Intermediate_Dir "Release_SMP"
-# PROP Ignore_Export_Lib 0
-# PROP Target_Dir ""
-# ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\src" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_SMP" /YX /FD /c
-# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
-# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
-# ADD BASE RSC /l 0xc09 /d "NDEBUG"
-# ADD RSC /l 0xc09 /d "NDEBUG"
-BSC32=bscmake.exe
-# ADD BASE BSC32 /nologo
-# ADD BSC32 /nologo
-LINK32=link.exe
-# ADD BASE LINK32 user32.lib comdlg32.lib comctl32.lib advapi32.lib gdi32.lib shell32.lib winmm.lib ..\xvidcore\build\win32\bin\core.lib /nologo /dll /machine:I386 /out:"bin\xvid.dll"
-# ADD LINK32 user32.lib comdlg32.lib comctl32.lib advapi32.lib gdi32.lib shell32.lib winmm.lib ..\build\win32\bin\libxvidcore.lib pthreadVC.lib /nologo /dll /machine:I386 /out:"bin\xvid.dll"
+# Begin Special Build Tool
+SOURCE="$(InputPath)"
+PostBuild_Cmds=copy ../build/win32/bin/xvidcore.dll bin
+# End Special Build Tool
 
 !ENDIF 
 
@@ -116,7 +96,6 @@ LINK32=link.exe
 
 # Name "vfw - Win32 Release"
 # Name "vfw - Win32 Debug"
-# Name "vfw - Win32 Release _SMP"
 # Begin Group "doc"
 
 # PROP Default_Filter ""

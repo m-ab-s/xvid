@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.1.2.7 2003-12-27 14:33:13 Isibaar Exp $
+ * $Id: CXvidDecoder.cpp,v 1.1.2.8 2004-01-02 13:18:28 syskin Exp $
  *
  ****************************************************************************/
 
@@ -201,6 +201,8 @@ STDMETHODIMP CXvidDecoder::NonDelegatingQueryInterface(REFIID riid, void **ppv)
 
 /* constructor */
 
+#define XVID_DLL_NAME "xvidcore.dll"
+
 CXvidDecoder::CXvidDecoder(LPUNKNOWN punk, HRESULT *phr) :
     CVideoTransformFilter(NAME("CXvidDecoder"), punk, CLSID_XVID)
 {
@@ -209,7 +211,27 @@ CXvidDecoder::CXvidDecoder(LPUNKNOWN punk, HRESULT *phr) :
 	xvid_gbl_init_t init;
 	memset(&init, 0, sizeof(init));
 	init.version = XVID_VERSION;
-	if (xvid_global(0, XVID_GBL_INIT, &init, NULL) < 0)
+
+	m_hdll = LoadLibrary(XVID_DLL_NAME);
+	if (m_hdll == NULL) {
+		DPRINTF("dll load failed");
+		MessageBox(0, XVID_DLL_NAME " not found","Error", 0);
+		return;
+	}
+
+	xvid_global_func = (int (__cdecl *)(void *, int, void *, void *))GetProcAddress(m_hdll, "xvid_global");
+	if (xvid_global_func == NULL) {
+		MessageBox(0, "xvid_global() not found", "Error", 0);
+		return;
+	}
+
+	xvid_decore_func = (int (__cdecl *)(void *, int, void *, void *))GetProcAddress(m_hdll, "xvid_decore");
+	if (xvid_decore_func == NULL) {
+		MessageBox(0, "xvid_decore() not found", "Error", 0);
+		return;
+	}
+
+	if (xvid_global_func(0, XVID_GBL_INIT, &init, NULL) < 0)
 	{
 		MessageBox(0, "xvid_global() failed", "Error", 0);
 		return;
@@ -285,8 +307,14 @@ CXvidDecoder::~CXvidDecoder()
 
 	if (m_create.handle != NULL)
 	{
-		xvid_decore(m_create.handle, XVID_DEC_DESTROY, 0, 0);
+		xvid_decore_func(m_create.handle, XVID_DEC_DESTROY, 0, 0);
 		m_create.handle = NULL;
+	}
+
+	if (m_hdll != NULL)
+	{
+		FreeLibrary(m_hdll);
+		m_hdll = NULL;
 	}
 }
 
@@ -620,7 +648,7 @@ HRESULT CXvidDecoder::Transform(IMediaSample *pIn, IMediaSample *pOut)
 
 	if (m_create.handle == NULL)
 	{
-		if (xvid_decore(0, XVID_DEC_CREATE, &m_create, 0) < 0)
+		if (xvid_decore_func(0, XVID_DEC_CREATE, &m_create, 0) < 0)
 		{
             DPRINTF("*** XVID_DEC_CREATE error");
 			return S_FALSE;
@@ -688,7 +716,7 @@ repeat :
 
 	if (pIn->IsPreroll() != S_OK)
 	{
-		length = xvid_decore(m_create.handle, XVID_DEC_DECODE, &m_frame, &stats);
+		length = xvid_decore_func(m_create.handle, XVID_DEC_DECODE, &m_frame, &stats);
 
 		if (length < 0)
 		{
@@ -709,7 +737,7 @@ repeat :
 /*		m_frame.general &= ~XVID_DERING; */
 		m_frame.general &= ~XVID_FILMEFFECT;
 
-		length = xvid_decore(m_create.handle, XVID_DEC_DECODE, &m_frame, &stats);
+		length = xvid_decore_func(m_create.handle, XVID_DEC_DECODE, &m_frame, &stats);
 		if (length < 0)
 		{
             DPRINTF("*** XVID_DEC_DECODE");

@@ -2,7 +2,7 @@
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
 # ** DO NOT EDIT **
 
-# TARGTYPE "Win32 (x86) Static Library" 0x0104
+# TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
 
 CFG=libxvidcore - Win32 Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
@@ -17,15 +17,16 @@ CFG=libxvidcore - Win32 Debug
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "libxvidcore - Win32 Release" (based on "Win32 (x86) Static Library")
-!MESSAGE "libxvidcore - Win32 Debug" (based on "Win32 (x86) Static Library")
+!MESSAGE "libxvidcore - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "libxvidcore - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
 # PROP Scc_ProjName ""
 # PROP Scc_LocalPath ""
-CPP=cl.exe
+CPP=xicl6.exe
+MTL=midl.exe
 RSC=rc.exe
 
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
@@ -39,18 +40,20 @@ RSC=rc.exe
 # PROP Use_Debug_Libraries 0
 # PROP Output_Dir "Release"
 # PROP Intermediate_Dir "Release"
+# PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /G6 /W3 /GX /Op /Ob2 /D "NDEBUG" /D "ARCH_IS_IA32" /D "ARCH_IS_32BIT" /D "ARCH_IS_LITTLE_ENDIAN" /D "WIN32" /D "_MBCS" /D "_LIB" /FAcs /YX /FD /O2 -QxK /Qunroll /c
-# SUBTRACT CPP /Fr
+# ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /D "NDEBUG" /D "ARCH_IS_IA32" /D "WIN32" /D "_WINDOWS" /D "ARCH_IS_32BIT" /YX /FD /Qipo /c
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc09 /d "NDEBUG"
 # ADD RSC /l 0xc09 /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-LIB32=link.exe -lib
-# ADD BASE LIB32 /nologo
-# ADD LIB32 /nologo /out:"bin\libxvidcore.lib"
+LINK32=xilink6.exe
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /version:1.0 /subsystem:windows /dll /machine:I386 /out:"bin\xvidcore.dll"
 
 !ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
 
@@ -63,17 +66,20 @@ LIB32=link.exe -lib
 # PROP Use_Debug_Libraries 1
 # PROP Output_Dir "Debug"
 # PROP Intermediate_Dir "Debug"
+# PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W4 /Gm /GX /ZI /Od /D "_DEBUG" /D "ARCH_IS_IA32" /D "ARCH_IS_32BIT" /D "ARCH_IS_LITTLE_ENDIAN" /D "WIN32" /D "_MBCS" /D "_LIB" /FR /YX /FD /GZ /c
+# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "ARCH_IS_32BIT" /D "ARCH_IS_IA32" /YX /FD /GZ /c
+# ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
+# ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0xc09 /d "_DEBUG"
 # ADD RSC /l 0xc09 /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
-LIB32=link.exe -lib
-# ADD BASE LIB32 /nologo
-# ADD LIB32 /nologo /out:"bin\libxvidcore.lib"
+LINK32=xilink6.exe
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /version:1.0 /subsystem:windows /dll /debug /machine:I386 /out:"libxvidcore.dll" /pdbtype:sept
 
 !ENDIF 
 
@@ -98,7 +104,15 @@ SOURCE=..\..\CodingStyle
 # End Source File
 # Begin Source File
 
+SOURCE="..\..\doc\INSTALL"
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\LICENSE
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\doc\README"
 # End Source File
 # Begin Source File
 
@@ -107,14 +121,6 @@ SOURCE=..\..\README
 # Begin Source File
 
 SOURCE=..\..\TODO
-# End Source File
-# Begin Source File
-
-SOURCE="..\..\doc\README"
-# End Source File
-# Begin Source File
-
-SOURCE="..\..\doc\INSTALL"
 # End Source File
 # End Group
 # Begin Group "bitstream"
@@ -520,7 +526,7 @@ SOURCE=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\xvidcore\src\image\x86_asm
+InputDir=..\..\src\image\x86_asm
 IntDir=.\Release
 InputPath=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
 InputName=colorspace_rgb_mmx
@@ -533,7 +539,7 @@ InputName=colorspace_rgb_mmx
 !ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\xvidcore\src\image\x86_asm
+InputDir=..\..\src\image\x86_asm
 IntDir=.\Debug
 InputPath=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
 InputName=colorspace_rgb_mmx
@@ -553,7 +559,7 @@ SOURCE=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\xvidcore\src\image\x86_asm
+InputDir=..\..\image\x86_asm
 IntDir=.\Release
 InputPath=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
 InputName=colorspace_yuv_mmx
@@ -566,7 +572,7 @@ InputName=colorspace_yuv_mmx
 !ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\xvidcore\src\image\x86_asm
+InputDir=..\..\src\image\x86_asm
 IntDir=.\Debug
 InputPath=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
 InputName=colorspace_yuv_mmx
@@ -586,7 +592,7 @@ SOURCE=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
 !IF  "$(CFG)" == "libxvidcore - Win32 Release"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\xvidcore\src\image\x86_asm
+InputDir=..\..\src\image\x86_asm
 IntDir=.\Release
 InputPath=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
 InputName=colorspace_yuyv_mmx
@@ -599,7 +605,7 @@ InputName=colorspace_yuyv_mmx
 !ELSEIF  "$(CFG)" == "libxvidcore - Win32 Debug"
 
 # Begin Custom Build - Assembling $(InputPath)
-InputDir=\xvidcore\src\image\x86_asm
+InputDir=..\..\src\image\x86_asm
 IntDir=.\Debug
 InputPath=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
 InputName=colorspace_yuyv_mmx
@@ -1499,6 +1505,10 @@ SOURCE=..\..\src\decoder.c
 # Begin Source File
 
 SOURCE=..\..\src\encoder.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\generic\libxvidcore.def
 # End Source File
 # Begin Source File
 

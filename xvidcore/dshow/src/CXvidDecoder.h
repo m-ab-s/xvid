@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.h,v 1.1.2.4 2003-12-12 15:09:01 Isibaar Exp $
+ * $Id: CXvidDecoder.h,v 1.1.2.5 2004-01-02 13:18:28 syskin Exp $
  *
  ****************************************************************************/
 
@@ -109,6 +109,10 @@ private :
 
 	xvid_dec_create_t m_create;
 	xvid_dec_frame_t m_frame;
+
+	HINSTANCE m_hdll;
+	int (*xvid_global_func)(void *handle, int opt, void *param1, void *param2);
+	int (*xvid_decore_func)(void *handle, int opt, void *param1, void *param2);
 };
 
 

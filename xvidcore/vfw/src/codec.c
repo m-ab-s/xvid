@@ -299,6 +299,51 @@ int vfw_debug(void *handle,
 	return XVID_ERR_FAIL;
 }
 
+#define XVID_DLL_NAME "xvidcore.dll"
+
+static int init_dll()
+{
+	/*if (m_hdll != NULL) return;*/
+
+	DPRINTF("init_dll");
+	m_hdll = LoadLibrary(XVID_DLL_NAME);
+	if (m_hdll == NULL) {
+		DPRINTF("dll load failed");
+		MessageBox(0, XVID_DLL_NAME " not found","Error", 0);
+		return XVID_ERR_FAIL;
+	}
+
+	xvid_global_func = (int (__cdecl *)(void *, int, void *, void *))GetProcAddress(m_hdll, "xvid_global");
+	if (xvid_global_func == NULL) {
+		MessageBox(0, "xvid_global() not found", "Error", 0);
+		return XVID_ERR_FAIL;
+	}
+
+	xvid_encore_func = (int (__cdecl *)(void *, int, void *, void *))GetProcAddress(m_hdll, "xvid_encore");
+	if (xvid_encore_func == NULL) {
+		MessageBox(0, "xvid_encore() not found", "Error", 0);
+		return XVID_ERR_FAIL;
+	}
+
+	xvid_decore_func = (int (__cdecl *)(void *, int, void *, void *))GetProcAddress(m_hdll, "xvid_decore");
+	if (xvid_decore_func == NULL) {
+		MessageBox(0, "xvid_decore() not found", "Error", 0);
+		return XVID_ERR_FAIL;
+	}
+
+	xvid_plugin_single_func = 
+		(int (__cdecl *)(void *, int, void *, void *))(GetProcAddress(m_hdll, "xvid_plugin_single"));
+	xvid_plugin_2pass1_func = 
+		(int (__cdecl *)(void *, int, void *, void *))(GetProcAddress(m_hdll, "xvid_plugin_2pass1"));
+	xvid_plugin_2pass2_func = 
+		(int (__cdecl *)(void *, int, void *, void *))(GetProcAddress(m_hdll, "xvid_plugin_2pass2"));
+	xvid_plugin_lumimasking_func = 
+		(int (__cdecl *)(void *, int, void *, void *))(GetProcAddress(m_hdll, "xvid_plugin_lumimasking"));
+	xvid_plugin_psnr_func = 
+		(int (__cdecl *)(void *, int, void *, void *))(GetProcAddress(m_hdll, "xvid_plugin_psnr"));
+
+	return 0;
+}
 
 
 LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiOutput)
@@ -311,9 +356,10 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	xvid_plugin_2pass2_t pass2;
     int i;
 
+	if (init_dll() != 0) return ICERR_ERROR;
     /* destroy previously created codec */
 	if(codec->ehandle) {
-		xvid_encore(codec->ehandle, XVID_ENC_DESTROY, NULL, NULL);
+		xvid_encore_func(codec->ehandle, XVID_ENC_DESTROY, NULL, NULL);
 		codec->ehandle = NULL;
 	}
 
@@ -321,7 +367,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	init.version = XVID_VERSION;
 	init.cpu_flags = codec->config.cpu;
     init.debug = codec->config.debug;
-	xvid_global(0, XVID_GBL_INIT, &init, NULL);
+	xvid_global_func(0, XVID_GBL_INIT, &init, NULL);
 
 	memset(&create, 0, sizeof(create));
 	create.version = XVID_VERSION;
@@ -352,7 +398,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
         single.reaction_delay_factor = codec->config.rc_reaction_delay_factor;
 		single.averaging_period = codec->config.rc_averaging_period;
 		single.buffer = codec->config.rc_buffer;
-        plugins[create.num_plugins].func = xvid_plugin_single;
+        plugins[create.num_plugins].func = xvid_plugin_single_func;
         plugins[create.num_plugins].param = &single;
         create.num_plugins++;
         break;
@@ -362,7 +408,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	    pass1.version = XVID_VERSION;
         pass1.filename = codec->config.stats;
 
-        plugins[create.num_plugins].func = xvid_plugin_2pass1;
+        plugins[create.num_plugins].func = xvid_plugin_2pass1_func;
         plugins[create.num_plugins].param = &pass1;
         create.num_plugins++;
 		break;
@@ -387,7 +433,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
         pass2.kfthreshold = codec->config.kfthreshold;
         pass2.container_frame_overhead = 24;    /* AVI */
 
-        plugins[create.num_plugins].func = xvid_plugin_2pass2;
+        plugins[create.num_plugins].func = xvid_plugin_2pass2_func;
         plugins[create.num_plugins].param = &pass2;
         create.num_plugins++;
 		break;
@@ -400,7 +446,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	}
 
   	if ((profiles[codec->config.profile].flags & PROFILE_ADAPTQUANT) && codec->config.lum_masking) {
-        plugins[create.num_plugins].func = xvid_plugin_lumimasking;
+        plugins[create.num_plugins].func = xvid_plugin_lumimasking_func;
         plugins[create.num_plugins].param = NULL;
         create.num_plugins++; 
 	}
@@ -442,7 +488,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 
     create.num_threads = codec->config.num_threads;
 
-	switch(xvid_encore(0, XVID_ENC_CREATE, &create, NULL))
+	switch(xvid_encore_func(0, XVID_ENC_CREATE, &create, NULL))
 	{
 	case XVID_ERR_FAIL :	
 		return ICERR_ERROR;
@@ -472,9 +518,13 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 
 LRESULT compress_end(CODEC * codec)
 {
-    if (codec->ehandle != NULL) {
-		xvid_encore(codec->ehandle, XVID_ENC_DESTROY, NULL, NULL);
-		codec->ehandle = NULL;
+    if (m_hdll != NULL) {
+		if (codec->ehandle != NULL) {
+			xvid_encore_func(codec->ehandle, XVID_ENC_DESTROY, NULL, NULL);
+			codec->ehandle = NULL;
+		}
+		FreeLibrary(m_hdll);
+		m_hdll = NULL;
 	}
 
     if (codec->config.display_status)
@@ -669,7 +719,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	memset(&stats, 0, sizeof(stats));
 	stats.version = XVID_VERSION;
 
-    length = xvid_encore(codec->ehandle, XVID_ENC_ENCODE, &frame, &stats);
+    length = xvid_encore_func(codec->ehandle, XVID_ENC_ENCODE, &frame, &stats);
 	switch (length) 
 	{
 	case XVID_ERR_FAIL :	
@@ -804,17 +854,19 @@ LRESULT decompress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpb
 	xvid_gbl_init_t init;
 	xvid_dec_create_t create;
 
+	if (init_dll() != 0) return ICERR_ERROR;
+
 	memset(&init, 0, sizeof(init));
 	init.version = XVID_VERSION;
 	init.cpu_flags = codec->config.cpu;
-	xvid_global(0, XVID_GBL_INIT, &init, NULL);
+	xvid_global_func(0, XVID_GBL_INIT, &init, NULL);
 
 	memset(&create, 0, sizeof(create));
 	create.version = XVID_VERSION;
 	create.width = lpbiInput->bmiHeader.biWidth;
 	create.height = lpbiInput->bmiHeader.biHeight;
 
-	switch(xvid_decore(0, XVID_DEC_CREATE, &create, NULL)) 
+	switch(xvid_decore_func(0, XVID_DEC_CREATE, &create, NULL)) 
 	{
 	case XVID_ERR_FAIL :	
 		return ICERR_ERROR;
@@ -837,11 +889,15 @@ LRESULT decompress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpb
 
 LRESULT decompress_end(CODEC * codec)
 {
-	if (codec->dhandle != NULL)
-	{
-		xvid_decore(codec->dhandle, XVID_DEC_DESTROY, NULL, NULL);
-		codec->dhandle = NULL;
+	if (m_hdll != NULL) {
+		if (codec->dhandle != NULL) {
+			xvid_decore_func(codec->dhandle, XVID_DEC_DESTROY, NULL, NULL);
+			codec->dhandle = NULL;
+		}
+		FreeLibrary(m_hdll);
+		m_hdll = NULL;
 	}
+
 	return ICERR_OK;
 }
 
@@ -887,7 +943,7 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 		convert.interlacing = 0;
 		if (convert.input.csp == XVID_CSP_NULL ||
 			convert.output.csp == XVID_CSP_NULL ||
-			xvid_global(0, XVID_GBL_CONVERT, &convert, NULL) < 0)
+			xvid_global_func(0, XVID_GBL_CONVERT, &convert, NULL) < 0)
 		{
 			 return ICERR_BADFORMAT;
 		}
@@ -917,7 +973,7 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 		frame.output.csp = XVID_CSP_NULL;
 	}
 
-	switch (xvid_decore(codec->dhandle, XVID_DEC_DECODE, &frame, NULL)) 
+	switch (xvid_decore_func(codec->dhandle, XVID_DEC_DECODE, &frame, NULL)) 
 	{
 	case XVID_ERR_FAIL :	
 		return ICERR_ERROR;

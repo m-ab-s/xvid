@@ -266,6 +266,8 @@ static const BYTE default_qmatrix_inter[] = {
 
 #define REG_GET_B(X, Y, Z) size=sizeof((Z));if(RegQueryValueEx(hKey, X, 0, 0, Y, &size) != ERROR_SUCCESS) {memcpy(Y, Z, sizeof((Z)));}
 
+#define XVID_DLL_NAME "xvidcore.dll"
+
 void config_reg_get(CONFIG * config)
 {
     char tmp[32];
@@ -273,10 +275,20 @@ void config_reg_get(CONFIG * config)
 	DWORD size;
     int i,j;
 	xvid_gbl_info_t info;
+	HINSTANCE m_hdll;
 
 	memset(&info, 0, sizeof(info));
 	info.version = XVID_VERSION;
-	xvid_global(0, XVID_GBL_INFO, &info, NULL);
+
+	m_hdll = LoadLibrary(XVID_DLL_NAME);
+	if (m_hdll != NULL) {
+
+		((int (__cdecl *)(void *, int, void *, void *))GetProcAddress(m_hdll, "xvid_global"))
+			(0, XVID_GBL_INFO, &info, NULL);
+
+		FreeLibrary(m_hdll);
+	}
+
 	reg.cpu = info.cpu_flags;
 	reg.num_threads = info.num_threads;
 	
@@ -1689,18 +1701,30 @@ BOOL CALLBACK about_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			char core[100];
 			HFONT hFont;
 			LOGFONT lfData;
+			HINSTANCE m_hdll;
 
 			SetDlgItemText(hDlg, IDC_BUILD, XVID_BUILD);
 			SetDlgItemText(hDlg, IDC_SPECIAL_BUILD, XVID_SPECIAL_BUILD);
 
 			memset(&info, 0, sizeof(info));
 			info.version = XVID_VERSION;
-			xvid_global(0, XVID_GBL_INFO, &info, NULL);
-			wsprintf(core, "libxvidcore version %d.%d.%d (\"%s\")",
-				XVID_VERSION_MAJOR(info.actual_version),
-				XVID_VERSION_MINOR(info.actual_version),
-				XVID_VERSION_PATCH(info.actual_version),
-				info.build);
+			
+			m_hdll = LoadLibrary(XVID_DLL_NAME);
+			if (m_hdll != NULL) {
+				
+				((int (__cdecl *)(void *, int, void *, void *))GetProcAddress(m_hdll, "xvid_global"))
+					(0, XVID_GBL_INFO, &info, NULL);
+				
+				wsprintf(core, "xvidcore.dll version %d.%d.%d (\"%s\")",
+					XVID_VERSION_MAJOR(info.actual_version),
+					XVID_VERSION_MINOR(info.actual_version),
+					XVID_VERSION_PATCH(info.actual_version),
+					info.build);
+				
+				FreeLibrary(m_hdll);
+			} else {
+				wsprintf(core, "xvidcore.dll not found!");
+			}
 
 			SetDlgItemText(hDlg, IDC_CORE, core);
 
@@ -1719,7 +1743,6 @@ BOOL CALLBACK about_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SetDlgItemText(hDlg, IDC_WEBSITE, XVID_WEBSITE);
 		}
 		break;
-
 	case WM_CTLCOLORSTATIC :
 		if ((HWND)lParam == GetDlgItem(hDlg, IDC_WEBSITE))
 		{

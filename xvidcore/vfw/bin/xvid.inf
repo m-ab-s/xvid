@@ -8,20 +8,21 @@ Class = MEDIA
 1="XviD MPEG-4 Video Codec Install Disk",, 0001
 
 [SourceDisksFiles]
-xvid.dll=1
+xvidvfw.dll=1
 xvid.inf=1
+xvidcore.dll=1
 
 [Installable.Drivers]
-XVID = 1:xvid.dll, "vidc.XVID", "XviD MPEG-4 Video Codec" , , ,
+XVID = 1:xvidvfw.dll, "vidc.XVID", "XviD MPEG-4 Video Codec" , , ,
 
 [DefaultInstall]
-CopyFiles=MPEG4.Copy,MPEG4.Copy.Inf
+CopyFiles=MPEG4.Copy.Inf,MPEG4.Copy
 Updateinis = MPEG4.Updateini
 addreg = MPEG4.AddReg,MPEG4.AddReg9x,MPEG4.DoReg
 MediaType = SOFTWARE
 
 [DefaultInstall.ntx86]
-CopyFiles=MPEG4.Copy,MPEG4.Copy.Inf
+CopyFiles=MPEG4.Copy.Inf,MPEG4.Copy
 addreg = MPEG4.AddReg,MPEG4.AddRegNT,MPEG4.DoReg
 MediaType = SOFTWARE
 
@@ -32,22 +33,23 @@ DelFiles = MPEG4.Copy,MPEG4.Copy.Inf
 UpdateInis = MPEG4.DelIni
 
 [MPEG4.Copy]
-xvid.dll
+xvidvfw.dll
+xvidcore.dll
 
 [MPEG4.Copy.Inf]
 xvid.inf
 
 [MPEG4.UpdateIni]
-system.ini, drivers32,,"vidc.XVID=xvid.dll"
+system.ini, drivers32,,"vidc.XVID=xvidvfw.dll"
 
 [MPEG4.DelIni]
-system.ini, drivers32,"vidc.XVID=xvid.dll",
+system.ini, drivers32,"vidc.XVID=xvidvfw.dll",
 
 [MPEG4.AddReg]
 
 [MPEG4.AddReg9x]
 HKLM,SYSTEM\CurrentControlSet\Control\MediaResources\icm\vidc.XVID,Description,,%XviD%
-HKLM,SYSTEM\CurrentControlSet\Control\MediaResources\icm\vidc.XVID,Driver,,xvid.dll
+HKLM,SYSTEM\CurrentControlSet\Control\MediaResources\icm\vidc.XVID,Driver,,xvidvfw.dll
 HKLM,SYSTEM\CurrentControlSet\Control\MediaResources\icm\vidc.XVID,FriendlyName,,"XVID"
 
 HKLM,%UnInstallPath%,DisplayName,,%UninstallDispName%
@@ -55,7 +57,7 @@ HKLM,%UnInstallPath%,UninstallString,,"%10%\rundll.exe setupx.dll,InstallHinfSec
 
 [MPEG4.AddRegNT]
 HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\drivers.desc,xvid.dll,,%XviD%
-HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\drivers32,vidc.XVID,,xvid.dll
+HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\drivers32,vidc.XVID,,xvidvfw.dll
 
 HKLM,%UnInstallPath%,DisplayName,,%UninstallDispName%
 HKLM,%UnInstallPath%,UninstallString,,"%11%\rundll32.exe setupapi,InstallHinfSection Remove_XviD 132 %17%\%InfFile%"
@@ -66,7 +68,7 @@ HKLM,%UnInstallPath%,UninstallString,,"%11%\rundll32.exe setupapi,InstallHinfSec
 [MPEG4.DelReg]
 HKLM,SYSTEM\CurrentControlSet\Control\MediaResources\icm\vidc.XVID
 
-HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\drivers.desc,xvid.dll,,""
+HKLM,SOFTWARE\Microsoft\Windows NT\CurrentVersion\drivers.desc,xvidvfw.dll,,""
 HKLM,%UnInstallPath%
 
 [MPEG4.Unregister]

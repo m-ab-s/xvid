@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: codec.h,v 1.1.2.5 2003-06-10 10:07:03 suxen_drol Exp $
+ * $Id: codec.h,v 1.1.2.6 2004-01-02 13:18:28 syskin Exp $
  *
  ****************************************************************************/
 #ifndef _CODEC_H_
@@ -84,5 +84,16 @@ LRESULT decompress_get_format(CODEC *, BITMAPINFO *, BITMAPINFO *);
 LRESULT decompress_begin(CODEC *, BITMAPINFO *, BITMAPINFO *);
 LRESULT decompress_end(CODEC *);
 LRESULT decompress(CODEC *, ICDECOMPRESS *);
+
+HINSTANCE m_hdll;
+int (*xvid_global_func)(void *handle, int opt, void *param1, void *param2);
+int (*xvid_encore_func)(void *handle, int opt, void *param1, void *param2);
+int (*xvid_decore_func)(void *handle, int opt, void *param1, void *param2);
+
+xvid_plugin_func *xvid_plugin_single_func, 
+				*xvid_plugin_2pass1_func,
+				*xvid_plugin_2pass2_func,
+				*xvid_plugin_lumimasking_func,
+				*xvid_plugin_psnr_func;
 
 #endif /* _CODEC_H_ */
