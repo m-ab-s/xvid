@@ -401,6 +401,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		frame.general |= XVID_INTERLACING;
 
 
+
 // added by koepi for credits greyscale
 
 	check_greyscale_mode(&codec->config, &frame, codec->framenum);
@@ -450,7 +451,8 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	frame.motion = pmvfast_presets[codec->config.motion_search];
 
 	frame.image = icc->lpInput;
-	// dev-api-3 frame.stride = (((icc->lpbiInput->biWidth * icc->lpbiInput->biBitCount) + 31) & ~31) >> 3;
+	// dev-api-3 
+	frame.stride = (((icc->lpbiInput->biWidth * icc->lpbiInput->biBitCount) + 31) & ~31) >> 3;
 
 	if ((frame.colorspace = get_colorspace(inhdr)) == XVID_CSP_NULL)
 		return ICERR_BADFORMAT;
@@ -725,8 +727,9 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 	frame.length = icd->lpbiInput->biSizeImage;
 
 	frame.image = icd->lpOutput;
-	frame.stride = icd->lpbiOutput->biWidth;
-	// dev-api-3: frame.stride = (((icd->lpbiOutput->biWidth * icd->lpbiOutput->biBitCount) + 31) & ~31) >> 3;
+	//frame.stride = icd->lpbiOutput->biWidth;
+	// dev-api-3: 
+	frame.stride = (((icd->lpbiOutput->biWidth * icd->lpbiOutput->biBitCount) + 31) & ~31) >> 3;
 
 	/* --- yv12 --- */	
 	if (icd->lpbiInput->biCompression == FOURCC_YV12) {

@@ -385,18 +385,18 @@ HRESULT CXvidDecoder::GetMediaType(int iPosition, CMediaType *mtOut)
 #endif
 
 	case 7:
-#ifdef ENABLE_RGB555
-		vih->bmiHeader.biCompression = BI_RGB;
-		vih->bmiHeader.biBitCount = 16;	
-		mtOut->SetSubtype(&MEDIASUBTYPE_RGB555);
-		break;
-#endif
-
-	case 8:
 #ifdef ENABLE_RGB565
 		vih->bmiHeader.biCompression = BI_RGB;
 		vih->bmiHeader.biBitCount = 16;	
 		mtOut->SetSubtype(&MEDIASUBTYPE_RGB565);
+		break;
+#endif
+
+	case 8:
+#ifdef ENABLE_RGB555
+		vih->bmiHeader.biCompression = BI_RGB;
+		vih->bmiHeader.biBitCount = 16;	
+		mtOut->SetSubtype(&MEDIASUBTYPE_RGB555);
 		break;
 #endif
 
@@ -419,6 +419,29 @@ HRESULT CXvidDecoder::GetMediaType(int iPosition, CMediaType *mtOut)
 
 HRESULT CXvidDecoder::ChangeColorspace(GUID subtype, GUID formattype, void * format)
 {
+	int rgb_flip;
+
+	if (formattype == FORMAT_VideoInfo)
+	{
+		VIDEOINFOHEADER * vih = (VIDEOINFOHEADER * )format;
+		//m_frame.stride = vih->bmiHeader.biWidth;
+		// dev-api-3: 
+		m_frame.stride = (((vih->bmiHeader.biWidth * vih->bmiHeader.biBitCount) + 31) & ~31) >> 3;
+		rgb_flip = (vih->bmiHeader.biHeight < 0 ? 0 : XVID_CSP_VFLIP);
+	}
+	else if (formattype == FORMAT_VideoInfo2)
+	{
+		VIDEOINFOHEADER2 * vih2 = (VIDEOINFOHEADER2 * )format;
+		//m_frame.stride = vih2->bmiHeader.biWidth;
+		// dev-api-3: 
+		m_frame.stride = (((vih2->bmiHeader.biWidth * vih2->bmiHeader.biBitCount) + 31) & ~31) >> 3;
+		rgb_flip = (vih2->bmiHeader.biHeight < 0 ? 0 : XVID_CSP_VFLIP);
+	}
+	else
+	{
+		return S_FALSE;
+	}
+
 	if (subtype == MEDIASUBTYPE_IYUV)
 	{
 		DEBUG("IYUV");
@@ -447,44 +470,26 @@ HRESULT CXvidDecoder::ChangeColorspace(GUID subtype, GUID formattype, void * for
 	else if (subtype == MEDIASUBTYPE_RGB32)
 	{
 		DEBUG("RGB32");
-		m_frame.colorspace = XVID_CSP_VFLIP | XVID_CSP_RGB32;
+		m_frame.colorspace = rgb_flip | XVID_CSP_RGB32;
 	}
 	else if (subtype == MEDIASUBTYPE_RGB24)
 	{
 		DEBUG("RGB24");
-		m_frame.colorspace = XVID_CSP_VFLIP | XVID_CSP_RGB24;
+		m_frame.colorspace = rgb_flip | XVID_CSP_RGB24;
 	}
 	else if (subtype == MEDIASUBTYPE_RGB555)
 	{
 		DEBUG("RGB555");
-		m_frame.colorspace = XVID_CSP_VFLIP | XVID_CSP_RGB555;
+		m_frame.colorspace = rgb_flip | XVID_CSP_RGB555;
 	}
 	else if (subtype == MEDIASUBTYPE_RGB565)
 	{
 		DEBUG("RGB565");
-		m_frame.colorspace = XVID_CSP_VFLIP | XVID_CSP_RGB565;
+		m_frame.colorspace = rgb_flip | XVID_CSP_RGB565;
 	}
 	else if (subtype == GUID_NULL)
 	{
 		m_frame.colorspace = XVID_CSP_NULL;
-	}
-	else
-	{
-		return S_FALSE;
-	}
-
-
-	if (formattype == FORMAT_VideoInfo)
-	{
-		VIDEOINFOHEADER * vih = (VIDEOINFOHEADER * )format;
-		m_frame.stride = vih->bmiHeader.biWidth;
-		// dev-api-3: m_frame.stride = (((vih->bmiHeader.biWidth * vih->bmiHeader.biBitCount) + 31) & ~31) >> 3;
-	}
-	else if (formattype == FORMAT_VideoInfo2)
-	{
-		VIDEOINFOHEADER2 * vih2 = (VIDEOINFOHEADER2 * )format;
-		m_frame.stride = vih2->bmiHeader.biWidth;
-		// dev-api-3: m_frame.stride = (((vih2->bmiHeader.biWidth * vih2->bmiHeader.biBitCount) + 31) & ~31) >> 3;
 	}
 	else
 	{
