@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.33 2003-12-21 17:38:17 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.34 2004-01-07 13:51:24 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -130,17 +130,15 @@ typedef struct
 
 	/*----------------------------------
 	 * Zones statistical data
-	 *
-	 * ToDo: Fix zones, current
-	 *       implementation is buggy
 	 *--------------------------------*/
-
-	/* Average weight of the zones */
-	double avg_weight;
 
 	/* Total length used by XVID_ZONE_QUANT zones */
 	uint64_t tot_quant;
 	uint64_t tot_quant_invariant;
+
+	/* Holds the total amount of frame bytes, zone weighted (only scalable
+	 * part of frame bytes) */
+	uint64_t tot_weighted;
 
 	/*----------------------------------
 	 * Advanced settings helper ratios
@@ -375,6 +373,27 @@ rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t **handle)
 	if(rc->param.container_frame_overhead)
 		DPRINTF(XVID_DEBUG_RC, "[xvid rc] -- New target filesize after container compensation: %lld\n", rc->target);
 
+	/* When bitrate is not given it means it has been scaled by an external
+	 * application */
+	if (rc->param.bitrate) {
+		/* Apply zone settings
+		 * - set rc->tot_quant which represents the total num of bytes spent in
+		 *   fixed quant zones
+		 * - set rc->tot_weighted which represents the total amount of bytes
+		 *   spent in normal or weighted zones in first pass (normal zones can
+		 *   be considered weight=1)
+		 * - set rc->tot_quant_invariant which represents the total num of bytes
+		 *   spent in fixed quant zones for headers */
+		zone_process(rc, create);
+	} else {
+		/* External scaling -- zones are ignored */
+		for (i=0;i<rc->num_frames;i++) {
+			rc->stats[i].zone_mode = XVID_ZONE_WEIGHT;
+			rc->stats[i].weight = 1.0;
+		}
+		rc->tot_quant = 0;
+	}
+
 	/* Gathers some information about first pass stats:
 	 *  - finds the minimum frame length for each frame type during 1st pass.
 	 *     rc->min_size[]
@@ -390,25 +409,10 @@ rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t **handle)
 	 */
 	first_pass_stats_prepare_data(rc);
 
-	/* When bitrate is not given it means it has been scaled by an external
-	 * application */
+	/* If we have a user bitrate, it means it's an internal curve scaling */
 	if (rc->param.bitrate) {
-		/* Apply zone settings
-		 * - set rc->tot_quant which represents the total num of bytes spent in
-		 *   fixed quant zones
-		 * - set rc->tot_quant_invariant which represents the total num of bytes spent
-		 *   in fixed quant zones for headers */
-		zone_process(rc, create);
 		/* Perform internal curve scaling */
 		first_pass_scale_curve_internal(rc);
-	} else {
-		/* External scaling -- zones are ignored */
-		for (i=0;i<rc->num_frames;i++) {
-			rc->stats[i].zone_mode = XVID_ZONE_WEIGHT;
-			rc->stats[i].weight = 1.0;
-		}
-		rc->avg_weight = 1.0;
-		rc->tot_quant = 0;
 	}
 
 	/* Apply advanced curve options, and compute some parameters in order to
@@ -984,7 +988,7 @@ statsfile_load(rc_2pass2_t *rc, char * filename)
 
 /* pre-process the statistics data
  * - for each type, count, tot_length, min_length, max_length
- * - set keyframes_locations */
+ * - set keyframes_locations, tot_prescaled */
 static void
 first_pass_stats_prepare_data(rc_2pass2_t * rc)
 {
@@ -1001,6 +1005,7 @@ first_pass_stats_prepare_data(rc_2pass2_t * rc)
 	}
 
 	rc->max_length = INT_MIN;
+	rc->tot_weighted = 0;
 
 	/* Loop through all frames and find/compute all the stuff this function
 	 * is supposed to do */
@@ -1010,6 +1015,8 @@ first_pass_stats_prepare_data(rc_2pass2_t * rc)
 		rc->count[s->type-1]++;
 		rc->tot_length[s->type-1] += s->length;
 		rc->tot_invariant[s->type-1] += s->invariant;
+		if (s->zone_mode != XVID_ZONE_QUANT)
+			rc->tot_weighted += (int)(s->weight*(s->length - s->invariant));
 
 		if (s->length < rc->min_length[s->type-1]) {
 			rc->min_length[s->type-1] = s->length;
@@ -1044,7 +1051,6 @@ zone_process(rc_2pass2_t *rc, const xvid_plg_create_t * create)
 	int i,j;
 	int n = 0;
 
-	rc->avg_weight = 0.0;
 	rc->tot_quant = 0;
 	rc->tot_quant_invariant = 0;
 
@@ -1053,7 +1059,6 @@ zone_process(rc_2pass2_t *rc, const xvid_plg_create_t * create)
 			rc->stats[j].zone_mode = XVID_ZONE_WEIGHT;
 			rc->stats[j].weight = 1.0;
 		}
-		rc->avg_weight += rc->num_frames * 1.0;
 		n += rc->num_frames;
 	}
 
@@ -1062,12 +1067,16 @@ zone_process(rc_2pass2_t *rc, const xvid_plg_create_t * create)
 
 		int next = (i+1<create->num_zones) ? create->zones[i+1].frame : rc->num_frames;
 
+		/* Zero weight make no sense */
+		if (create->zones[i].increment == 0) create->zones[i].increment = 1;
+		/* And obviously an undetermined infinite makes even less sense */
+		if (create->zones[i].base == 0) create->zones[i].base = 1;
+
 		if (i==0 && create->zones[i].frame > 0) {
 			for (j = 0; j < create->zones[i].frame && j < rc->num_frames; j++) {
 				rc->stats[j].zone_mode = XVID_ZONE_WEIGHT;
 				rc->stats[j].weight = 1.0;
 			}
-			rc->avg_weight += create->zones[i].frame * 1.0;
 			n += create->zones[i].frame;
 		}
 
@@ -1077,7 +1086,6 @@ zone_process(rc_2pass2_t *rc, const xvid_plg_create_t * create)
 				rc->stats[j].weight = (double)create->zones[i].increment / (double)create->zones[i].base;
 			}
 			next -= create->zones[i].frame;
-			rc->avg_weight += (double)(next * create->zones[i].increment) / (double)create->zones[i].base;
 			n += next;
 		} else{  /* XVID_ZONE_QUANT */
 			for (j = create->zones[i].frame; j < next && j < rc->num_frames; j++ ) {
@@ -1088,9 +1096,6 @@ zone_process(rc_2pass2_t *rc, const xvid_plg_create_t * create)
 			}
 		}
 	}
-	rc->avg_weight = n>0 ? rc->avg_weight/n : 1.0;
-
-	DPRINTF(XVID_DEBUG_RC, "[xvid rc] -- center_weight:%f (for %d frames)  fixed_bytes:%d\n", rc->avg_weight, n, rc->tot_quant);
 }
 
 
@@ -1099,7 +1104,6 @@ static void
 first_pass_scale_curve_internal(rc_2pass2_t *rc)
 {
 	int64_t target;
-	int64_t pass1_length;
 	int64_t total_invariant;
 	double scaler;
 	int i, num_MBs;
@@ -1118,23 +1122,8 @@ first_pass_scale_curve_internal(rc_2pass2_t *rc)
 	target	= rc->target;
 	target -= rc->tot_quant;
 
-	/* Do the same for the first pass data */
-	pass1_length  = rc->tot_length[XVID_TYPE_IVOP-1];
-	pass1_length += rc->tot_length[XVID_TYPE_PVOP-1];
-	pass1_length += rc->tot_length[XVID_TYPE_BVOP-1];
-	pass1_length -= rc->tot_quant;
-
 	/* Let's compute a linear scaler in order to perform curve scaling */
-	scaler = (double)(target - total_invariant) / (double)(pass1_length - total_invariant);
-
-#ifdef PASS_SMALLER
-	if ((target - total_invariant) <= 0 ||
-		(pass1_length - total_invariant) <= 0 ||
-		target >= pass1_length) {
-		DPRINTF(XVID_DEBUG_RC, "[xvid rc] -- WARNING: Undersize detected before correction\n");
-		scaler = 1.0;
-	}
-#endif
+	scaler = (double)(target - total_invariant) / (double)(rc->tot_weighted);
 
 	/* Compute min frame lengths (for each frame type) according to the number
 	 * of MBs. We sum all block type counters of frame 0, this gives us the
@@ -1177,7 +1166,7 @@ first_pass_scale_curve_internal(rc_2pass2_t *rc)
 		}
 
 		/* Compute the scaled length -- only non invariant data length is scaled */
-		len = s->invariant + (int)((double)(s->length-s->invariant) * scaler * s->weight / rc->avg_weight);
+		len = s->invariant + (int)((double)(s->length-s->invariant) * scaler * s->weight);
 
 		/* Compare with the computed minimum */
 		if (len < rc->min_length[s->type-1]) {
@@ -1189,7 +1178,6 @@ first_pass_scale_curve_internal(rc_2pass2_t *rc)
 			 * total counters, as we prepare a second pass for 'regular'
 			 * frames */
 			target -= s->scaled_length;
-			pass1_length -= s->length;
 		} else {
 			/* Do nothing for now, we'll scale this later */
 			s->scaled_length = 0;
@@ -1200,15 +1188,7 @@ first_pass_scale_curve_internal(rc_2pass2_t *rc)
 	 * total counters. Now, it's possible to scale the 'regular' frames. */
 
 	/* Scaling factor for 'regular' frames */
-	scaler = (double)(target - total_invariant) / (double)(pass1_length - total_invariant);
-
-#ifdef PASS_SMALLER
-	/* Detect undersizing */
-	if (target <= 0 || pass1_length <= 0 || target >= pass1_length) {
-		DPRINTF(XVID_DEBUG_RC, "[xvid rc] -- WARNING: Undersize detected after correction\n");
-		scaler = 1.0;
-	}
-#endif
+	scaler = (double)(target - total_invariant) / (double)(rc->tot_weighted);
 
 	/* Do another pass with the new scaler */
 	for (i=0; i<rc->num_frames; i++) {
@@ -1216,7 +1196,7 @@ first_pass_scale_curve_internal(rc_2pass2_t *rc)
 
 		/* Ignore frame with forced frame sizes */
 		if (s->scaled_length == 0)
-			s->scaled_length = s->invariant + (int)((double)(s->length-s->invariant) * scaler * s->weight / rc->avg_weight);
+			s->scaled_length = s->invariant + (int)((double)(s->length-s->invariant) * scaler * s->weight);
 	}
 
 	/* Job done */
