@@ -92,8 +92,14 @@ output_slice(IMAGE * cur, int edged_width, int width, XVID_DEC_PICTURE* out_frm,
 
 
 void
+image_clear(IMAGE * img, int width, int height, int edged_width,
+					int y, int u, int v);
+
+
+void
 image_deblock_rrv(IMAGE * img, int edgeg_width,
-				const MACROBLOCK * mbs, int mb_width, int mb_height, int mb_stride);
+				const MACROBLOCK * mbs, int mb_width, int mb_height, int mb_stride,
+				int block, int flags);
 
 
 #endif							/* _IMAGE_H_ */

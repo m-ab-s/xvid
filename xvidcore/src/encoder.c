@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.30 2002-12-13 11:54:17 syskin Exp $
+ *  $Id: encoder.c,v 1.76.2.31 2002-12-14 06:07:02 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -1608,7 +1608,8 @@ FrameCodeI(Encoder * pEnc,
 	if ((pEnc->current->global_flags & XVID_REDUCED))
 	{
 		image_deblock_rrv(&pEnc->current->image, pEnc->mbParam.edged_width, 
-			pEnc->current->mbs, mb_width, mb_height, pEnc->mbParam.mb_width);
+			pEnc->current->mbs, mb_width, mb_height, pEnc->mbParam.mb_width,
+			16, XVID_DEC_DEBLOCKY|XVID_DEC_DEBLOCKUV);
 	}
 	emms();
 
@@ -1848,7 +1849,8 @@ FrameCodeP(Encoder * pEnc,
 	if ((pEnc->current->global_flags & XVID_REDUCED))
 	{
 		image_deblock_rrv(&pEnc->current->image, pEnc->mbParam.edged_width, 
-			pEnc->current->mbs, mb_width, mb_height, pEnc->mbParam.mb_width);
+			pEnc->current->mbs, mb_width, mb_height, pEnc->mbParam.mb_width,
+			16, XVID_DEC_DEBLOCKY|XVID_DEC_DEBLOCKUV);
 	}
 
 	emms();

@@ -1100,66 +1100,104 @@ output_slice(IMAGE * cur, int std, int width, XVID_DEC_PICTURE* out_frm, int mbx
 }
 
 
-/* reduced resolution deblocking filter */
+void
+image_clear(IMAGE * img, int width, int height, int edged_width,
+					int y, int u, int v)
+{
+	uint8_t * p;
+	int i;
+
+	p = img->y;
+	for (i = 0; i < height; i++) {
+		memset(p, y, width);
+		p += edged_width;
+	}
+
+	p = img->u;
+	for (i = 0; i < height/2; i++) {
+		memset(p, u, width/2);
+		p += edged_width/2;
+	}
+
+	p = img->v;
+	for (i = 0; i < height/2; i++) {
+		memset(p, v, width/2);
+		p += edged_width/2;
+	}
+}
+
+
+/* reduced resolution deblocking filter 
+	block = block size (16=rrv, 8=full resolution)
+	flags = XVID_DEC_YDEBLOCK|XVID_DEC_UVDEBLOCK
+*/
 void
 image_deblock_rrv(IMAGE * img, int edged_width,
-				const MACROBLOCK * mbs, int mb_width, int mb_height, int mb_stride)
+				const MACROBLOCK * mbs, int mb_width, int mb_height, int mb_stride,
+				int block, int flags)
 {
 	const int edged_width2 = edged_width /2;
+	const int nblocks = block / 8;	/* skals code uses 8pixel block uints */
 	int i,j;
 
-	/* horizontal deblocking */
-
-	for (j = 1; j < mb_height*2; j++)	// luma: j,i in block units
-	for (i = 0; i < mb_width*2; i++)
+	/* luma: j,i in block units */
+	if ((flags & XVID_DEC_DEBLOCKY))
 	{
-		if (mbs[(j-1)/2*mb_stride + (i/2)].mode != MODE_NOT_CODED ||
-			mbs[(j+0)/2*mb_stride + (i/2)].mode != MODE_NOT_CODED)
+		for (j = 1; j < mb_height*2; j++)		/* horizontal deblocking */
+		for (i = 0; i < mb_width*2; i++)
 		{
-			xvid_HFilter_31_C(img->y + (j*16 - 1)*edged_width + i*16,
-							  img->y + (j*16 + 0)*edged_width + i*16, 2);
+			if (mbs[(j-1)/2*mb_stride + (i/2)].mode != MODE_NOT_CODED ||
+				mbs[(j+0)/2*mb_stride + (i/2)].mode != MODE_NOT_CODED)
+			{
+				xvid_HFilter_31_C(img->y + (j*block - 1)*edged_width + i*block,
+								  img->y + (j*block + 0)*edged_width + i*block, nblocks);
+			}
+		}
+
+		for (j = 0; j < mb_height*2; j++)		/* vertical deblocking */
+		for (i = 1; i < mb_width*2; i++)
+		{
+			if (mbs[(j/2)*mb_stride + (i-1)/2].mode != MODE_NOT_CODED ||
+				mbs[(j/2)*mb_stride + (i+0)/2].mode != MODE_NOT_CODED)
+			{
+				vfilter_31(img->y + (j*block)*edged_width + i*block - 1,
+						   img->y + (j*block)*edged_width + i*block + 0,
+						   edged_width, nblocks);
+			}
 		}
 	}
 
-	for (j = 1; j < mb_height; j++)	// chroma
-	for (i = 0; i < mb_width; i++)
+
+	/* chroma */
+	if ((flags & XVID_DEC_DEBLOCKUV))
 	{
-		if (mbs[(j-1)*mb_stride + i].mode != MODE_NOT_CODED || 
-			mbs[(j+0)*mb_stride + i].mode != MODE_NOT_CODED)
+		for (j = 0; j < mb_height; j++)			/* horizontal deblocking */
+		for (i = 1; i < mb_width; i++)
 		{
-			hfilter_31(img->u + (j*16 - 1)*edged_width2 + i*16,
-					   img->u + (j*16 + 0)*edged_width2 + i*16, 2);
-			hfilter_31(img->v + (j*16 - 1)*edged_width2 + i*16,
-					   img->v + (j*16 + 0)*edged_width2 + i*16, 2);
+			if (mbs[j*mb_stride + i - 1].mode != MODE_NOT_CODED ||
+				mbs[j*mb_stride + i + 0].mode != MODE_NOT_CODED) 
+			{
+				vfilter_31(img->u + (j*block)*edged_width2 + i*block - 1,
+						   img->u + (j*block)*edged_width2 + i*block + 0,
+						   edged_width2, nblocks);
+				vfilter_31(img->v + (j*block)*edged_width2 + i*block - 1,
+						   img->v + (j*block)*edged_width2 + i*block + 0,
+						   edged_width2, nblocks);
+			}
+		}
+
+		for (j = 1; j < mb_height; j++)		/* vertical deblocking */
+		for (i = 0; i < mb_width; i++)
+		{
+			if (mbs[(j-1)*mb_stride + i].mode != MODE_NOT_CODED || 
+				mbs[(j+0)*mb_stride + i].mode != MODE_NOT_CODED)
+			{
+				hfilter_31(img->u + (j*block - 1)*edged_width2 + i*block,
+						   img->u + (j*block + 0)*edged_width2 + i*block, nblocks);
+				hfilter_31(img->v + (j*block - 1)*edged_width2 + i*block,
+						   img->v + (j*block + 0)*edged_width2 + i*block, nblocks);
+			}
 		}
 	}
 
-	/* vertical deblocking */
-
-	for (j = 0; j < mb_height*2; j++)		// luma: i,j in block units
-	for (i = 1; i < mb_width*2; i++)
-	{
-		if (mbs[(j/2)*mb_stride + (i-1)/2].mode != MODE_NOT_CODED ||
-			mbs[(j/2)*mb_stride + (i+0)/2].mode != MODE_NOT_CODED)
-		{
-			vfilter_31(img->y + (j*16)*edged_width + i*16 - 1,
-					   img->y + (j*16)*edged_width + i*16 + 0,
-					   edged_width, 2);
-		}
-	}
-
-	for (j = 0; j < mb_height; j++)	// chroma
-	for (i = 1; i < mb_width; i++)
-	{
-		if (mbs[j*mb_stride + i - 1].mode != MODE_NOT_CODED ||
-			mbs[j*mb_stride + i + 0].mode != MODE_NOT_CODED) 
-		{
-			vfilter_31(img->u + (j*16)*edged_width2 + i*16 - 1,
-					   img->u + (j*16)*edged_width2 + i*16 + 0,
-					   edged_width2, 2);
-			vfilter_31(img->v + (j*16)*edged_width2 + i*16 - 1,
-					   img->v + (j*16)*edged_width2 + i*16 + 0,
-					   edged_width2, 2);
-		}
-	}
 }

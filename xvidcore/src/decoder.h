@@ -33,7 +33,7 @@
  *
  *  - 13.06.2002 Added legal header - Cosmetic
  *
- *  $Id: decoder.h,v 1.10.2.4 2002-12-12 10:37:44 suxen_drol Exp $
+ *  $Id: decoder.h,v 1.10.2.5 2002-12-14 06:07:02 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -123,12 +123,10 @@ typedef struct
 	uint32_t edged_height;
 
 	IMAGE cur;
-	IMAGE refn[3];				// 0   -- last I or P VOP
-	// 1   -- first I or P
-	// 2   -- for interpolate mode B-frame
-	IMAGE refh;
-	IMAGE refv;
-	IMAGE refhv;
+	IMAGE refn[2];				// 0   -- last I or P VOP
+								// 1   -- first I or P
+	IMAGE tmp;		/* bframe interpolation, and post processing tmp buffer */
+	IMAGE qtmp;		/* quarter pel tmp buffer */
 
 	// macroblock
 
@@ -136,12 +134,14 @@ typedef struct
 	uint32_t mb_height;
 	MACROBLOCK *mbs;
 
-	// for B-frame
+	// for B-frame & low_delay==0
+	// XXX: should move frame based stuff into a DECODER_FRAMEINFO struct */
+	MACROBLOCK *last_mbs;			// last MB
+	int last_reduced_resolution;	// last reduced_resolution value
 	int32_t frames;				// total frame number
 	int32_t packed_mode;		// bframes packed bitstream? (1 = yes)
 	int8_t scalability;
 	VECTOR p_fmv, p_bmv;		// pred forward & backward motion vector
-	MACROBLOCK *last_mbs;		// last MB
 	int64_t time;				// for record time
 	int64_t time_base;
 	int64_t last_time_base;
