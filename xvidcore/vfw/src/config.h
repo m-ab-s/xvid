@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: config.h,v 1.1.2.19 2004-01-24 13:36:00 syskin Exp $
+ * $Id: config.h,v 1.1.2.20 2004-01-26 03:16:53 suxen_drol Exp $
  *
  ****************************************************************************/
 #ifndef _CONFIG_H_
@@ -153,6 +153,19 @@ typedef struct
 	int twopass_max_overflow_improvement;
 	int twopass_max_overflow_degradation;
 
+	/* bitrate calculator */
+	int target_size;
+	int subtitle_size;
+	int container_type;
+	int hours;
+	int minutes;
+	int seconds;
+	int fps;
+	int audio_mode;
+	int audio_type;
+	int audio_rate;
+	int audio_size;
+
     /* motion */
 	int motion_search;
 	int vhq_mode;
@@ -255,6 +268,8 @@ extern const profile_t profiles[];
 
 void config_reg_get(CONFIG * config);
 void config_reg_set(CONFIG * config);
+void sort_zones(zone_t * zones, int zone_num, int * sel);
+
 
 BOOL CALLBACK main_proc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK about_proc(HWND, UINT, WPARAM, LPARAM);

@@ -153,6 +153,10 @@ SOURCE=.\src\debug.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\resource.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\status.h
 # End Source File
 # Begin Source File

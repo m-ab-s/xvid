@@ -72,7 +72,7 @@ static const int pmvfast_presets[7] = {
 	or XVID_CSP_NULL if failure
 */
 
-int get_colorspace(BITMAPINFOHEADER * hdr)
+static int get_colorspace(BITMAPINFOHEADER * hdr)
 {
 	/* rgb only: negative height specifies top down image */
 	int rgb_flip = (hdr->biHeight < 0 ? 0 : XVID_CSP_VFLIP);
@@ -254,7 +254,7 @@ LRESULT compress_frames_info(CODEC * codec, ICCOMPRESSFRAMES * icf)
 }
 
 
-const char type2char(int type)
+static char type2char(int type)
 {
 	if (type==XVID_TYPE_IVOP)
 		return 'I';
@@ -265,7 +265,7 @@ const char type2char(int type)
 	return 'S';
 }
 
-int vfw_debug(void *handle,
+static int vfw_debug(void *handle,
 			 int opt,
 			 void *param1,
 			 void *param2)
@@ -346,8 +346,6 @@ static int init_dll()
 	return 0;
 }
 
-void
-sort_zones(zone_t * zones, int zone_num, int * sel);
 
 static void
 prepare_cquant_zones(CONFIG * config) {

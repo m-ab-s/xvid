@@ -25,6 +25,7 @@
 #define IDD_DEC                         124
 #define IDD_STATUS                      125
 #define IDD_AR                          126
+#define IDD_BITRATE                     127
 #define WIZ_CYDLG                       140
 #define PROP_MIN_CYDLG                  144
 #define PROP_SM_CYDLG                   188
@@ -276,6 +277,7 @@
 #define IDC_PROFILE_ADV                 1242
 #define IDC_ADD                         1243
 #define IDC_PROFILE_BVOP                1244
+#define IDC_BITRATE_ADV                 1244
 #define IDC_REMOVE                      1245
 #define IDC_EDIT                        1246
 #define IDC_PROFILE_MPEGQUANT           1247
@@ -390,14 +392,31 @@
 #define IDC_DEBUGOUTPUT                 1372
 #define IDC_SHOWINTERNALS               1373
 #define IDC_DEC_FE                      1374
+#define IDC_BITRATE_TSIZE               1375
+#define IDC_BITRATE_SSIZE               1376
+#define IDC_BITRATE_SSELECT             1377
+#define IDC_BITRATE_CFORMAT             1378
+#define IDC_BITRATE_COVERHEAD           1379
+#define IDC_BITRATE_HOURS               1380
+#define IDC_BITRATE_MINUTES             1381
+#define IDC_BITRATE_SECONDS             1382
+#define IDC_BITRATE_FPS                 1383
+#define IDC_BITRATE_VRATE               1384
+#define IDC_BITRATE_VSIZE               1385
+#define IDC_BITRATE_AFORMAT             1386
+#define IDC_BITRATE_AMODE_RATE          1387
+#define IDC_BITRATE_AMODE_SIZE          1388
+#define IDC_BITRATE_ARATE               1389
+#define IDC_BITRATE_ASIZE               1390
+#define IDC_BITRATE_ASELECT             1391
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        127
+#define _APS_NEXT_RESOURCE_VALUE        128
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1375
+#define _APS_NEXT_CONTROL_VALUE         1392
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -57,9 +57,6 @@
 
 #include <windows.h>
 #include <commctrl.h>
-#include <shlobj.h>
-#include <prsht.h>
-
 #include <stdio.h>  /* sprintf */
 #include <xvid.h>	/* XviD API */
 
@@ -146,6 +143,36 @@ const profile_t profiles[] =
 };
 
 
+typedef struct {
+	char * name;
+	float value;
+} named_float_t;
+
+static const named_float_t video_fps_list[] = {
+	{  "15.0",			15.0F	},
+	{  "23.976 (FILM)",	23.976F	},
+	{  "25.0 (PAL)",	25.0F	},
+	{  "29.97 (NTSC)",	29.970F	},
+	{  "30.0",			30.0F	}
+};
+
+
+typedef struct {
+	char * name;
+	int value;
+} named_int_t;
+
+/* audio overhead intervals (milliseconds) */
+
+static const named_int_t audio_type_list[] = {
+	{	"MP3-CBR",		1000	},
+	{	"MP3-VBR",		  24	},
+	{	"AC3",			  64	},
+	{	"DTS",			  21	},
+	{	"(None)",		   0	},
+};
+		
+
 /* ===================================================================================== */
 /* REGISTRY ============================================================================ */
 /* ===================================================================================== */
@@ -202,6 +229,19 @@ static const REG_INT reg_ints[] = {
 	{"overflow_control_strength", &reg.overflow_control_strength, 5},
 	{"twopass_max_overflow_improvement", &reg.twopass_max_overflow_improvement, 5},
 	{"twopass_max_overflow_degradation", &reg.twopass_max_overflow_degradation, 5},
+
+	/* bitrate calculator */
+	{"container_type",			&reg.container_type,			1},
+	{"target_size",				&reg.target_size,				650 * 1024},
+	{"subtitle_size",			&reg.subtitle_size,				0},
+	{"hours",        			&reg.hours,						1},
+	{"minutes",        			&reg.minutes,					30},
+	{"seconds",        			&reg.seconds,					0},
+	{"fps",	        			&reg.fps,						2},
+	{"audio_mode",				&reg.audio_mode,				0},
+	{"audio_type",				&reg.audio_type,				0},
+	{"audio_rate",				&reg.audio_rate,				128},
+	{"audio_size",				&reg.audio_size,				0},
 
 	/* motion */
 	{"motion_search",			&reg.motion_search,				6},
@@ -419,7 +459,7 @@ void config_reg_set(CONFIG * config)
 
 /* clear XviD registry key, load defaults */
 
-void config_reg_default(CONFIG * config)
+static void config_reg_default(CONFIG * config)
 {
 	HKEY hKey;
 
@@ -440,7 +480,7 @@ void config_reg_default(CONFIG * config)
 
 
 /* leaves current config value if dialog item is empty */
-int config_get_int(HWND hDlg, INT item, int config)
+static int config_get_int(HWND hDlg, INT item, int config)
 {
 	BOOL success = FALSE;
 	int tmp = GetDlgItemInt(hDlg, item, &success, TRUE);
@@ -448,7 +488,7 @@ int config_get_int(HWND hDlg, INT item, int config)
 }
 
 
-int config_get_uint(HWND hDlg, UINT item, int config)
+static int config_get_uint(HWND hDlg, UINT item, int config)
 {
 	BOOL success = FALSE;
 	int tmp = GetDlgItemInt(hDlg, item, &success, FALSE);
@@ -459,7 +499,7 @@ int config_get_uint(HWND hDlg, UINT item, int config)
 /* we use "100 base" floats */
 
 #define FLOAT_BUF_SZ	20
-int get_dlgitem_float(HWND hDlg, UINT item, int def)
+static int get_dlgitem_float(HWND hDlg, UINT item, int def)
 {
 	char buf[FLOAT_BUF_SZ];
 
@@ -469,7 +509,7 @@ int get_dlgitem_float(HWND hDlg, UINT item, int def)
 	return (int)(atof(buf)*100);
 }
 
-void set_dlgitem_float(HWND hDlg, UINT item, int value)
+static void set_dlgitem_float(HWND hDlg, UINT item, int value)
 {
 	char buf[FLOAT_BUF_SZ];
 	sprintf(buf, "%.2f", (float)value/100);
@@ -478,7 +518,7 @@ void set_dlgitem_float(HWND hDlg, UINT item, int value)
 
 
 #define HEX_BUF_SZ  16
-unsigned int get_dlgitem_hex(HWND hDlg, UINT item, unsigned int def)
+static unsigned int get_dlgitem_hex(HWND hDlg, UINT item, unsigned int def)
 {
 	char buf[HEX_BUF_SZ];
 	unsigned int value;
@@ -493,7 +533,7 @@ unsigned int get_dlgitem_hex(HWND hDlg, UINT item, unsigned int def)
 	return def;
 }
 
-void set_dlgitem_hex(HWND hDlg, UINT item, int value)
+static void set_dlgitem_hex(HWND hDlg, UINT item, int value)
 {
 	char buf[HEX_BUF_SZ];
 	wsprintf(buf, "0x%x", value);
@@ -504,7 +544,7 @@ void set_dlgitem_hex(HWND hDlg, UINT item, int value)
 /* QUANT MATRIX DIALOG ================================================================= */
 /* ===================================================================================== */
 
-void quant_upload(HWND hDlg, CONFIG* config)
+static void quant_upload(HWND hDlg, CONFIG* config)
 {
 	int i;
 
@@ -515,7 +555,7 @@ void quant_upload(HWND hDlg, CONFIG* config)
 }
 
 
-void quant_download(HWND hDlg, CONFIG* config)
+static void quant_download(HWND hDlg, CONFIG* config)
 {
 	int i;
 
@@ -533,7 +573,7 @@ void quant_download(HWND hDlg, CONFIG* config)
 }
 
 
-void quant_loadsave(HWND hDlg, CONFIG * config, int save)
+static void quant_loadsave(HWND hDlg, CONFIG * config, int save)
 {
 	char file[MAX_PATH];
 	OPENFILENAME ofn;
@@ -592,7 +632,7 @@ void quant_loadsave(HWND hDlg, CONFIG * config, int save)
 
 /* quantization matrix dialog proc */
 
-BOOL CALLBACK quantmatrix_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static BOOL CALLBACK quantmatrix_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	CONFIG* config = (CONFIG*)GetWindowLong(hDlg, GWL_USERDATA);
 
@@ -650,7 +690,7 @@ BOOL CALLBACK quantmatrix_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 /* ===================================================================================== */
 
 /* initialise pages */
-void adv_init(HWND hDlg, int idd, CONFIG * config)
+static void adv_init(HWND hDlg, int idd, CONFIG * config)
 {
 	unsigned int i;
 
@@ -661,8 +701,8 @@ void adv_init(HWND hDlg, int idd, CONFIG * config)
 		SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"H.263");
 		SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"MPEG");
 		SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"MPEG-Custom");
-
 		break;
+
 	case IDD_AR:
 		SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_ADDSTRING, 0, (LPARAM)"Square (default)");
 		SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_ADDSTRING, 0, (LPARAM)"4:3 PAL");
@@ -675,6 +715,34 @@ void adv_init(HWND hDlg, int idd, CONFIG * config)
 	case IDD_LEVEL :
 		for (i=0; i<sizeof(profiles)/sizeof(profile_t); i++)
 			SendDlgItemMessage(hDlg, IDC_LEVEL_PROFILE, CB_ADDSTRING, 0, (LPARAM)profiles[i].name);
+		break;
+
+	case IDD_BITRATE :
+		SendDlgItemMessage(hDlg, IDC_BITRATE_CFORMAT, CB_ADDSTRING, 0, (LPARAM)"AVI-Legacy");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_CFORMAT, CB_ADDSTRING, 0, (LPARAM)"AVI-OpenDML");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_CFORMAT, CB_ADDSTRING, 0, (LPARAM)"(None)");
+
+		SendDlgItemMessage(hDlg, IDC_BITRATE_TSIZE, CB_ADDSTRING, 0, (LPARAM)"665600");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_TSIZE, CB_ADDSTRING, 0, (LPARAM)"716800");
+
+		for (i=0; i<sizeof(video_fps_list)/sizeof(named_float_t); i++)
+			SendDlgItemMessage(hDlg, IDC_BITRATE_FPS, CB_ADDSTRING, 0, (LPARAM)video_fps_list[i].name);
+
+		for (i=0; i<sizeof(audio_type_list)/sizeof(named_int_t); i++)
+			SendDlgItemMessage(hDlg, IDC_BITRATE_AFORMAT, CB_ADDSTRING, 0, (LPARAM)audio_type_list[i].name);
+
+		SendDlgItemMessage(hDlg, IDC_BITRATE_ARATE, CB_ADDSTRING, 0, (LPARAM)"32");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_ARATE, CB_ADDSTRING, 0, (LPARAM)"56");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_ARATE, CB_ADDSTRING, 0, (LPARAM)"64");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_ARATE, CB_ADDSTRING, 0, (LPARAM)"96");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_ARATE, CB_ADDSTRING, 0, (LPARAM)"112");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_ARATE, CB_ADDSTRING, 0, (LPARAM)"128");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_ARATE, CB_ADDSTRING, 0, (LPARAM)"160");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_ARATE, CB_ADDSTRING, 0, (LPARAM)"192");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_ARATE, CB_ADDSTRING, 0, (LPARAM)"224");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_ARATE, CB_ADDSTRING, 0, (LPARAM)"256");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_ARATE, CB_ADDSTRING, 0, (LPARAM)"384");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_ARATE, CB_ADDSTRING, 0, (LPARAM)"512");
 		break;
 
 	case IDD_ZONE :
@@ -712,7 +780,7 @@ void adv_init(HWND hDlg, int idd, CONFIG * config)
 
 /* enable/disable controls based on encoder-mode or user selection */
 
-void adv_mode(HWND hDlg, int idd, CONFIG * config)
+static void adv_mode(HWND hDlg, int idd, CONFIG * config)
 {
 	int profile;
 	int weight_en, quant_en;
@@ -785,6 +853,100 @@ void adv_mode(HWND hDlg, int idd, CONFIG * config)
 		SetDlgItemInt(hDlg, IDC_LEVEL_BITRATE, profiles[profile].max_bitrate, FALSE);
 		break;
 
+	case IDD_BITRATE :
+		{
+			int ctype = SendDlgItemMessage(hDlg, IDC_BITRATE_CFORMAT, CB_GETCURSEL, 0, 0);
+			int target_size = config_get_uint(hDlg, IDC_BITRATE_TSIZE, 0);
+			int subtitle_size = config_get_uint(hDlg, IDC_BITRATE_SSIZE, 0);
+			int fps = SendDlgItemMessage(hDlg, IDC_BITRATE_FPS, CB_GETCURSEL, 0, 0);
+
+			int duration = 
+				3600 * config_get_uint(hDlg, IDC_BITRATE_HOURS, 0) +
+				60 * config_get_uint(hDlg, IDC_BITRATE_MINUTES, 0) +
+				config_get_uint(hDlg, IDC_BITRATE_SECONDS, 0);
+
+			int audio_type = SendDlgItemMessage(hDlg, IDC_BITRATE_AFORMAT, CB_GETCURSEL, 0, 0);
+			int audio_mode = IsDlgChecked(hDlg, IDC_BITRATE_AMODE_SIZE);
+			int audio_rate = config_get_uint(hDlg, IDC_BITRATE_ARATE, 0);
+			int audio_size = config_get_uint(hDlg, IDC_BITRATE_ASIZE, 0);
+			int audio_value;
+
+			int frames;
+			int overhead;
+			int vsize;
+
+			if (duration == 0) 
+				break;
+
+			if (fps < 0 || fps >= sizeof(video_fps_list)/sizeof(named_float_t)) {
+				fps = 0;
+			}
+			if (audio_type < 0 || audio_type >= sizeof(audio_type_list)/sizeof(named_int_t)) {
+				audio_type = 0;
+			}
+
+			/* audio_value tells us the audio overhead interval (milliseconds), or
+			   zero if audio is not selected*/
+
+			audio_value = audio_type_list[audio_type].value;
+
+			EnableDlgWindow(hDlg, IDC_BITRATE_AMODE_RATE, audio_value);
+			EnableDlgWindow(hDlg, IDC_BITRATE_AMODE_SIZE, audio_value);
+			EnableDlgWindow(hDlg, IDC_BITRATE_ARATE, audio_value && !audio_mode);
+			EnableDlgWindow(hDlg, IDC_BITRATE_ASIZE, audio_value && audio_mode);
+			EnableDlgWindow(hDlg, IDC_BITRATE_ASELECT, audio_value && audio_mode);
+
+			/* step 1: calculate number of frames */
+
+			frames = (int)(duration * video_fps_list[fps].value);
+			
+			/* step 2: calculate audio_size (kbytes)*/
+
+			if (audio_value) {
+				if (audio_mode==0) {
+					audio_size = (duration * audio_rate) / 8;
+				}
+			}else{
+				audio_size = 0;
+			}
+
+			/* step 3: calculate container overhead */
+
+			switch(ctype) {
+			case 0 :	/* AVI */
+			case 1 :	/* AVI-OpenDML */
+
+				overhead = frames;
+				
+				if (audio_value) {
+					overhead += (duration * 1000) / audio_value;
+				}
+
+				overhead *= (ctype==0) ? 24 : 16;
+				overhead /= 1024;
+				break;
+
+			default	:	/* (none) */
+				overhead = 0;
+				break;
+			}
+
+			SetDlgItemInt(hDlg, IDC_BITRATE_COVERHEAD, overhead, TRUE);
+
+			/* final video bitstream size */
+			vsize = target_size - subtitle_size - audio_size - overhead;
+			if (vsize > 0) {
+				SetDlgItemInt(hDlg, IDC_BITRATE_VSIZE, vsize, TRUE);
+				/* convert from kbytes to kbits-per-second */
+				SetDlgItemInt(hDlg, IDC_BITRATE_VRATE, (vsize * 8 * 128) / (duration * 125), TRUE);
+			}else{
+				SetDlgItemText(hDlg, IDC_BITRATE_VSIZE, "Overflow");
+				SetDlgItemText(hDlg, IDC_BITRATE_VRATE, "Overflow");
+			}
+
+		}
+		break;
+
 	case IDD_ZONE :
 		weight_en = IsDlgChecked(hDlg, IDC_ZONE_MODE_WEIGHT);
 		quant_en =   IsDlgChecked(hDlg, IDC_ZONE_MODE_QUANT);
@@ -823,7 +985,7 @@ void adv_mode(HWND hDlg, int idd, CONFIG * config)
 
 
 /* upload config data into dialog */
-void adv_upload(HWND hDlg, int idd, CONFIG * config)
+static void adv_upload(HWND hDlg, int idd, CONFIG * config)
 {
 	switch (idd)
 	{
@@ -879,6 +1041,22 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
 		SetDlgItemInt(hDlg, IDC_CURVECOMPH, config->curve_compression_high, FALSE);
 		SetDlgItemInt(hDlg, IDC_CURVECOMPL, config->curve_compression_low, FALSE);
 		SetDlgItemInt(hDlg, IDC_MINKEY, config->kfthreshold, FALSE);
+		break;
+
+	case IDD_BITRATE :
+		SendDlgItemMessage(hDlg, IDC_BITRATE_CFORMAT, CB_SETCURSEL, config->container_type, 0);
+		SetDlgItemInt(hDlg, IDC_BITRATE_TSIZE, config->target_size, FALSE);
+		SetDlgItemInt(hDlg, IDC_BITRATE_SSIZE, config->subtitle_size, FALSE);
+
+		SetDlgItemInt(hDlg, IDC_BITRATE_HOURS, config->hours, FALSE);
+		SetDlgItemInt(hDlg, IDC_BITRATE_MINUTES, config->minutes, FALSE);
+		SetDlgItemInt(hDlg, IDC_BITRATE_SECONDS, config->seconds, FALSE);
+		SendDlgItemMessage(hDlg, IDC_BITRATE_FPS, CB_SETCURSEL, config->fps, 0);
+		
+		SendDlgItemMessage(hDlg, IDC_BITRATE_AFORMAT, CB_SETCURSEL, config->audio_type, 0);
+		CheckRadioButton(hDlg, IDC_BITRATE_AMODE_RATE, IDC_BITRATE_AMODE_SIZE, config->audio_mode == 0 ? IDC_BITRATE_AMODE_RATE : IDC_BITRATE_AMODE_SIZE);
+		SetDlgItemInt(hDlg, IDC_BITRATE_ARATE, config->audio_rate, FALSE);
+		SetDlgItemInt(hDlg, IDC_BITRATE_ASIZE, config->audio_size, FALSE);
 		break;
 
 	case IDD_ZONE :
@@ -948,7 +1126,7 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
 
 /* download config data from dialog */
 
-void adv_download(HWND hDlg, int idd, CONFIG * config)
+static void adv_download(HWND hDlg, int idd, CONFIG * config)
 {
 	switch (idd)
 	{
@@ -1019,6 +1197,25 @@ void adv_download(HWND hDlg, int idd, CONFIG * config)
 
 		config->kfthreshold = config_get_uint(hDlg, IDC_MINKEY, config->kfthreshold);
 
+		break;
+
+	case IDD_BITRATE :
+		config->container_type = config->profile = SendDlgItemMessage(hDlg, IDC_BITRATE_CFORMAT, CB_GETCURSEL, 0, 0);
+		config->target_size = config_get_uint(hDlg, IDC_BITRATE_TSIZE, config->target_size);
+		config->subtitle_size = config_get_uint(hDlg, IDC_BITRATE_SSIZE, config->subtitle_size);
+
+		config->hours = config_get_uint(hDlg, IDC_BITRATE_HOURS, config->hours);
+		config->minutes = config_get_uint(hDlg, IDC_BITRATE_MINUTES, config->minutes);
+		config->seconds = config_get_uint(hDlg, IDC_BITRATE_SECONDS, config->seconds);
+		config->fps = config->profile = SendDlgItemMessage(hDlg, IDC_BITRATE_FPS, CB_GETCURSEL, 0, 0);
+
+		config->audio_type = config->profile = SendDlgItemMessage(hDlg, IDC_BITRATE_AFORMAT, CB_GETCURSEL, 0, 0);
+		config->audio_mode = IsDlgChecked(hDlg, IDC_BITRATE_AMODE_SIZE) ? 1 : 0 ;
+		config->audio_rate = config_get_uint(hDlg, IDC_BITRATE_ARATE, config->audio_rate);
+		config->audio_size = config_get_uint(hDlg, IDC_BITRATE_ASIZE, config->audio_size);
+
+		config->desired_size = config_get_uint(hDlg, IDC_BITRATE_VSIZE, config->desired_size);
+		config->bitrate = config_get_uint(hDlg, IDC_BITRATE_VRATE, config->bitrate);
 		break;
 
 	case IDD_ZONE :
@@ -1101,7 +1298,7 @@ void adv_download(HWND hDlg, int idd, CONFIG * config)
 
 /* advanced dialog proc */
 
-BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	PROPSHEETINFO *psi;
 
@@ -1132,7 +1329,44 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			case IDC_CPU_FORCE :
 			case IDC_AR :
 			case IDC_PAR :
+			case IDC_BITRATE_AMODE_RATE :
+			case IDC_BITRATE_AMODE_SIZE :
 				adv_mode(hDlg, psi->idd, psi->config);
+				break;
+
+			case IDC_BITRATE_SSELECT :
+			case IDC_BITRATE_ASELECT :
+				{
+				OPENFILENAME ofn;
+				char filename[MAX_PATH] = "";
+
+				memset(&ofn, 0, sizeof(OPENFILENAME));
+				ofn.lStructSize = sizeof(OPENFILENAME);
+
+				ofn.hwndOwner = hDlg;
+				if (LOWORD(wParam)==IDC_BITRATE_SSELECT) {
+					ofn.lpstrFilter = "Subtitle files (*.sub, *.ssa)\0*.sub;*.ssa\0All files (*.*)\0*.*\0\0";
+				}else{
+					ofn.lpstrFilter = "Audio files (*.mp3, *.ac3)\0*.mp3; *.ac3\0All files (*.*)\0*.*\0\0";
+				}
+				
+				ofn.lpstrFile = filename;
+				ofn.nMaxFile = MAX_PATH;
+				ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+				if (GetOpenFileName(&ofn)) {
+					HANDLE hFile;
+					DWORD filesize;
+				
+					if ((hFile = CreateFile(filename, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0)) == INVALID_HANDLE_VALUE ||
+						(filesize = GetFileSize(hFile, NULL)) == INVALID_FILE_SIZE) {
+						MessageBox(hDlg, "Could not get file size", "Error", 0);
+					}else{
+						SetDlgItemInt(hDlg, IDC_BITRATE_SSIZE, filesize / 1024, FALSE);
+						CloseHandle(hFile);
+					}
+				}
+				}
 				break;
 
 			case IDC_QUANTMATRIX :
@@ -1165,7 +1399,8 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				{
 					SetDlgItemText(hDlg, IDC_STATS, tmp);
 				}
-			}
+				}
+				break;
 
 			case IDC_ZONE_FETCH :
 				SetDlgItemInt(hDlg, IDC_ZONE_FRAME, psi->config->ci.ciActiveFrame, FALSE);
@@ -1198,24 +1433,39 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			default :
 				return TRUE;
 			}
+		}else if ((HIWORD(wParam) == CBN_EDITCHANGE || HIWORD(wParam)==CBN_SELCHANGE) &&
+			(LOWORD(wParam)==IDC_BITRATE_TSIZE ||
+			 LOWORD(wParam)==IDC_BITRATE_ARATE )) {
+			adv_mode(hDlg, psi->idd, psi->config);
 		}else if (HIWORD(wParam) == LBN_SELCHANGE &&
 			(LOWORD(wParam) == IDC_PROFILE_PROFILE ||
 			 LOWORD(wParam) == IDC_LEVEL_PROFILE ||
 			 LOWORD(wParam) == IDC_QUANTTYPE ||
-			 LOWORD(wParam) == IDC_ASPECT_RATIO))
-		{
+			 LOWORD(wParam) == IDC_ASPECT_RATIO ||
+			 LOWORD(wParam) == IDC_BITRATE_CFORMAT ||
+			 LOWORD(wParam) == IDC_BITRATE_AFORMAT ||
+			 LOWORD(wParam) == IDC_BITRATE_FPS)) {
 			adv_mode(hDlg, psi->idd, psi->config);
 		}else if (HIWORD(wParam) == EN_UPDATE && (LOWORD(wParam)==IDC_ZONE_WEIGHT || LOWORD(wParam)==IDC_ZONE_QUANT)) {
 
 			SendDlgItemMessage(hDlg, IDC_ZONE_SLIDER, TBM_SETPOS, TRUE,
 					get_dlgitem_float(hDlg, LOWORD(wParam), 100));
+
 		} else if (HIWORD(wParam) == EN_UPDATE && (LOWORD(wParam)==IDC_PARX || LOWORD(wParam)==IDC_PARY)) {
+
 			if (5 == SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_GETCURSEL, 0, 0)) {
 				if(LOWORD(wParam)==IDC_PARX)
 					psi->config->par_x = config_get_uint(hDlg, LOWORD(wParam), psi->config->par_x);
 				else
 					psi->config->par_y = config_get_uint(hDlg, LOWORD(wParam), psi->config->par_y);
 			}
+		} else if (HIWORD(wParam) == EN_UPDATE &&
+			(LOWORD(wParam)==IDC_BITRATE_SSIZE ||
+			 LOWORD(wParam)==IDC_BITRATE_HOURS ||
+			 LOWORD(wParam)==IDC_BITRATE_MINUTES ||
+			 LOWORD(wParam)==IDC_BITRATE_SECONDS ||
+			 LOWORD(wParam)==IDC_BITRATE_ASIZE)) {
+			adv_mode(hDlg, psi->idd, psi->config);
 		} else
 			return 0;
 		break;
@@ -1268,7 +1518,7 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
   or fasle if changes were canceled.
 
   */
-BOOL adv_dialog(HWND hParent, CONFIG * config, const int * dlgs, int size)
+static BOOL adv_dialog(HWND hParent, CONFIG * config, const int * dlgs, int size)
 {
 	PROPSHEETINFO psi[6];
 	PROPSHEETPAGE psp[6];
@@ -1315,7 +1565,7 @@ BOOL adv_dialog(HWND hParent, CONFIG * config, const int * dlgs, int size)
 /* ===================================================================================== */
 
 
-void main_insert_zone(HWND hDlg, zone_t * s, int i, BOOL insert)
+static void main_insert_zone(HWND hDlg, zone_t * s, int i, BOOL insert)
 {
 	char tmp[32];
 
@@ -1359,7 +1609,8 @@ void main_insert_zone(HWND hDlg, zone_t * s, int i, BOOL insert)
 	ListView_SetItemText(hDlg, i, 2, tmp);
 }
 
-void main_mode(HWND hDlg, CONFIG * config)
+
+static void main_mode(HWND hDlg, CONFIG * config)
 {
 	const int profile = SendDlgItemMessage(hDlg, IDC_PROFILE, CB_GETCURSEL, 0, 0);
 	const int rc_mode = SendDlgItemMessage(hDlg, IDC_MODE, CB_GETCURSEL, 0, 0);
@@ -1409,8 +1660,7 @@ void main_mode(HWND hDlg, CONFIG * config)
 }
 
 
-
-void main_upload(HWND hDlg, CONFIG * config)
+static void main_upload(HWND hDlg, CONFIG * config)
 {
 
 	SendDlgItemMessage(hDlg, IDC_PROFILE, CB_SETCURSEL, config->profile, 0);
@@ -1426,11 +1676,12 @@ void main_upload(HWND hDlg, CONFIG * config)
 		set_dlgitem_float(hDlg, IDC_BITRATE, config->desired_quant);
 	}
 
-	zones_update(hDlg, config);}
+	zones_update(hDlg, config);
+}
 
 
 /* downloads data from main dialog */
-void main_download(HWND hDlg, CONFIG * config)
+static void main_download(HWND hDlg, CONFIG * config)
 {
 	config->profile = SendDlgItemMessage(hDlg, IDC_PROFILE, CB_GETCURSEL, 0, 0);
 	config->mode = SendDlgItemMessage(hDlg, IDC_MODE, CB_GETCURSEL, 0, 0);
@@ -1451,6 +1702,7 @@ static const int profile_dlgs[] = { IDD_PROFILE, IDD_LEVEL, IDD_AR };
 static const int single_dlgs[] = { IDD_RC_CBR };
 static const int pass1_dlgs[] = { IDD_RC_2PASS1 };
 static const int pass2_dlgs[] = { IDD_RC_2PASS2 };
+static const int bitrate_dlgs[] = { IDD_BITRATE };
 static const int zone_dlgs[] = { IDD_ZONE };
 static const int decoder_dlgs[] = { IDD_DEC };
 static const int adv_dlgs[] = { IDD_MOTION, IDD_QUANT, IDD_DEBUG};
@@ -1576,11 +1828,17 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				}
 				break;
 
-
 			case IDC_BITRATE_S :
 				/* alternate between bitrate/desired_length metrics */
 				main_download(hDlg, config);
 				config->use_2pass_bitrate = !config->use_2pass_bitrate;
+				main_mode(hDlg, config);
+				main_upload(hDlg, config);
+				break;
+
+			case IDC_BITRATE_ADV :
+				main_download(hDlg, config);
+				adv_dialog(hDlg, config, bitrate_dlgs, sizeof(bitrate_dlgs)/sizeof(int));
 				main_mode(hDlg, config);
 				main_upload(hDlg, config);
 				break;
@@ -1818,6 +2076,7 @@ BOOL CALLBACK about_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	return 1;
 }
+
 
 void
 sort_zones(zone_t * zones, int zone_num, int * sel)
