@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.18.2.8 2002-12-10 11:13:50 suxen_drol Exp $
+ *  $Id: encoder.h,v 1.18.2.9 2003-01-11 14:59:23 chl Exp $
  *
  ****************************************************************************/
 
@@ -98,10 +98,6 @@ typedef struct
 	int bquant_offset;
 	int frame_drop_ratio;
 
-#ifdef _SMP
-	int num_threads;
-#endif
-	
 	int iMaxKeyInterval;
 	int max_bframes;
 
@@ -132,6 +128,7 @@ typedef struct
 	int kblks;
 	int mblks;
 	int ublks;
+	int gblks;
 }
 Statistics;
 
@@ -155,12 +152,13 @@ typedef struct
 	IMAGE image;
 
 	MACROBLOCK *mbs;
-	VECTOR GMC_MV;
 
+	WARPPOINTS warp;		// as in bitstream
+	GMC_DATA gmc_data;		// common data for all MBs
+		
 	Statistics sStat;
 }
 FRAMEINFO;
-
 
 
 typedef struct
@@ -183,6 +181,8 @@ typedef struct
 	IMAGE vInterVf;
 	IMAGE vInterHV;
 	IMAGE vInterHVf;
+
+	IMAGE vGMC;
 
 	/* image queue */
 	int queue_head;

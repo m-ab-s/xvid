@@ -39,10 +39,9 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.34 2003-01-05 16:18:47 syskin Exp $
+ *  $Id: encoder.c,v 1.76.2.35 2003-01-11 14:59:23 chl Exp $
  *
  ****************************************************************************/
-
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -320,6 +319,11 @@ encoder_create(XVID_ENC_PARAM * pParam)
 		 pEnc->mbParam.edged_height) < 0)
 		goto xvid_err_memory3;
 
+/* Create full bitplane for GMC, this might be wasteful */
+	if (image_create
+		(&pEnc->vGMC, pEnc->mbParam.edged_width,
+		 pEnc->mbParam.edged_height) < 0)
+		goto xvid_err_memory3;
 
 
 	/* B Frames specific init */
@@ -486,6 +490,11 @@ encoder_create(XVID_ENC_PARAM * pParam)
 				  pEnc->mbParam.edged_height);
 	image_destroy(&pEnc->vInterHVf, pEnc->mbParam.edged_width,
 				  pEnc->mbParam.edged_height);
+
+/* destroy GMC image */
+	image_destroy(&pEnc->vGMC, pEnc->mbParam.edged_width,
+				  pEnc->mbParam.edged_height);
+
 
   xvid_err_memory2:
 	xvid_free(pEnc->current->mbs);
@@ -1099,8 +1108,8 @@ bvop_loop:
 				   pEnc->mbParam.edged_width, pEnc->mbParam.width,
 				   pEnc->mbParam.height);
 
-	snprintf(temp, 127, "PSNR: %f\n", psnr);
-	DEBUG(temp);
+	printf("PSNR: %f\n", psnr);
+//	DEBUG(temp);
 #endif
 
 	if (pFrame->quant == 0) {
@@ -1292,7 +1301,7 @@ encoder_encode(Encoder * pEnc,
 				   pEnc->mbParam.height);
 
 	snprintf(temp, 127, "PSNR: %f\n", psnr);
-	DEBUG(temp);
+//	DEBUG(temp);
 #endif
 
 	pEnc->iFrameNum++;
@@ -1620,6 +1629,8 @@ FrameCodeI(Encoder * pEnc,
 #define INTRA_THRESHOLD 0.5
 #define BFRAME_SKIP_THRESHHOLD 30
 
+
+/* FrameCodeP also handles S(GMC)-VOPs */
 static int
 FrameCodeP(Encoder * pEnc,
 		   Bitstream * bs,
@@ -1675,18 +1686,12 @@ FrameCodeP(Encoder * pEnc,
 		stop_inter_timer();
 	}
 
-	if (pEnc->current->global_flags & XVID_GMC) {
-//		printf("Global Motion = %d %d quarterpel=%d\n", pEnc->current->GMC_MV.x, pEnc->current->GMC_MV.y,pEnc->current->quarterpel);
-		DPRINTF(DPRINTF_HEADER, "Global Motion = %d %d quarterpel=%d\n", pEnc->current->GMC_MV.x, pEnc->current->GMC_MV.y,pEnc->current->quarterpel);
-		pEnc->current->coding_type = S_VOP;
-	} else
-		pEnc->current->coding_type = P_VOP;
+	pEnc->current->coding_type = P_VOP;
 	
 	start_timer();
 	if (pEnc->current->global_flags & XVID_HINTEDME_SET)
 		HintedMESet(pEnc, &bIntra);
 	else
-
 		bIntra =
 			MotionEstimation(&pEnc->mbParam, pEnc->current, pEnc->reference,
                          &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV,
@@ -1696,13 +1701,25 @@ FrameCodeP(Encoder * pEnc,
 
 	if (bIntra == 1) return FrameCodeI(pEnc, bs, pBits);
 
-	if ( (pEnc->current->GMC_MV.x == 0) && (pEnc->current->GMC_MV.y == 0) )
-			pEnc->current->coding_type = P_VOP;		/* no global motion -> no GMC */
+	if ( ( pEnc->current->global_flags & XVID_GMC ) 
+		&& ( (pEnc->current->warp.duv[1].x != 0) || (pEnc->current->warp.duv[1].y != 0) ) )
+	{
+		pEnc->current->coding_type = S_VOP;
 
+		generate_GMCparameters(	2, 16, &pEnc->current->warp, 
+					pEnc->mbParam.width, pEnc->mbParam.height, 
+					&pEnc->current->gmc_data);
+
+		generate_GMCimage(&pEnc->current->gmc_data, &pEnc->reference->image, 
+				pEnc->mbParam.mb_width, pEnc->mbParam.mb_height,
+				pEnc->mbParam.edged_width, pEnc->mbParam.edged_width/2, 
+				pEnc->mbParam.m_fcode, 0, 0, 
+				pEnc->current->rounding_type, pEnc->current->mbs, &pEnc->vGMC);
+
+	}
 
 	if (vol_header)
 		BitstreamWriteVolHeader(bs, &pEnc->mbParam, pEnc->current);
-		
 
 	set_timecodes(pEnc->current,pEnc->reference,pEnc->mbParam.fbase);
 	BitstreamWriteVopHeader(bs, &pEnc->mbParam, pEnc->current, 1);
@@ -1712,84 +1729,123 @@ FrameCodeP(Encoder * pEnc,
 	pEnc->current->sStat.iTextBits = pEnc->current->sStat.iMvSum = pEnc->current->sStat.iMvCount = 
 		pEnc->current->sStat.kblks = pEnc->current->sStat.mblks = pEnc->current->sStat.ublks = 0;
 
+
 	for (y = 0; y < mb_height; y++) {
 		for (x = 0; x < mb_width; x++) {
 			MACROBLOCK *pMB =
 				&pEnc->current->mbs[x + y * pEnc->mbParam.mb_width];
 
+/* Mode decision: Check, if the block should be INTRA / INTER or GMC-coded */
+/* For a start, leave INTRA decision as is, only choose only between INTER/GMC  - gruel, 9.1.2002 */
+
+
 			bIntra = (pMB->mode == MODE_INTRA) || (pMB->mode == MODE_INTRA_Q);
 
-			if (!bIntra) {
-				start_timer();
-				MBMotionCompensation(pMB, x, y, &pEnc->reference->image,
-									 &pEnc->vInterH, &pEnc->vInterV,
-									 &pEnc->vInterHV, &pEnc->current->image,
-									 dct_codes, pEnc->mbParam.width,
-									 pEnc->mbParam.height,
-									 pEnc->mbParam.edged_width,
-									 pEnc->mbParam.m_quarterpel,
-									 (pEnc->current->global_flags & XVID_REDUCED),
-									 pEnc->current->rounding_type);
-				stop_comp_timer();
-
-				if ((pEnc->current->global_flags & XVID_LUMIMASKING)) {
-					if (pMB->dquant != NO_CHANGE) {
-						pMB->mode = MODE_INTER_Q;
-						pEnc->current->quant += DQtab[pMB->dquant];
-						if (pEnc->current->quant > 31)
-							pEnc->current->quant = 31;
-						else if (pEnc->current->quant < 1)
-							pEnc->current->quant = 1;
-					}
-				}
-				pMB->quant = pEnc->current->quant;
-
-				pMB->field_pred = 0;
-
-				if (pMB->mode != MODE_NOT_CODED)
-					pMB->cbp =
-						MBTransQuantInter(&pEnc->mbParam, pEnc->current, pMB, x, y,
-										  dct_codes, qcoeff);
-			} else {
+			if (bIntra) {
 				CodeIntraMB(pEnc, pMB);
 				MBTransQuantIntra(&pEnc->mbParam, pEnc->current, pMB, x, y,
 								  dct_codes, qcoeff);
+
+				start_timer();
+				MBPrediction(pEnc->current, x, y, pEnc->mbParam.mb_width, qcoeff);
+				stop_prediction_timer();
+
+				pEnc->current->sStat.kblks++;
+
+				MBCoding(pEnc->current, pMB, qcoeff, bs, &pEnc->current->sStat);
+				continue;
+			}
+				
+			if (pEnc->current->coding_type == S_VOP) {
+
+				int32_t iSAD = sad16(pEnc->current->image.y + 16*y*pEnc->mbParam.edged_width + 16*x,
+					pEnc->vGMC.y + 16*y*pEnc->mbParam.edged_width + 16*x, 
+					pEnc->mbParam.edged_width,65536);
+				
+				if (iSAD <= pMB->sad16) {		/* mode decision GMC */
+					if (pEnc->mbParam.m_quarterpel)
+						pMB->qmvs[0] = pMB->qmvs[1] =pMB->qmvs[2] =pMB->qmvs[3] = pMB->amv;
+					else
+						pMB->mvs[0] = pMB->mvs[1] =pMB->mvs[2] =pMB->mvs[3] = pMB->amv;
+
+					pMB->mode = MODE_INTER;
+					pMB->mcsel = 1;
+					pMB->sad16 = iSAD;
+				} else {
+					pMB->mcsel = 0;
+				}
+			} else 
+			{
+				pMB->mcsel = 0;	/* just a precaution */
 			}
 
 			start_timer();
-			MBPrediction(pEnc->current, x, y, pEnc->mbParam.mb_width, qcoeff);
-			stop_prediction_timer();
+			MBMotionCompensation(pMB, x, y, &pEnc->reference->image,
+								 &pEnc->vInterH, &pEnc->vInterV,
+								 &pEnc->vInterHV, &pEnc->vGMC, 
+								 &pEnc->current->image,
+								 dct_codes, pEnc->mbParam.width,
+								 pEnc->mbParam.height,
+								 pEnc->mbParam.edged_width,
+								 pEnc->mbParam.m_quarterpel,
+								 (pEnc->current->global_flags & XVID_REDUCED),
+								 pEnc->current->rounding_type);
 
-			if (pMB->mode == MODE_INTRA || pMB->mode == MODE_INTRA_Q) {
-				pEnc->current->sStat.kblks++;
-			} else if (pMB->cbp || pMB->mvs[0].x || pMB->mvs[0].y ||
-					   pMB->mvs[1].x || pMB->mvs[1].y || pMB->mvs[2].x ||
-					   pMB->mvs[2].y || pMB->mvs[3].x || pMB->mvs[3].y) {
+			stop_comp_timer();
+
+			if ((pEnc->current->global_flags & XVID_LUMIMASKING)) {
+				if (pMB->dquant != NO_CHANGE) {
+					pMB->mode = MODE_INTER_Q;
+					pEnc->current->quant += DQtab[pMB->dquant];
+					if (pEnc->current->quant > 31)
+						pEnc->current->quant = 31;
+					else if (pEnc->current->quant < 1)
+						pEnc->current->quant = 1;
+				}
+			}
+			pMB->quant = pEnc->current->quant;
+
+			pMB->field_pred = 0;
+
+			if (pMB->mode != MODE_NOT_CODED)
+			{	pMB->cbp =
+					MBTransQuantInter(&pEnc->mbParam, pEnc->current, pMB, x, y,
+									  dct_codes, qcoeff);
+			}
+
+
+			if (pMB->cbp || pMB->mvs[0].x || pMB->mvs[0].y ||
+				   pMB->mvs[1].x || pMB->mvs[1].y || pMB->mvs[2].x ||
+				   pMB->mvs[2].y || pMB->mvs[3].x || pMB->mvs[3].y) {
 				pEnc->current->sStat.mblks++;
 			}  else {
 				pEnc->current->sStat.ublks++;
-			} 
-
+			}
+			
 			start_timer();
 
 			/* Finished processing the MB, now check if to CODE or SKIP */
 
 			skip_possible = (pMB->cbp == 0) & (pMB->mode == MODE_INTER) &
 							(pMB->dquant == NO_CHANGE);
-
-			if(pEnc->mbParam.m_quarterpel)
-			{	skip_possible &= (pMB->qmvs[0].x == pEnc->current->GMC_MV.x) & (pMB->qmvs[0].y == pEnc->current->GMC_MV.y);
-			}
-			else
-			{	skip_possible &= (pMB->mvs[0].x == pEnc->current->GMC_MV.x) & (pMB->mvs[0].y == pEnc->current->GMC_MV.y);
-			}
 			
+			if (pEnc->current->coding_type == S_VOP)
+				skip_possible &= (pMB->mcsel == 1);
+			else if (pEnc->current->coding_type == P_VOP) {
+				if (pEnc->mbParam.m_quarterpel)
+					skip_possible &= (pMB->qmvs[0].x == 0) & (pMB->qmvs[0].y == 0);
+				else 
+					skip_possible &= (pMB->mvs[0].x == 0) & (pMB->mvs[0].y == 0);
+			}
+
 			if ( (pMB->mode == MODE_NOT_CODED) || (skip_possible)) {
 
 /* This is a candidate for SKIPping, but for P-VOPs check intermediate B-frames first */
-				int bSkip = 1; 
 
 				if (pEnc->current->coding_type == P_VOP)	/* special rule for P-VOP's SKIP */
+				{
+					int bSkip = 1; 
+				
 					for (k=pEnc->bframenum_head; k< pEnc->bframenum_tail; k++)
 					{
 						int iSAD;
@@ -1802,38 +1858,71 @@ FrameCodeP(Encoder * pEnc,
 						}
 					}
 					
-				if (!bSkip)
-				{
-					VECTOR predMV;
-					if(pEnc->mbParam.m_quarterpel) {
-						predMV = get_qpmv2(pEnc->current->mbs, pEnc->mbParam.mb_width, 0, x, y, 0);
-						pMB->pmvs[0].x = pMB->qmvs[0].x - predMV.x;  /* with GMC, qmvs doesn't have to be (0,0)! */
-						pMB->pmvs[0].y = pMB->qmvs[0].y - predMV.y; 
+					if (!bSkip) {	/* no SKIP, but trivial block */
+						if(pEnc->mbParam.m_quarterpel) {
+							VECTOR predMV = get_qpmv2(pEnc->current->mbs, pEnc->mbParam.mb_width, 0, x, y, 0);
+							pMB->pmvs[0].x = - predMV.x; 
+							pMB->pmvs[0].y = - predMV.y; 
+						}
+						else {
+							VECTOR predMV = get_pmv2(pEnc->current->mbs, pEnc->mbParam.mb_width, 0, x, y, 0);
+							pMB->pmvs[0].x = - predMV.x; 
+							pMB->pmvs[0].y = - predMV.y; 
+						}
+						pMB->mode = MODE_INTER;
+						pMB->cbp = 0;
+						MBCoding(pEnc->current, pMB, qcoeff, bs, &pEnc->current->sStat);
+						stop_coding_timer();
+						continue;	/* next MB */
 					}
-					else {
-						predMV = get_pmv2(pEnc->current->mbs, pEnc->mbParam.mb_width, 0, x, y, 0);
-						pMB->pmvs[0].x = pMB->mvs[0].x - predMV.x; /* with GMC, mvs doesn't have to be (0,0)! */
-						pMB->pmvs[0].y = pMB->mvs[0].y - predMV.y; 
-					}
-					pMB->mode = MODE_INTER;
-					pMB->cbp = 0;
-					MBCoding(pEnc->current, pMB, qcoeff, bs, &pEnc->current->sStat);
 				}
-				else 
-				{
-					pMB->mode = MODE_NOT_CODED;
-					MBSkip(bs);
-				}
-			
-			} else {
-				if (pEnc->current->global_flags & XVID_GREYSCALE)
-				{	pMB->cbp &= 0x3C;		/* keep only bits 5-2 */
-					qcoeff[4*64+0]=0;		/* zero, because DC for INTRA MBs DC value is saved */
-					qcoeff[5*64+0]=0;
-				}
-				MBCoding(pEnc->current, pMB, qcoeff, bs, &pEnc->current->sStat);
+				/* do SKIP */
+
+				pMB->mode = MODE_NOT_CODED;
+				MBSkip(bs);
+				stop_coding_timer();
+				continue;	/* next MB */
+			}
+			/* ordinary case: normal coded INTER/INTER4V block */
+
+			if (pEnc->current->global_flags & XVID_GREYSCALE)
+			{	pMB->cbp &= 0x3C;		/* keep only bits 5-2 */
+				qcoeff[4*64+0]=0;		/* zero, because DC for INTRA MBs DC value is saved */
+				qcoeff[5*64+0]=0;
 			}
 
+			if(pEnc->mbParam.m_quarterpel) {
+				VECTOR predMV = get_qpmv2(pEnc->current->mbs, pEnc->mbParam.mb_width, 0, x, y, 0);
+				pMB->pmvs[0].x = pMB->qmvs[0].x - predMV.x;  
+				pMB->pmvs[0].y = pMB->qmvs[0].y - predMV.y; 
+				DPRINTF(DPRINTF_MV,"mv_diff (%i,%i) pred (%i,%i) result (%i,%i)", pMB->pmvs[0].x, pMB->pmvs[0].y, predMV.x, predMV.y, pMB->mvs[0].x, pMB->mvs[0].y);
+			} else {
+				VECTOR predMV = get_pmv2(pEnc->current->mbs, pEnc->mbParam.mb_width, 0, x, y, 0);
+				pMB->pmvs[0].x = pMB->mvs[0].x - predMV.x; 
+				pMB->pmvs[0].y = pMB->mvs[0].y - predMV.y; 
+				DPRINTF(DPRINTF_MV,"mv_diff (%i,%i) pred (%i,%i) result (%i,%i)", pMB->pmvs[0].x, pMB->pmvs[0].y, predMV.x, predMV.y, pMB->mvs[0].x, pMB->mvs[0].y);
+			}
+
+
+			if (pMB->mode == MODE_INTER4V)
+			{	int k;
+				for (k=1;k<4;k++)
+				{
+					if(pEnc->mbParam.m_quarterpel) {
+						VECTOR predMV = get_qpmv2(pEnc->current->mbs, pEnc->mbParam.mb_width, 0, x, y, k);
+						pMB->pmvs[k].x = pMB->qmvs[k].x - predMV.x;  
+						pMB->pmvs[k].y = pMB->qmvs[k].y - predMV.y; 
+				DPRINTF(DPRINTF_MV,"mv_diff (%i,%i) pred (%i,%i) result (%i,%i)", pMB->pmvs[k].x, pMB->pmvs[k].y, predMV.x, predMV.y, pMB->mvs[k].x, pMB->mvs[k].y);
+					} else {
+						VECTOR predMV = get_pmv2(pEnc->current->mbs, pEnc->mbParam.mb_width, 0, x, y, k);
+						pMB->pmvs[k].x = pMB->mvs[k].x - predMV.x; 
+						pMB->pmvs[k].y = pMB->mvs[k].y - predMV.y; 
+				DPRINTF(DPRINTF_MV,"mv_diff (%i,%i) pred (%i,%i) result (%i,%i)", pMB->pmvs[k].x, pMB->pmvs[k].y, predMV.x, predMV.y, pMB->mvs[k].x, pMB->mvs[k].y);
+					}
+
+				}
+			}
+			MBCoding(pEnc->current, pMB, qcoeff, bs, &pEnc->current->sStat);
 			stop_coding_timer();
 		}
 	}
@@ -1875,7 +1964,7 @@ FrameCodeP(Encoder * pEnc,
 	pEnc->fMvPrevSigma = fSigma;
 
 	/* frame drop code */
-	// DPRINTF(DPRINTF_DEBUG, "kmu %i %i %i", pEnc->current->sStat.kblks, pEnc->current->sStat.mblks, pEnc->current->sStat.ublks);
+	DPRINTF(DPRINTF_DEBUG, "kmu %i %i %i", pEnc->current->sStat.kblks, pEnc->current->sStat.mblks, pEnc->current->sStat.ublks);
 	if (pEnc->current->sStat.kblks + pEnc->current->sStat.mblks <
 		(pEnc->mbParam.frame_drop_ratio * mb_width * mb_height) / 100)
 	{
@@ -2054,18 +2143,3 @@ FrameCodeB(Encoder * pEnc,
 	}
 #endif
 }
-
-
-/*	in case internal output is needed somewhere... */
-/*	{
-        FILE *filehandle;
-        filehandle=fopen("last-b.pgm","wb");
-        if (filehandle)
-        {
-                fprintf(filehandle,"P5\n\n");           //
-                fprintf(filehandle,"%d %d 255\n",pEnc->mbParam.edged_width,pEnc->mbParam.edged_height);
-                fwrite(frame->image.y,pEnc->mbParam.edged_width,pEnc->mbParam.edged_height,filehandle);
-                fclose(filehandle);
-		}
-	}
-*/

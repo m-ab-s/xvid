@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion_est.h,v 1.1.2.12 2003-01-09 11:36:33 syskin Exp $
+ *  $Id: motion_est.h,v 1.1.2.13 2003-01-11 14:59:24 chl Exp $
  *
  ***************************************************************************/
 
@@ -231,9 +231,15 @@ SearchP(const IMAGE * const pRef,
 		int inter4v,
 		MACROBLOCK * const pMB);
 
-static VECTOR
+
+static WARPPOINTS
 GlobalMotionEst(const MACROBLOCK * const pMBs, 
-				const MBParam * const pParam, const uint32_t iFcode);
+				const MBParam * const pParam,
+				const FRAMEINFO * const current,
+				const FRAMEINFO * const reference,
+				const IMAGE * const pRefH,
+				const IMAGE * const pRefV,
+				const IMAGE * const pRefHV	);
 
 #define iDiamondSize 2
 

@@ -52,7 +52,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: portab.h,v 1.26.2.5 2003-01-05 03:31:26 suxen_drol Exp $
+ * $Id: portab.h,v 1.26.2.6 2003-01-11 14:59:23 chl Exp $
  *
  ****************************************************************************/
 
@@ -76,7 +76,7 @@
 
 /* debug level for this library */
 #ifdef _DEBUG
-#define DPRINTF_LEVEL		(DPRINTF_RC|0x0000000f)
+#define DPRINTF_LEVEL		(DPRINTF_RC|0x0000007F)
 #else
 #define DPRINTF_LEVEL		DPRINTF_RC
 #endif

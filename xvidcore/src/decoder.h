@@ -33,7 +33,7 @@
  *
  *  - 13.06.2002 Added legal header - Cosmetic
  *
- *  $Id: decoder.h,v 1.10.2.5 2002-12-14 06:07:02 suxen_drol Exp $
+ *  $Id: decoder.h,v 1.10.2.6 2003-01-11 14:59:23 chl Exp $
  *
  ****************************************************************************/
 
@@ -64,6 +64,7 @@ typedef struct
 	int intra_blocks;
 	int inter_blocks;
 	int inter4v_blocks;
+	int gmc_blocks;
 	int not_coded_blocks;
 
 	int dct_coefs;
@@ -94,7 +95,7 @@ typedef struct
 	uint32_t shape;
 	uint32_t quant_bits;
 	uint32_t quant_type;
-	uint32_t quarterpel;
+	int32_t quarterpel;
 	int complexity_estimation_disable;
 	ESTIMATION estimation;
 
@@ -151,6 +152,11 @@ typedef struct
 	uint32_t low_delay;			// low_delay flage (1 means no B_VOP)
 	uint32_t low_delay_default;	// default value for low_delay flag
 
+	// for GMC: central place for all parameters
+	
+	IMAGE gmc;		/* gmc tmp buffer, remove for blockbased compensation */
+	GMC_DATA gmc_data;
+	
 	XVID_DEC_PICTURE* out_frm;                // This is used for slice rendering
 }
 DECODER;

@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion.h,v 1.13.2.7 2002-12-08 06:43:34 suxen_drol Exp $
+ *  $Id: motion.h,v 1.13.2.8 2003-01-11 14:59:24 chl Exp $
  *
  ***************************************************************************/
 
@@ -75,7 +75,7 @@ get_ref(const uint8_t * const refn,
 
 		const int32_t dx,
 		const int32_t dy,
-		const uint32_t stride)
+		const int32_t stride)
 {
 
 
@@ -109,7 +109,7 @@ get_ref_mv(const uint8_t * const refn,
 
 		   const VECTOR * mv,	/* measured in half-pel! */
 
-		   const uint32_t stride)
+		   const int32_t stride)
 {
 
 	switch ((((mv->x) & 1) << 1) + ((mv->y) & 1)) {
@@ -161,6 +161,44 @@ void MBMotionCompensationBVOP(MBParam * pParam,
 							  const IMAGE * const b_refv,
 							  const IMAGE * const b_refhv,
 							  int16_t * dct_codes);
+							  
+							  
+/* GMC stuff. Maybe better put it into a separate file */
+							  
+void 
+generate_GMCparameters(	const int num_wp,				// [input]: number of warppoints
+						const int res, 					// [input]: resolution 
+						const WARPPOINTS *const warp, 	// [input]: warp points  
+						const int width, const int height, 	// [input]: without edges!
+						GMC_DATA *const gmc); 		// [output] precalculated parameters 
+
+void 
+generate_GMCimage(	const GMC_DATA *const gmc_data, 	// [input] precalculated data
+					const IMAGE *const pRef,			// [input] 
+					const int mb_width, 
+					const int mb_height,
+					const int stride,
+					const int stride2, 
+					const int fcode, 					// [input] some parameters...
+  					const int32_t quarterpel,			// [input] for rounding avgMV
+					const int reduced_resolution,		// [input] ignored
+					const int32_t rounding,			// [input] for rounding image data
+					MACROBLOCK *const pMBs, 	// [output] average motion vectors
+					IMAGE *const pGMC);			// [output] full warped image
+					
+
+VECTOR generate_GMCimageMB(	const GMC_DATA *const gmc_data, 	/* [input] all precalc data */
+							const IMAGE *const pRef,			// [input] 
+							const int mi, const int mj, 		/* [input] MB position  */
+							const int stride,					/* [input] Lumi stride */
+							const int stride2,					/* [input] chroma stride */
+							const int quarterpel, 				/* [input] for rounding of AvgMV */
+							const int rounding, 				
+							IMAGE *const pGMC);					/* [outut] generate image */
+
+
+
+/* Hinted ME */
 
 void
 MotionEstimationHinted(	MBParam * const pParam,
@@ -182,6 +220,8 @@ int
 FindFcode(	const MBParam * const pParam,
 			const FRAMEINFO * const current);
 
+
+int d_amv_penalty(int x, int y, const VECTOR pred, const uint32_t iFcode, const int quant);
 				
 
 #endif							/* _MOTION_H_ */

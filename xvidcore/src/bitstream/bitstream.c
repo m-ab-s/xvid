@@ -41,7 +41,7 @@
   *                                                                            *
   *  Revision history:                                                         *
   *                                                                            *
-  *  28.10.2002	GMC support - gruel											   *
+  *  05.01.2003	GMC support - gruel											   *
   *  04.10.2002	qpel support - Isibaar										   *
   *  11.07.2002 add VOP width & height return to dec when dec->width           *
   *             or dec->height is 0  (for use in examples/ex1.c)               *
@@ -230,7 +230,7 @@ read_video_packet_header(Bitstream *bs,
 			if (coding_type == B_VOP && fcode_backward)
 			{
 				*fcode_backward = BitstreamGetBits(bs, 3);
-				DPRINTF(DPRINTF_HEADER,"fcode_backward %i", fcode_backward);
+				DPRINTF(DPRINTF_HEADER,"fcode_backward %i", *fcode_backward);
 			}
 		}
 
@@ -432,7 +432,7 @@ BitstreamReadHeaders(Bitstream * bs,
 					 uint32_t * fcode_forward,
 					 uint32_t * fcode_backward,
 					 uint32_t * intra_dc_threshold,
-					 VECTOR * gmc_mv)
+					 WARPPOINTS *gmc_warp)
 {
 	uint32_t vol_ver_id;
 	uint32_t coding_type;
@@ -827,7 +827,7 @@ BitstreamReadHeaders(Bitstream * bs,
 				READ_MARKER();
 				seconds = BitstreamGetBits(bs, 6);
 				
-				DPRINTF(DPRINTF_HEADER, "time %ih%im%is", hours);
+				DPRINTF(DPRINTF_HEADER, "time %ih%im%is", hours,minutes,seconds);
 			}
 			BitstreamSkip(bs, 1);	// closed_gov
 			BitstreamSkip(bs, 1);	// broken_link
@@ -1001,8 +1001,8 @@ BitstreamReadHeaders(Bitstream * bs,
 					}
 					READ_MARKER();
 
-					gmc_mv[i].x = x;
-					gmc_mv[i].y = y;
+					gmc_warp->duv[i].x = x;
+					gmc_warp->duv[i].y = y;
 
 					DPRINTF(DPRINTF_HEADER,"sprite_warping_point[%i] xy=(%i,%i)", i, x, y);
 				}
@@ -1322,38 +1322,34 @@ BitstreamWriteVopHeader(
 	}
 	
 	if (frame->coding_type == S_VOP) {
-		if (1)	{		// no_of_sprite_warping_points>=1
+		if (1)	{		// no_of_sprite_warping_points>=1 (we use 2!)
+			int k;
+			for (k=0;k<2;k++)
+			{
 			if (pParam->m_quarterpel)
-				bs_put_spritetrajectory(bs, frame->GMC_MV.x/2 ); // du[0] 
+				bs_put_spritetrajectory(bs, frame->warp.duv[k].x/2 ); // du[k] 
 			else
-				bs_put_spritetrajectory(bs, frame->GMC_MV.x ); // du[0] 
+				bs_put_spritetrajectory(bs, frame->warp.duv[k].x ); // du[k] 
 			WRITE_MARKER();
 			
 			if (pParam->m_quarterpel)
-				bs_put_spritetrajectory(bs, frame->GMC_MV.y/2 ); // dv[0] 
+				bs_put_spritetrajectory(bs, frame->warp.duv[k].y/2 ); // dv[k] 
 			else
-				bs_put_spritetrajectory(bs, frame->GMC_MV.y ); // dv[0] 
+				bs_put_spritetrajectory(bs, frame->warp.duv[k].y ); // dv[k] 
 			WRITE_MARKER();
-
 
 			if (pParam->m_quarterpel)
 			{
-				DPRINTF(DPRINTF_HEADER,"sprite_warping_point[%i] xy=(%i,%i) *QPEL*", 0, frame->GMC_MV.x/2, frame->GMC_MV.y/2);
+				DPRINTF(DPRINTF_HEADER,"sprite_warping_point[%i] xy=(%i,%i) *QPEL*", k, frame->warp.duv[k].x/2, frame->warp.duv[k].y/2);
 			}
 			else
 			{
-				DPRINTF(DPRINTF_HEADER,"sprite_warping_point[%i] xy=(%i,%i)", 0, frame->GMC_MV.x, frame->GMC_MV.y);
+				DPRINTF(DPRINTF_HEADER,"sprite_warping_point[%i] xy=(%i,%i)", k, frame->warp.duv[k].x, frame->warp.duv[k].y);
 			}
-
+			}
 		}
 /* GMC is halfpel in bitstream, even though GMC_MV was pseudo-qpel (2*halfpel) */
 
-		if (2) {		// no_of_sprite_warping_points>=2 (for DivX5 compat)
-			bs_put_spritetrajectory(bs, 0 );
-			WRITE_MARKER();
-			bs_put_spritetrajectory(bs, 0 );
-			WRITE_MARKER();
-		}
 		// no support for brightness_change!
 	}
 	

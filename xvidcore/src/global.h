@@ -23,6 +23,55 @@
 #define MODE_DIRECT_NONE_MV	4
 #define MODE_DIRECT_NO4V	5
 
+typedef struct 
+{
+	VECTOR duv[3];
+}
+WARPPOINTS;
+
+/* save all warping parameters for GMC once and for all, instead of 
+   recalculating for every block. This is needed for encoding&decoding
+   When switching to incremental calculations, this will get much shorter 
+*/
+
+/*	we don't include WARPPOINTS wp	here, but in FRAMEINFO itself */
+
+typedef struct 
+{
+	int num_wp;		//	[input]: 0=none, 1=translation, 2,3 = warping
+							//  a value of -1 means: "structure not initialized!"
+	int s;					//  [input]: calc is done with 1/s pel resolution
+
+	int W;
+	int H;
+	
+	int ss;		
+	int smask;	
+	int sigma;     
+	
+	int r;		
+	int rho;	
+
+	int i0s;
+	int j0s;
+	int i1s;
+	int j1s;
+//	int i2s;
+//	int j2s;
+	
+	int i1ss; 
+	int j1ss; 
+//	int i2ss; 
+//	int j2ss; 
+
+	int alpha;
+//	int beta;
+	int Ws; 
+//	int Hs; 
+}
+GMC_DATA;
+
+
 typedef struct
 {
 	uint8_t *y;
@@ -99,6 +148,10 @@ typedef struct
 	int32_t i_sad8[4];	// SAD values for inter4v-VECTORs
 //	int32_t i_sad16;	// SAD value for inter-VECTOR
 
+	VECTOR amv; // average motion vectors from GMC 
+	int32_t mcsel;
+
+/* This structure has become way to big! What to do? Split it up?   */ 
 
 }
 MACROBLOCK;

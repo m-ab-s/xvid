@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>	// memcpy
+#include <math.h>	// lrint 
 
 #include "../encoder.h"
 #include "../utils/mbfunctions.h"
@@ -752,7 +753,7 @@ MotionEstimation(MBParam * const pParam,
 	Data.iFcode = current->fcode;
 	Data.rounding = pParam->m_rounding_type;
 	Data.qpel = pParam->m_quarterpel;
-	Data.chroma = current->global_flags & XVID_ME_COLOUR;
+	Data.chroma = current->global_flags & ( PMV_CHROMA16 | PMV_CHROMA8 );
 	Data.rrv = current->global_flags & XVID_REDUCED;
 
 	if ((current->global_flags & XVID_REDUCED)) {
@@ -800,9 +801,9 @@ MotionEstimation(MBParam * const pParam,
 			pMB->quant = current->quant;
 
 //initial skip decision
-/* no early skip for GMC (global vector = skip vector is unknown!)	*/
-			if (current->coding_type == P_VOP)	{ /* no fast SKIP for S(GMC)-VOPs */
-				if (pMB->dquant == NO_CHANGE && sad00 < pMB->quant * INITIAL_SKIP_THRESH * (Data.rrv ? 4:1) )
+/* no early skip for GMC (global vector = skip vector is unknown!)  */
+			if (!(current->global_flags & XVID_GMC))	{ /* no fast SKIP for S(GMC)-VOPs */
+				if (pMB->dquant == NO_CHANGE && sad00 < pMB->quant * INITIAL_SKIP_THRESH  * (Data.rrv ? 4:1) )
 					if (Data.chroma || SkipDecisionP(pCurrent, pRef, x, y, iEdgedWidth/2, pMB->quant, Data.rrv)) {
 						SkipMacroblockP(pMB, sad00);
 						continue;
@@ -815,7 +816,7 @@ MotionEstimation(MBParam * const pParam,
 						current->global_flags & XVID_INTER4V, pMB);
 
 /* final skip decision, a.k.a. "the vector you found, really that good?" */
-			if (current->coding_type == P_VOP)	{
+			if (!(current->global_flags & XVID_GMC))	{
 				if ( (pMB->dquant == NO_CHANGE) && (sad00 < pMB->quant * MAX_SAD00_FOR_SKIP)
 					&& ((100*pMB->sad16)/(sad00+1) > FINAL_SKIP_THRESH * (Data.rrv ? 4:1)) )
 					if (Data.chroma || SkipDecisionP(pCurrent, pRef, x, y, iEdgedWidth/2, pMB->quant, Data.rrv)) {
@@ -855,11 +856,11 @@ MotionEstimation(MBParam * const pParam,
 		}
 	}
 
-	if (current->coding_type == S_VOP)	/* first GMC step only for S(GMC)-VOPs */
-		current->GMC_MV = GlobalMotionEst( pMBs, pParam, current->fcode );
-	else
-		current->GMC_MV = zeroMV;
-
+	if (current->global_flags & XVID_GMC )	/* first GMC step only for S(GMC)-VOPs */
+	{
+		current->warp = GlobalMotionEst( pMBs, pParam, current, reference, pRefH, pRefV, pRefHV);
+	}
+	
 	return 0;
 }
 
@@ -1913,93 +1914,180 @@ MEanalysis(	const IMAGE * const pRef,
 
 }
 
-static void
-CheckGMC(int x, int y, const int dir, int * iDirection,
-		const MACROBLOCK * const pMBs, uint32_t * bestcount, VECTOR * GMC,
-		const MBParam * const pParam)
-{
-	uint32_t mx, my, a, count = 0;
 
-	for (my = 1; my < pParam->mb_height-1; my++)
-		for (mx = 1; mx < pParam->mb_width-1; mx++) {
-			VECTOR mv;
-			const MACROBLOCK *pMB = &pMBs[mx + my * pParam->mb_width];
-			if (pMB->mode == MODE_INTRA || pMB->mode == MODE_NOT_CODED) continue;
-			mv = pMB->mvs[0];
-			a = ABS(mv.x - x) + ABS(mv.y - y);
-			if (a < 6) count += 6 - a;
+static WARPPOINTS
+GlobalMotionEst(const MACROBLOCK * const pMBs, 
+				const MBParam * const pParam,
+				const FRAMEINFO * const current,
+				const FRAMEINFO * const reference,
+				const IMAGE * const pRefH,
+				const IMAGE * const pRefV,
+				const IMAGE * const pRefHV	)
+{
+
+	const int deltax=8;		// upper bound for difference between a MV and it's neighbour MVs
+	const int deltay=8;
+	const int grad=512;		// lower bound for deviation in MB 
+	
+	WARPPOINTS gmc;
+	
+	uint32_t mx, my;
+
+	int MBh = pParam->mb_height;
+	int MBw = pParam->mb_width;
+	
+	int *MBmask= calloc(MBh*MBw,sizeof(int));
+	double DtimesF[4] = { 0.,0., 0., 0. };
+	double sol[4] = { 0., 0., 0., 0. };
+	double a,b,c,n,denom;
+	double meanx,meany;
+	int num,oldnum;
+		
+	if (!MBmask) { fprintf(stderr,"Mem error\n"); return gmc;}
+
+// filter mask of all blocks 
+
+	for (my = 1; my < MBh-1; my++)
+	for (mx = 1; mx < MBw-1; mx++)
+	{
+		const int mbnum = mx + my * MBw;
+		const MACROBLOCK *pMB = &pMBs[mbnum];
+		const VECTOR mv = pMB->mvs[0];
+		
+		if (pMB->mode == MODE_INTRA || pMB->mode == MODE_NOT_CODED)
+			continue;
+
+		if ( ( (ABS(mv.x -   (pMB-1)->mvs[0].x) < deltax) && (ABS(mv.y -   (pMB-1)->mvs[0].y) < deltay) )
+		&&   ( (ABS(mv.x -   (pMB+1)->mvs[0].x) < deltax) && (ABS(mv.y -   (pMB+1)->mvs[0].y) < deltay) )
+		&&   ( (ABS(mv.x - (pMB-MBw)->mvs[0].x) < deltax) && (ABS(mv.y - (pMB-MBw)->mvs[0].y) < deltay) )
+		&&   ( (ABS(mv.x - (pMB+MBw)->mvs[0].x) < deltax) && (ABS(mv.y - (pMB+MBw)->mvs[0].y) < deltay) ) )
+			MBmask[mbnum]=1;
+	}
+	
+	for (my = 1; my < MBh-1; my++)
+	for (mx = 1; mx < MBw-1; mx++)
+	{
+		const uint8_t *const pCur = current->image.y + 16*my*pParam->edged_width + 16*mx;
+		
+		const int mbnum = mx + my * MBw;
+		if (!MBmask[mbnum])
+			continue;
+
+		if (sad16 ( pCur, pCur+1 , pParam->edged_width, 65536) <= grad )
+			MBmask[mbnum] = 0;
+		if (sad16 ( pCur, pCur+pParam->edged_width, pParam->edged_width, 65536) <= grad )
+			MBmask[mbnum] = 0;
+		
+	}
+
+	emms();
+
+	do {		/* until convergence */
+
+	a = b = c = n = 0;
+	DtimesF[0] = DtimesF[1] = DtimesF[2] = DtimesF[3] = 0.;
+	for (my = 0; my < MBh; my++)
+		for (mx = 0; mx < MBw; mx++)
+		{
+			const int mbnum = mx + my * MBw;
+			const MACROBLOCK *pMB = &pMBs[mbnum];
+			const VECTOR mv = pMB->mvs[0];
+
+			if (!MBmask[mbnum])
+				continue;
+		
+			n++;
+			a += 16*mx+8;
+			b += 16*my+8;
+			c += (16*mx+8)*(16*mx+8)+(16*my+8)*(16*my+8);
+
+			DtimesF[0] += (double)mv.x;
+			DtimesF[1] += (double)mv.x*(16*mx+8) + (double)mv.y*(16*my+8);
+			DtimesF[2] += (double)mv.x*(16*my+8) - (double)mv.y*(16*mx+8);
+			DtimesF[3] += (double)mv.y;
 		}
 
-	if (count > *bestcount) {
-		*bestcount = count;
-		*iDirection = dir;
-		GMC->x = x; GMC->y = y;
+	denom = a*a+b*b-c*n;
+	
+/* Solve the system:     sol = (D'*E*D)^{-1} D'*E*F   */
+/* D'*E*F has been calculated in the same loop as matrix */
+
+	sol[0] = -c*DtimesF[0] + a*DtimesF[1] + b*DtimesF[2];
+	sol[1] =  a*DtimesF[0] - n*DtimesF[1]                + b*DtimesF[3];
+	sol[2] =  b*DtimesF[0]                - n*DtimesF[2] - a*DtimesF[3];
+	sol[3] =                 b*DtimesF[1] - a*DtimesF[2] - c*DtimesF[3];
+
+	sol[0] /= denom;
+	sol[1] /= denom;
+	sol[2] /= denom;
+	sol[3] /= denom;
+	
+	meanx = meany = 0.;
+	oldnum = 0;
+	for (my = 0; my < MBh; my++)
+		for (mx = 0; mx < MBw; mx++)
+		{
+			const int mbnum = mx + my * MBw;
+			const MACROBLOCK *pMB = &pMBs[mbnum];
+			const VECTOR mv = pMB->mvs[0];
+
+			if (!MBmask[mbnum])
+				continue;
+
+			oldnum++;
+			meanx += ABS(( sol[0] + (16*mx+8)*sol[1] + (16*my+8)*sol[2] ) - mv.x );
+			meany += ABS(( sol[3] + (16*my+8)*sol[1] - (16*mx+8)*sol[2] ) - mv.y );
+
+		}
+		
+	if (2*meanx > oldnum)	/* mittlere Abweichung von Ebene */
+		meanx /= oldnum;
+	else 
+		meanx = 0.5;
+	if (2*meany > oldnum)
+		meany /= oldnum;
+	else 
+		meanx = 0.5;
+		
+//	fprintf(stderr,"meanx = %8.5f  meany = %8.5f   %d\n",meanx,meany, oldnum);
+	
+	num = 0;
+	for (my = 0; my < MBh; my++)
+		for (mx = 0; mx < MBw; mx++)
+		{
+			const int mbnum = mx + my * MBw;
+			const MACROBLOCK *pMB = &pMBs[mbnum];
+			const VECTOR mv = pMB->mvs[0];
+
+			if (!MBmask[mbnum])
+				continue;
+
+			if  ( ( ABS(( sol[0] + (16*mx+8)*sol[1] + (16*my+8)*sol[2] ) - mv.x ) > meanx )
+			   || ( ABS(( sol[3] + (16*my+8)*sol[1] - (16*mx+8)*sol[2] ) - mv.y ) > meany ) )
+				MBmask[mbnum]=0;
+			else
+				num++;
+		}
+
+	} while ( (oldnum != num) && (num>=4) );
+
+	if (num < 4)
+	{
+		gmc.duv[0].x= gmc.duv[0].y= gmc.duv[1].x= gmc.duv[1].y= gmc.duv[2].x= gmc.duv[2].y=0;
+	} else {
+
+		gmc.duv[0].x=(int)(sol[0]+0.5);
+		gmc.duv[0].y=(int)(sol[3]+0.5);
+
+		gmc.duv[1].x=(int)(sol[1]*pParam->width+0.5);
+		gmc.duv[1].y=(int)(-sol[2]*pParam->width+0.5);
+	
+		gmc.duv[2].x=0;
+		gmc.duv[2].y=0;
 	}
-}
+//	fprintf(stderr,"wp1 = ( %4d, %4d)  wp2 = ( %4d, %4d) \n", gmc.duv[0].x, gmc.duv[0].y, gmc.duv[1].x, gmc.duv[1].y);
 
-
-static VECTOR
-GlobalMotionEst(const MACROBLOCK * const pMBs, const MBParam * const pParam, const uint32_t iFcode)
-{
-
-	uint32_t count, bestcount = 0;
-	int x, y;
-	VECTOR gmc = {0,0};
-	int step, min_x, max_x, min_y, max_y;
-	uint32_t mx, my;
-	int iDirection, bDirection;
-
-	min_x = min_y = -32<<iFcode;
-	max_x = max_y = 32<<iFcode;
-
-//step1: let's find a rough camera panning
-	for (step = 32; step >= 2; step /= 2) {
-		bestcount = 0;
-		for (y = min_y; y <= max_y; y += step)
-			for (x = min_x ; x <= max_x; x += step) {
-				count = 0;
-				//for all macroblocks
-				for (my = 1; my < pParam->mb_height-1; my++)
-					for (mx = 1; mx < pParam->mb_width-1; mx++) {
-						const MACROBLOCK *pMB = &pMBs[mx + my * pParam->mb_width];
-						VECTOR mv;
-
-						if (pMB->mode == MODE_INTRA || pMB->mode == MODE_NOT_CODED)
-							continue;
-
-						mv = pMB->mvs[0];
-						if ( ABS(mv.x - x) <= step && ABS(mv.y - y) <= step ) 	/* GMC translation is always halfpel-res */
-							count++;
-					}
-				if (count >= bestcount) { bestcount = count; gmc.x = x; gmc.y = y; }
-			}
-		min_x = gmc.x - step;
-		max_x = gmc.x + step;
-		min_y = gmc.y - step;
-		max_y = gmc.y + step;
-	}
-
-	if (bestcount < (pParam->mb_height-2)*(pParam->mb_width-2)/10)
-		gmc.x = gmc.y = 0; //no camara pan, no GMC
-
-// step2: let's refine camera panning using gradiend-descent approach
-// TODO: more warping points may be evaluated here (like in interpolate mode search - two vectors in one diamond)
-	bestcount = 0;
-	CheckGMC(gmc.x, gmc.y, 255, &iDirection, pMBs, &bestcount, &gmc, pParam);
-	do {
-		x = gmc.x; y = gmc.y;
-		bDirection = iDirection; iDirection = 0;
-		if (bDirection & 1) CheckGMC(x - 1, y, 1+4+8, &iDirection, pMBs, &bestcount, &gmc, pParam);
-		if (bDirection & 2) CheckGMC(x + 1, y, 2+4+8, &iDirection, pMBs, &bestcount, &gmc, pParam);
-		if (bDirection & 4) CheckGMC(x, y - 1, 1+2+4, &iDirection, pMBs, &bestcount, &gmc, pParam);
-		if (bDirection & 8) CheckGMC(x, y + 1, 1+2+8, &iDirection, pMBs, &bestcount, &gmc, pParam);
-
-	} while (iDirection);
-
-	if (pParam->m_quarterpel) {
-		gmc.x *= 2;
-		gmc.y *= 2;	/* we store the halfpel value as pseudo-qpel to make comparison easier */
-	}
-
+	free(MBmask);
+	
 	return gmc;
 }

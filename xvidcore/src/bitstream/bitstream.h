@@ -149,7 +149,7 @@ int BitstreamReadHeaders(Bitstream * bs,
 						 uint32_t * fcode_forward,
 						 uint32_t * fcode_backward,
 						 uint32_t * intra_dc_threshold,
-						 VECTOR * gmc_mv);
+						 WARPPOINTS * gmc_warp);
 
 
 void BitstreamWriteVolHeader(Bitstream * const bs,

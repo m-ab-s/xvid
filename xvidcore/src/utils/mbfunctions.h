@@ -42,22 +42,24 @@ bool SMP_MotionEstimation(MBParam * const pParam,
 
 
 /** MBMotionCompensation **/
-void MBMotionCompensation(MACROBLOCK * const pMB,
-						  const uint32_t j,
-						  const uint32_t i,
-						  const IMAGE * const pRef,
-						  const IMAGE * const pRefH,
-						  const IMAGE * const pRefV,
-						  const IMAGE * const pRefHV,
-						  IMAGE * const pCurrent,
-						  int16_t dct_codes[6 * 64],
-						  const uint32_t width,
-						  const uint32_t height,
-						  const uint32_t edged_width,
-						  const int quarterpel,
-						  const int reduced_resolution,
-						  const uint32_t rounding);
 
+void
+MBMotionCompensation(MACROBLOCK * const mb,
+					 const uint32_t i,
+					 const uint32_t j,
+					 const IMAGE * const ref,
+					 const IMAGE * const refh,
+					 const IMAGE * const refv,
+					 const IMAGE * const refhv,
+					 const IMAGE * const refGMC,
+					 IMAGE * const cur,
+					 int16_t * dct_codes,
+					 const uint32_t width,
+					 const uint32_t height,
+					 const uint32_t edged_width,
+					 const int32_t quarterpel,
+					 const int reduced_resolution,
+					 const int32_t rounding);
 
 /** MBTransQuant.c **/
 

@@ -41,7 +41,7 @@
   *																			   *	
   *  Revision history:                                                         *
   *                                                                            *
-  *  28.10.2002	GMC support - gruel											   *
+  *  04.01.2003 GMC support - gruel											   *
   *  28.06.2002 added check_resync_marker()                                    *
   *  14.04.2002 bframe encoding												   *
   *  08.03.2002 initial version; isibaar					                   *
@@ -49,7 +49,7 @@
   ******************************************************************************/
 
 
-
+#include <stdio.h>
 #include <stdlib.h>
 #include "../portab.h"
 #include "../global.h"
@@ -406,7 +406,6 @@ CodeBlockInter(const FRAMEINFO * const frame,
 
 	int32_t i;
 	uint32_t bits, mcbpc, cbpy;
-	int mcsel=0;
 
 	mcbpc = (pMB->mode & 7) | ((pMB->cbp & 3) << 3);
 	cbpy = 15 - (pMB->cbp >> 2);
@@ -417,14 +416,8 @@ CodeBlockInter(const FRAMEINFO * const frame,
 
 	if ( (frame->coding_type == S_VOP) && (pMB->mode == MODE_INTER || pMB->mode == MODE_INTER_Q) )
 	{
-		if (frame->quarterpel) {
-			if ( (pMB->qmvs[0].x == frame->GMC_MV.x) && (pMB->qmvs[0].y == frame->GMC_MV.y) )
-				mcsel=1;
-		} else {
-			if ( (pMB->mvs[0].x == frame->GMC_MV.x) && (pMB->mvs[0].y == frame->GMC_MV.y) )
-				mcsel=1;	
-		}
-		BitstreamPutBit(bs, mcsel);		// mcsel: '0'=local motion, '1'=GMC
+			/* decision on GMC is done in encoder.c now */
+		BitstreamPutBit(bs, pMB->mcsel);		// mcsel: '0'=local motion, '1'=GMC
 	}
 
 	// write cbpy
@@ -454,7 +447,7 @@ CodeBlockInter(const FRAMEINFO * const frame,
 		}
 	}
 	// code motion vector(s) if motion is local 
-	if (mcsel==0)
+	if (!pMB->mcsel)
 		for (i = 0; i < (pMB->mode == MODE_INTER4V ? 4 : 1); i++) {
 			CodeVector(bs, pMB->pmvs[i].x, frame->fcode, pStat);
 			CodeVector(bs, pMB->pmvs[i].y, frame->fcode, pStat);

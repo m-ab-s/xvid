@@ -28,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.19 2003-01-04 06:14:32 suxen_drol Exp $
+*  $Id: xvid.h,v 1.17.2.20 2003-01-11 14:59:23 chl Exp $
 *
 *****************************************************************************/
 
@@ -287,8 +287,8 @@ extern "C" {
 #define XVID_GREYSCALE			0x01000000	/* enable greyscale only mode (even for */
 #define XVID_GRAYSCALE			0x01000000  /* color input material chroma is ignored) */
 
-#define XVID_GMC				0x20000000
-#define XVID_ME_COLOUR			0x40000000
+#define XVID_GMC				0x10000000
+#define XVID_GMC_TRANSLATIONAL	0x20000000
 
 #define XVID_REDUCED			0x04000000	/* reduced resolution vop */
 
@@ -300,20 +300,33 @@ extern "C" {
 #define PMV_HALFPELREFINE16 	0x00020000
 #define PMV_QUARTERPELREFINE16	0x00040000
 #define PMV_EXTSEARCH16 		0x00080000	/* extend PMV by more searches */
-#define PMV_QUICKSTOP16	   		0x00100000	/* like early, but without any more refinement */
+
+#define PMV_CHROMA16			0x00100000	/* also use chroma for MB-ME */
 #define PMV_UNRESTRICTED16   	0x00200000	/* unrestricted ME, not implemented */
 #define PMV_OVERLAPPING16   	0x00400000	/* overlapping ME, not implemented */
-#define PMV_USESQUARES16		0x00800000
+#define PMV_USESQUARES16		0x00800000	/* use squares instead of diamonds as search pattern */
 
 #define PMV_HALFPELDIAMOND8 	0x01000000
 #define PMV_HALFPELREFINE8 		0x02000000
 #define PMV_QUARTERPELREFINE8	0x04000000
 #define PMV_EXTSEARCH8 			0x08000000	/* extend PMV by more searches */
-#define PMV_QUICKSTOP8	   		0x10000000	/* like early, but without any more refinement */
+
+#define PMV_CHROMA8				0x10000000	/* also use chroma for B-ME */
 #define PMV_UNRESTRICTED8   	0x20000000	/* unrestricted ME, not implemented */
 #define PMV_OVERLAPPING8   		0x40000000	/* overlapping ME, not implemented */
 #define PMV_USESQUARES8			0x80000000
 
+
+/* note: old and deprecated */
+
+/* only for compatability with old encoders */
+
+#define PMV_EARLYSTOP16			0x00	
+#define PMV_EARLYSTOP8			0x00
+#define PMV_QUICKSTOP16	   		0x00	
+#define PMV_QUICKSTOP8	   		0x00	
+
+#define XVID_ME_COLOUR			0x00	/* this has been converted to PMV_COLOUR[16/8] */
 
 
 /*****************************************************************************
