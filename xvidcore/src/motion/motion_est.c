@@ -1907,7 +1907,7 @@ MEanalysis(	const IMAGE * const pRef,
 		}
 	}
 	sSAD /= (pParam->mb_height-2)*(pParam->mb_width-2);
-	if (sSAD > IntraThresh + INTRA_BIAS) return I_VOP;
+//	if (sSAD > IntraThresh + INTRA_BIAS) return I_VOP;
 	if (sSAD > InterThresh ) return P_VOP;
 	emms();
 	return B_VOP;
