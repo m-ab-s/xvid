@@ -23,7 +23,8 @@ HWND hTooltip;
 #define XVID_REG_CLASS	"config"
 
 #define XVID_BUILD		__TIME__ ", " __DATE__
-#define XVID_WEBSITE	"http://www.xvid.org"
+#define XVID_WEBSITE	"http://www.xvid.org/"
+#define XVID_SPECIAL_BUILD	"(Vanilla CVS Build)"
 
 /* constants */
 #define CONFIG_HINTFILE		"\\hintfile.mvh"
@@ -140,6 +141,9 @@ typedef struct
 	int credits_end_begin;
 	int credits_end_end;
 
+//added by koepi for gruel's greyscale_mode
+	int credits_greyscale;
+// end of koepi's additions
 	int credits_mode;
 	int credits_rate;
 	int credits_quant_i;

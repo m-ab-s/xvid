@@ -165,5 +165,8 @@ int codec_get_quant(CODEC *, XVID_ENC_FRAME *);
 int codec_is_in_credits(CONFIG *, int);
 int codec_get_vbr_quant(CONFIG *, int);
 
+// added by Koepi for greyscale credits
+int check_greyscale_mode(CONFIG *, XVID_ENC_FRAME* , int);
+// end of koepi's additions
 
 #endif /* _CODEC_H_ */

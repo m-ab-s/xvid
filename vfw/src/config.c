@@ -140,6 +140,9 @@ REG_INT const reg_ints[] = {
 	{"credits_end_begin",		&reg.credits_end_begin,			0},
 	{"credits_end_end",			&reg.credits_end_end,			0},
 
+// added by koepi for greyscale credits
+	{"credits_greyscale",		&reg.credits_greyscale,			0},
+// end of koepi's addition
 	{"credits_mode",			&reg.credits_mode,				0},
 	{"credits_rate",			&reg.credits_rate,				20},
 	{"credits_quant_i",			&reg.credits_quant_i,			20},
@@ -507,8 +510,8 @@ void adv_mode(HWND hDlg, int mode)
 		IDC_CREDITS_START, IDC_CREDITS_END, IDC_CREDITS_START_BEGIN, IDC_CREDITS_START_END,
 		IDC_CREDITS_END_BEGIN, IDC_CREDITS_END_END, IDC_CREDITS_RATE_RADIO,
 		IDC_CREDITS_QUANT_RADIO, IDC_CREDITS_QUANT_STATIC, IDC_CREDITS_SIZE_RADIO,
-		IDC_CREDITS_END_STATIC, IDC_CREDITS_RATE, IDC_CREDITS_QUANTI, IDC_CREDITS_QUANTP,
-		IDC_CREDITS_START_SIZE, IDC_CREDITS_END_SIZE,
+		IDC_CREDITS_QUANTI, IDC_CREDITS_QUANTP, IDC_CREDITS_END_STATIC, IDC_CREDITS_RATE,
+		IDC_CREDITS_START_SIZE, IDC_CREDITS_END_SIZE, IDC_CREDITS_GREYSCALE
 	};
 
 	const short qual_disable[] = {
@@ -699,6 +702,9 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 		SetDlgItemInt(hDlg, IDC_CREDITS_END_BEGIN, config->credits_end_begin, FALSE);
 		SetDlgItemInt(hDlg, IDC_CREDITS_END_END, config->credits_end_end, FALSE);
 
+// added by koepi for credits greyscale
+		CheckDlgButton(hDlg, IDC_CREDITS_GREYSCALE, config->credits_greyscale ? BST_CHECKED : BST_UNCHECKED);
+// end of koepi's addition
 		SetDlgItemInt(hDlg, IDC_CREDITS_RATE, config->credits_rate, FALSE);
 		SetDlgItemInt(hDlg, IDC_CREDITS_QUANTI, config->credits_quant_i, FALSE);
 		SetDlgItemInt(hDlg, IDC_CREDITS_QUANTP, config->credits_quant_p, FALSE);
@@ -853,6 +859,9 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 		config->credits_end_begin = config_get_uint(hDlg, IDC_CREDITS_END_BEGIN, config->credits_end_begin);
 		config->credits_end_end = config_get_uint(hDlg, IDC_CREDITS_END_END, config->credits_end_end);
 
+// added by koepi for gruel's greyscale_mode
+		config->credits_greyscale = ISDLGSET(IDC_CREDITS_GREYSCALE);
+// end of koepi's addition
 		config->credits_rate = config_get_uint(hDlg, IDC_CREDITS_RATE, config->credits_rate);
 		config->credits_quant_i = config_get_uint(hDlg, IDC_CREDITS_QUANTI, config->credits_quant_i);
 		config->credits_quant_p = config_get_uint(hDlg, IDC_CREDITS_QUANTP, config->credits_quant_p);
@@ -1374,6 +1383,7 @@ BOOL CALLBACK about_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			LOGFONT lfData;
 
 			SetDlgItemText(hDlg, IDC_BUILD, XVID_BUILD);
+			SetDlgItemText(hDlg, IDC_SPECIAL_BUILD, XVID_SPECIAL_BUILD);
 
 			init_param.cpu_flags = XVID_CPU_CHKONLY;
 			xvid_init(NULL, 0, &init_param, 0);

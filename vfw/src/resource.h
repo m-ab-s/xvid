@@ -236,6 +236,8 @@
 #define IDC_KFTRESHOLD                  1226
 #define IDC_KFREDUCTION                 1227
 #define IDC_GREYSCALE                   1228
+#define IDC_CREDITS_GREYSCALE           1229
+#define IDC_SPECIAL_BUILD               1230
 
 // Next default values for new objects
 // 
@@ -243,7 +245,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1229
+#define _APS_NEXT_CONTROL_VALUE         1231
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
