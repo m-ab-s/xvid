@@ -209,18 +209,22 @@ STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Credits"
 FONT 8, "MS Sans Serif"
 BEGIN
+    GROUPBOX        "",IDC_STATIC,4,4,192,48
     CONTROL         "Credits at start of movie",IDC_CREDITS_START,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,12,4,88,10
     EDITTEXT        IDC_CREDITS_START_BEGIN,112,16,76,12,ES_AUTOHSCROLL | 
                     ES_NUMBER
     EDITTEXT        IDC_CREDITS_START_END,112,32,76,12,ES_AUTOHSCROLL | 
                     ES_NUMBER
+    GROUPBOX        "",IDC_STATIC,4,55,192,48
     CONTROL         "Credits at end of movie",IDC_CREDITS_END,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,12,60,88,10
-    EDITTEXT        IDC_CREDITS_END_BEGIN,112,72,76,12,ES_AUTOHSCROLL | 
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,55,88,10
+    EDITTEXT        IDC_CREDITS_END_BEGIN,112,67,76,12,ES_AUTOHSCROLL | 
                     ES_NUMBER
-    EDITTEXT        IDC_CREDITS_END_END,112,88,76,12,ES_AUTOHSCROLL | 
+    EDITTEXT        IDC_CREDITS_END_END,112,83,76,12,ES_AUTOHSCROLL | 
                     ES_NUMBER
+    CONTROL         "Encode credits in greyscale",IDC_CREDITS_GREYSCALE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,104,103,10
     CONTROL         "Desired % rate:",IDC_CREDITS_RATE_RADIO,"Button",
                     BS_AUTORADIOBUTTON | WS_GROUP,12,128,88,12
     EDITTEXT        IDC_CREDITS_RATE,112,128,76,12,ES_AUTOHSCROLL | 
@@ -239,13 +243,11 @@ BEGIN
                     ES_NUMBER
     LTEXT           "Credits start at frame no.:",IDC_STATIC,12,16,88,12,
                     SS_CENTERIMAGE
-    LTEXT           "Credits end at frame no.:",IDC_STATIC,12,88,88,12,
+    LTEXT           "Credits end at frame no.:",IDC_STATIC,12,83,88,12,
                     SS_CENTERIMAGE
-    GROUPBOX        "",IDC_STATIC,4,4,192,48
-    GROUPBOX        "",IDC_STATIC,4,60,192,48
     LTEXT           "Credits end at frame no.:",IDC_STATIC,12,32,88,12,
                     SS_CENTERIMAGE
-    LTEXT           "Credits begin at frame no.:",IDC_STATIC,12,72,88,12,
+    LTEXT           "Credits begin at frame no.:",IDC_STATIC,12,67,88,12,
                     SS_CENTERIMAGE
     GROUPBOX        "Credits rate reduction",IDC_STATIC,4,116,192,96
     LTEXT           "Ending size (KBytes):",IDC_CREDITS_END_STATIC,24,192,76,
@@ -568,7 +570,7 @@ FONT 8, "MS Sans Serif"
 BEGIN
     CTEXT           "GPL'ed MPEG4 video codec demonstration.\nFor educational purposes only.",
                     IDC_STATIC,12,112,168,20
-    CTEXT           "WEBSITE",IDC_WEBSITE,64,92,64,8,SS_NOTIFY | 
+    CTEXT           "WEBSITE",IDC_WEBSITE,6,92,179,8,SS_NOTIFY | 
                     SS_CENTERIMAGE
     CTEXT           "BUILD",IDC_BUILD,8,28,176,8,SS_CENTERIMAGE
     CONTROL         "IDB_LOGO",IDC_STATIC,"Static",SS_BITMAP,24,56,15,13
@@ -576,6 +578,7 @@ BEGIN
     GROUPBOX        "About",IDC_STATIC,4,4,184,132
     DEFPUSHBUTTON   "OK",IDOK,56,144,80,12
     CTEXT           "CORE",IDC_CORE,8,40,176,8,SS_CENTERIMAGE
+    CTEXT           "( SPECIAL BUILD )",IDC_SPECIAL_BUILD,5,102,181,8
 END
 
 IDD_2PASSALT DIALOG DISCARDABLE  0, 0, 200, 217
@@ -583,6 +586,7 @@ STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Alt. Curve"
 FONT 8, "MS Sans Serif"
 BEGIN
+    GROUPBOX        "",IDC_STATIC,4,4,192,152
     CONTROL         "Use Alternative curve system",IDC_USEALT,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,12,4,107,10
     COMBOBOX        IDC_CURVETYPE,112,20,76,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
@@ -600,7 +604,6 @@ BEGIN
     EDITTEXT        IDC_MAXBITRATE,112,164,76,12,ES_AUTOHSCROLL | ES_NUMBER
     EDITTEXT        IDC_OVERIMP,112,180,76,12,ES_AUTOHSCROLL | ES_NUMBER
     EDITTEXT        IDC_OVERDEG,112,196,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    GROUPBOX        "",IDC_STATIC,4,4,192,152
     LTEXT           "Minimum relative quality %:",IDC_STATIC,16,100,96,12,
                     SS_CENTERIMAGE
     LTEXT           "High distance from average %:",IDC_STATIC,12,36,100,12,
@@ -788,6 +791,7 @@ BEGIN
     IDC_FRAMEDROP           "Frame dropping ratio [0-100]. 0 = no frame dropping .. 100 = drop all frames."
     IDC_KFTRESHOLD          "I-frames appearing in the range below this value will be treated as consecutive keyframes."
     IDC_KFREDUCTION         "Reduction of bitrate for the first consecutive i-frames. The last i-frame will get treated normally."
+    IDC_CREDITS_GREYSCALE   "Encode credits in black&white"
 END
 
 #endif    // Englisch (Australien) resources
