@@ -37,6 +37,7 @@ typedef struct
 	int nFlipVideo;
 	int nForceColorspace;
 	unsigned int supported_4cc;
+	int videoinfo_compat;
 } CONFIG;
 
 

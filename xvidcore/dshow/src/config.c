@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: config.c,v 1.1.2.1 2004-01-31 13:44:33 suxen_drol Exp $
+ * $Id: config.c,v 1.1.2.2 2004-02-28 07:24:34 syskin Exp $
  *
  ****************************************************************************/
 
@@ -51,6 +51,7 @@ void LoadRegistryInfo()
 	REG_GET_N("ForceColorspace", g_config.nForceColorspace, 0)
 	REG_GET_N("FlipVideo",  g_config.nFlipVideo, 0)
 	REG_GET_N("Supported_4CC",  g_config.supported_4cc, 0)
+	REG_GET_N("Videoinfo_Compat",  g_config.videoinfo_compat, 0)
 
 	RegCloseKey(hKey);
 }
@@ -83,6 +84,7 @@ void SaveRegistryInfo()
 	REG_SET_N("ForceColorspace", g_config.nForceColorspace);
 	REG_SET_N("FlipVideo", g_config.nFlipVideo);
 	REG_SET_N("Supported_4CC",  g_config.supported_4cc);
+	REG_SET_N("Videoinfo_Compat",  g_config.videoinfo_compat);
 
 	RegCloseKey(hKey);
 }
@@ -135,6 +137,7 @@ BOOL CALLBACK adv_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		SendMessage(GetDlgItem(hwnd, IDC_DIVX), BM_SETCHECK, g_config.supported_4cc & SUPPORT_DIVX, 0);
 		SendMessage(GetDlgItem(hwnd, IDC_DX50), BM_SETCHECK, g_config.supported_4cc & SUPPORT_DX50, 0);
 		SendMessage(GetDlgItem(hwnd, IDC_MP4V), BM_SETCHECK, g_config.supported_4cc & SUPPORT_MP4V, 0);
+		SendMessage(GetDlgItem(hwnd, IDC_COMPAT), BM_SETCHECK, g_config.videoinfo_compat, 0);
 
 		// Set Date & Time of Compilation
 		DPRINTF("(%s %s)", __DATE__, __TIME__);
@@ -156,44 +159,39 @@ BOOL CALLBACK adv_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SendMessage(GetDlgItem(hwnd, IDC_FLIPVIDEO), BM_SETCHECK, g_config.nFlipVideo, 0);
 			g_config.nForceColorspace = 0;
 			SendMessage(GetDlgItem(hwnd, IDC_COLORSPACE), CB_SETCURSEL, g_config.nForceColorspace, 0); 
-			SaveRegistryInfo();
 
 			break;
 		case IDC_DEBLOCK_Y:
 			g_config.nDeblock_Y = !g_config.nDeblock_Y;
-			SaveRegistryInfo();
 			break;
 		case IDC_DEBLOCK_UV:
 			g_config.nDeblock_UV = !g_config.nDeblock_UV;
-			SaveRegistryInfo();
 			break;
 		case IDC_DERING:
 			g_config.nDering = !g_config.nDering;
-			SaveRegistryInfo();
 			break;
 		case IDC_FILMEFFECT:
 			g_config.nFilmEffect = !g_config.nFilmEffect;
-			SaveRegistryInfo();
 			break;
 		case IDC_FLIPVIDEO:
 			g_config.nFlipVideo = !g_config.nFlipVideo;
-			SaveRegistryInfo();
 			break;
 		case IDC_DIVX:
 			g_config.supported_4cc ^= SUPPORT_DIVX;
-			SaveRegistryInfo();
 			break;
 		case IDC_DX50:
 			g_config.supported_4cc ^= SUPPORT_DX50;
-			SaveRegistryInfo();
 			break;
 		case IDC_MP4V:
 			g_config.supported_4cc ^= SUPPORT_MP4V;
-			SaveRegistryInfo();
+			break;
+		case IDC_COMPAT:
+			g_config.videoinfo_compat = !g_config.videoinfo_compat;
 			break;
 		default :
 			return FALSE;
 		}
+		SaveRegistryInfo();
 		break;
 	case WM_NOTIFY:
 		hBrightness = GetDlgItem(hwnd, IDC_BRIGHTNESS);

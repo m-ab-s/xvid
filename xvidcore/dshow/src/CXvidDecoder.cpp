@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.1.2.18 2004-02-07 03:57:39 syskin Exp $
+ * $Id: CXvidDecoder.cpp,v 1.1.2.19 2004-02-28 07:24:34 syskin Exp $
  *
  ****************************************************************************/
 
@@ -331,6 +331,8 @@ HRESULT CXvidDecoder::CheckInputType(const CMediaType * mtIn)
 		   which is equal to ppm_Y:ppm_X */
 		ar_x = vih->bmiHeader.biYPelsPerMeter * abs(hdr->biWidth);
 		ar_y = vih->bmiHeader.biXPelsPerMeter * abs(hdr->biHeight);
+		DPRINTF("VIDEOINFOHEADER PAR: %d:%d -> AR %d:%d",
+			vih->bmiHeader.biYPelsPerMeter,vih->bmiHeader.biXPelsPerMeter, ar_x, ar_y);
 	}
 	else if (*mtIn->FormatType() == FORMAT_VideoInfo2)
 	{
@@ -338,6 +340,7 @@ HRESULT CXvidDecoder::CheckInputType(const CMediaType * mtIn)
 		hdr = &vih2->bmiHeader;
 		ar_x = vih2->dwPictAspectRatioX;
 		ar_y = vih2->dwPictAspectRatioY;
+		DPRINTF("VIDEOINFOHEADER2 AR: %d:%d", ar_x, ar_y);
 	}
 	else
 	{
@@ -386,6 +389,7 @@ HRESULT CXvidDecoder::CheckInputType(const CMediaType * mtIn)
 
 HRESULT CXvidDecoder::GetMediaType(int iPosition, CMediaType *mtOut)
 {
+	BITMAPINFOHEADER * bmih;
 	DPRINTF("GetMediaType");
 
 	if (m_pInput->IsConnected() == FALSE)
@@ -393,22 +397,38 @@ HRESULT CXvidDecoder::GetMediaType(int iPosition, CMediaType *mtOut)
 		return E_UNEXPECTED;
 	}
 
-	VIDEOINFOHEADER2 * vih = (VIDEOINFOHEADER2 *) mtOut->ReallocFormatBuffer(sizeof(VIDEOINFOHEADER2));
-	if (vih == NULL)
-	{
-		return E_OUTOFMEMORY;
+	if (!g_config.videoinfo_compat) {
+		VIDEOINFOHEADER2 * vih = (VIDEOINFOHEADER2 *) mtOut->ReallocFormatBuffer(sizeof(VIDEOINFOHEADER2));
+		if (vih == NULL) return E_OUTOFMEMORY;
+
+		ZeroMemory(vih, sizeof (VIDEOINFOHEADER2));
+		bmih = &(vih->bmiHeader);
+		mtOut->SetFormatType(&FORMAT_VideoInfo2);
+
+		if (ar_x != 0 && ar_y != 0) {
+			vih->dwPictAspectRatioX = ar_x;
+			vih->dwPictAspectRatioY = ar_y;
+		} else { // just to be safe
+			vih->dwPictAspectRatioX = m_create.width;
+			vih->dwPictAspectRatioY = abs(m_create.height);
+		}
+
+	} else {
+
+		VIDEOINFOHEADER * vih = (VIDEOINFOHEADER *) mtOut->ReallocFormatBuffer(sizeof(VIDEOINFOHEADER));
+		if (vih == NULL) return E_OUTOFMEMORY;
+
+		ZeroMemory(vih, sizeof (VIDEOINFOHEADER2));
+		bmih = &(vih->bmiHeader);
+		mtOut->SetFormatType(&FORMAT_VideoInfo);
 	}
 
-	ZeroMemory(vih, sizeof (VIDEOINFOHEADER2));
-	vih->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	vih->bmiHeader.biWidth	= m_create.width;
-	vih->bmiHeader.biHeight = m_create.height;
-	vih->bmiHeader.biPlanes = 1;
+	bmih->biSize = sizeof(BITMAPINFOHEADER);
+	bmih->biWidth	= m_create.width;
+	bmih->biHeight = m_create.height;
+	bmih->biPlanes = 1;
 
-	if (iPosition < 0)
-	{
-		return E_INVALIDARG;
-	}
+	if (iPosition < 0) return E_INVALIDARG;
 
 	switch(iPosition)
 	{
@@ -416,72 +436,72 @@ HRESULT CXvidDecoder::GetMediaType(int iPosition, CMediaType *mtOut)
 	case 0:
 if ( USE_YUY2 )
 {
-		vih->bmiHeader.biCompression = MEDIASUBTYPE_YUY2.Data1;
-		vih->bmiHeader.biBitCount = 16;
+		bmih->biCompression = MEDIASUBTYPE_YUY2.Data1;
+		bmih->biBitCount = 16;
 		mtOut->SetSubtype(&MEDIASUBTYPE_YUY2);
 		break;
 }
 	case 1 :
 if ( USE_YVYU )
 {
-		vih->bmiHeader.biCompression = MEDIASUBTYPE_YVYU.Data1;
-		vih->bmiHeader.biBitCount = 16;
+		bmih->biCompression = MEDIASUBTYPE_YVYU.Data1;
+		bmih->biBitCount = 16;
 		mtOut->SetSubtype(&MEDIASUBTYPE_YVYU);
 		break;
 }
 	case 2 :
 if ( USE_UYVY )
 {
-		vih->bmiHeader.biCompression = MEDIASUBTYPE_UYVY.Data1;
-		vih->bmiHeader.biBitCount = 16;
+		bmih->biCompression = MEDIASUBTYPE_UYVY.Data1;
+		bmih->biBitCount = 16;
 		mtOut->SetSubtype(&MEDIASUBTYPE_UYVY);
 		break;
 }
 	case 3	:
 		if ( USE_IYUV )
 {
-		vih->bmiHeader.biCompression = CLSID_MEDIASUBTYPE_IYUV.Data1;
-		vih->bmiHeader.biBitCount = 12;
+		bmih->biCompression = CLSID_MEDIASUBTYPE_IYUV.Data1;
+		bmih->biBitCount = 12;
 		mtOut->SetSubtype(&CLSID_MEDIASUBTYPE_IYUV);
 		break;
 }
 	case 4	:
 if ( USE_YV12 )
 {
-		vih->bmiHeader.biCompression = MEDIASUBTYPE_YV12.Data1;
-		vih->bmiHeader.biBitCount = 12;
+		bmih->biCompression = MEDIASUBTYPE_YV12.Data1;
+		bmih->biBitCount = 12;
 		mtOut->SetSubtype(&MEDIASUBTYPE_YV12);
 		break;
 }
 	case 5 :
 if ( USE_RGB32 )
 {
-		vih->bmiHeader.biCompression = BI_RGB;
-		vih->bmiHeader.biBitCount = 32;
+		bmih->biCompression = BI_RGB;
+		bmih->biBitCount = 32;
 		mtOut->SetSubtype(&MEDIASUBTYPE_RGB32);
 		break;
 }
 	case 6 :
 if ( USE_RGB24 )
 {
-		vih->bmiHeader.biCompression = BI_RGB;
-		vih->bmiHeader.biBitCount = 24;	
+		bmih->biCompression = BI_RGB;
+		bmih->biBitCount = 24;	
 		mtOut->SetSubtype(&MEDIASUBTYPE_RGB24);
 		break;
 }
 	case 7 :
 if ( USE_RG555 )
 {
-		vih->bmiHeader.biCompression = BI_RGB;
-		vih->bmiHeader.biBitCount = 16;	
+		bmih->biCompression = BI_RGB;
+		bmih->biBitCount = 16;	
 		mtOut->SetSubtype(&MEDIASUBTYPE_RGB555);
 		break;
 }
 	case 8 :
 if ( USE_RG565 )
 {
-		vih->bmiHeader.biCompression = BI_RGB;
-		vih->bmiHeader.biBitCount = 16;	
+		bmih->biCompression = BI_RGB;
+		bmih->biBitCount = 16;	
 		mtOut->SetSubtype(&MEDIASUBTYPE_RGB565);
 		break;
 }	
@@ -489,20 +509,11 @@ if ( USE_RG565 )
 		return VFW_S_NO_MORE_ITEMS;
 	}
 
-	vih->bmiHeader.biSizeImage = GetBitmapSize(&vih->bmiHeader);
-
-	if (ar_x != 0 && ar_y != 0) {
-		vih->dwPictAspectRatioX = ar_x;
-		vih->dwPictAspectRatioY = ar_y;
-	} else { // just to be safe
-		vih->dwPictAspectRatioX = m_create.width;
-		vih->dwPictAspectRatioY = abs(m_create.height);
-	}
+	bmih->biSizeImage = GetBitmapSize(bmih);
 
 	mtOut->SetType(&MEDIATYPE_Video);
-	mtOut->SetFormatType(&FORMAT_VideoInfo2);
 	mtOut->SetTemporalCompression(FALSE);
-	mtOut->SetSampleSize(vih->bmiHeader.biSizeImage);
+	mtOut->SetSampleSize(bmih->biSizeImage);
 
 	return S_OK;
 }
@@ -770,7 +781,7 @@ repeat :
 			return S_FALSE;
 		}
 		
-		pOut->SetDiscontinuity(TRUE);
+//		pOut->SetDiscontinuity(TRUE);
 		pOut->SetSyncPoint(TRUE);
 
 		m_frame.bitstream = (BYTE*)m_frame.bitstream + length;
