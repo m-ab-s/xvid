@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.24 2003-12-10 15:07:42 edgomez Exp $
+ * $Id: decoder.c,v 1.49.2.25 2003-12-13 13:52:25 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1317,7 +1317,7 @@ decoder_bframe(DECODER * dec,
 void decoder_output(DECODER * dec, IMAGE * img, MACROBLOCK * mbs,
 					xvid_dec_frame_t * frame, xvid_dec_stats_t * stats, int coding_type)
 {
-	if (frame->general & (XVID_DEBLOCKY|XVID_DEBLOCKUV))	/* post process */
+	if (frame->general & (XVID_DEBLOCKY|XVID_DEBLOCKUV) && mbs != NULL)	/* post process */
 	{
 		/* note: image is stored to tmp */
 		image_copy(&dec->tmp, img, dec->edged_width, dec->height);
