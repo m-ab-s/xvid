@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: global.h,v 1.21.2.10 2003-10-01 23:23:00 edgomez Exp $
+ * $Id: global.h,v 1.21.2.11 2003-12-08 13:20:59 syskin Exp $
  *
  ****************************************************************************/
 
@@ -204,7 +204,6 @@ typedef struct
 
 	/* encoder specific */
 
-	VECTOR mv16;
 	VECTOR pmvs[4];
 	VECTOR qmvs[4];				/* mvs in quarter pixel resolution */
 
@@ -218,13 +217,6 @@ typedef struct
 
 	VECTOR b_mvs[4];
 	VECTOR b_qmvs[4];
-
-	int mb_type;
-
-	/*
-	 * stuff for block based ME (needed for Qpel ME)
-	 * backup of last integer ME vectors/sad
-	 */
 
 	VECTOR amv; /* average motion vectors from GMC  */
 	int32_t mcsel;
