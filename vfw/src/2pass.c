@@ -41,7 +41,7 @@ int codec_2pass_init(CODEC* codec)
 	DWORD version = -20;
 	DWORD read, wrote;
 
-	int	frames = 0, credits_frames = 0, i_frames = 0;
+	int	frames = 0, credits_frames = 0, i_frames = 0, recminpsize = 0, recminisize = 0;
 	__int64 total_ext = 0, total = 0, i_total = 0, i_boost_total = 0, start = 0, end = 0, start_curved = 0, end_curved = 0;
 	__int64 desired = (__int64)codec->config.desired_size * 1024;
 
@@ -174,6 +174,17 @@ int codec_2pass_init(CODEC* codec)
 				else
 					++credits_frames;
 
+				if (twopass->nns1.quant & NNSTATS_KEYFRAME)
+				{
+					if (!(twopass->nns1.kblk + twopass->nns1.mblk))
+						recminisize = twopass->nns1.bytes;
+				}
+				else
+				{
+					if (!(twopass->nns1.kblk + twopass->nns1.mblk))
+						recminpsize = twopass->nns1.bytes;
+				}
+
 				++frames;
 			}
 			twopass->keyframe_locations[i_frames] = frames;
@@ -257,6 +268,10 @@ int codec_2pass_init(CODEC* codec)
 				{
 					twopass->minpsize = (twopass->nns1.kblk + 88) / 8;
 					twopass->minisize = ((twopass->nns1.kblk * 22) + 240) / 8;
+					if (recminpsize > twopass->minpsize)
+						twopass->minpsize = recminpsize;
+					if (recminisize > twopass->minisize)
+						twopass->minisize = recminisize;
 				}
 
 				if (!codec_is_in_credits(&codec->config, frames) &&
@@ -390,6 +405,17 @@ int codec_2pass_init(CODEC* codec)
 				}
 
 				total += twopass->nns1.bytes;
+
+				if (twopass->nns1.quant & NNSTATS_KEYFRAME)
+				{
+					if (!(twopass->nns1.kblk + twopass->nns1.mblk))
+						recminisize = twopass->nns1.bytes;
+				}
+				else
+				{
+					if (!(twopass->nns1.kblk + twopass->nns1.mblk))
+						recminpsize = twopass->nns1.bytes;
+				}
 
 				++frames;
 			}
@@ -527,6 +553,10 @@ int codec_2pass_init(CODEC* codec)
 				{
 					twopass->minpsize = (twopass->nns1.kblk + 88) / 8;
 					twopass->minisize = ((twopass->nns1.kblk * 22) + 240) / 8;
+					if (recminpsize > twopass->minpsize)
+						twopass->minpsize = recminpsize;
+					if (recminisize > twopass->minisize)
+						twopass->minisize = recminisize;
 				}
 
 				if (!codec_is_in_credits(&codec->config, frames) &&
@@ -958,21 +988,21 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 			bytes2 += ((int)dbytes);
 		}
 
-		if (frame->intra)
+		// cap bytes2 to first pass size, lowers number of quant=1 frames
+		if (bytes2 > bytes1)
 		{
-			if (bytes2 < twopass->minisize)
-			{
-				curve_comp_error -= twopass->minisize - bytes2;
-				bytes2 = twopass->minisize;
-			}
+			curve_comp_error += bytes2 - bytes1;
+			bytes2 = bytes1;
 		}
 		else
 		{
-			// cap bytes2 to first pass size, lowers number of quant=1 frames
-			if (bytes2 > bytes1)
+			if (frame->intra)
 			{
-				curve_comp_error += bytes2 - bytes1;
-				bytes2 = bytes1;
+				if (bytes2 < twopass->minisize)
+				{
+					curve_comp_error -= twopass->minisize - bytes2;
+					bytes2 = twopass->minisize;
+				}
 			}
 			else if (bytes2 < twopass->minpsize)
 				bytes2 = twopass->minpsize;
@@ -1009,8 +1039,7 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 
 	// Foxer: scale overflow in relation to average size, so smaller frames don't get
 	// too much/little bitrate
-	overflow = (int)((double)overflow * bytes2 / twopass->average_frame *
-		(bytes1 - bytes2) / bytes1);
+	overflow = (int)((double)overflow * bytes2 / twopass->average_frame);
 
 	// Foxer: reign in overflow with huge frames
 	if (labs(overflow) > labs(twopass->overflow))
@@ -1039,10 +1068,14 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 		bytes2 = twopass->max_framesize;
 	}
 
-	if (bytes2 < 1) 
+	// make sure to not scale below the minimum framesize
+	if (twopass->nns1.quant & NNSTATS_KEYFRAME)
 	{
-		bytes2 = 1;
+		if (bytes2 < twopass->minisize)
+			bytes2 = twopass->minisize;
 	}
+	else if (bytes2 < twopass->minpsize)
+		bytes2 = twopass->minpsize;
 
 	twopass->bytes1 = bytes1;
 	twopass->bytes2 = bytes2;
@@ -1262,3 +1295,4 @@ void codec_2pass_finish(CODEC* codec)
 		return;
 	}
 }
+
