@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.1 2003-02-22 08:49:44 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.95.2.2 2003-03-09 00:28:09 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -634,8 +634,10 @@ set_stats(xvid_enc_stats_t * stats, RateControl * rc,
  * Returned values :
  *    - >0               - output bytes
  *    - 0                - no output
+ *    - XVID_ERR_VERSION - wrong version passed to core
+ *    - XVID_ERR_END     - End of stream reached before end of coding
  *    - XVID_ERR_FORMAT  - the image subsystem reported the image had a wrong
- *                        format
+ *                         format
  ****************************************************************************/
 
 
@@ -1029,12 +1031,14 @@ repeat:
 
 done_flush:
 
+#if 0
 	{
 		char tmp[100];
 		wsprintf(tmp,"\\frame%03i.pgm", pEnc->m_framenum);
 		image_dump_yuvpgm(&pEnc->current->image, pEnc->mbParam.edged_width,
 			pEnc->mbParam.width, pEnc->mbParam.height, tmp);
 	}
+#endif
 
 	/* packed_mode: repeat */
 	pEnc->flush_bframes = 1;
