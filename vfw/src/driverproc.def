@@ -1,0 +1,7 @@
+EXPORTS
+	DriverProc
+	decore
+	encore
+	xvid_init
+	xvid_decore
+	xvid_encore
