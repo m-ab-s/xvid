@@ -10,6 +10,7 @@
 #define IDD_CPU                         105
 #define IDD_QUANTMATRIX                 106
 #define IDD_ABOUT                       107
+#define IDD_2PASSALT                    108
 #define IDC_MODE                        1000
 #define IDC_SLIDER                      1001
 #define IDC_VALUE                       1002
@@ -202,14 +203,24 @@
 #define IDC_QINTER61                    1189
 #define IDC_QINTER62                    1190
 #define IDC_QINTER63                    1191
+#define IDC_DEFAULTS                    1192
+#define IDC_USEALT                      1193
+#define IDC_USEAUTO                     1194
+#define IDC_AUTOSTR                     1195
+#define IDC_USEAUTOBONUS                1196
+#define IDC_BONUSBIAS                   1197
+#define IDC_CURVETYPE                   1198
+#define IDC_ALTCURVEHIGH                1199
+#define IDC_ALTCURVELOW                 1201
+#define IDC_MINQUAL                     1202
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        108
+#define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1192
+#define _APS_NEXT_CONTROL_VALUE         1203
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

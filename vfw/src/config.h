@@ -5,6 +5,7 @@
 
 
 HINSTANCE hInst;
+HWND hTooltip;
 
 
 /* small hack */
@@ -21,7 +22,7 @@ HINSTANCE hInst;
 #define XVID_REG_CHILD	"XviD"
 #define XVID_REG_CLASS	"config"
 
-#define XVID_HELP		"Move cursor over item to view help"
+#define XVID_BUILD		__TIME__ ", " __DATE__
 #define XVID_WEBSITE	"http://www.xvid.org"
 
 /* constants */
@@ -29,13 +30,14 @@ HINSTANCE hInst;
 #define CONFIG_2PASS_2_FILE "\\videogk.stats"
 
 /* property sheets - sheets can be reordered here */
-#define DLG_COUNT		5
+#define DLG_COUNT		6
 
 #define DLG_GLOBAL		0
 #define DLG_QUANT		1
 #define DLG_2PASS		2
-#define DLG_CREDITS		3
-#define DLG_CPU			4
+#define DLG_2PASSALT	3
+#define DLG_CREDITS		4
+#define DLG_CPU			5
 
 /* codec modes */
 #define DLG_MODE_CBR			0
@@ -60,6 +62,8 @@ HINSTANCE hInst;
 #define CREDITS_START			1
 #define CREDITS_END				2
 
+#define RAD2DEG 57.295779513082320876798154814105
+#define DEG2RAD 0.017453292519943295769236907684886
 
 typedef struct
 {
@@ -89,6 +93,15 @@ typedef struct
 	int dummy2pass;
 	int curve_compression_high;
 	int curve_compression_low;
+	int use_alt_curve;
+	int alt_curve_use_auto;
+	int alt_curve_auto_str;
+	int alt_curve_use_auto_bonus_bias;
+	int alt_curve_bonus_bias;
+	int alt_curve_type;
+	int alt_curve_high_dist;
+	int alt_curve_low_dist;
+	int alt_curve_min_rel_qual;
 	int bitrate_payback_delay;
 	int bitrate_payback_method;
 	char stats1[MAX_PATH];
@@ -108,18 +121,11 @@ typedef struct
 	int credits_start_size;
 	int credits_end_size;
 
+//	char build[50];
 	DWORD cpu;
-
 	float fquant;
-
 	BOOL save;
 } CONFIG;
-
-typedef struct HELPRECT
-{
-	int item;
-	RECT rect;
-} HELPRECT;
 
 typedef struct PROPSHEETINFO
 {
@@ -127,6 +133,19 @@ typedef struct PROPSHEETINFO
 	CONFIG * config;
 } PROPSHEETINFO;
 
+typedef struct REG_INT
+{
+	char* reg_value;
+	int* config_int;
+	int def;
+} REG_INT;
+
+typedef struct REG_STR
+{
+	char* reg_value;
+	char* config_str;
+	char* def;
+} REG_STR;
 
 void config_reg_get(CONFIG *);
 void config_reg_set(CONFIG *);
@@ -141,7 +160,7 @@ void adv_upload(HWND, int, CONFIG *);
 void adv_download(HWND, int, CONFIG *);
 void quant_upload(HWND, CONFIG *);
 void quant_download(HWND, CONFIG *);
-LRESULT CALLBACK msg_proc(int, WPARAM, LPARAM);
+BOOL CALLBACK enum_tooltips(HWND, LPARAM);
 BOOL CALLBACK main_proc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK adv_proc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK quantmatrix_proc(HWND, UINT, WPARAM, LPARAM);
