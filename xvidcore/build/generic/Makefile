@@ -32,7 +32,6 @@ RM = rm -rf
 
 # Their Objects
 OBJECTS=$(GENERIC_OBJECTS)
-OBJECTS+=$(DIVX4COMPAT_OBJECTS)
 OBJECTS+=$(ASSEMBLY_OBJECTS)
 OBJECTS+=$(DCT_IA64_OBJECTS)
 
@@ -135,7 +134,6 @@ clean:
 
 distclean: clean
 	@echo -n "Cleaning generated files... "
-	@$(RM) libxvidcore.def
 	@$(RM) platform.inc
 	@$(RM) config.log
 	@$(RM) config.status
