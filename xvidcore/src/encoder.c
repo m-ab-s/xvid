@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.2 2003-03-09 00:28:09 edgomez Exp $
+ *  $Id: encoder.c,v 1.95.2.3 2003-03-10 00:38:49 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -720,7 +720,30 @@ repeat:
 					pEnc->bframenum_head, pEnc->bframenum_tail,
 					pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
 
+			if (pEnc->bframes[pEnc->bframenum_head]->vop_flags & XVID_EXTRASTATS) {
+				image_copy(&pEnc->sOriginal, &pEnc->bframes[pEnc->bframenum_head]->image,
+						   pEnc->mbParam.edged_width, pEnc->mbParam.height);
+			}
+
 			FrameCodeB(pEnc, pEnc->bframes[pEnc->bframenum_head], &bs);
+
+			if (pEnc->bframes[pEnc->bframenum_head]->vop_flags & XVID_EXTRASTATS) {
+				stats->sse_y =
+					plane_sse( pEnc->sOriginal.y, pEnc->bframes[pEnc->bframenum_head]->image.y,
+							   pEnc->mbParam.edged_width, pEnc->mbParam.width,
+							   pEnc->mbParam.height);
+
+				stats->sse_u =
+					plane_sse( pEnc->sOriginal.u, pEnc->bframes[pEnc->bframenum_head]->image.u,
+							   pEnc->mbParam.edged_width/2, pEnc->mbParam.width/2,
+							   pEnc->mbParam.height/2);
+
+				stats->sse_v =
+					plane_sse( pEnc->sOriginal.v, pEnc->bframes[pEnc->bframenum_head]->image.v,
+							   pEnc->mbParam.edged_width/2, pEnc->mbParam.width/2,
+							   pEnc->mbParam.height/2);		
+			}
+
 			set_stats(stats, &pEnc->rate_control, &pEnc->mbParam, pEnc->bframes[pEnc->bframenum_head]);
 
 			pEnc->bframenum_head++;
@@ -824,8 +847,8 @@ repeat:
 		    pEnc->mbParam.width, pEnc->mbParam.height, pEnc->mbParam.edged_width);
     }
 
-    if (xFrame->vop_flags & XVID_EXTRASTATS)
-    {	image_copy(&pEnc->sOriginal, &pEnc->current->image,
+    if (xFrame->vop_flags & XVID_EXTRASTATS) {
+		image_copy(&pEnc->sOriginal, &pEnc->current->image,
 		       pEnc->mbParam.edged_width, pEnc->mbParam.height);
     }
 
@@ -1008,8 +1031,8 @@ repeat:
 
     }
 
-	if (xFrame->vop_flags & XVID_EXTRASTATS)
-	{	stats->sse_y =
+	if (xFrame->vop_flags & XVID_EXTRASTATS) {
+		stats->sse_y =
 			plane_sse( pEnc->sOriginal.y, pEnc->current->image.y,
 					   pEnc->mbParam.edged_width, pEnc->mbParam.width,
 					   pEnc->mbParam.height);
@@ -1701,7 +1724,7 @@ FrameCodeB(Encoder * pEnc,
 				mb->quant = frame->quant;
 			
 				mb->cbp =
-					MBTransQuantInterBVOP(&pEnc->mbParam, frame, mb, dct_codes, qcoeff);
+					MBTransQuantInterBVOP(&pEnc->mbParam, frame, mb, x, y,  dct_codes, qcoeff);
 
 				if ( (mb->mode == MODE_DIRECT) && (mb->cbp == 0)
 					&& (mb->pmvs[3].x == 0) && (mb->pmvs[3].y == 0) ) {
