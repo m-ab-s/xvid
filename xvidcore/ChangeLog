@@ -6,6 +6,118 @@
 #
 
 
+2004-02-29 13:08:38 GMT	                                	patch-38
+
+    Summary:
+      Win32 project fixes for xvid_encraw and xvid_decraw.
+    Revision:
+      xvidcore--devapi4--1.0--patch-38
+
+    From sysKin:
+     * xvid_dec/encraw were linking against libxvidcore.lib. Now they link
+       against xvidcore.dll.a
+    
+    NB: xvid_bench is left as is though it doesn't link. This program
+        requires access to internal functions which aren't available
+        through the dll link lib. No good solution exists for MSVC to
+        build both a dll+its link lib+static lib.
+
+    modified files:
+     build/win32/xvid_decraw.dsp build/win32/xvid_encraw.dsp
+
+
+2004-02-29 12:56:36 GMT	                                	patch-37
+
+    Summary:
+      DShow updates
+    Revision:
+      xvidcore--devapi4--1.0--patch-37
+
+    Bunch of DShow updates
+
+    modified files:
+     dshow/src/CXvidDecoder.cpp dshow/src/resource.h
+     dshow/src/xvid.ax.rc
+
+
+2004-02-29 12:55:41 GMT	                                	patch-36
+
+    Summary:
+      VFW updates.
+    Revision:
+      xvidcore--devapi4--1.0--patch-36
+
+    * Bunch of VFW frontends updates.
+
+    modified files:
+     vfw/src/codec.c vfw/src/codec.h vfw/src/config.c
+     vfw/src/resource.rc vfw/src/status.c vfw/vfw.dsp
+
+
+2004-02-29 12:49:24 GMT	                                	patch-35
+
+    Summary:
+      Artefact workaround in bframes.
+    Revision:
+      xvidcore--devapi4--1.0--patch-35
+
+    From sysKin:
+     * Workaround for some artefacts appearing in bframes.
+
+    modified files:
+     src/motion/estimation_bvop.c
+
+
+2004-02-29 12:46:13 GMT	                                	patch-34
+
+    Summary:
+      Decoder buffer overflow fix.
+    Revision:
+      xvidcore--devapi4--1.0--patch-34
+
+    From sysKin:
+     * Avoids buffer overflow when reading the last align byte. Our
+       bitstream do 4 byte reading because of some platform contraints
+       (ARM) and can cause buffer overflow reads.
+
+    modified files:
+     src/decoder.c
+
+
+2004-02-29 11:53:47 GMT	                                	patch-33
+
+    Summary:
+      Compatibility decoding for old bitstreams.
+    Revision:
+      xvidcore--devapi4--1.0--patch-33
+
+    From syskin:
+     * old core versions used in dev-api-3 distributed by nearly all win32 bin
+       builders used to have a edging bug. So when this information is known,
+       workaround the bug.
+
+    modified files:
+     src/decoder.c src/encoder.c src/image/image.c
+     src/image/image.h
+
+#########################################################################
+# 1.0.0 RC2
+#########################################################################
+
+2004-02-08 01:06:40 GMT	                                	patch-32
+
+    Summary:
+      Marking RC2
+    Revision:
+      xvidcore--devapi4--1.0--patch-32
+
+    Marking RC2
+    
+
+    modified files:
+     ChangeLog build/generic/configure.in
+
+
 2004-02-07 13:54:24 GMT	                                	patch-31
 
     Summary:
@@ -1065,7 +1177,7 @@
        the bvop lag frame (black with error message).
     
     Fixing previous patch a bit:
-     * added $Id: ChangeLog,v 1.1.2.7 2004-02-08 13:16:37 edgomez Exp $ fields
+     * added $Id: ChangeLog,v 1.1.2.8 2004-03-03 20:57:36 edgomez Exp $ fields
      * Fixed copyright
 
     modified files:
