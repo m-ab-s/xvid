@@ -47,7 +47,7 @@
 #define FINAL_SKIP_THRESH	(50)
 #define MAX_SAD00_FOR_SKIP	(20)
 #define MAX_CHROMA_SAD_FOR_SKIP	(22)
-#define SKIP_THRESH_B (15)
+#define SKIP_THRESH_B (25)
 
 #define CHECK_CANDIDATE(X,Y,D) { \
 (*CheckCandidate)((const int)(X),(const int)(Y), (D), &iDirection, data ); }
@@ -1455,7 +1455,7 @@ SearchDirect(const IMAGE * const f_Ref,
 
 	SubpelRefine(Data);
 
-	*Data->iMinSAD +=  1 * Data->lambda16; // one bit is needed to code direct mode
+//	*Data->iMinSAD +=  1 * Data->lambda16; // one bit is needed to code direct mode
 	*best_sad = *Data->iMinSAD;
 
 	if (b_mb->mode == MODE_INTER4V) 
@@ -1579,8 +1579,6 @@ SearchInterpolate(const uint8_t * const f_Ref,
 
 	} while (!(iDirection));
 
-	*fData->iMinSAD +=  2 * fData->lambda16; // two bits are needed to code interpolate mode.
-
 	if (fData->qpel) {
 		CheckCandidate = CheckCandidateInt;
 		fData->qpel_precision = bData.qpel_precision = 1;
@@ -1594,6 +1592,8 @@ SearchInterpolate(const uint8_t * const f_Ref,
 		fData->currentQMV[2] = fData->currentQMV[0];
 		SubpelRefine(&bData);
 	}
+	
+	*fData->iMinSAD +=  2 * fData->lambda16; // two bits are needed to code interpolate mode.
 
 	if (*fData->iMinSAD < *best_sad) {
 		*best_sad = *fData->iMinSAD;
@@ -1655,7 +1655,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 	Data.iEdgedWidth = pParam->edged_width;
 	Data.currentMV = currentMV; Data.currentQMV = currentQMV;
 	Data.iMinSAD = &iMinSAD;
-	Data.lambda16 = lambda_vec16[frame->quant];
+	Data.lambda16 = lambda_vec16[frame->quant] + 2;
 	Data.qpel = pParam->m_quarterpel;
 	Data.rounding = 0;
 
@@ -1752,7 +1752,6 @@ MotionEstimationBVOP(MBParam * const pParam,
 				case MODE_DIRECT:
 				case MODE_DIRECT_NO4V:
 					d_count++;
-					break;
 				default:
 					break;
 			}
