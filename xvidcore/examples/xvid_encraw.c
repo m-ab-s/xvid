@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.11 2003-03-23 04:01:32 suxen_drol Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.12 2003-03-25 11:01:48 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -90,6 +90,7 @@ static int ARG_DUMP = 0;
 static int ARG_LUMIMASKING = 0;
 static int ARG_BITRATE = 0;
 static char * ARG_PASS1 = 0;
+static char * ARG_PASS2 = 0;
 static int ARG_QUANTI = 0;
 static int ARG_QUALITY = 5;
 static float ARG_FRAMERATE = 25.00f;
@@ -210,6 +211,11 @@ main(int argc,
 		} else if (strcmp("-pass1", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_PASS1 = argv[i];
+		} else if (strcmp("-pass2", argv[i]) == 0 && i < argc - 2) {
+			i++;
+			ARG_PASS1 = argv[i];
+            i++;
+            ARG_PASS2 = argv[i];
 		} else if (strcmp("-max_bframes", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_MAXBFRAMES = atoi(argv[i]);
@@ -566,7 +572,8 @@ usage()
 	fprintf(stderr,	" -bquant_ratio  integer: bframe quantizer ratio (default=150)\n");
 	fprintf(stderr,	" -bquant_offset integer: bframe quantizer offset (default=100)\n");
 	fprintf(stderr, " -framerate     float  : target framerate (>0)\n");
-    fprintf(stderr,	" -pass1         string: fisrt pass stats file\n");
+    fprintf(stderr,	" -pass1 filename      : stats filename\n");
+    fprintf(stderr,	" -pass2 filename1 filename2    : stats amd scaled-stats filename\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Other options\n");
 	fprintf(stderr, " -asm            : use assembly optmized code\n");
@@ -711,7 +718,8 @@ enc_init(int use_assembler)
 	int xerr;
     xvid_plugin_cbr_t cbr;
     xvid_plugin_2pass1_t rc2pass1;
-    xvid_enc_plugin_t plugins[5];
+    xvid_plugin_2pass2_t rc2pass2;
+    xvid_enc_plugin_t plugins[6];
 	xvid_gbl_init_t xvid_gbl_init;
 	xvid_enc_create_t xvid_enc_create;
 
@@ -766,7 +774,16 @@ enc_init(int use_assembler)
 		xvid_enc_create.num_plugins++;
     }
 
-    if (ARG_PASS1) {
+    if (ARG_PASS1 && ARG_PASS2) {
+        rc2pass2.version = XVID_VERSION;
+        memset(&rc2pass2, 0, sizeof(xvid_plugin_2pass2_t));
+        rc2pass2.filename1 = ARG_PASS1;
+        rc2pass2.filename2 = ARG_PASS2;
+
+        plugins[xvid_enc_create.num_plugins].func = xvid_plugin_2pass2;
+		plugins[xvid_enc_create.num_plugins].param = &rc2pass2;
+		xvid_enc_create.num_plugins++;
+    } else if (ARG_PASS1) {
         rc2pass1.version = XVID_VERSION;
         memset(&rc2pass1, 0, sizeof(xvid_plugin_2pass1_t));
         rc2pass1.filename = ARG_PASS1;
@@ -776,7 +793,8 @@ enc_init(int use_assembler)
 		xvid_enc_create.num_plugins++;
     }
 
-	if (ARG_LUMIMASKING) {
+
+    if (ARG_LUMIMASKING) {
 		plugins[xvid_enc_create.num_plugins].func = xvid_plugin_lumimasking;
 		plugins[xvid_enc_create.num_plugins].param = NULL;
 		xvid_enc_create.num_plugins++;

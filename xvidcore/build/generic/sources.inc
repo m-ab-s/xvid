@@ -23,6 +23,7 @@ SRC_GENERIC = \
 	$(SRCDIR)/plugins/plugin_fixed.c \
 	$(SRCDIR)/plugins/plugin_cbr.c \
 	$(SRCDIR)/plugins/plugin_2pass1.c \
+	$(SRCDIR)/plugins/plugin_2pass2.c \
 	$(SRCDIR)/plugins/plugin_lumimasking.c \
 	$(SRCDIR)/plugins/plugin_dump.c \
 	$(SRCDIR)/plugins/plugin_psnr.c \

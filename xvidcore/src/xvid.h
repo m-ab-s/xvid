@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.10 2003-03-23 04:01:49 suxen_drol Exp $
+ * $Id: xvid.h,v 1.27.2.11 2003-03-25 10:57:02 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -370,7 +370,8 @@ typedef struct
 
 xvid_plugin_func xvid_plugin_fixed;   /* fixed quantizer control */
 xvid_plugin_func xvid_plugin_cbr;   /* constant bitrate control */
-xvid_plugin_func xvid_plugin_2pass1;   /* 2pass rate control: pass 1 */
+xvid_plugin_func xvid_plugin_2pass1;   /* 2pass rate control: first pass */
+xvid_plugin_func xvid_plugin_2pass2;   /* 2pass rate control: second pass */
 
 xvid_plugin_func xvid_plugin_lumimasking;  /* lumimasking */
 
@@ -404,6 +405,42 @@ typedef struct {
 } xvid_plugin_2pass1_t;
 
 
+#define XVID_CURVE_COSINE   0   /* low aggressiveness */
+#define XVID_CURVE_LINEAR   1   /* medium aggressiveness */
+#define XVID_CURVE_SINE     2   /* high aggressiveness */
+
+#define XVID_PAYBACK_BIAS   0   /* payback with bias */
+#define XVID_PAYBACK_PROP   1   /* payback proportionally */
+
+typedef struct {
+    int version;
+    char * filename1;
+    char * filename2;
+
+    int keyframe_boost;             /* keyframe boost percentage: [0..100...]; */
+    int payback_method;
+    int bitrate_payback_delay;
+    int curve_compression_high;
+    int curve_compression_low;
+    int max_overflow_improvement;
+    int max_overflow_degradation;
+    int min_quant[3];
+    int max_quant[3];
+
+    int use_alt_curve;
+	int alt_curve_high_dist;
+	int alt_curve_low_dist;
+    int alt_curve_use_auto;
+	int alt_curve_auto_str;
+	int alt_curve_type; /* XVID_CURVE_ */
+	int alt_curve_min_rel_qual;
+	int alt_curve_use_auto_bonus_bias;
+    int alt_curve_bonus_bias;
+
+    int kftreshold;
+	int kfreduction;
+    int min_key_interval;
+}xvid_plugin_2pass2_t;
 
 
 /*****************************************************************************
