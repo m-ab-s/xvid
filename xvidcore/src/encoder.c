@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.33 2003-01-05 03:30:44 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.76.2.34 2003-01-05 16:18:47 syskin Exp $
  *
  ****************************************************************************/
 
@@ -674,7 +674,8 @@ encoder_encode_bframes(Encoder * pEnc,
 {
 	uint16_t x, y;
 	Bitstream bs;
-	uint32_t bits, mode;
+	uint32_t bits;
+	int mode;
 
 	int input_valid = 1;
 	int bframes_count = 0;
