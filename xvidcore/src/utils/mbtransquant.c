@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbtransquant.c,v 1.21.2.19 2003-11-23 17:01:08 edgomez Exp $
+ * $Id: mbtransquant.c,v 1.21.2.20 2003-11-24 22:06:19 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -647,11 +647,11 @@ MBFrameToField(int16_t data[6 * 64])
  *    IEEE Transactions on Image Processing, Vol.9, No.8, Aug. 2000.
  *
  * we are at stake with a simplified Bellmand-Ford / Dijkstra Single
- * Source Shorted Path algo. But due to the underlying graph structure
+ * Source Shortest Path algo. But due to the underlying graph structure
  * ("Trellis"), it can be turned into a dynamic programming algo,
  * partially saving the explicit graph's nodes representation. And
  * without using a heap, since the open frontier of the DAG is always
- * known, and of fixed sized.
+ * known, and of fixed size.
  *--------------------------------------------------------------------------*/
 
 
@@ -799,19 +799,19 @@ dct_quantize_trellis_c(int16_t *const Out,
 					   int Non_Zero)
 {
 
-    /*
-	 * Note: We should search last non-zero coeffs on *real* DCT input coeffs (In[]),
-	 * not quantized one (Out[]). However, it only improves the result *very*
-	 * slightly (~0.01dB), whereas speed drops to crawling level :)
-	 * Well, actually, taking 1 more coeff past Non_Zero into account sometimes helps.
-	 */
+	/* Note: We should search last non-zero coeffs on *real* DCT input coeffs
+	 * (In[]), not quantized one (Out[]). However, it only improves the result
+	 * *very* slightly (~0.01dB), whereas speed drops to crawling level :)
+	 * Well, actually, taking 1 more coeff past Non_Zero into account sometimes
+	 * helps. */
 	typedef struct { int16_t Run, Level; } NODE;
 
 	NODE Nodes[65], Last;
 	uint32_t Run_Costs0[64+1];
 	uint32_t * const Run_Costs = Run_Costs0 + 1;
 
-	const int Lambda = Trellis_Lambda_Tabs[Q-1];    /* it's 1/lambda, actually */
+	/* it's 1/lambda, actually */
+	const int Lambda = Trellis_Lambda_Tabs[Q-1];
 
 	int Run_Start = -1;
 	uint32_t Min_Cost = 2<<TL_SHIFT;
@@ -820,7 +820,9 @@ dct_quantize_trellis_c(int16_t *const Out,
 	uint32_t Last_Cost = 0;
 
 	int i, j, sum;
-	Run_Costs[-1] = 2<<TL_SHIFT;                          /* source (w/ CBP penalty) */
+
+	/* source (w/ CBP penalty) */
+	Run_Costs[-1] = 2<<TL_SHIFT;
 
 	Non_Zero = Find_Last(Out, Zigzag, Non_Zero);
 	if (Non_Zero<0)
@@ -860,16 +862,14 @@ dct_quantize_trellis_c(int16_t *const Out,
 				const uint32_t Cost = Cost_Base + (Code_Len20[Run-1]<<TL_SHIFT);
 				const uint32_t lCost = Cost_Base + (Code_Len24[Run-1]<<TL_SHIFT);
 
-				/*
-				 * TODO: what about tie-breaks? Should we favor short runs or
+				/* TODO: what about tie-breaks? Should we favor short runs or
 				 * long runs? Although the error is the same, it would not be
-				 * spread the same way along high and low frequencies...
-				 */
+				 * spread the same way along high and low frequencies... */
 
-				/* (I'd say: favour short runs => hifreq errors (HVS) -- gruel ) */
+				/* Gruel: I'd say, favour short runs => hifreq errors (HVS) */
 
 				if (Cost<Best_Cost) {
-					Best_Cost    = Cost;
+					Best_Cost	 = Cost;
 					Nodes[i].Run = Run;
 				}
 
@@ -881,7 +881,8 @@ dct_quantize_trellis_c(int16_t *const Out,
 			}
 			if (Last_Node==i)
 				Last.Level = Nodes[i].Level;
-		} else { /* "big" levels */
+		} else if (51U>(uint32_t)(Level1+25)) {
+			/* "big" levels (not less than ESC3, though) */
 			const uint8_t *Tbl_L1, *Tbl_L2, *Tbl_L1_Last, *Tbl_L2_Last;
 			int Level2;
 			int dQ1, dQ2;
@@ -893,16 +894,16 @@ dct_quantize_trellis_c(int16_t *const Out,
 				dQ1 = Level1*Mult-AC + Bias;
 				dQ2 = dQ1 - Mult;
 				Level2 = Level1-1;
-				Tbl_L1      = (Level1<=24) ? B16_17_Code_Len[Level1-1]     : Code_Len0;
-				Tbl_L2      = (Level2<=24) ? B16_17_Code_Len[Level2-1]     : Code_Len0;
+				Tbl_L1		= (Level1<=24) ? B16_17_Code_Len[Level1-1]	   : Code_Len0;
+				Tbl_L2		= (Level2<=24) ? B16_17_Code_Len[Level2-1]	   : Code_Len0;
 				Tbl_L1_Last = (Level1<=6) ? B16_17_Code_Len_Last[Level1-1] : Code_Len0;
 				Tbl_L2_Last = (Level2<=6) ? B16_17_Code_Len_Last[Level2-1] : Code_Len0;
 			} else { /* Level1<-1 */
 				dQ1 = Level1*Mult-AC - Bias;
 				dQ2 = dQ1 + Mult;
 				Level2 = Level1 + 1;
-				Tbl_L1      = (Level1>=-24) ? B16_17_Code_Len[Level1^-1]      : Code_Len0;
-				Tbl_L2      = (Level2>=-24) ? B16_17_Code_Len[Level2^-1]      : Code_Len0;
+				Tbl_L1		= (Level1>=-24) ? B16_17_Code_Len[Level1^-1]	  : Code_Len0;
+				Tbl_L2		= (Level2>=-24) ? B16_17_Code_Len[Level2^-1]	  : Code_Len0;
 				Tbl_L1_Last = (Level1>=- 6) ? B16_17_Code_Len_Last[Level1^-1] : Code_Len0;
 				Tbl_L2_Last = (Level2>=- 6) ? B16_17_Code_Len_Last[Level2^-1] : Code_Len0;
 			}
@@ -917,11 +918,10 @@ dct_quantize_trellis_c(int16_t *const Out,
 				uint32_t Cost1, Cost2;
 				int bLevel;
 
-				/*
-				 * for sub-optimal (but slightly worth it, speed-wise) search, uncomment the following:
-				 *      if (Cost_Base>=Best_Cost) continue;
-				 * (? doesn't seem to have any effect -- gruel )
-				 */
+				/* for sub-optimal (but slightly worth it, speed-wise) search,
+				 * uncomment the following:
+				 *		if (Cost_Base>=Best_Cost) continue;
+				 * (? doesn't seem to have any effect -- gruel ) */
 
 				Cost1 = Cost_Base + (Tbl_L1[Run-1]<<TL_SHIFT);
 				Cost2 = Cost_Base + (Tbl_L2[Run-1]<<TL_SHIFT) + dDist21;
@@ -956,8 +956,28 @@ dct_quantize_trellis_c(int16_t *const Out,
 					Last_Node  = i;
 				}
 			} /* end of "for Run" */
+		} else {
+			/* Very very high levels, with no chance of being optimizable
+			 * => Simply pick best Run. */
+			int Run;
+			for(Run=i-Run_Start; Run>0; --Run) {  
+				/* 30 bits + no distortion */
+				const uint32_t Cost = (30<<TL_SHIFT) + Run_Costs[i-Run];
+				if (Cost<Best_Cost) {
+					Best_Cost = Cost;
+					Nodes[i].Run   = Run;
+					Nodes[i].Level = Level1;
+				}
 
+				if (Cost<Last_Cost) {
+					Last_Cost  = Cost;
+					Last.Run   = Run;
+					Last.Level = Level1;
+					Last_Node  = i;	 
+				}
+			}
 		}
+
 
 		Run_Costs[i] = Best_Cost;
 
@@ -965,23 +985,22 @@ dct_quantize_trellis_c(int16_t *const Out,
 			Min_Cost = Best_Cost;
 			Run_Start = i;
 		} else {
-			/*
-			 * as noticed by Michael Niedermayer (michaelni at gmx.at), there's
-			 * a code shorter by 1 bit for a larger run (!), same level. We give
-			 * it a chance by not moving the left barrier too much.
-			 */
-
+			/* as noticed by Michael Niedermayer (michaelni at gmx.at),
+			 * there's a code shorter by 1 bit for a larger run (!), same
+			 * level. We give it a chance by not moving the left barrier too
+			 * much. */
 			while( Run_Costs[Run_Start]>Min_Cost+(1<<TL_SHIFT) )
 				Run_Start++;
 
-			/* spread on preceding coeffs the cost incurred by skipping this one */
+			/* spread on preceding coeffs the cost incurred by skipping this
+			 * one */
 			for(j=Run_Start; j<i; ++j) Run_Costs[j] += Dist0;
 			Min_Cost += Dist0;
 		}
 	}
 
-	/* It seems trellis doesn't give good results... just compute the Out sum and
-	 * quit (even if we did not modify it, upperlayer relies on this data) */
+	/* It seems trellis doesn't give good results... just compute the Out sum
+	 * and quit */
 	if (Last_Node<0)
 		return Compute_Sum(Out, Non_Zero);
 

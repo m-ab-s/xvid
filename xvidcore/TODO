@@ -50,5 +50,6 @@ Already completed items:
 * INSTALL guide for Unix and Win32 (ed.gomez)
 * dshow static link to libxvidcore.lib (peter)
 * update/fix Lumimasking (sysKin)
+* trellis for mpeg and relaxed optimization for big levels (skal)
 
-Last edited: $Date: 2003-11-22 15:31:28 $
+Last edited: $Date: 2003-11-24 22:06:19 $
