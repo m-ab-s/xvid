@@ -7,7 +7,21 @@ todo
 	friendlier error boxes
 
 - about screen
-        display core version/build info [Done]
+	display core version/build info [Done]
+
+- add proper tooltips
+
+- add 'load default settings' button
+	(config_reg_default() already exists)
+
+- update cpu checkboxes with xvid_init() results, when auto option enabled
+
+- figure out what to do with bitfield colorspace stuff in BITMAPINFOHEADER
+
+- track down 2-pass bug where frame struct somehow isn't initialized when sent
+
+- use multicolumn list box instead of edit boxes in custom quant matrix screen
+
 
 
 *** documentation ***
