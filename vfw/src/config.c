@@ -102,13 +102,13 @@ REG_INT const reg_ints[] = {
 	{"frame_drop_ratio",		&reg.frame_drop_ratio,			0},
 #endif
 
-	{"min_iquant",				&reg.min_iquant,				1},
+	{"min_iquant",				&reg.min_iquant,				2},
 	{"max_iquant",				&reg.max_iquant,				31},
-	{"min_pquant",				&reg.min_pquant,				1},
+	{"min_pquant",				&reg.min_pquant,				2},
 	{"max_pquant",				&reg.max_pquant,				31},
 
 	{"desired_size",			&reg.desired_size,				570000},
-	{"keyframe_boost",			&reg.keyframe_boost,			20},
+	{"keyframe_boost",			&reg.keyframe_boost,			0},
 	{"discard1pass",			&reg.discard1pass,				1},
 	{"dummy2pass",				&reg.dummy2pass,				0},
 // added by koepi for new two-pass curve treatment
@@ -117,16 +117,16 @@ REG_INT const reg_ints[] = {
 // end of koepi's additions
 	{"curve_compression_high",	&reg.curve_compression_high,	25},
 	{"curve_compression_low",	&reg.curve_compression_low,		10},
-	{"use_alt_curve",			&reg.use_alt_curve,				0},
+	{"use_alt_curve",			&reg.use_alt_curve,				1},
 	{"alt_curve_use_auto",		&reg.alt_curve_use_auto,		1},
-	{"alt_curve_auto_str",		&reg.alt_curve_auto_str,		50},
+	{"alt_curve_auto_str",		&reg.alt_curve_auto_str,		30},
 	{"alt_curve_use_auto_bonus_bias",	&reg.alt_curve_use_auto_bonus_bias,	1},
 	{"alt_curve_bonus_bias",	&reg.alt_curve_bonus_bias,		50},
 	{"alt_curve_type",			&reg.alt_curve_type,			1},
-	{"alt_curve_high_dist",		&reg.alt_curve_high_dist,		300},
-	{"alt_curve_low_dist",		&reg.alt_curve_low_dist,		300},
+	{"alt_curve_high_dist",		&reg.alt_curve_high_dist,		500},
+	{"alt_curve_low_dist",		&reg.alt_curve_low_dist,		90},
 	{"alt_curve_min_rel_qual",	&reg.alt_curve_min_rel_qual,	50},
-	{"bitrate_payback_delay",	&reg.bitrate_payback_delay,		240},
+	{"bitrate_payback_delay",	&reg.bitrate_payback_delay,		250},
 	{"bitrate_payback_method",	&reg.bitrate_payback_method,	0},
 	{"twopass_max_bitrate",		&reg.twopass_max_bitrate,		10000 * CONFIG_KBPS},
 	{"twopass_max_overflow_improvement", &reg.twopass_max_overflow_improvement, 60},
