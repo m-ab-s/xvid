@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbtransquant.c,v 1.21.2.8 2003-04-13 16:18:09 syskin Exp $
+ * $Id: mbtransquant.c,v 1.21.2.9 2003-04-27 19:47:48 chl Exp $
  *
  ****************************************************************************/
 
@@ -34,6 +34,7 @@
 #include "../global.h"
 #include "mem_transfer.h"
 #include "timer.h"
+#include "../bitstream/mbcoding.h"
 #include "../dct/fdct.h"
 #include "../dct/idct.h"
 #include "../quant/quant_mpeg4.h"
@@ -115,6 +116,7 @@ MBiDCT(int16_t data[6 * 64],
 /* Quantize all blocks -- Intra mode */
 static __inline void
 MBQuantIntra(const MBParam * pParam,
+			 const FRAMEINFO * const frame,
 			 const MACROBLOCK * pMB,
 			 int16_t qcoeff[6 * 64],
 			 int16_t data[6*64])
@@ -126,10 +128,11 @@ MBQuantIntra(const MBParam * pParam,
 
 		/* Quantize the block */
 		start_timer();
-		if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT))
+		if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT)) {
 			quant_intra(&data[i * 64], &qcoeff[i * 64], pMB->quant, iDcScaler);
-		else
+		} else {
 			quant4_intra(&data[i * 64], &qcoeff[i * 64], pMB->quant, iDcScaler);
+		}
 		stop_quant_timer();
 	}
 }
@@ -158,6 +161,7 @@ MBDeQuantIntra(const MBParam * pParam,
 /* Quantize all blocks -- Inter mode */
 static __inline uint8_t
 MBQuantInter(const MBParam * pParam,
+			 const FRAMEINFO * const frame,
 			 const MACROBLOCK * pMB,
 			 int16_t data[6 * 64],
 			 int16_t qcoeff[6 * 64],
@@ -174,10 +178,17 @@ MBQuantInter(const MBParam * pParam,
 
 		/* Quantize the block */
 		start_timer();
-		if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT))
-			sum = quant_inter(&qcoeff[i * 64], &data[i * 64], pMB->quant);
-		else
+		if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT)) {
+			sum = quant_inter(&qcoeff[i*64], &data[i*64], pMB->quant);
+			if ( (sum) && (frame->vop_flags & XVID_VOP_TRELLISQUANT) ) {
+				sum = dct_quantize_trellis_inter_h263_c (&qcoeff[i*64], &data[i*64], pMB->quant)+1;
+				limit = 1;
+			}
+		} else {
 			sum = quant4_inter(&qcoeff[i * 64], &data[i * 64], pMB->quant);
+//			if ( (sum) && (frame->vop_flags & XVID_VOP_TRELLISQUANT) )
+//				sum = dct_quantize_trellis_inter_mpeg_c (&qcoeff[i*64], &data[i*64], pMB->quant)+1;	
+		}
 		stop_quant_timer();
 
 		/*
@@ -202,7 +213,6 @@ MBQuantInter(const MBParam * pParam,
 
 		/* Set the corresponding cbp bit */
 		cbp |= code_block << (5 - i);
-
 	}
 
 	return(cbp);
@@ -374,7 +384,7 @@ MBTransQuantIntra(const MBParam * const pParam,
 	MBfDCT(pParam, frame, pMB, x_pos, y_pos, data);
 
 	/* Quantize the block */
-	MBQuantIntra(pParam, pMB, data, qcoeff);
+	MBQuantIntra(pParam, frame, pMB, data, qcoeff);
 
 	/* DeQuantize the block */
 	MBDeQuantIntra(pParam, pMB->quant, data, qcoeff);
@@ -411,7 +421,7 @@ MBTransQuantInter(const MBParam * const pParam,
 	limit = PVOP_TOOSMALL_LIMIT + ((pMB->quant == 1)? 1 : 0);
 
 	/* Quantize the block */
-	cbp = MBQuantInter(pParam, pMB, data, qcoeff, 0, limit);
+	cbp = MBQuantInter(pParam, frame, pMB, data, qcoeff, 0, limit);
 
 	/* DeQuantize the block */
 	MBDeQuantInter(pParam, pMB->quant, data, qcoeff, cbp);
@@ -449,7 +459,7 @@ MBTransQuantInterBVOP(const MBParam * pParam,
 	limit = BVOP_TOOSMALL_LIMIT;
 
 	/* Quantize the block */
-	cbp = MBQuantInter(pParam, pMB, data, qcoeff, 1, limit);
+	cbp = MBQuantInter(pParam, frame, pMB, data, qcoeff, 1, limit);
 
 	/*
 	 * History comment:

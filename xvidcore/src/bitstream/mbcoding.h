@@ -57,4 +57,10 @@ int CodeCoeff_CalcBits(const int16_t qcoeff[64], VLC * table, const uint16_t * z
 int CodeCoeffIntra_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag);
 #endif
 
+int
+dct_quantize_trellis_inter_h263_c (int16_t *qcoeff, const int16_t *data, int quant);
+int
+dct_quantize_trellis_inter_mpeg_c (int16_t *qcoeff, const int16_t *data, int quant);
+
+
 #endif							/* _MB_CODING_H_ */
