@@ -9,23 +9,16 @@ Active Items to work on:
 
 * update vfw & dshow decoder frontends
   - GUI isn't perfect for vfw and dshow still links against xvid.dll
-    which doesn't export internal functions anymore because of the license
-    change. 
+    which doesn't export internal functions anymore because of the
+    license change. 
 * decide on vfw & dshow linking policy. presently we statically link,
     however this increases the size of zips/packages where both vfw &
     dshow are included.
-* update/fix 2pass plugin
-  - Commited but needs additional testing/feedback (ed.gomez)
 * update/fix CBR plugin
   - misses target bitrate, bitrate burst in static motion/high motion
     transistions
-* update/fix Lumimasking
-  - doesn't take care of frame type (plugin framework problem, before
-    operation is done before type is known). Taking care of frame type
-    is important because bframe allowed dquants aren't the same as
-    i/pframes allowed dquants
 * bug hunting (ed.gomez/sysKin)
-  - xvidcore is still a place were bugs feel confortable
+  - xvidcore is still a place where bugs feel confortable
 * quant matrix usage (not thread nor instance safe)
   - i (ed.gomez) started an API change to matrix related functions
     (quant_mpeg_xxx). But the remaining problem is that matrices should
@@ -34,6 +27,7 @@ Active Items to work on:
     hacking nastly.
 * docbook writing (ed.gomez)
   - New API has to be documented.
+* two pass code should not introduce quality regressions (every tester)
 
 
 Already completed items:
@@ -55,5 +49,6 @@ Already completed items:
 * New thread/instance safe sse2 code (p.massimino)
 * INSTALL guide for Unix and Win32 (ed.gomez)
 * dshow static link to libxvidcore.lib (peter)
+* update/fix Lumimasking (sysKin)
 
-Last edited: $Date: 2003-11-15 03:10:42 $
+Last edited: $Date: 2003-11-22 15:31:28 $

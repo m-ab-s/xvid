@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "Release"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /G6 /W3 /GX /Op /Ob2 /D "NDEBUG" /D "ARCH_IS_IA32" /D "ARCH_IS_32BIT" /D "ARCH_IS_LITTLE_ENDIAN" /D "WIN32" /D "_MBCS" /D "_LIB" /FAcs /YX /FD /O3 -QxK /Qunroll /c
+# ADD CPP /nologo /G6 /W3 /GX /Op /Ob2 /D "NDEBUG" /D "ARCH_IS_IA32" /D "ARCH_IS_32BIT" /D "ARCH_IS_LITTLE_ENDIAN" /D "WIN32" /D "_MBCS" /D "_LIB" /FAcs /YX /FD /O2 -QxK /Qunroll /c
 # SUBTRACT CPP /Fr
 # ADD BASE RSC /l 0xc09 /d "NDEBUG"
 # ADD RSC /l 0xc09 /d "NDEBUG"
@@ -86,15 +86,11 @@ LIB32=link.exe -lib
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\doc\_API_.txt
+SOURCE=..\..\AUTHORS
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\authors.txt
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\changelog.txt
+SOURCE=..\..\ChangeLog
 # End Source File
 # Begin Source File
 
@@ -102,31 +98,23 @@ SOURCE=..\..\CodingStyle
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\gpl.txt
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\INSTALL
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\LICENSE
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\README.txt
+SOURCE=..\..\README
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\todo.txt
+SOURCE=..\..\TODO
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\doc\xvid-decoding.txt"
+SOURCE="..\..\doc\README"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\doc\xvid-encoder.txt"
+SOURCE="..\..\doc\INSTALL"
 # End Source File
 # End Group
 # Begin Group "bitstream"
@@ -538,7 +526,7 @@ InputPath=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
 InputName=colorspace_rgb_mmx
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -I"$(InputDir)" -o $(IntDir)\$(InputName).obj $(InputPath)
+	nasm -f win32 -DPREFIX -I"$(InputDir)\" -o $(IntDir)\$(InputName).obj $(InputPath)
 
 # End Custom Build
 
@@ -551,7 +539,7 @@ InputPath=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
 InputName=colorspace_rgb_mmx
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -I"$(InputDir)" -o $(IntDir)\$(InputName).obj $(InputPath)
+	nasm -f win32 -DPREFIX -I"$(InputDir)\" -o $(IntDir)\$(InputName).obj $(InputPath)
 
 # End Custom Build
 
@@ -571,7 +559,7 @@ InputPath=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
 InputName=colorspace_yuv_mmx
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -I"$(InputDir)" -o $(IntDir)\$(InputName).obj $(InputPath)
+	nasm -f win32 -DPREFIX -I"$(InputDir)\" -o $(IntDir)\$(InputName).obj $(InputPath)
 
 # End Custom Build
 
@@ -584,7 +572,7 @@ InputPath=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
 InputName=colorspace_yuv_mmx
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -I"$(InputDir)" -o $(IntDir)\$(InputName).obj $(InputPath)
+	nasm -f win32 -DPREFIX -I"$(InputDir)\" -o $(IntDir)\$(InputName).obj $(InputPath)
 
 # End Custom Build
 
@@ -604,7 +592,7 @@ InputPath=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
 InputName=colorspace_yuyv_mmx
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -I"$(InputDir)" -o $(IntDir)\$(InputName).obj $(InputPath)
+	nasm -f win32 -DPREFIX -I"$(InputDir)\" -o $(IntDir)\$(InputName).obj $(InputPath)
 
 # End Custom Build
 
@@ -617,7 +605,7 @@ InputPath=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
 InputName=colorspace_yuyv_mmx
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -I"$(InputDir)" -o $(IntDir)\$(InputName).obj $(InputPath)
+	nasm -f win32 -DPREFIX -I"$(InputDir)\" -o $(IntDir)\$(InputName).obj $(InputPath)
 
 # End Custom Build
 
