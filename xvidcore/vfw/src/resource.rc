@@ -82,7 +82,7 @@ END
 IDD_MAIN DIALOGEX 0, 0, 225, 255
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "XviD Configuration"
-FONT 8, "MS Shell Dlg"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     COMBOBOX        IDC_PROFILE,88,16,91,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
@@ -1056,8 +1056,8 @@ BEGIN
     IDC_BITRATE_SSIZE       "The file size of subtitles or other data files"
     IDC_BITRATE_SSELECT     "Select file size from existing subtitle file"
     IDC_BITRATE_COVERHEAD   "Calculated container format overhead (kbytes)."
-    IDC_BITRATE_VRATE       "Calculated average video bitrate (kilobits-per-second)"
-    IDC_BITRATE_VSIZE       "Calculated video file size"
+    IDC_BITRATE_VRATE       "Calculated average video bitrate (kilobits-per-second)\nNote that ""desired bitrate"" setting in main window includes AVI overhead, so will be larger than this value."
+    IDC_BITRATE_VSIZE       "Calculated video size.\nNote that ""desired filesize"" setting in main window includes AVI overhead, so will be larger than this value."
     IDC_BITRATE_ARATE       "Audio bitrate (kilobits-per-second)"
     IDC_BITRATE_ASELECT     "Select file size from existing audio file"
 END
@@ -1109,7 +1109,7 @@ BEGIN
     EDITTEXT        IDC_BITRATE_HOURS,15,100,29,11,ES_AUTOHSCROLL
     EDITTEXT        IDC_BITRATE_MINUTES,55,100,29,11,ES_AUTOHSCROLL
     EDITTEXT        IDC_BITRATE_SECONDS,95,100,29,11,ES_AUTOHSCROLL
-    COMBOBOX        IDC_BITRATE_FPS,135,101,60,64,CBS_DROPDOWNLIST | 
+    COMBOBOX        IDC_BITRATE_FPS,135,100,60,64,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
     EDITTEXT        IDC_BITRATE_VSIZE,95,120,75,12,ES_AUTOHSCROLL | 
                     ES_READONLY
@@ -1122,25 +1122,25 @@ BEGIN
     EDITTEXT        IDC_BITRATE_ASIZE,95,188,75,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_BITRATE_ASELECT,178,188,20,12
     CONTROL         "Average bitrate:",IDC_BITRATE_AMODE_RATE,"Button",
-                    BS_AUTORADIOBUTTON,15,178,66,10
+                    BS_AUTORADIOBUTTON,15,175,66,10
     GROUPBOX        "Video",IDC_STATIC,5,75,200,132
     GROUPBOX        "Audio",IDC_STATIC,5,148,200,59
     CONTROL         "Size (kbytes):",IDC_BITRATE_AMODE_SIZE,"Button",
-                    BS_AUTORADIOBUTTON,15,193,58,10
-    LTEXT           "Target size (kbytes):",IDC_STATIC,15,5,64,12,
+                    BS_AUTORADIOBUTTON,15,190,58,10
+    LTEXT           "Target size (kbytes):",IDC_STATIC,15,6,64,12,
                     SS_CENTERIMAGE
-    LTEXT           "Format:",IDC_STATIC,15,45,24,13,SS_CENTERIMAGE
-    LTEXT           "Format:",IDC_STATIC,15,163,24,8,SS_CENTERIMAGE
-    LTEXT           "Size (kbytes):",IDC_STATIC,15,120,43,8,SS_CENTERIMAGE
+    LTEXT           "Format:",IDC_STATIC,15,46,24,13,SS_CENTERIMAGE
+    LTEXT           "Format:",IDC_STATIC,15,160,24,8,SS_CENTERIMAGE
+    LTEXT           "Size (kbytes):",IDC_STATIC,15,121,43,8,SS_CENTERIMAGE
     GROUPBOX        "Container:",IDC_STATIC,5,35,200,172
-    LTEXT           "Overhead (kbytes):",IDC_STATIC,15,60,61,10,
+    LTEXT           "Overhead (kbytes):",IDC_STATIC,15,61,61,10,
                     SS_CENTERIMAGE
-    LTEXT           "Average bitrate:",IDC_STATIC,15,135,51,8,SS_CENTERIMAGE
+    LTEXT           "Average bitrate:",IDC_STATIC,15,136,51,8,SS_CENTERIMAGE
     CTEXT           "hours",IDC_STATIC,15,90,30,8
     CTEXT           "minutes",IDC_STATIC,55,90,30,8
     CTEXT           "seconds",IDC_STATIC,95,90,30,8
     CTEXT           "fps",IDC_STATIC,145,90,40,8
-    LTEXT           "Subtitles (kbytes):",IDC_STATIC,15,20,60,10,
+    LTEXT           "Subtitles (kbytes):",IDC_STATIC,15,21,60,10,
                     SS_CENTERIMAGE
 END
 
