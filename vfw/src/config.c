@@ -84,24 +84,29 @@ REG_INT const reg_ints[] = {
 	{"rc_averaging_period",		&reg.rc_averaging_period,		100},
 	{"rc_buffer",				&reg.rc_buffer,					100},
 
-	{"motion_search",			&reg.motion_search,				5},
+	{"motion_search",			&reg.motion_search,				6},
 	{"quant_type",				&reg.quant_type,				0},
 	{"fourcc_used",				&reg.fourcc_used,				0},
+	{"vhq_mode",				&reg.vhq_mode,					0},
 	{"max_key_interval",		&reg.max_key_interval,			300},
 	{"min_key_interval",		&reg.min_key_interval,			1},
 	{"lum_masking",				&reg.lum_masking,				0},
 	{"interlacing",				&reg.interlacing,				0},
+	{"qpel",					&reg.qpel,						0},
+	{"gmc",						&reg.gmc,						0},
+	{"chromame",				&reg.chromame,					0},
 //added by koepi for gruel's greyscale_mode
 	{"greyscale",				&reg.greyscale,					0},
 // end of koepi's additions
-#ifdef BFRAMES
 	{"max_bframes",				&reg.max_bframes,				-1},
-	{"bquant_ratio",			&reg.bquant_ratio,				200},
+	{"bquant_ratio",			&reg.bquant_ratio,				150},
+	{"bquant_offset",			&reg.bquant_offset,				100},
 	{"packed",					&reg.packed,					0},
-	{"dx50bvop",				&reg.dx50bvop,					0},
+	{"dx50bvop",				&reg.dx50bvop,					1},
 	{"debug",					&reg.debug,						0},
+	{"reduced_resolution",		&reg.reduced_resolution,		0},
+	{"chroma_opt",				&reg.chroma_opt,				0},
 	{"frame_drop_ratio",		&reg.frame_drop_ratio,			0},
-#endif
 
 	{"min_iquant",				&reg.min_iquant,				2},
 	{"max_iquant",				&reg.max_iquant,				31},
@@ -114,11 +119,11 @@ REG_INT const reg_ints[] = {
 	{"dummy2pass",				&reg.dummy2pass,				0},
 // added by koepi for new two-pass curve treatment
 	{"kftreshold",				&reg.kftreshold,				10},
-	{"kfreduction",				&reg.kfreduction,				30},
+	{"kfreduction",				&reg.kfreduction,				20},
 // end of koepi's additions
-	{"curve_compression_high",	&reg.curve_compression_high,	25},
-	{"curve_compression_low",	&reg.curve_compression_low,		10},
-	{"use_alt_curve",			&reg.use_alt_curve,				1},
+	{"curve_compression_high",	&reg.curve_compression_high,	0},
+	{"curve_compression_low",	&reg.curve_compression_low,		0},
+	{"use_alt_curve",			&reg.use_alt_curve,				0},
 	{"alt_curve_use_auto",		&reg.alt_curve_use_auto,		1},
 	{"alt_curve_auto_str",		&reg.alt_curve_auto_str,		30},
 	{"alt_curve_use_auto_bonus_bias",	&reg.alt_curve_use_auto_bonus_bias,	1},
@@ -149,7 +154,11 @@ REG_INT const reg_ints[] = {
 	{"credits_quant_i",			&reg.credits_quant_i,			20},
 	{"credits_quant_p",			&reg.credits_quant_p,			20},
 	{"credits_start_size",		&reg.credits_start_size,		10000},
-	{"credits_end_size",		&reg.credits_end_size,			10000}
+	{"credits_end_size",		&reg.credits_end_size,			10000},
+
+	/* decoder */
+	{"deblock_y",				&reg.deblock_y,					0},
+	{"deblock_uv",				&reg.deblock_uv,				0}
 };
 
 REG_STR const reg_strs[] = {
@@ -539,9 +548,9 @@ void adv_mode(HWND hDlg, int mode)
 
 	const short twopass2_ext_disable[] = {
 		IDC_CBR_REACTIONDELAY, IDC_CBR_AVERAGINGPERIOD, IDC_CBR_BUFFER,
-		IDC_CREDITS_RATE_RADIO, IDC_CREDITS_QUANT_RADIO, IDC_CREDITS_QUANT_STATIC,
+		IDC_CREDITS_RATE_RADIO, 
 		IDC_CREDITS_SIZE_RADIO, IDC_CREDITS_END_STATIC, IDC_CREDITS_RATE,
-		IDC_CREDITS_QUANTI, IDC_CREDITS_QUANTP, IDC_CREDITS_START_SIZE, IDC_CREDITS_END_SIZE
+		IDC_CREDITS_START_SIZE, IDC_CREDITS_END_SIZE
 	};
 
 	const short twopass2_int_disable[] = {
@@ -635,20 +644,26 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 		SendDlgItemMessage(hDlg, IDC_MOTION, CB_SETCURSEL, config->motion_search, 0);
 		SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_SETCURSEL, config->quant_type, 0);
 		SendDlgItemMessage(hDlg, IDC_FOURCC, CB_SETCURSEL, config->fourcc_used, 0);
+		SendDlgItemMessage(hDlg, IDC_VHQ, CB_SETCURSEL, config->vhq_mode, 0);
 		SetDlgItemInt(hDlg, IDC_MAXKEY, config->max_key_interval, FALSE);
 		SetDlgItemInt(hDlg, IDC_MINKEY, config->min_key_interval, FALSE);
 		CheckDlgButton(hDlg, IDC_LUMMASK, config->lum_masking ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_INTERLACING, config->interlacing ? BST_CHECKED : BST_UNCHECKED);
+
+		CheckDlgButton(hDlg, IDC_QPEL, config->qpel ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg, IDC_GMC, config->gmc ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg, IDC_CHROMAME, config->chromame ? BST_CHECKED : BST_UNCHECKED);
 // added by koepi for gruel's greyscale_mode
 		CheckDlgButton(hDlg, IDC_GREYSCALE, config->greyscale ? BST_CHECKED : BST_UNCHECKED);
 // end of koepi's addition
-#ifdef BFRAMES
 		SetDlgItemInt(hDlg, IDC_MAXBFRAMES, config->max_bframes, TRUE);
 		SetDlgItemInt(hDlg, IDC_BQUANTRATIO, config->bquant_ratio, FALSE);
+		SetDlgItemInt(hDlg, IDC_BQUANTOFFSET, config->bquant_offset, FALSE);
 		CheckDlgButton(hDlg, IDC_PACKED, config->packed ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_DX50BVOP, config->dx50bvop ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_DEBUG, config->debug ? BST_CHECKED : BST_UNCHECKED);
-#endif
+		
+		CheckDlgButton(hDlg, IDC_REDUCED, config->reduced_resolution ? BST_CHECKED : BST_UNCHECKED);
 		break;
 
 	case DLG_QUANT :
@@ -742,11 +757,8 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 #ifdef _SMP
 		SetDlgItemInt(hDlg, IDC_NUMTHREADS, config->num_threads, FALSE);
 #endif
-
-#ifdef BFRAMES
+		CheckDlgButton(hDlg, IDC_CHROMA_OPT, (config->chroma_opt) ? BST_CHECKED : BST_UNCHECKED);
 		SetDlgItemInt(hDlg, IDC_FRAMEDROP, config->frame_drop_ratio, FALSE);
-#endif
-
 		SetDlgItemInt(hDlg, IDC_CBR_REACTIONDELAY, config->rc_reaction_delay_factor, FALSE);
 		SetDlgItemInt(hDlg, IDC_CBR_AVERAGINGPERIOD, config->rc_averaging_period, FALSE);
 		SetDlgItemInt(hDlg, IDC_CBR_BUFFER, config->rc_buffer, FALSE);
@@ -769,20 +781,25 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 		config->motion_search = SendDlgItemMessage(hDlg, IDC_MOTION, CB_GETCURSEL, 0, 0);
 		config->quant_type = SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_GETCURSEL, 0, 0);
 		config->fourcc_used = SendDlgItemMessage(hDlg, IDC_FOURCC, CB_GETCURSEL, 0, 0);
+		config->vhq_mode = SendDlgItemMessage(hDlg, IDC_VHQ, CB_GETCURSEL, 0, 0);
 		config->max_key_interval = config_get_uint(hDlg, IDC_MAXKEY, config->max_key_interval);
 		config->min_key_interval = config_get_uint(hDlg, IDC_MINKEY, config->min_key_interval);
 		config->lum_masking = ISDLGSET(IDC_LUMMASK);
 		config->interlacing = ISDLGSET(IDC_INTERLACING);
+
+		config->qpel = ISDLGSET(IDC_QPEL);
+		config->gmc = ISDLGSET(IDC_GMC);
+		config->chromame = ISDLGSET(IDC_CHROMAME);
 // added by koepi for gruel's greyscale_mode
 		config->greyscale = ISDLGSET(IDC_GREYSCALE);
 // end of koepi's addition
-#ifdef BFRAMES
 		config->max_bframes = config_get_int(hDlg, IDC_MAXBFRAMES, config->max_bframes);
 		config->bquant_ratio = config_get_uint(hDlg, IDC_BQUANTRATIO, config->bquant_ratio);
+		config->bquant_offset = config_get_uint(hDlg, IDC_BQUANTOFFSET, config->bquant_offset);
 		config->packed = ISDLGSET(IDC_PACKED);
 		config->dx50bvop = ISDLGSET(IDC_DX50BVOP);
 		config->debug = ISDLGSET(IDC_DEBUG);
-#endif
+		config->reduced_resolution = ISDLGSET(IDC_REDUCED);
 		break;
 
 	case DLG_QUANT :
@@ -905,10 +922,8 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 #ifdef _SMP
 		config->num_threads = config_get_uint(hDlg, IDC_NUMTHREADS, config->num_threads);
 #endif
-#ifdef BFRAMES
+		config->chroma_opt = ISDLGSET(IDC_CHROMA_OPT);
 		config->frame_drop_ratio = config_get_uint(hDlg, IDC_FRAMEDROP, config->frame_drop_ratio);
-#endif
-
 		config->rc_reaction_delay_factor = config_get_uint(hDlg, IDC_CBR_REACTIONDELAY, config->rc_reaction_delay_factor);
 		config->rc_averaging_period = config_get_uint(hDlg, IDC_CBR_AVERAGINGPERIOD, config->rc_averaging_period);
 		config->rc_buffer = config_get_uint(hDlg, IDC_CBR_BUFFER, config->rc_buffer);
@@ -969,6 +984,134 @@ BOOL CALLBACK enum_tooltips(HWND hWnd, LPARAM lParam)
 
 	return TRUE;
 }
+
+
+
+/* --- decoder options dialog  --- */
+
+#define DEC_DLG_COUNT	1
+#define DEC_DLG_POSTPROC	0
+
+/* decoder dialog: upload config data */
+
+void dec_upload(HWND hDlg, int page, CONFIG * config)
+{
+	switch (page)
+	{
+	case DEC_DLG_POSTPROC :
+		CheckDlgButton(hDlg, IDC_DEBLOCK_Y,  config->deblock_y ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg, IDC_DEBLOCK_UV, config->deblock_uv ? BST_CHECKED : BST_UNCHECKED);
+		break;
+	}
+}
+
+
+/* dec dialog: download config data */
+
+void dec_download(HWND hDlg, int page, CONFIG * config)
+{
+	switch (page)
+	{
+	case DEC_DLG_POSTPROC :
+		config->deblock_y = ISDLGSET(IDC_DEBLOCK_Y);
+		config->deblock_uv = ISDLGSET(IDC_DEBLOCK_UV);
+		break;
+	}
+}
+
+/* decoder dialog proc */
+
+BOOL CALLBACK dec_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	PROPSHEETINFO *psi;
+
+	psi = (PROPSHEETINFO*)GetWindowLong(hDlg, GWL_USERDATA);
+
+	switch (uMsg)
+	{
+	case WM_INITDIALOG :
+		psi = (PROPSHEETINFO*) ((LPPROPSHEETPAGE)lParam)->lParam;
+
+		SetWindowLong(hDlg, GWL_USERDATA, (LPARAM)psi);
+
+		if (hTooltip)
+		{
+			EnumChildWindows(hDlg, enum_tooltips, 0);
+		}
+
+		dec_upload(hDlg, psi->page, psi->config);
+		break;
+
+	case WM_NOTIFY :
+		switch (((NMHDR *)lParam)->code)
+		{
+		case PSN_KILLACTIVE :	
+			/* validate */
+			dec_download(hDlg, psi->page, psi->config);
+			SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
+			break;
+
+		case PSN_APPLY :
+			/* apply */
+			dec_download(hDlg, psi->page, psi->config);
+			SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
+			psi->config->save = TRUE;
+			break;
+		}
+		break;
+
+	default :
+		return 0;
+	}
+
+	return 1;
+}
+
+
+void dec_dialog(HWND hParent, CONFIG * config)
+{
+	PROPSHEETINFO psi[DEC_DLG_COUNT];
+	PROPSHEETPAGE psp[DEC_DLG_COUNT];
+	PROPSHEETHEADER psh;
+	CONFIG temp;
+	int i;
+
+	config->save = FALSE;
+	memcpy(&temp, config, sizeof(CONFIG));
+
+	for (i=0 ; i<DEC_DLG_COUNT ; ++i)
+	{
+		psp[i].dwSize = sizeof(PROPSHEETPAGE);
+		psp[i].dwFlags = 0;
+		psp[i].hInstance = hInst;
+		psp[i].pfnDlgProc = dec_proc;
+		psp[i].lParam = (LPARAM)&psi[i];
+		psp[i].pfnCallback = NULL;
+
+		psi[i].page = i;
+		psi[i].config = &temp;
+	}
+
+	psp[DEC_DLG_POSTPROC].pszTemplate = MAKEINTRESOURCE(IDD_POSTPROC);
+
+	psh.dwSize = sizeof(PROPSHEETHEADER);
+	psh.dwFlags = PSH_PROPSHEETPAGE | PSH_NOAPPLYNOW;
+	psh.hwndParent = hParent;
+	psh.hInstance = hInst;
+	psh.pszCaption = (LPSTR) "XviD Configuration";
+	psh.nPages = DEC_DLG_COUNT;
+	psh.nStartPage = DEC_DLG_POSTPROC;
+	psh.ppsp = (LPCPROPSHEETPAGE)&psp;
+	psh.pfnCallback = NULL;
+
+	PropertySheet(&psh);
+
+	if (temp.save)
+	{
+		memcpy(config, &temp, sizeof(CONFIG));
+	}
+}
+
 
 
 /* main dialog proc */
@@ -1032,6 +1175,15 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		else if (LOWORD(wParam) == IDC_ADVANCED && HIWORD(wParam) == BN_CLICKED)
 		{
 			adv_dialog(hDlg, config);
+
+			if (config->save)
+			{
+				config_reg_set(config);
+			}
+		}
+		else if (LOWORD(wParam) == IDC_DECODER && HIWORD(wParam) == BN_CLICKED)
+		{
+			dec_dialog(hDlg, config);
 
 			if (config->save)
 			{
@@ -1121,21 +1273,19 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"MPEG");
 			SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"MPEG-Custom");
 			SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"Modulated");
+			SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"New Modulated HQ");
 
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"XVID");
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DIVX");
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DX50");
 
-#ifndef BFRAMES
-			EnableWindow(GetDlgItem(hDlg, IDC_BSTATIC1), FALSE);
-			EnableWindow(GetDlgItem(hDlg, IDC_BSTATIC2), FALSE);
-			EnableWindow(GetDlgItem(hDlg, IDC_BSTATIC3), FALSE);
-			EnableWindow(GetDlgItem(hDlg, IDC_MAXBFRAMES), FALSE);
-			EnableWindow(GetDlgItem(hDlg, IDC_BQUANTRATIO), FALSE);
-			EnableWindow(GetDlgItem(hDlg, IDC_PACKED), FALSE);
-			EnableWindow(GetDlgItem(hDlg, IDC_DX50BVOP), FALSE);
-			EnableWindow(GetDlgItem(hDlg, IDC_DEBUG), FALSE);
-#endif
+			SendDlgItemMessage(hDlg, IDC_VHQ, CB_ADDSTRING, 0, (LPARAM)"0 - Off");
+			SendDlgItemMessage(hDlg, IDC_VHQ, CB_ADDSTRING, 0, (LPARAM)"1 - Mode Decision");
+			SendDlgItemMessage(hDlg, IDC_VHQ, CB_ADDSTRING, 0, (LPARAM)"2 - Limited Search");
+			SendDlgItemMessage(hDlg, IDC_VHQ, CB_ADDSTRING, 0, (LPARAM)"3 - Medium Search");
+			SendDlgItemMessage(hDlg, IDC_VHQ, CB_ADDSTRING, 0, (LPARAM)"4 - Wide Search");
+			/* XXX: reduced resolution is not ready for prime-time */
+			ShowWindow(GetDlgItem(hDlg, IDC_REDUCED), SW_HIDE);
 		}
 		else if (psi->page == DLG_2PASSALT)
 		{
@@ -1146,13 +1296,8 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		else if (psi->page == DLG_CPU)
 		{
 #ifndef _SMP
-
 			EnableWindow(GetDlgItem(hDlg, IDC_NUMTHREADS_STATIC), FALSE);
 			EnableWindow(GetDlgItem(hDlg, IDC_NUMTHREADS), FALSE);
-#endif
-#ifndef BFRAMES
-			EnableWindow(GetDlgItem(hDlg, IDC_FRAMEDROP_STATIC), FALSE);
-			EnableWindow(GetDlgItem(hDlg, IDC_FRAMEDROP), FALSE);
 #endif
 		}
 

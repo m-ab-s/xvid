@@ -6,23 +6,29 @@
 #include "config.h"
 #include "xvid.h"
 
+#if defined(_DEBUG)
+#define DEBUG(X) OutputDebugString(X)
+#define DEBUG1(X,A) { char tmp[120]; wsprintf(tmp, "%s %i", (X), (A)); OutputDebugString(tmp); }
+#define DEBUG2(X,A,B) { char tmp[120]; wsprintf(tmp, "%s %i %i", (X), (A), (B)); OutputDebugString(tmp); }
+#define DEBUG3(X,A,B,C) { char tmp[120]; wsprintf(tmp, "%s %i %i %i", (X), (A), (B), (C)); OutputDebugString(tmp); }
+#define DEBUG4(X,A,B,C,D) { char tmp[120]; wsprintf(tmp, "%s %i %i %i %i", (X), (A), (B), (C), (D)); OutputDebugString(tmp); }
+#define DEBUG5(X,A,B,C,D,E) { char tmp[120]; wsprintf(tmp, "%s %i %i %i %i %i", (X), (A), (B), (C), (D), (E)); OutputDebugString(tmp); }
+#define DEBUGFOURCC(X,Y) { char tmp[120]; wsprintf(tmp, "%s %c %c %c %c", (X), (Y)&0xff, ((Y)>>8)&0xff, ((Y)>>16)&0xff, ((Y)>>24)&0xff); OutputDebugString(tmp); }
+#else
 #define DEBUG(X)
-// OutputDebugString(X)
 #define DEBUG1(X,A) { char tmp[120]; wsprintf(tmp, "%s %i", (X), (A)); OutputDebugString(tmp); }
 #define DEBUG2(X,A,B)
-// { char tmp[120]; wsprintf(tmp, "%s %i %i", (X), (A), (B)); OutputDebugString(tmp); }
 #define DEBUG3(X,A,B,C)
-// { char tmp[120]; wsprintf(tmp, "%s %i %i %i", (X), (A), (B), (C)); OutputDebugString(tmp); }
 #define DEBUG4(X,A,B,C,D)
-// { char tmp[120]; wsprintf(tmp, "%s %i %i %i %i", (X), (A), (B), (C), (D)); OutputDebugString(tmp); }
 #define DEBUG5(X,A,B,C,D,E)
-// { char tmp[120]; wsprintf(tmp, "%s %i %i %i %i %i", (X), (A), (B), (C), (D), (E)); OutputDebugString(tmp); }
 #define DEBUGFOURCC(X,Y)
-// { char tmp[120]; wsprintf(tmp, "%s %c %c %c %c", (X), (Y)&0xff, ((Y)>>8)&0xff, ((Y)>>16)&0xff, ((Y)>>24)&0xff); OutputDebugString(tmp); }
+#endif
+
+
 #define DEBUGERR(X) OutputDebugString(X)
 #define DEBUG2P(X) OutputDebugString(X)
-#define DEBUG1ST(A,B,C,D,E,F,G) { char tmp[120]; wsprintf(tmp, "1st-pass: size:%d total-kbytes:%d %s quant:%d %s kblocks:%d mblocks:%d", (A), (B), (C) ? "intra" : "inter", (D), (E), (F), (G)); OutputDebugString(tmp); }
-#define DEBUG2ND(A,B,C,D,E,F,G,H) { char tmp[120]; wsprintf(tmp, "2nd-pass: quant:%d %s %s stats1:%d scaled:%d actual:%d overflow:%d %s", (A), (B), (C) ? "intra" : "inter", (D), (E), (F), (G), (H) ? "credits" : "movie"); OutputDebugString(tmp); }
+#define DEBUG1ST(A,B,C,D,E,F,G) { char tmp[140]; wsprintf(tmp, "1st-pass: size:%d total-kbytes:%d %s quant:%d %s kblocks:%d mblocks:%d", (A), (B), (C), (D), (E), (F), (G)); OutputDebugString(tmp); }
+#define DEBUG2ND(A,B,C,D,E,F,G,H) { char tmp[140]; wsprintf(tmp, "2nd-pass: quant:%d %s %s stats1:%d scaled:%d actual:%d overflow:%d %s", (A), (B), (C), (D), (E), (F), (G), (H) ? "credits" : "movie"); OutputDebugString(tmp); }
 
 
 #define FOURCC_XVID	mmioFOURCC('X','V','I','D')
@@ -34,7 +40,6 @@
 /* yuyu		4:2:2 16bit, y-u-y-v, packed*/
 #define FOURCC_YUYV	mmioFOURCC('Y','U','Y','V')
 #define FOURCC_YUY2	mmioFOURCC('Y','U','Y','2')
-#define FOURCC_V422	mmioFOURCC('V','4','2','2')
 
 /* yvyu		4:2:2 16bit, y-v-y-u, packed*/
 #define FOURCC_YVYU	mmioFOURCC('Y','V','Y','U')
@@ -56,6 +61,10 @@
 
 
 #define NNSTATS_KEYFRAME	(1<<31)
+#define NNSTATS_BFRAME		(1<<30)
+#define NNSTATS_SKIPFRAME	(1<<29)
+#define NNSTATS_PADFRAME	(1<<28)
+#define NNSTATS_DELAYFRAME	(1<<27)
 
 typedef struct
 {
@@ -103,12 +112,13 @@ typedef struct
 
 	int keyframe_locations[20480];
 	int max_framesize;
-	int minpsize, minisize;
+	int minbsize, minpsize, minisize;
 	double movie_curve;
 	double credits_start_curve;
 	double credits_end_curve;
 
-	double average_frame;
+	double average_pframe;
+	double average_bframe;
 	double curve_comp_scale;
 	double curve_bias_bonus;
 	double alt_curve_low;
@@ -122,6 +132,12 @@ typedef struct
 
 	NNSTATS nns1;
 	NNSTATS nns2;
+
+	NNSTATS* nns1_array;
+	NNSTATS* nns2_array;
+	int nns_array_size;
+	int nns_array_length;
+	int nns_array_pos;
 } TWOPASS;
 
 
