@@ -52,7 +52,11 @@
 
 bits 32
 
-section .data data  align=8
+%ifdef FORMAT_COFF
+SECTION .data data
+%else
+SECTION .data data align=8
+%endif
 
 %macro cglobal 1 
 	%ifdef PREFIX
