@@ -19,6 +19,15 @@
 #define SIGN(X) (((X)>0)?1:-1)
 #endif
 
+#ifndef RSHIFT
+#define RSHIFT(a,b) ((a) > 0 ? ((a) + (1<<((b)-1)))>>(b) : ((a) + (1<<((b)-1))-1)>>(b))
+#endif
+
+/* assume b>0 */
+#ifndef ROUNDED_DIV
+#define ROUNDED_DIV(a,b) (((a)>0 ? (a) + ((b)>>1) : (a) - ((b)>>1))/(b))
+#endif
+
 
 /* This is borrowed from    decoder.c   */
 static __inline int gmc_sanitize(int value, int quarterpel, int fcode)
@@ -632,11 +641,11 @@ type | variable name  |   ISO name (TeX-style) |  value or range  |  usage
 	/* i2s and i2ss are only needed for num_wp == 3, etc.  */
 
 	/* the 'ss' values are in 1/16 pel resolution */
-	gmc->i1ss = 16*gmc->Ws + ((gmc->W-gmc->Ws)*(gmc->r*gmc->i0s) + gmc->Ws*(gmc->r*gmc->i1s - 16*gmc->W)) / gmc->W; 
-	gmc->j1ss = ((gmc->W - gmc->Ws)*(gmc->r*gmc->j0s) + gmc->Ws*gmc->r*gmc->j1s) / gmc->W; 
+	gmc->i1ss = 16*gmc->Ws + ROUNDED_DIV(((gmc->W-gmc->Ws)*(gmc->r*gmc->i0s) + gmc->Ws*(gmc->r*gmc->i1s - 16*gmc->W)),gmc->W); 
+	gmc->j1ss = ROUNDED_DIV( ((gmc->W - gmc->Ws)*(gmc->r*gmc->j0s) + gmc->Ws*gmc->r*gmc->j1s) ,gmc->W );   
 
-//	gmc->i2ss = ((gmc->H - gmc->Hs)*(gmc->r*gmc->i0s) + gmc->Hs*(gmc->r*gmc->i2s)) / gmc->H; 
-//	gmc->j2ss = 16*gmc->Hs + ((gmc->H-gmc->Hs)*(gmc->r*gmc->j0s) + gmc->Ws*(gmc->r*gmc->j2s - 16*gmc->H)) / gmc->H;
+//	gmc->i2ss = ROUNDED_DIV( ((gmc->H - gmc->Hs)*(gmc->r*gmc->i0s) + gmc->Hs*(gmc->r*gmc->i2s)), gmc->H); 
+//	gmc->j2ss = 16*gmc->Hs + ROUNDED_DIV( ((gmc->H-gmc->Hs)*(gmc->r*gmc->j0s) + gmc->Ws*(gmc->r*gmc->j2s - 16*gmc->H)), gmc->H);
 
 	return; 
 }
@@ -832,20 +841,13 @@ type | variable name  |   ISO name (TeX-style) |  value or range  |  usage
 			
 		pGMC->v[J*stride2+I] = (uint8_t)C00;										/* output 1 V-pixel */
 	}
-	
-	
-	
-/* The average vector is rounded from 1/s-pel to 1/2 or 1/4 */
-	if (quarterpel)
-	{	/* >>8 because of 256 terms in sum, >>(sigma-2) to obtain 1/4th-pel */
-		avgMV.x = ( (avgMV.x + (1<<(sigma+5)) )>>(sigma+6) );
-		avgMV.y = ( (avgMV.y + (1<<(sigma+5)) )>>(sigma+6) );
-	}
-	else
-	{	/*  >>8 because of 256 terms in sum, >>(sigma-1) to obtain 1/2th-pel */
-		avgMV.x = ( (avgMV.x + (1<<(sigma+6)))>>(sigma+7) );
-		avgMV.y = ( (avgMV.y + (1<<(sigma+6)))>>(sigma+7) );
-	}	/* TODO: Check if this is correct way of rounding */
+		
+/* The average vector is rounded from 1/s-pel to 1/2 or 1/4 using the '//' operator*/
+
+	avgMV.x = RSHIFT( avgMV.x, (sigma+7-quarterpel) );
+	avgMV.y = RSHIFT( avgMV.y, (sigma+7-quarterpel) );
+
+	/* ^^^^ this is the way MS Reference Software does it */
 	
 	return avgMV;	/* clipping to fcode area is done outside! */
 }
