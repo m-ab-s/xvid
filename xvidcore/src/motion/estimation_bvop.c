@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_bvop.c,v 1.1.2.10 2003-12-18 13:26:48 Isibaar Exp $
+ * $Id: estimation_bvop.c,v 1.1.2.11 2003-12-18 14:47:44 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -870,8 +870,6 @@ MotionEstimationBVOP(MBParam * const pParam,
 			MACROBLOCK * const pMB = frame->mbs + i + j * pParam->mb_width;
 			const MACROBLOCK * const b_mb = b_mbs + i + j * pParam->mb_width;
 			int interpol_search;
-			int bf_search = 0;
-			int bf_thresh1, bf_thresh2;
 
 /* special case, if collocated block is SKIPed in P-VOP: encoding is forward (0,0), cpb=0 without further ado */
 			if (b_reference->coding_type != S_VOP)
@@ -907,9 +905,11 @@ MotionEstimationBVOP(MBParam * const pParam,
 			}
 
 			if (frame->motion_flags & XVID_ME_BFRAME_EARLYSTOP) {
+				int bf_search = 0;
+				int bf_thresh = 0;
 
 				if(i > 0 && j > 0 && i < pParam->mb_width) {
-					bf_thresh1 = ((&pMBs[(i-1) + j * pParam->mb_width])->sad16 + 
+					bf_thresh = ((&pMBs[(i-1) + j * pParam->mb_width])->sad16 + 
 								(&pMBs[i + (j-1) * pParam->mb_width])->sad16 +
 								(&pMBs[(i+1) + (j-1) * pParam->mb_width])->sad16) / 3;
 
@@ -929,7 +929,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 						bf_search++;
 				}
 
-				if ((best_sad < bf_thresh1) && (bf_search == 3))
+				if ((best_sad < bf_thresh) && (bf_search == 3))
 					continue;
 			}
 

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CAbout.cpp,v 1.1.2.4 2003-12-17 17:08:29 Isibaar Exp $
+ * $Id: CAbout.cpp,v 1.1.2.5 2003-12-18 14:47:44 edgomez Exp $
  *
  ****************************************************************************/
 
