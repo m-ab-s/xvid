@@ -49,6 +49,7 @@
 
 #include <windows.h>
 #include <vfw.h>
+#include <stdio.h>
 #include "vfwext.h"
 
 #include <xvid.h>
@@ -280,11 +281,17 @@ int vfw_debug(void *handle,
 		{
 			xvid_plg_data_t *data = (xvid_plg_data_t *) param1;
 
-			DPRINTF("[%5i]   type=%c   Q:%2i   length:%6i",
-				   data->frame_num, 
-                   type2char(data->type),
-                   data->quant, 
-                   data->length);
+			/* We don't use DPRINTF here because it's active only for _DEBUG
+			 * builds and that activates lot of other debug printfs. We only
+			 * want these all the time */
+			char buf[1024];
+			sprintf(buf, "[%5i]   type=%c   Q:%2i   length:%6i",
+					data->frame_num, 
+					type2char(data->type),
+					data->quant, 
+					data->length);
+			OutputDebugString(buf);
+
 			return 0;
 		}
 	}
@@ -568,9 +575,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 
 	if (codec->config.cartoon_mode) {
 		frame.vop_flags |= XVID_VOP_CARTOON;
-#if 0 /* Seems to cause crashes with P4 cpus */
 		frame.motion |= XVID_ME_DETECT_STATIC_MOTION;
-#endif
 	}
 
 	frame.motion |= pmvfast_presets[codec->config.motion_search];

@@ -139,21 +139,17 @@ CAPTION "2nd Pass"
 FONT 8, "MS Sans Serif"
 BEGIN
     EDITTEXT        IDC_KFBOOST,120,34,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    EDITTEXT        IDC_KFTRESHOLD,120,50,75,12,ES_AUTOHSCROLL | ES_NUMBER
     EDITTEXT        IDC_KFREDUCTION,120,66,75,12,ES_AUTOHSCROLL | ES_NUMBER
     EDITTEXT        IDC_CURVECOMPH,120,130,76,12,ES_AUTOHSCROLL | ES_NUMBER
     EDITTEXT        IDC_CURVECOMPL,120,146,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    EDITTEXT        IDC_PAYBACK,120,162,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    CONTROL         "Payback with bias",IDC_PAYBACKBIAS,"Button",
-                    BS_AUTORADIOBUTTON | WS_GROUP,20,178,96,12
-    CONTROL         "Payback proportionally",IDC_PAYBACKPROP,"Button",
-                    BS_AUTORADIOBUTTON,20,190,96,12
+    EDITTEXT        IDC_OVERFLOW_CONTROL_STRENGTH,120,162,76,12,
+                    ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "Stats filename:",IDC_STATIC,8,6,52,12,SS_CENTERIMAGE
     EDITTEXT        IDC_STATS,72,6,112,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_STATS_BROWSE,188,6,16,11
     GROUPBOX        "Two-pass tuning",IDC_STATIC,8,22,196,94
-    LTEXT           "Bitrate payback delay (frames):",IDC_STATIC,16,162,100,
-                    12,SS_CENTERIMAGE
+    LTEXT           "Overflow control strength %:",IDC_STATIC,16,162,100,12,
+                    SS_CENTERIMAGE
     LTEXT           "High bitrate scenes %:",IDC_STATIC,16,130,100,12,
                     SS_CENTERIMAGE
     LTEXT           "Low bitrate scenes %:",IDC_STATIC,16,146,100,12,
@@ -161,8 +157,8 @@ BEGIN
     GROUPBOX        "Curve compression",IDC_STATIC,8,120,196,88
     LTEXT           "I-frame boost %:",IDC_STATIC,16,34,100,12,
                     SS_CENTERIMAGE
-    LTEXT           "Below i-frame distance...:",IDC_STATIC,16,50,100,12
-    LTEXT           "I-frame bitrate reduction %:",IDC_STATIC,16,66,100,12
+    LTEXT           "CC I-frame bitrate reduction %:",IDC_STATIC,16,66,100,
+                    12
     EDITTEXT        IDC_OVERIMP,120,82,76,12,ES_AUTOHSCROLL | ES_NUMBER
     EDITTEXT        IDC_OVERDEG,120,98,76,12,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "Max overflow improvement %:",IDC_STATIC,16,82,100,12,
@@ -908,9 +904,6 @@ BEGIN
     IDC_DUMMY2PASS          "Performs a dummy 2nd pass - doesn't output any video data"
     IDC_CURVECOMPH          "The higher this value, the more bits get taken from frames larger than the average size, and redistributed to others"
     IDC_CURVECOMPL          "The higher this value, the more bits get assigned to frames below the average frame size"
-    IDC_PAYBACK             "The higher this value, the longer the codec has to smooth out bit allocation"
-    IDC_PAYBACKBIAS         "Payback with bias to small frames"
-    IDC_PAYBACKPROP         "Payback proportionally (all frames treated equally)"
     IDC_STATS1              "Location for 1st pass stats file to be saved to"
     IDC_STATS2              "Location for 2nd pass curve stats to be loaded from - External mode only"
     IDC_CREDITS_START_BEGIN "Credits begin at this frame"
@@ -969,6 +962,12 @@ BEGIN
     IDC_LEVEL_VCV           "Video Complexity Verifier (VCV):\nThe maximum macroblocks decoded per second."
     IDC_LEVEL_VBV           "Video Buffer Verifier (VBV):\n\nThe maximum size of the video decoder buffer. The encoded bitstream but not overflow or underflow this buffer."
     IDC_LEVEL_BITRATE       "Maximum instantaneous bitrate."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_OVERFLOW_CONTROL_STRENGTH 
+                            "0=Default from core (let xvid decide). Else overflow payback percent per frame."
 END
 
 #endif    // Neutral resources

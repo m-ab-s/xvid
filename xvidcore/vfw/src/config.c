@@ -789,24 +789,14 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
 	case IDD_RC_2PASS2 :
 		SetDlgItemText(hDlg, IDC_STATS, config->stats);
         SetDlgItemInt(hDlg, IDC_KFBOOST, config->keyframe_boost, FALSE);
-#if defined(REMOVE_ME)
-		SetDlgItemInt(hDlg, IDC_KFTRESHOLD, config->kftreshold, FALSE);
-#endif
 		SetDlgItemInt(hDlg, IDC_KFREDUCTION, config->kfreduction, FALSE);
 
+		SetDlgItemInt(hDlg, IDC_OVERFLOW_CONTROL_STRENGTH, config->overflow_control_strength, FALSE);
         SetDlgItemInt(hDlg, IDC_OVERIMP, config->twopass_max_overflow_improvement, FALSE);
 		SetDlgItemInt(hDlg, IDC_OVERDEG, config->twopass_max_overflow_degradation, FALSE);
 
 		SetDlgItemInt(hDlg, IDC_CURVECOMPH, config->curve_compression_high, FALSE);
 		SetDlgItemInt(hDlg, IDC_CURVECOMPL, config->curve_compression_low, FALSE);
-#if defined(REMOVE_ME)
-		SetDlgItemInt(hDlg, IDC_PAYBACK, config->bitrate_payback_delay, FALSE);
-		CheckDlgButton(hDlg, IDC_PAYBACKBIAS, (config->bitrate_payback_method == XVID_PAYBACK_BIAS));
-		CheckDlgButton(hDlg, IDC_PAYBACKPROP, (config->bitrate_payback_method == XVID_PAYBACK_PROP));
-#endif
-		/* TODO:
-		 * Add here the control strength code
-		 */
 		break;
 
     case IDD_ZONE :
@@ -912,33 +902,21 @@ void adv_download(HWND hDlg, int idd, CONFIG * config)
 			lstrcpy(config->stats, CONFIG_2PASS_FILE);
 
         config->keyframe_boost = GetDlgItemInt(hDlg, IDC_KFBOOST, NULL, FALSE);
-#if defined(REMOVE_ME)
-		config->kftreshold = GetDlgItemInt(hDlg, IDC_KFTRESHOLD, NULL, FALSE);
-#endif
 		config->kfreduction = GetDlgItemInt(hDlg, IDC_KFREDUCTION, NULL, FALSE);
+		CONSTRAINVAL(config->keyframe_boost, 0, 1000);
 
+		config->overflow_control_strength = GetDlgItemInt(hDlg, IDC_OVERFLOW_CONTROL_STRENGTH, NULL, FALSE);
 		config->twopass_max_overflow_improvement = config_get_uint(hDlg, IDC_OVERIMP, config->twopass_max_overflow_improvement);
 		config->twopass_max_overflow_degradation = config_get_uint(hDlg, IDC_OVERDEG, config->twopass_max_overflow_degradation);
 		CONSTRAINVAL(config->twopass_max_overflow_improvement, 1, 80);
 		CONSTRAINVAL(config->twopass_max_overflow_degradation, 1, 80);
+		CONSTRAINVAL(config->overflow_control_strength, 0, 100);
 		
 		config->curve_compression_high = GetDlgItemInt(hDlg, IDC_CURVECOMPH, NULL, FALSE);
 		config->curve_compression_low = GetDlgItemInt(hDlg, IDC_CURVECOMPL, NULL, FALSE);
-#if defined(REMOVE_ME)
-		config->bitrate_payback_delay = config_get_uint(hDlg, IDC_PAYBACK, config->bitrate_payback_delay);
-        config->bitrate_payback_method = IsDlgChecked(hDlg, IDC_PAYBACKPROP) ? XVID_PAYBACK_PROP : XVID_PAYBACK_BIAS;
-#endif
-
-#if defined(REMOVE_ME)
-		CONSTRAINVAL(config->bitrate_payback_delay, 1, 10000);
-#endif
-		CONSTRAINVAL(config->keyframe_boost, 0, 1000);
 		CONSTRAINVAL(config->curve_compression_high, 0, 100);
 		CONSTRAINVAL(config->curve_compression_low, 0, 100);
 
-		/*
-		 * TODO: add the control strength code
-		 */
 		break;
 
     case IDD_ZONE :
