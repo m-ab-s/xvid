@@ -52,7 +52,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: portab.h,v 1.42 2003-02-09 22:48:38 edgomez Exp $
+ * $Id: portab.h,v 1.42.2.1 2003-04-04 22:10:38 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -113,10 +113,10 @@
  ****************************************************************************/
 
 #if defined(ARCH_IS_32BIT)
-#    define CACHE_LINE  16
+#    define CACHE_LINE  64
 #    define ptr_t uint32_t
 #elif defined(ARCH_IS_64BIT)
-#    define CACHE_LINE  32
+#    define CACHE_LINE  64
 #    define ptr_t uint64_t
 #else
 #    error You are trying to compile XviD without defining address bus size.
