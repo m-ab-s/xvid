@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion_est.h,v 1.1.2.11 2002-12-13 11:56:31 syskin Exp $
+ *  $Id: motion_est.h,v 1.1.2.12 2003-01-09 11:36:33 syskin Exp $
  *
  ***************************************************************************/
 
@@ -35,6 +35,7 @@
 
 #include "../portab.h"
 #include "../global.h"
+#include "../image/reduced.h"
 
 /* hard coded motion search parameters for motion_est and smp_motion_est */
 
@@ -46,7 +47,7 @@
 
 /* vector map (vlc delta size) smoother parameters ! float !*/
 #define NEIGH_TEND_16X16	10.5
-#define NEIGH_TEND_8X8		4.0
+#define NEIGH_TEND_8X8		40.0
 #define NEIGH_8X8_BIAS		30
 
 /* Parameters which control inter/inter4v decision */
@@ -101,61 +102,58 @@ static const int DQtab[4] = {
 };
 
 #define RRV_MV_SCALEDOWN(a)	( (a)>=0 ? (a+1)/2 : (a-1)/2 )
-#define RRV_MV_SCALEUP(a)	( (a)>0 ? 2*(a)-1 : (a)<0 ? 2*(a)+1 : (a) )
+
+static const VECTOR zeroMV = {0,0};
 
 typedef struct
-	{
+{
 // general fields
-		int max_dx, min_dx, max_dy, min_dy;
-		uint32_t rounding;
-		VECTOR predMV;
-		VECTOR *currentMV;
-		VECTOR *currentQMV;
-		int32_t *iMinSAD;
-		const uint8_t * Ref;
-		const uint8_t * RefH;
-		const uint8_t * RefV;
-		const uint8_t * RefHV;
-		const uint8_t * RefCU;
-		const uint8_t * RefCV;
-		const uint8_t * CurU;
-		const uint8_t * CurV;
-		uint8_t * RefQ;
-		const uint8_t * Cur;
-		uint32_t lambda16;
-		uint32_t lambda8;
-		uint32_t iEdgedWidth;
-		uint32_t iFcode;
-		int * temp;
-		int qpel, qpel_precision;
-		int chroma;
-		int rrv;
-//fields for interpolate and direct mode
-		const uint8_t *bRef;
-		const uint8_t *bRefH;
-		const uint8_t *bRefV;
-		const uint8_t *bRefHV;
-		VECTOR bpredMV;
-		uint32_t bFcode;
+	int max_dx, min_dx, max_dy, min_dy;
+	uint32_t rounding;
+	VECTOR predMV;
+	VECTOR * currentMV;
+	VECTOR * currentQMV;
+	int32_t * iMinSAD;
+	const uint8_t * Ref;
+	const uint8_t * RefH;
+	const uint8_t * RefV;
+	const uint8_t * RefHV;
+	const uint8_t * RefCU;
+	const uint8_t * RefCV;
+	const uint8_t * CurU;
+	const uint8_t * CurV;
+	uint8_t * RefQ;
+	const uint8_t * Cur;
+	uint32_t lambda16;
+	uint32_t lambda8;
+	uint32_t iEdgedWidth;
+	uint32_t iFcode;
+	int * temp;
+	int qpel, qpel_precision;
+	int chroma;
+	int rrv;
+//fields for interpolate and direct modes
+	const uint8_t * bRef;
+	const uint8_t * bRefH;
+	const uint8_t * bRefV;
+	const uint8_t * bRefHV;
+	VECTOR bpredMV;
+	uint32_t bFcode;
 // fields for direct mode
-		VECTOR directmvF[4];
-		VECTOR directmvB[4];
-		const VECTOR * referencemv;
-	}
-	SearchData;
+	VECTOR directmvF[4];
+	VECTOR directmvB[4];
+	const VECTOR * referencemv;
+
+} SearchData;
 
 
 typedef void(CheckFunc)(const int x, const int y,
 						const int Direction, int * const dir,
 						const SearchData * const Data);
-
-static CheckFunc CheckCandidate16, CheckCandidate16no4v, CheckCandidateInt,
-			CheckCandidateDirect, CheckCandidateDirectno4v,
-			CheckCandidate8;
 CheckFunc *CheckCandidate;
 
 /*
- * Calculate the min/max range (in halfpixels)
+ * Calculate the min/max range
  * relative to the _MACROBLOCK_ position
  */
 static void __inline
@@ -165,28 +163,27 @@ get_range(int32_t * const min_dx,
 		  int32_t * const max_dy,
 		  const uint32_t x,
 		  const uint32_t y,
-		  uint32_t block_sz,	/* block dimension, 8 or 16 */
+		  uint32_t block_sz, /* block dimension, 8 or 16 */
 		  const uint32_t width,
 		  const uint32_t height,
 		  const uint32_t fcode,
-		  const int qpel,
+		  const int qpel, /* 1 if the resulting range should be in qpel precision; otherwise 0 */
 		  const int rrv)
 {
-	int k, m = 2;
+	int k, m = qpel ? 4 : 2;
 	const int search_range = 32 << (fcode - 1);
 	int high = search_range - 1;
 	int low = -search_range;
 	
-	if (qpel) m = 4;
-	else if (rrv) {
-			high = RRV_MV_SCALEUP(high);
-			low = RRV_MV_SCALEUP(low);
-			block_sz *= 2;
-		}
+	if (rrv) {
+		high = RRV_MV_SCALEUP(high);
+		low = RRV_MV_SCALEUP(low);
+		block_sz *= 2;
+	}
 
-	k = m * (int)(width - x*block_sz);
+	k = m * (int)(width - x * block_sz);
 	*max_dx = MIN(high, k);
-	k = m * (int)(height -  y*block_sz);
+	k = m * (int)(height -  y * block_sz);
 	*max_dy = MIN(high, k);
 	
 	k = -m * (int)((x+1) * block_sz);
