@@ -25,12 +25,15 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.31 2003-12-17 15:16:16 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.32 2003-12-21 12:41:48 syskin Exp $
  *
  *****************************************************************************/
 
 #define BQUANT_PRESCALE
 #undef COMPENSATE_FORMULA
+
+/* forces second pass not to be bigger than first */
+#undef PASS_SMALLER
 
 #include <stdio.h>
 #include <math.h>
@@ -535,7 +538,7 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	 *-----------------------------------------------------------------------*/
 
 	/* Compute the overflow we should compensate */
-	if (s->type != XVID_TYPE_IVOP) {
+	if (s->type != XVID_TYPE_IVOP || rc->overflow > 0) {
 		double frametype_factor;
 		double framesize_factor;
 
@@ -566,7 +569,7 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 		/* Apply the overflow strength imposed by the user */
 		overflow *= (rc->param.overflow_control_strength/100.0f);
 	} else {
-		/* no overflow applied in IFrames because:
+		/* no negative overflow applied in IFrames because:
 		 *  - their role is important as they're references for P/BFrames.
 		 *  - there aren't much in typical sequences, so if an IFrame overflows too
 		 *    much, this overflow may impact the next IFrame too much and generate
@@ -598,9 +601,12 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	 * pass nor smaller than the allowed minimum.
 	 *-----------------------------------------------------------------------*/
 
+#ifdef PASS_SMALLER
 	if (dbytes > s->length) {
 		dbytes = s->length;
-	} else if (dbytes < rc->min_length[s->type-1]) {
+	} else
+#endif
+		if (dbytes < rc->min_length[s->type-1]) {
 		dbytes = rc->min_length[s->type-1];
 	} else if (dbytes > rc->max_length) {
 		/* ToDo: this condition is always wrong as max_length == maximum frame
@@ -1112,13 +1118,14 @@ first_pass_scale_curve_internal(rc_2pass2_t *rc)
 	/* Let's compute a linear scaler in order to perform curve scaling */
 	scaler = (double)(target - total_invariant) / (double)(pass1_length - total_invariant);
 
+#ifdef PASS_SMALLER
 	if ((target - total_invariant) <= 0 ||
 		(pass1_length - total_invariant) <= 0 ||
 		target >= pass1_length) {
 		DPRINTF(XVID_DEBUG_RC, "[xvid rc] -- WARNING: Undersize detected before correction\n");
 		scaler = 1.0;
 	}
-
+#endif
 	/* Compute min frame lengths (for each frame type) according to the number
 	 * of MBs. We sum all block type counters of frame 0, this gives us the
 	 * number of MBs.
@@ -1185,11 +1192,13 @@ first_pass_scale_curve_internal(rc_2pass2_t *rc)
 	/* Scaling factor for 'regular' frames */
 	scaler = (double)(target - total_invariant) / (double)(pass1_length - total_invariant);
 
+#ifdef PASS_SMALLER
 	/* Detect undersizing */
 	if (target <= 0 || pass1_length <= 0 || target >= pass1_length) {
 		DPRINTF(XVID_DEBUG_RC, "[xvid rc] -- WARNING: Undersize detected after correction\n");
 		scaler = 1.0;
 	}
+#endif
 
 	/* Do another pass with the new scaler */
 	for (i=0; i<rc->num_frames; i++) {
