@@ -1,10 +1,553 @@
 #
-# This ChangeLog is generated from my(edgomez) personal tree maintained
-# under the arch version control tool. That's why dates may be wrong and
-# so may are patch submitters
-# 
+# Ed.Gomez: This ChangeLog is generated from a personal tree maintained
+# under the arch revision control tool. That's why dates may be skewed. I
+# also removed all my email adresses from the output because they are not
+# relevent
+#
 
-2003-06-27 13:42:52 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-80
+
+2003-08-09 20:31:17 GMT	                                	patch-23
+
+    Summary:
+      Workaround to a GMC bug due to a MS compiler bug.
+    Revision:
+      xvidcore--devapi4--1.0--patch-23
+
+    Christoph did use a trick to speed up code that resulted in badly
+    optimized code (teh compiler was missing a cast)
+
+    modified files:
+     ./src/motion/gmc.c
+
+
+2003-08-09 17:09:00 GMT	                                	patch-22
+
+    Summary:
+      Fixes to xvid_decraw
+    Revision:
+      xvidcore--devapi4--1.0--patch-22
+
+    xvid_decraw has always been used on not so high bitrate sequences
+    and not so big sequences neither.
+    
+    I've been doing lot of tests on the Matrix 2 trailer
+    (1000x540 25fps ~5Mbits/s) and xvid_decraw was not able to handle that
+    because of bugs in the buffer filling algorithm.
+    
+    This patch fixes the buffer filling and catches up with christoph changes
+    in CVS (wrong help message and option parsing).
+
+    modified files:
+     ./examples/xvid_decraw.c
+
+
+2003-08-08 21:31:59 GMT	                                	patch-21
+
+    Summary:
+      Added QPel and GMC options.
+    Revision:
+      xvidcore--devapi4--1.0--patch-21
+
+    XviD has so many options that we forget to propose them all on the
+    CLI, here are two more: GMC and Qpel.
+
+    modified files:
+     ./examples/xvid_encraw.c
+
+
+2003-08-07 19:26:28 GMT	                                	patch-20
+
+    Summary:
+      SVOP handling in status window
+    Revision:
+      xvidcore--devapi4--1.0--patch-20
+
+    SVOP handling in status window
+    
+
+    modified files:
+     ./vfw/src/status.c
+
+
+2003-08-07 19:25:03 GMT	                                	patch-19
+
+    Summary:
+      Warning cleanups by chl
+    Revision:
+      xvidcore--devapi4--1.0--patch-19
+
+    Warning cleanups by chl
+    
+
+    modified files:
+     ./src/encoder.c ./src/encoder.h ./src/image/interpolate8x8.c
+     ./src/motion/motion_est.c ./src/xvid.h
+
+
+2003-08-06 21:13:35 GMT	                                	patch-18
+
+    Summary:
+      Fix to GMC sprite trajectory code
+    Revision:
+      xvidcore--devapi4--1.0--patch-18
+
+    Fix to GMC sprite trajectory code
+    
+
+    modified files:
+     ./src/bitstream/mbcoding.c ./src/xvid.h
+
+
+2003-08-06 10:57:25 GMT	                                	patch-17
+
+    Summary:
+      Fixes a bug in BVOP block skipping thresholding
+    Revision:
+      xvidcore--devapi4--1.0--patch-17
+
+    Fixes a bug in BVOP block skipping thresholding
+    
+
+    modified files:
+     ./src/motion/motion_est.c
+
+
+2003-08-03 14:57:32 GMT	                                	patch-16
+
+    Summary:
+      Functions renaming + motion fixes.
+    Revision:
+      xvidcore--devapi4--1.0--patch-16
+
+    BITS flags have been renamed to RD (Rate Distorsion) flags... however
+    function names were still xxxBitsxxx.
+    
+    Improved frame type decision
+    
+    Fix for DQUANTS plugins, their quant was never checked against valid
+    [1..31] range.
+
+    modified files:
+     ./src/encoder.c ./src/motion/motion_est.c
+     ./src/motion/motion_est.h
+
+
+2003-08-02 15:00:49 GMT	                                	patch-15
+
+    Summary:
+      API cleanup.
+    Revision:
+      xvidcore--devapi4--1.0--patch-15
+
+    Since we started devapi3 and then devapi4, feature names did not change
+    because it was just convenient to keep them to minimize the change impact.
+    But most of the flags were now not even suggesting what they do. So this
+    patch cleans the API.
+    
+    This patch also change the way we describe flags, it's more compact and
+    shows better flags are bit sets that must not overlap. This change fixes
+    a plugin flag overlapping problem as well.
+
+    modified files:
+     ./examples/xvid_encraw.c ./src/decoder.c ./src/encoder.c
+     ./src/encoder.h ./src/motion/motion_est.c
+     ./src/motion/motion_est.h ./src/xvid.c ./src/xvid.h
+     ./vfw/src/codec.c ./vfw/src/config.c
+
+
+2003-07-29 22:25:12 GMT	                                	patch-14
+
+    Summary:
+      Fixed bogus memory accesses
+    Revision:
+      xvidcore--devapi4--1.0--patch-14
+
+    Fixed bogus memory accesses
+    
+
+    modified files:
+     ./src/encoder.c ./src/plugins/plugin_2pass1.c
+
+
+2003-07-28 12:22:33 GMT	                                	patch-13
+
+    Summary:
+      Bitstream version increased to 16
+    Revision:
+      xvidcore--devapi4--1.0--patch-13
+
+    Bitstream version increased to 16
+    
+
+    modified files:
+     ./src/xvid.h
+
+
+2003-07-25 12:01:51 GMT	                                	patch-12
+
+    Summary:
+      Added gmc files to teh windows project file
+    Revision:
+      xvidcore--devapi4--1.0--patch-12
+
+    Added gmc files to teh windows project file
+    
+
+    modified files:
+     ./build/win32/libxvidcore.dsp ./vfw/src/codec.c
+
+
+2003-07-25 12:00:31 GMT	                                	patch-11
+
+    Summary:
+      Added cartoon mode from Isibaar
+    Revision:
+      xvidcore--devapi4--1.0--patch-11
+
+    Added cartoon mode from Isibaar
+    
+
+    modified files:
+     ./src/motion/motion_est.c ./src/plugins/plugin_single.c
+     ./src/utils/mbtransquant.c ./src/xvid.h
+
+
+2003-07-25 10:30:41 GMT	                                	patch-10
+
+    Summary:
+      Bitstream syntax comments.
+    Revision:
+      xvidcore--devapi4--1.0--patch-10
+
+    This patch does not change the bitstream but adds some comments that
+    can help in order to understand (lack of) calls to BitstreamPadAlways.
+
+    modified files:
+     ./src/bitstream/bitstream.c ./src/encoder.c
+
+
+2003-07-22 16:34:25 GMT	                                	patch-9
+
+    Summary:
+      Fixes Bistream errors in VOL (+ forced stuffing)
+    Revision:
+      xvidcore--devapi4--1.0--patch-9
+
+    After a detailed bugreport at:
+    http://www.xvid.org/modules.php?op=modload&name=phpBB2&file=viewtopic&t=1387&highlight=
+    
+    I discovered that:
+    
+    1/ we did not write video_signal_type, but we were padding to the next
+    byte, that's why we had video_signal_type=0 and then only 1s until the
+    next byte boundary. This explains the 11 next_start_code();
+    
+    2/ video_object_type_indication = Reserved is right on my machine,
+    please check again, but i doubt there is a bug there, we use 3 hard
+    wired values and none of them is zero.
+    
+    3/ 01 : next_start_code() *** Was wrong in 24.02.2003; is correct in
+    dev-api-4!!! *** was a bug in fact... when we write user data, we pad to
+    the next byte boundary (if needed) like the standard says... by
+    chancepadding was almost always done, thus the next_start_code() was
+    respected.
+    
+    4/ The extra stuffing bits were caused by a forced padding between our
+    VOL function writer and VOP header function writer.
+
+    modified files:
+     ./src/bitstream/bitstream.c ./src/encoder.c
+
+
+2003-07-16 22:57:44 GMT	                                	patch-8
+
+    Summary:
+      Fixed quant4_intra_xmm and quant_intra_3dne bug for DC<0.
+    Revision:
+      xvidcore--devapi4--1.0--patch-8
+
+    These two functions were suffering the same error that consists in
+    emulating idiv with some an inversed divisor array and an imul
+    instruction followed by a right shift...
+    
+    That was always decreasing the ressult by 1 for negative DC values.
+    A not so bad solution is simply to use a cmov instruction and choose
+    the right value according to the DC value. As these function were
+    for PIII and Athlon, we are sure we can use the cmov instruction.
+    
+    PS: the fix is somewhere in cosmetic changes... sorry but the code was
+    too ugly to fix it like it was.
+
+    modified files:
+     ./src/quant/x86_asm/quantize4_xmm.asm
+     ./src/quant/x86_asm/quantize_3dne.asm
+
+
+2003-07-16 12:58:21 GMT	                                	patch-7
+
+    Summary:
+      Fixed the build system (error caused by patch-5)
+    Revision:
+      xvidcore--devapi4--1.0--patch-7
+
+    IA64 cahnges were wrong in the build system, they make all platforms
+    try to compile a directory... That patch should fix the IA64 target
+    build and get back to previous behavior for other architectures.
+
+    modified files:
+     ./build/generic/configure.in ./build/generic/platform.inc.in
+     ./build/generic/sources.inc
+
+
+2003-07-13 12:16:55 GMT	                                	patch-6
+
+    Summary:
+      Updates for GME and some cleanups.
+    Revision:
+      xvidcore--devapi4--1.0--patch-6
+
+    This is a all in one patch from syskin:
+    * mcsel decision moved to ModeDecision() function. That makes motion
+      loop completely aware of macroblock mode and vectors (amv in that case).
+      A simple copy&paste was needed to make the the decision R-D based, to be
+      compatible with MODEDECISION_BITS.
+    
+    * many bugs fixed. Most of them very small,  the only big one was that
+      BITS was misunderstanding a flag and was thinking that mpeg quant is
+      used when h263 quant is used and vice versa :( Also, correct cbp with
+      inter4v mode makes mode decision better. Two speedups - for BITS (no
+      more dequantization when sum == 0) and for ChromaME (chroma sad not
+      computed if total sad too big before that). Some GMC compiler warnings
+      removed. Probably more, I don't remember ;) I haven't touched P/B/I
+      decision for once.
+    
+    * compiler warnings removed, mostly "const mismatch" in get_amv() <-- or
+      what was his name.
+    
+    * two functions made 2x smaller, shorter and faster.
+
+    modified files:
+     ./src/encoder.c ./src/global.h ./src/image/interpolate8x8.h
+     ./src/motion/gmc.c ./src/motion/gmc.h
+     ./src/motion/motion_est.c ./src/motion/motion_est.h
+     ./vfw/src/codec.c
+
+
+2003-07-10 17:35:59 GMT	                                	patch-5
+
+    Summary:
+      IA64 updates.
+    Revision:
+      xvidcore--devapi4--1.0--patch-5
+
+    Changes from Stephan Krause <s_kraste at ira.uka.de>
+    
+    Small updates so ia64 is supposed to work. Further testing is needed
+    because tests have only been done with xvid_encraw.
+
+    modified files:
+     ./build/generic/platform.inc.in ./examples/xvid_encraw.c
+     ./src/motion/motion_est.c ./src/xvid.c
+
+
+2003-07-10 17:27:01 GMT	                                	patch-4
+
+    Summary:
+      Removed remaining expanded $ lines from the arch repo
+    Revision:
+      xvidcore--devapi4--1.0--patch-4
+
+    Removed remaining expanded $ lines from the arch repo
+    
+
+    modified files:
+     ./CodingStyle ./build/generic/bootstrap.sh
+     ./doc/xvid-encoder.txt ./src/bitstream/ppc_asm/cbp_altivec.s
+     ./src/bitstream/ppc_asm/cbp_ppc.s
+     ./src/dct/x86_asm/fdct_xmm.asm
+     ./src/image/x86_asm/colorspace_yuv_mmx.asm
+     ./src/image/x86_asm/reduced_mmx.asm
+     ./src/image/x86_asm/yuv_to_yv12_mmx.asm
+     ./src/image/x86_asm/yv12_to_rgb24_mmx.asm
+     ./src/image/x86_asm/yv12_to_rgb32_mmx.asm
+     ./src/motion/ppc_asm/sad_altivec.c ./todo.txt
+
+
+2003-07-02 23:20:39 GMT	                                	patch-3
+
+    Summary:
+      Reset the IFrame counter when an iframe is encoded
+    Revision:
+      xvidcore--devapi4--1.0--patch-3
+
+    Reset the IFrame counter when an iframe is encoded
+    
+
+    modified files:
+     ./src/encoder.c
+
+
+2003-06-29 21:58:24 GMT	                                	patch-2
+
+    Summary:
+      Added 3 warp point GMC.
+    Revision:
+      xvidcore--devapi4--1.0--patch-2
+
+    Added 3 warp point GMC (first cvs commit + bitstream warp writing fix
+    from cvs)
+
+    new files:
+     ./src/motion/.arch-ids/gmc.c.id
+     ./src/motion/.arch-ids/gmc.h.id ./src/motion/gmc.c
+     ./src/motion/gmc.h
+
+    modified files:
+     ./build/generic/sources.inc ./src/bitstream/bitstream.c
+     ./src/decoder.c ./src/decoder.h ./src/encoder.c
+     ./src/encoder.h ./src/global.h ./src/motion/motion.h
+     ./src/motion/motion_comp.c ./src/motion/motion_est.c
+     ./src/motion/motion_est.h ./src/utils/mbfunctions.h
+     ./src/xvid.h
+
+
+2003-06-29 21:35:01 GMT	                                	patch-1
+
+    Summary:
+      Updated changelog
+    Revision:
+      xvidcore--devapi4--1.0--patch-1
+
+    Updated changelog
+    
+
+    modified files:
+     ./changelog.txt
+
+
+2003-06-27 17:01:46 GMT	                                	base-0
+
+    Summary:
+      tag of ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-80
+    Revision:
+      xvidcore--devapi4--1.0--base-0
+
+    (automatically generated log message)
+
+    new patches:
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--base-0
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-1
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-2
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-3
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-4
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-5
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-6
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-7
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-8
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-9
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-10
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-11
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-12
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-13
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-14
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-15
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-16
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-17
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-18
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-19
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-20
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-21
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-22
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-23
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-24
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-25
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-26
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-27
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-28
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-29
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-30
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-31
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-32
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-33
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-34
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-35
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-36
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-37
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-38
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-39
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-40
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-41
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-42
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-43
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-44
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-45
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-46
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-47
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-48
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-49
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-50
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-51
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-52
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-53
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-54
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-55
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-56
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-57
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-58
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-59
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-60
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-61
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-62
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-63
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-64
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-65
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-66
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-67
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-68
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-69
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-70
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-71
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-72
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-73
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-74
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-75
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-76
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-77
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-78
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-79
+     ed.gomez@free.fr--main/xvidcore--devapi4--1.0--patch-80
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--base-0
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-1
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-2
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-3
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-4
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-5
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-6
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-7
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-8
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-9
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-10
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-11
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-12
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-13
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-14
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-15
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-16
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-17
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-18
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-19
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--patch-20
+     ed.gomez@free.fr--main/xvidcore--stable--0.9--version-0
+     ed.gomez@free.fr--main/xvidcore--stable--1.0--base-0
+     ed.gomez@free.fr--main/xvidcore--stable--1.0--patch-1
+     ed.gomez@free.fr--main/xvidcore--stable--1.0--patch-2
+     ed.gomez@free.fr--main/xvidcore--stable--1.0--patch-3
+     ed.gomez@free.fr--main/xvidcore--stable--1.0--patch-4
+     ed.gomez@free.fr--main/xvidcore--stable--1.0--patch-5
+     ed.gomez@free.fr--main/xvidcore--stable--1.0--patch-6
+
+
+2003-06-27 13:42:52 GMT	                                	patch-80
 
     Summary:
       Still fixes and improvements to motion estimation
@@ -17,7 +560,7 @@
      src/motion/motion_est.c src/motion/motion_est.h
 
 
-2003-06-27 13:35:20 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-79
+2003-06-27 13:35:20 GMT	                                	patch-79
 
     Summary:
       Added compile time PNM reading
@@ -31,7 +574,7 @@
      examples/xvid_encraw.c
 
 
-2003-06-24 12:19:01 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-78
+2003-06-24 12:19:01 GMT	                                	patch-78
 
     Summary:
       Fixes to the RD ME
@@ -44,7 +587,7 @@
      src/motion/motion_est.c src/motion/motion_est.h
 
 
-2003-06-14 09:14:11 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-77
+2003-06-14 09:14:11 GMT	                                	patch-77
 
     Summary:
       Zone update.
@@ -59,7 +602,7 @@
      vfw/src/config.rc vfw/src/resource.h
 
 
-2003-06-14 09:06:37 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-76
+2003-06-14 09:06:37 GMT	                                	patch-76
 
     Summary:
       Fixes a bug where type was not respected in a BEFORE plugin.
@@ -75,7 +618,7 @@
      src/encoder.c
 
 
-2003-06-12 23:03:38 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-75
+2003-06-12 23:03:38 GMT	                                	patch-75
 
     Summary:
       Fixed the old "yellow line on left" with rgb output.
@@ -88,7 +631,7 @@
      src/image/x86_asm/colorspace_rgb_mmx.asm
 
 
-2003-06-12 23:02:10 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-74
+2003-06-12 23:02:10 GMT	                                	patch-74
 
     Summary:
       Removed log2bin ia32 optimization.
@@ -101,7 +644,7 @@
      src/bitstream/bitstream.c
 
 
-2003-06-12 22:55:10 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-73
+2003-06-12 22:55:10 GMT	                                	patch-73
 
     Summary:
       Fixed some small things in encoder.
@@ -116,7 +659,7 @@
      src/encoder.c
 
 
-2003-06-12 22:51:55 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-72
+2003-06-12 22:51:55 GMT	                                	patch-72
 
     Summary:
       Back to Walken's Idct
@@ -130,7 +673,7 @@
      src/xvid.c src/xvid.h
 
 
-2003-06-10 22:45:57 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-71
+2003-06-10 22:45:57 GMT	                                	patch-71
 
     Summary:
       VFW front end update (New live quant histogram window)
@@ -150,7 +693,7 @@
      vfw/src/resource.h vfw/vfw.dsp
 
 
-2003-06-10 20:58:09 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-70
+2003-06-10 20:58:09 GMT	                                	patch-70
 
     Summary:
       Fixed the win32 project file because of patch-64
@@ -164,7 +707,7 @@
      build/win32/libxvidcore.dsp
 
 
-2003-06-10 20:53:31 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-69
+2003-06-10 20:53:31 GMT	                                	patch-69
 
     Summary:
       Added direct target frame size support + cosmetic.
@@ -180,7 +723,7 @@
      src/plugins/plugin_2pass2.c
 
 
-2003-06-10 09:13:40 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-68
+2003-06-10 09:13:40 GMT	                                	patch-68
 
     Summary:
       xvid_bench updates and corresponding Makefile changes.
@@ -199,7 +742,7 @@
      examples/Makefile examples/xvid_bench.c
 
 
-2003-06-10 09:05:14 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-67
+2003-06-10 09:05:14 GMT	                                	patch-67
 
     Summary:
       Probably a small copy/paste error
@@ -213,7 +756,7 @@
      src/xvid.h
 
 
-2003-06-09 19:39:47 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-66
+2003-06-09 19:39:47 GMT	                                	patch-66
 
     Summary:
       Activated simple_idct_mmx.
@@ -234,7 +777,7 @@
      src/decoder.h src/xvid.c src/xvid.h
 
 
-2003-06-09 19:15:18 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-65
+2003-06-09 19:15:18 GMT	                                	patch-65
 
     Summary:
       Remaining include of adapt_quant.h
@@ -247,7 +790,7 @@
      src/encoder.c
 
 
-2003-06-09 17:49:44 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-64
+2003-06-09 17:49:44 GMT	                                	patch-64
 
     Summary:
       Moved code from adapt_quant.c to the lumimasking plugin.
@@ -272,7 +815,7 @@
      build/generic/sources.inc src/plugins/plugin_lumimasking.c
 
 
-2003-06-09 13:45:29 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-63
+2003-06-09 13:45:29 GMT	                                	patch-63
 
     Summary:
       Legal GNU GPL Headers and copyright holders.
@@ -323,7 +866,7 @@
      vfw/src/debug.h vfw/src/resource.h vfw/src/vfwext.h
 
 
-2003-06-09 01:13:50 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-62
+2003-06-09 01:13:50 GMT	                                	patch-62
 
     Summary:
       ANSI C comments.
@@ -360,7 +903,7 @@
      vfw/src/config.c vfw/src/config.h vfw/src/driverproc.c
 
 
-2003-06-04 18:19:56 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-61
+2003-06-04 18:19:56 GMT	                                	patch-61
 
     Summary:
       Removed AltCC from VFW frontend
@@ -375,7 +918,7 @@
      vfw/src/config.rc
 
 
-2003-05-29 14:47:28 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-60
+2003-05-29 14:47:28 GMT	                                	patch-60
 
     Summary:
       Lot of two pass updates.
@@ -414,7 +957,7 @@
      src/plugins/plugin_2pass2.c
 
 
-2003-05-25 10:01:55 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-59
+2003-05-25 10:01:55 GMT	                                	patch-59
 
     Summary:
       Function reordering, fix minimum "hardcoded" frame sizes in internal_sacle().
@@ -433,7 +976,7 @@
      src/plugins/plugin_2pass2.c
 
 
-2003-05-22 23:11:21 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-58
+2003-05-22 23:11:21 GMT	                                	patch-58
 
     Summary:
       Added the container_frame_overhead field to the 2pass2 RC structure.
@@ -452,7 +995,7 @@
      src/plugins/plugin_2pass2.c src/xvid.h vfw/src/codec.c
 
 
-2003-05-22 22:22:47 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-57
+2003-05-22 22:22:47 GMT	                                	patch-57
 
     Summary:
       Fixed an overflow bug in target filesize computation.
@@ -469,7 +1012,7 @@
      src/plugins/plugin_2pass2.c
 
 
-2003-05-22 18:53:19 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-56
+2003-05-22 18:53:19 GMT	                                	patch-56
 
     Summary:
       Added the mrproper Makefile target.
@@ -484,7 +1027,7 @@
      build/generic/Makefile
 
 
-2003-05-22 17:30:15 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-55
+2003-05-22 17:30:15 GMT	                                	patch-55
 
     Summary:
       Fix a nasty bug due to a typo mistake.
@@ -498,7 +1041,7 @@
      src/plugins/plugin_2pass2.c
 
 
-2003-05-22 17:24:19 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-54
+2003-05-22 17:24:19 GMT	                                	patch-54
 
     Summary:
       Removed automatic \n in DPRINTF calls. 
@@ -514,7 +1057,7 @@
      src/prediction/mbprediction.c
 
 
-2003-05-22 17:03:38 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-53
+2003-05-22 17:03:38 GMT	                                	patch-53
 
     Summary:
       Cleaned up a bit, added comments.
@@ -529,7 +1072,7 @@
      src/plugins/plugin_2pass2.c
 
 
-2003-05-18 12:12:49 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-52
+2003-05-18 12:12:49 GMT	                                	patch-52
 
     Summary:
       Update of xvid_encraw (vop_debug, debug, max key frame)
@@ -548,7 +1091,7 @@
      examples/xvid_encraw.c
 
 
-2003-05-18 12:01:31 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-51
+2003-05-18 12:01:31 GMT	                                	patch-51
 
     Summary:
       Missing RateControl removal from Win32 visual project.
@@ -561,7 +1104,7 @@
      build/win32/libxvidcore.dsp
 
 
-2003-05-18 00:08:46 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-50
+2003-05-18 00:08:46 GMT	                                	patch-50
 
     Summary:
       Removed legacy RateControl module.
@@ -579,7 +1122,7 @@
      build/generic/sources.inc src/encoder.h
 
 
-2003-05-17 23:54:55 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-49
+2003-05-17 23:54:55 GMT	                                	patch-49
 
     Summary:
       VFW Update.
@@ -597,7 +1140,7 @@
      vfw/src/config.rc vfw/src/resource.h
 
 
-2003-05-17 23:50:38 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-48
+2003-05-17 23:50:38 GMT	                                	patch-48
 
     Summary:
       2pass plugin updates for zone support.
@@ -612,7 +1155,7 @@
      src/plugins/plugin_2pass1.c src/plugins/plugin_2pass2.c
 
 
-2003-05-17 21:07:43 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-47
+2003-05-17 21:07:43 GMT	                                	patch-47
 
     Summary:
       Debug is now controled through xvid_global + INIT
@@ -633,7 +1176,7 @@
      src/utils/ratecontrol.c src/xvid.c src/xvid.h
 
 
-2003-05-17 20:32:59 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-46
+2003-05-17 20:32:59 GMT	                                	patch-46
 
     Summary:
       Fix for the patch-44.
@@ -649,7 +1192,7 @@
      src/encoder.c
 
 
-2003-05-15 17:31:04 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-45
+2003-05-15 17:31:04 GMT	                                	patch-45
 
     Summary:
       Removed XVID_VOP_DYNAMIC_BFRAMES flag.
@@ -663,7 +1206,7 @@
      examples/xvid_encraw.c
 
 
-2003-05-15 17:24:55 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-44
+2003-05-15 17:24:55 GMT	                                	patch-44
 
     Summary:
       Fix to the encoder loop (was not respecting dynamic decision).
@@ -677,7 +1220,7 @@
      src/encoder.c src/xvid.h
 
 
-2003-05-14 23:27:59 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-43
+2003-05-14 23:27:59 GMT	                                	patch-43
 
     Summary:
       Added module building for MacOSX.
@@ -697,7 +1240,7 @@
      build/generic/configure.in
 
 
-2003-05-14 20:21:30 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-42
+2003-05-14 20:21:30 GMT	                                	patch-42
 
     Summary:
       Merged RD ME from cvs_head.
@@ -711,7 +1254,7 @@
      src/motion/motion_est.c src/motion/motion_est.h
 
 
-2003-05-14 18:40:40 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-41
+2003-05-14 18:40:40 GMT	                                	patch-41
 
     Summary:
       Merged syskin ME changes.
@@ -725,7 +1268,7 @@
      src/motion/motion_est.c src/motion/motion_est.h
 
 
-2003-05-14 17:28:52 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-40
+2003-05-14 17:28:52 GMT	                                	patch-40
 
     Summary:
       Small update to xvid_encraw.
@@ -738,7 +1281,7 @@
      examples/xvid_encraw.c
 
 
-2003-05-14 14:19:12 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-39
+2003-05-14 14:19:12 GMT	                                	patch-39
 
     Summary:
       VFW Update (zone support, profile support)
@@ -757,7 +1300,7 @@
      vfw/src/resource.h vfw/vfw.dsp
 
 
-2003-05-14 14:02:05 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-38
+2003-05-14 14:02:05 GMT	                                	patch-38
 
     Summary:
       Add support for single RC and zones to xvid_encraw.
@@ -770,7 +1313,7 @@
      examples/xvid_encraw.c
 
 
-2003-05-14 13:58:56 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-37
+2003-05-14 13:58:56 GMT	                                	patch-37
 
     Summary:
       Fixes for Win32 build of libxvidcore.
@@ -784,7 +1327,7 @@
      build/generic/libxvidcore.def.in build/win32/libxvidcore.dsp
 
 
-2003-05-13 00:10:12 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-36
+2003-05-13 00:10:12 GMT	                                	patch-36
 
     Summary:
       Small fixes.
@@ -799,7 +1342,7 @@
      src/encoder.c src/utils/mbtransquant.c
 
 
-2003-05-13 00:05:03 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-35
+2003-05-13 00:05:03 GMT	                                	patch-35
 
     Summary:
       CBR plugin is renamed Single pass. Fixed Quant plugin is disabled.
@@ -824,7 +1367,7 @@
        ==> src/plugins/plugin_single.c
 
 
-2003-05-12 23:49:14 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-34
+2003-05-12 23:49:14 GMT	                                	patch-34
 
     Summary:
       Removed quant limits per RC plugin, moved to global settings.
@@ -841,7 +1384,7 @@
      src/plugins/plugin_cbr.c src/xvid.h
 
 
-2003-05-12 23:25:54 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-33
+2003-05-12 23:25:54 GMT	                                	patch-33
 
     Summary:
       Added encoding zones
@@ -856,7 +1399,7 @@
      src/xvid.h
 
 
-2003-05-12 23:10:17 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-32
+2003-05-12 23:10:17 GMT	                                	patch-32
 
     Summary:
       Added the profile setting.
@@ -870,7 +1413,7 @@
      src/encoder.c src/encoder.h src/xvid.h
 
 
-2003-05-11 23:59:01 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-31
+2003-05-11 23:59:01 GMT	                                	patch-31
 
     Summary:
       Changed quality presets.
@@ -887,7 +1430,7 @@
      examples/xvid_encraw.c
 
 
-2003-05-11 20:47:55 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-30
+2003-05-11 20:47:55 GMT	                                	patch-30
 
     Summary:
       Some cleanups in the trellis code.
@@ -900,7 +1443,7 @@
      src/utils/mbtransquant.c
 
 
-2003-05-10 23:53:28 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-29
+2003-05-10 23:53:28 GMT	                                	patch-29
 
     Summary:
       New trellis code
@@ -915,7 +1458,7 @@
      src/utils/mbtransquant.c
 
 
-2003-05-10 23:43:11 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-28
+2003-05-10 23:43:11 GMT	                                	patch-28
 
     Summary:
       Intra frame decision.
@@ -930,7 +1473,7 @@
      src/motion/motion_est.c
 
 
-2003-05-05 21:50:25 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-27
+2003-05-05 21:50:25 GMT	                                	patch-27
 
     Summary:
       Fixed double last calculation in trellis quantization.
@@ -943,7 +1486,7 @@
      src/bitstream/mbcoding.c
 
 
-2003-05-05 21:46:29 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-26
+2003-05-05 21:46:29 GMT	                                	patch-26
 
     Summary:
       Added config.status to the distclean target.
@@ -959,7 +1502,7 @@
      build/generic/Makefile
 
 
-2003-05-05 21:39:47 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-25
+2003-05-05 21:39:47 GMT	                                	patch-25
 
     Summary:
       configure.in tuning (API number and lib sonames).
@@ -982,7 +1525,7 @@
      build/generic/configure.in
 
 
-2003-04-27 23:22:30 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-24
+2003-04-27 23:22:30 GMT	                                	patch-24
 
     Summary:
       Cleaned CBR plugin a bit, adds structure for a better initial quant.
@@ -999,7 +1542,7 @@
      src/plugins/plugin_cbr.c
 
 
-2003-04-27 23:18:20 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-23
+2003-04-27 23:18:20 GMT	                                	patch-23
 
     Summary:
       b-frames look good in still motion, after all.
@@ -1012,7 +1555,7 @@
      src/motion/motion_est.c
 
 
-2003-04-27 23:14:39 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-22
+2003-04-27 23:14:39 GMT	                                	patch-22
 
     Summary:
       Add initial trellis quantization to inter+h263 frames.
@@ -1029,7 +1572,7 @@
      src/bitstream/mbcoding.h src/utils/mbtransquant.c src/xvid.h
 
 
-2003-04-27 22:59:47 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-21
+2003-04-27 22:59:47 GMT	                                	patch-21
 
     Summary:
       Fixes 2 memory leaks.
@@ -1043,7 +1586,7 @@
      src/encoder.c src/utils/mem_align.c
 
 
-2003-04-27 22:50:27 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-20
+2003-04-27 22:50:27 GMT	                                	patch-20
 
     Summary:
       Adds Avg PSNR output to xvid_encraw.
@@ -1056,7 +1599,7 @@
      examples/xvid_encraw.c
 
 
-2003-04-27 22:40:45 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-19
+2003-04-27 22:40:45 GMT	                                	patch-19
 
     Summary:
       Fixes the vfw Visual Project.
@@ -1069,7 +1612,7 @@
      vfw/vfw.dsp
 
 
-2003-04-14 20:07:47 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-18
+2003-04-14 20:07:47 GMT	                                	patch-18
 
     Summary:
       Fixes plugin initialization in xvid_encraw.
@@ -1083,7 +1626,7 @@
      examples/xvid_encraw.c
 
 
-2003-04-14 15:28:57 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-17
+2003-04-14 15:28:57 GMT	                                	patch-17
 
     Summary:
       Fixed function prototypes <-> definitions mismatching.
@@ -1096,7 +1639,7 @@
      src/utils/mbfunctions.h src/utils/mbtransquant.c
 
 
-2003-04-14 15:23:15 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-16
+2003-04-14 15:23:15 GMT	                                	patch-16
 
     Summary:
       VFW frontend update
@@ -1111,7 +1654,7 @@
      vfw/src/resource.h vfw/vfw.dsp
 
 
-2003-04-14 15:05:20 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-15
+2003-04-14 15:05:20 GMT	                                	patch-15
 
     Summary:
       Fixed BITS decision for low quants, reworked p/b/i decision.
@@ -1128,7 +1671,7 @@
      src/motion/motion_est.c
 
 
-2003-04-10 13:01:07 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-14
+2003-04-10 13:01:07 GMT	                                	patch-14
 
     Summary:
       Removed all ABS() macros.
@@ -1149,7 +1692,7 @@
      src/utils/mbtransquant.c src/xvid.c
 
 
-2003-04-09 18:44:24 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-13
+2003-04-09 18:44:24 GMT	                                	patch-13
 
     Summary:
       Added GNU profiling option to the configure script.
@@ -1172,7 +1715,7 @@
      build/generic/configure.in
 
 
-2003-04-09 16:09:33 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-12
+2003-04-09 16:09:33 GMT	                                	patch-12
 
     Summary:
       Build fix from release-0_9_1-fixes@cvs.xvid.org
@@ -1186,7 +1729,7 @@
      build/generic/configure.in
 
 
-2003-04-09 13:44:06 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-11
+2003-04-09 13:44:06 GMT	                                	patch-11
 
     Summary:
       Syncing arch tree with xvid.org cvs.
@@ -1237,7 +1780,7 @@
      src/xvid.h vfw/src/2pass.c vfw/src/codec.c
 
 
-2003-03-16 00:21:32 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-10
+2003-03-16 00:21:32 GMT	                                	patch-10
 
     Summary:
       Added suxen plugin system (Synced with CVS)
@@ -1262,7 +1805,7 @@
      src/plugins/.arch-ids src/plugins
 
 
-2003-03-11 23:37:06 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-9
+2003-03-11 23:37:06 GMT	                                	patch-9
 
     Summary:
       Changed xvid_decraw option handling for -d/-m.
@@ -1275,7 +1818,7 @@
      examples/xvid_decraw.c
 
 
-2003-03-11 23:30:16 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-8
+2003-03-11 23:30:16 GMT	                                	patch-8
 
     Summary:
       Fixed frame counting in xvid_encraw.
@@ -1290,7 +1833,7 @@
      examples/xvid_encraw.c
 
 
-2003-03-11 23:07:01 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-7
+2003-03-11 23:07:01 GMT	                                	patch-7
 
     Summary:
       Ported xvid_decraw to new API.
@@ -1310,7 +1853,7 @@
      examples/Makefile examples/xvid_decraw.c
 
 
-2003-03-11 20:19:44 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-6
+2003-03-11 20:19:44 GMT	                                	patch-6
 
     Summary:
       Fix an important API comment in main header.
@@ -1324,7 +1867,7 @@
      src/xvid.h
 
 
-2003-03-11 00:36:34 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-5
+2003-03-11 00:36:34 GMT	                                	patch-5
 
     Summary:
       PSNR is now an option. More consistent -m/-s option handling.
@@ -1343,7 +1886,7 @@
      examples/xvid_encraw.c
 
 
-2003-03-10 00:36:15 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-4
+2003-03-10 00:36:15 GMT	                                	patch-4
 
     Summary:
       Adds extended stats support even for bframes in xvidcore.
@@ -1360,7 +1903,7 @@
      src/encoder.c src/utils/mbfunctions.h src/utils/mbtransquant.c
 
 
-2003-03-09 16:42:27 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-3
+2003-03-09 16:42:27 GMT	                                	patch-3
 
     Summary:
       Adds extended stats support.
@@ -1381,7 +1924,7 @@
      examples/xvid_encraw.c
 
 
-2003-03-09 00:23:52 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-2
+2003-03-09 00:23:52 GMT	                                	patch-2
 
     Summary:
       Updated xvid_encraw for new API.
@@ -1399,7 +1942,7 @@
      examples/Makefile examples/xvid_encraw.c src/encoder.c
 
 
-2003-03-06 22:08:43 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-1
+2003-03-06 22:08:43 GMT	                                	patch-1
 
     Summary:
       Synced with dev-api-4 XviD branch.
@@ -1464,7 +2007,7 @@
      vfw/src rawdec dshow dshow/src
 
 
-2003-03-06 21:27:16 GMT	Edouard Gomez <ed.gomez@free.fr>	base-0
+2003-03-06 21:27:16 GMT	                                	base-0
 
     Summary:
       tag of ed.gomez@free.fr--main/xvidcore--stable--1.0--patch-6
@@ -1505,7 +2048,7 @@
      ed.gomez@free.fr--main/xvidcore--stable--1.0--patch-5
      ed.gomez@free.fr--main/xvidcore--stable--1.0--patch-6
 
-2003-02-15 18:40:33 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-3
+2003-02-15 18:40:33 GMT	                                	patch-3
 
     Summary:
       Added latest Pete's chroma optimization code.
@@ -1518,7 +2061,7 @@
      src/encoder.c src/xvid.h
 
 
-2003-02-15 14:48:12 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-2
+2003-02-15 14:48:12 GMT	                                	patch-2
 
     Summary:
       Fixed compilation and moved back to plain GPL. 
@@ -1534,7 +2077,7 @@
      LICENSE src/portab.h
 
 
-2003-02-15 14:05:17 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-1
+2003-02-15 14:05:17 GMT	                                	patch-1
 
     Summary:
       Updated tree to dev-api-3 branch.
@@ -1649,7 +2192,7 @@
      src/utils/x86_asm/mem_transfer_mmx.asm src/xvid.c src/xvid.h
 
 
-2003-02-14 23:01:44 GMT	Edouard Gomez <ed.gomez@free.fr>	base-0
+2003-02-14 23:01:44 GMT	                                	base-0
 
     Summary:
       Upcoming 1.0 version continuation
@@ -1664,7 +2207,7 @@
      {arch}/xvidcore/xvidcore--stable/xvidcore--stable--1.0/ed.gomez@free.fr--main/patch-log
 
 
-2003-02-11 21:03:19 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-20
+2003-02-11 21:03:19 GMT	                                	patch-20
 
     Summary:
       Removed BFrame outdated bframe/qpel decoding.
@@ -1680,7 +2223,7 @@
      src/image/interpolate8x8.h
 
 
-2003-02-11 18:40:48 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-19
+2003-02-11 18:40:48 GMT	                                	patch-19
 
     Summary:
       Fixed libxvidcore.def, revamped Makefile output, fixed ia64 build, added ranlib detection.
@@ -1714,7 +2257,7 @@
 
 
 
-2003-02-10 23:31:01 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-18
+2003-02-10 23:31:01 GMT	                                	patch-18
 
     Summary:
       Fixed xvid_encraw help message.
@@ -1727,7 +2270,7 @@
      examples/xvid_encraw.c
 
 
-2003-02-10 23:06:32 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-17
+2003-02-10 23:06:32 GMT	                                	patch-17
 
     Summary:
       Added IA64 DCT source choice according to the compiler basename.
@@ -1745,7 +2288,7 @@
      build/generic/platform.inc.in
 
 
-2003-02-10 13:49:25 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-16
+2003-02-10 13:49:25 GMT	                                	patch-16
 
     Summary:
       Changed linking option on PPC platforms (-flat_namespace)
@@ -1758,7 +2301,7 @@
      build/generic/configure.in
 
 
-2003-02-09 23:15:18 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-15
+2003-02-09 23:15:18 GMT	                                	patch-15
 
     Summary:
       Added the configure bootstrap script.
@@ -1772,7 +2315,7 @@
      build/generic/bootstrap.sh
 
 
-2003-02-09 23:06:51 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-14
+2003-02-09 23:06:51 GMT	                                	patch-14
 
     Summary:
       The PPC port is now disabled because it is outdated.
@@ -1785,7 +2328,7 @@
      build/generic/configure.in
 
 
-2003-02-09 23:01:30 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-13
+2003-02-09 23:01:30 GMT	                                	patch-13
 
     Summary:
       More "unknown compiler" friendly portab.h file.
@@ -1799,7 +2342,7 @@
      src/portab.h
 
 
-2003-02-09 00:49:32 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-12
+2003-02-09 00:49:32 GMT	                                	patch-12
 
     Summary:
       DivX4 compatibility layer has been turned into an option (default:disable).
@@ -1815,7 +2358,7 @@
      build/generic/platform.inc.in build/generic/sources.inc
 
 
-2003-02-08 23:29:55 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-11
+2003-02-08 23:29:55 GMT	                                	patch-11
 
     Summary:
       Fixed WIN32/_MSC_VER confusion and updated MSVC libxvidcore.dsp project file.
@@ -1837,7 +2380,7 @@
      examples/xvid_stat.c src/xvid.c
 
 
-2003-02-08 14:55:19 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-10
+2003-02-08 14:55:19 GMT	                                	patch-10
 
     Summary:
       Fixed MacOSX build.
@@ -1852,7 +2395,7 @@
      build/generic/configure.in
 
 
-2003-02-08 12:49:17 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-9
+2003-02-08 12:49:17 GMT	                                	patch-9
 
     Summary:
       Added Altivec detection (Guillaume Morin)
@@ -1865,7 +2408,7 @@
      build/generic/configure.in
 
 
-2003-02-08 12:25:46 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-8
+2003-02-08 12:25:46 GMT	                                	patch-8
 
     Summary:
       Fixed portab.h for _DEBUG target and GCC/ICC compilers.
@@ -1882,7 +2425,7 @@
      src/portab.h
 
 
-2003-02-08 11:45:00 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-7
+2003-02-08 11:45:00 GMT	                                	patch-7
 
     Summary:
       Changed the way I add strings into variables.
@@ -1898,7 +2441,7 @@
      build/generic/configure.in
 
 
-2003-02-07 23:16:57 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-6
+2003-02-07 23:16:57 GMT	                                	patch-6
 
     Summary:
       Fixed the "ar" "s" option for some platforms.
@@ -1913,7 +2456,7 @@
      build/generic/Makefile
 
 
-2003-02-07 22:19:37 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-5
+2003-02-07 22:19:37 GMT	                                	patch-5
 
     Summary:
       Fixed a BSD checking in ansm output format.
@@ -1926,7 +2469,7 @@
      build/generic/configure.in
 
 
-2003-02-07 21:18:14 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-4
+2003-02-07 21:18:14 GMT	                                	patch-4
 
     Summary:
       Fixed options and added the --disable-assembly option
@@ -1945,7 +2488,7 @@
      build/generic/configure.in
 
 
-2003-02-06 21:49:16 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-3
+2003-02-06 21:49:16 GMT	                                	patch-3
 
     Summary:
       Fixes for the new build system in sources.
@@ -1960,7 +2503,7 @@
      src/utils/emms.h src/xvid.c
 
 
-2003-02-06 21:22:55 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-2
+2003-02-06 21:22:55 GMT	                                	patch-2
 
     Summary:
       Changed build system for Unix OSes
@@ -2024,7 +2567,7 @@
      build/generic/Makefile.linuxx86 build/generic/Makefile.sparc
 
 
-2003-02-06 21:11:17 GMT	Edouard Gomez <ed.gomez@free.fr>	patch-1
+2003-02-06 21:11:17 GMT	                                	patch-1
 
     Summary:
       Updated to current stable CVS_HEAD
@@ -2064,7 +2607,7 @@
      src/xvid.h todo.txt
 
 
-2003-02-06 20:59:19 GMT	Edouard Gomez <ed.gomez@free.fr>	base-0
+2003-02-06 20:59:19 GMT	                                	base-0
 
     Summary:
       Imported xvidcore 0.9.0 into arch repository
