@@ -47,7 +47,7 @@
 #define FINAL_SKIP_THRESH	(50)
 #define MAX_SAD00_FOR_SKIP	(20)
 #define MAX_CHROMA_SAD_FOR_SKIP	(22)
-#define SKIP_THRESH_B (25)
+#define SKIP_THRESH_B (15)
 
 #define CHECK_CANDIDATE(X,Y,D) { \
 (*CheckCandidate)((const int)(X),(const int)(Y), (D), &iDirection, data ); }
@@ -1368,7 +1368,7 @@ SearchDirect(const IMAGE * const f_Ref,
 		Data->min_dy *= 2;
 		Data->referencemv = b_mb->qmvs;
 	} else Data->referencemv = b_mb->mvs;
-	Data->qpel_precision = 0; // it'm a trick. it's 1 not 0, but we need 0 here
+	Data->qpel_precision = 0; // it's a trick. it's 1 not 0, but we need 0 here
 
 	for (k = 0; k < 4; k++) {
 		pMB->mvs[k].x = Data->directmvF[k].x = ((TRB * Data->referencemv[k].x) / TRD);
@@ -1458,9 +1458,9 @@ SearchDirect(const IMAGE * const f_Ref,
 	*Data->iMinSAD +=  1 * Data->lambda16; // one bit is needed to code direct mode
 	*best_sad = *Data->iMinSAD;
 
-//	if (b_mb->mode == MODE_INTER4V) 
+	if (b_mb->mode == MODE_INTER4V) 
 		pMB->mode = MODE_DIRECT;
-//	else pMB->mode = MODE_DIRECT_NO4V; //for faster compensation
+	else pMB->mode = MODE_DIRECT_NO4V; //for faster compensation
 
 	pMB->pmvs[3] = *Data->currentMV;
 
@@ -1536,7 +1536,7 @@ SearchInterpolate(const uint8_t * const f_Ref,
 	bData.RefHV = fData->bRefHV = b_RefHV + (x + y * iEdgedWidth) * 16;
 	bData.RefQ = fData->RefQ;
 	fData->qpel_precision = bData.qpel_precision = 0;
-	bData.rounding = 0; bData.qpel = fData->qpel;
+	bData.rounding = 0;
 
 	bData.bpredMV = fData->predMV = *f_predMV;
 	fData->bpredMV = bData.predMV = *b_predMV;
@@ -2037,7 +2037,7 @@ MEanalyzeMB (	const uint8_t * const pRef,
 }
 
 #define INTRA_THRESH	1350
-#define INTER_THRESH	900
+#define INTER_THRESH	1200
 
 
 int
@@ -2070,7 +2070,7 @@ MEanalysis(	const IMAGE * const pRef,
 			IntraThresh -= (IntraThresh * (maxIntra - 5*(maxIntra - intraCount)))/maxIntra;
 
 
-	InterThresh += 300 * (1 - bCount);
+	InterThresh += 400 * (1 - bCount);
 	if (InterThresh < 200) InterThresh = 200;
 
 	if (sadInit) (*sadInit) ();
