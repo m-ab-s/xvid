@@ -605,6 +605,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	{
 		*icc->lpdwFlags = 0;
 	}
+	if (frame.length == 0) { frame.length = 1; *((unsigned char*)frame.bitstream) = 0x7f; }
 
 	outhdr->biSizeImage = frame.length;
 
