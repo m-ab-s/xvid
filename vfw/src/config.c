@@ -90,6 +90,9 @@ REG_INT const reg_ints[] = {
 	{"min_key_interval",		&reg.min_key_interval,			1},
 	{"lum_masking",				&reg.lum_masking,				0},
 	{"interlacing",				&reg.interlacing,				0},
+//added by koepi for gruel's greyscale_mode
+	{"greyscale",				&reg.greyscale,					0},
+// end of koepi's additions
 #ifdef BFRAMES
 	{"max_bframes",				&reg.max_bframes,				-1},
 	{"bquant_ratio",			&reg.bquant_ratio,				200},
@@ -630,6 +633,9 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 		SetDlgItemInt(hDlg, IDC_MINKEY, config->min_key_interval, FALSE);
 		CheckDlgButton(hDlg, IDC_LUMMASK, config->lum_masking ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_INTERLACING, config->interlacing ? BST_CHECKED : BST_UNCHECKED);
+// added by koepi for gruel's greyscale_mode
+		CheckDlgButton(hDlg, IDC_GREYSCALE, config->greyscale ? BST_CHECKED : BST_UNCHECKED);
+// end of koepi's addition
 #ifdef BFRAMES
 		SetDlgItemInt(hDlg, IDC_MAXBFRAMES, config->max_bframes, TRUE);
 		SetDlgItemInt(hDlg, IDC_BQUANTRATIO, config->bquant_ratio, FALSE);
@@ -758,6 +764,9 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 		config->min_key_interval = config_get_uint(hDlg, IDC_MINKEY, config->min_key_interval);
 		config->lum_masking = ISDLGSET(IDC_LUMMASK);
 		config->interlacing = ISDLGSET(IDC_INTERLACING);
+// added by koepi for gruel's greyscale_mode
+		config->greyscale = ISDLGSET(IDC_GREYSCALE);
+// end of koepi's addition
 #ifdef BFRAMES
 		config->max_bframes = config_get_int(hDlg, IDC_MAXBFRAMES, config->max_bframes);
 		config->bquant_ratio = config_get_uint(hDlg, IDC_BQUANTRATIO, config->bquant_ratio);

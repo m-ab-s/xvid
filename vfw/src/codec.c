@@ -394,6 +394,13 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 
 	if (codec->config.interlacing)
 		frame.general |= XVID_INTERLACING;
+
+// added by koepi for gruel's greyscale_mode
+	if (codec->config.greyscale)
+		frame.general |= XVID_GREYSCALE;
+
+// end of koepi's addition
+
 // fix 1pass modes/hinted MV by koepi
 	if (codec->config.hinted_me && (codec->config.mode == DLG_MODE_CBR || codec->config.mode == DLG_MODE_VBR_QUAL || codec->config.mode == DLG_MODE_VBR_QUANT))
 	{
