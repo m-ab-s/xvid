@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion.h,v 1.13.2.3 2002-10-03 08:26:19 syskin Exp $
+ *  $Id: motion.h,v 1.13.2.4 2002-10-30 18:01:34 Isibaar Exp $
  *
  ***************************************************************************/
 
@@ -42,15 +42,27 @@
 #define MVzero(A) ( ((A).x)==(0) && ((A).y)==(0) )
 #define MVequal(A,B) ( ((A).x)==((B).x) && ((A).y)==((B).y) )
 
+static const uint32_t roundtab[16] =
+		{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2 };
+
+/*
+ * modified rounding tables
+ * original tables see ISO spec tables 7-6 -> 7-9
+ */
+
+/* K = 4 */
+static const uint32_t roundtab_76[16] = { 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1 };
+/* K = 2 */
+static const uint32_t roundtab_78[8] = { 0, 0, 1, 1, 0, 0, 0, 1  };
+/* K = 1 */
+static const uint32_t roundtab_79[4] = { 0, 1, 0, 0 };
+
+
 /*
  * getref: calculate reference image pointer
  * the decision to use interpolation h/v/hv or the normal image is
  * based on dx & dy.
  */
-
-static const uint32_t roundtab[16] =
-		{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2 };
-
 
 static __inline const uint8_t *
 get_ref(const uint8_t * const refn,

@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.5 2002-10-11 15:07:32 Isibaar Exp $
+ *  $Id: decoder.c,v 1.37.2.6 2002-10-30 18:01:48 Isibaar Exp $
  *
  *************************************************************************/
 
@@ -84,6 +84,7 @@
 #include "prediction/mbprediction.h"
 #include "utils/timer.h"
 #include "utils/emms.h"
+#include "motion/motion.h"
 
 #include "image/image.h"
 #include "image/colorspace.h"
@@ -325,9 +326,6 @@ decoder_mbintra(DECODER * dec,
 
 #define SIGN(X) (((X)>0)?1:-1)
 #define ABS(X) (((X)>0)?(X):-(X))
-static const uint32_t roundtab[16] =
-	{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2 };
-
 
 // decode an inter macroblock
 
@@ -364,12 +362,13 @@ decoder_mbinter(DECODER * dec,
 
 		if (dec->quarterpel)
 		{
-			uv_dx = (uv_dx >> 1) | (uv_dx & 1);
-			uv_dy = (uv_dy >> 1) | (uv_dy & 1);
+			uv_dx = (uv_dx >> 2) + roundtab_78[uv_dx & 0x7];
+			uv_dy = (uv_dy >> 2) + roundtab_78[uv_dy & 0x7];
 		}
-
-		uv_dx = (uv_dx & 3) ? (uv_dx >> 1) | 1 : uv_dx / 2;
-		uv_dy = (uv_dy & 3) ? (uv_dy >> 1) | 1 : uv_dy / 2;
+		else {
+			uv_dx = (uv_dx >> 1) + roundtab_79[uv_dx & 0x3];
+			uv_dy = (uv_dy >> 1) + roundtab_79[uv_dy & 0x3];
+		}
 
 		start_timer();
 		if(dec->quarterpel) {
@@ -396,23 +395,20 @@ decoder_mbinter(DECODER * dec,
 
 	} else {
 		int sum;
-		sum = pMB->mvs[0].x + pMB->mvs[1].x + pMB->mvs[2].x + pMB->mvs[3].x;
+		
+		if(dec->quarterpel)
+			sum = (pMB->mvs[0].x / 2) + (pMB->mvs[1].x / 2) + (pMB->mvs[2].x / 2) + (pMB->mvs[3].x / 2);
+		else
+			sum = pMB->mvs[0].x + pMB->mvs[1].x + pMB->mvs[2].x + pMB->mvs[3].x;
 
-		if (dec->quarterpel)
-		{
-			sum /= 2;
-		}
+		uv_dx = (sum >> 3) + roundtab_76[sum & 0xf];
 
-		uv_dx = (sum == 0 ? 0 : SIGN(sum) * (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2));
+		if(dec->quarterpel)
+			sum = (pMB->mvs[0].y / 2) + (pMB->mvs[1].y / 2) + (pMB->mvs[2].y / 2) + (pMB->mvs[3].y / 2);
+		else
+			sum = pMB->mvs[0].y + pMB->mvs[1].y + pMB->mvs[2].y + pMB->mvs[3].y;
 
-		sum = pMB->mvs[0].y + pMB->mvs[1].y + pMB->mvs[2].y + pMB->mvs[3].y;
-
-		if (dec->quarterpel)
-		{
-			sum /= 2;
-		}
-
-		uv_dy = (sum == 0 ? 0 : SIGN(sum) * (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2));
+		uv_dy = (sum >> 3) + roundtab_76[sum & 0xf];
 
 		start_timer();
 		if(dec->quarterpel) {

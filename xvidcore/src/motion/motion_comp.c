@@ -1,3 +1,4 @@
+// 30.10.2002	corrected qpel chroma rounding
 // 04.10.2002	added qpel support to MBMotionCompensation
 // 01.05.2002   updated MBMotionCompensationBVOP
 // 14.04.2002   bframe compensation
@@ -5,12 +6,12 @@
 #include "../encoder.h"
 #include "../utils/mbfunctions.h"
 #include "../image/interpolate8x8.h"
+#include "../image/qpel.h"
 #include "../utils/timer.h"
 #include "motion.h"
 
 #define ABS(X) (((X)>0)?(X):-(X))
 #define SIGN(X) (((X)>0)?1:-1)
-
 
 static __inline void
 compensate16x16_interpolate(int16_t * const dct_codes,
@@ -157,12 +158,13 @@ MBMotionCompensation(MACROBLOCK * const mb,
 
 		if (quarterpel)
 		{
-			dx = (dx >> 1) | (dx & 1);
-			dy = (dy >> 1) | (dy & 1);
+			dx = (dx >> 2) + roundtab_78[dx & 0x7];
+			dy = (dy >> 2) + roundtab_78[dy & 0x7];
 		}
-
-		dx = (dx & 3) ? (dx >> 1) | 1 : dx / 2;
-		dy = (dy & 3) ? (dy >> 1) | 1 : dy / 2;
+		else {
+			dx = (dx >> 1) + roundtab_79[dx & 0x3];
+			dy = (dy >> 1) + roundtab_79[dy & 0x3];
+		}
 
 		/* uv-block-based compensation */
 		transfer_8to16sub(&dct_codes[4 * 64],
@@ -199,21 +201,19 @@ MBMotionCompensation(MACROBLOCK * const mb,
 							  refv->y, refhv->y, 16 * i + 8, 16 * j + 8,
 							  mvs[3].x, mvs[3].y, edged_width, quarterpel, rounding);
 
-		sum = mvs[0].x + mvs[1].x + mvs[2].x + mvs[3].x;
-		
 		if(quarterpel)
-			sum /= 2;
+			sum = (mvs[0].x / 2) + (mvs[1].x / 2) + (mvs[2].x / 2) + (mvs[3].x / 2);
+		else
+			sum = mvs[0].x + mvs[1].x + mvs[2].x + mvs[3].x;
 
-		dx = (sum ? SIGN(sum) *
-			  (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2) : 0);
-
-		sum = mvs[0].y + mvs[1].y + mvs[2].y + mvs[3].y;
+		dx = (sum >> 3) + roundtab_76[sum & 0xf];
 
 		if(quarterpel)
-			sum /= 2;
+			sum = (mvs[0].y / 2) + (mvs[1].y / 2) + (mvs[2].y / 2) + (mvs[3].y / 2);
+		else
+			sum = mvs[0].y + mvs[1].y + mvs[2].y + mvs[3].y;
 
-		dy = (sum ? SIGN(sum) *
-			  (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2) : 0);
+		dy = (sum >> 3) + roundtab_76[sum & 0xf];
 
 		/* uv-block-based compensation */
 		transfer_8to16sub(&dct_codes[4 * 64],
