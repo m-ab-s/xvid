@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mem_transfer.h,v 1.12.2.1 2003-06-09 13:55:44 edgomez Exp $
+ * $Id: mem_transfer.h,v 1.12.2.2 2004-02-07 13:27:46 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -40,10 +40,16 @@ typedef TRANSFER_8TO16COPY *TRANSFER_8TO16COPY_PTR;
 extern TRANSFER_8TO16COPY_PTR transfer_8to16copy;
 
 /* Implemented functions */
-TRANSFER_8TO16COPY transfer_8to16copy_c;
-TRANSFER_8TO16COPY transfer_8to16copy_mmx;
-TRANSFER_8TO16COPY transfer_8to16copy_3dne;
-TRANSFER_8TO16COPY transfer_8to16copy_ia64;
+extern TRANSFER_8TO16COPY transfer_8to16copy_c;
+
+#ifdef ARCH_IS_IA32
+extern TRANSFER_8TO16COPY transfer_8to16copy_mmx;
+extern TRANSFER_8TO16COPY transfer_8to16copy_3dne;
+#endif
+
+#ifdef ARCH_IS_IA64
+extern TRANSFER_8TO16COPY transfer_8to16copy_ia64;
+#endif
 
 /*****************************************************************************
  * transfer16to8 API
@@ -58,10 +64,16 @@ typedef TRANSFER_16TO8COPY *TRANSFER_16TO8COPY_PTR;
 extern TRANSFER_16TO8COPY_PTR transfer_16to8copy;
 
 /* Implemented functions */
-TRANSFER_16TO8COPY transfer_16to8copy_c;
-TRANSFER_16TO8COPY transfer_16to8copy_mmx;
-TRANSFER_16TO8COPY transfer_16to8copy_3dne;
-TRANSFER_16TO8COPY transfer_16to8copy_ia64;
+extern TRANSFER_16TO8COPY transfer_16to8copy_c;
+
+#ifdef ARCH_IS_IA32
+extern TRANSFER_16TO8COPY transfer_16to8copy_mmx;
+extern TRANSFER_16TO8COPY transfer_16to8copy_3dne;
+#endif
+
+#ifdef ARCH_IS_IA64
+extern TRANSFER_16TO8COPY transfer_16to8copy_ia64;
+#endif
 
 /*****************************************************************************
  * transfer8to16 + substraction *writeback* op API
@@ -78,10 +90,16 @@ typedef TRANSFER_8TO16SUB *TRANSFER_8TO16SUB_PTR;
 extern TRANSFER_8TO16SUB_PTR transfer_8to16sub;
 
 /* Implemented functions */
-TRANSFER_8TO16SUB transfer_8to16sub_c;
-TRANSFER_8TO16SUB transfer_8to16sub_mmx;
-TRANSFER_8TO16SUB transfer_8to16sub_3dne;
-TRANSFER_8TO16SUB transfer_8to16sub_ia64;
+extern TRANSFER_8TO16SUB transfer_8to16sub_c;
+
+#ifdef ARCH_IS_IA32
+extern TRANSFER_8TO16SUB transfer_8to16sub_mmx;
+extern TRANSFER_8TO16SUB transfer_8to16sub_3dne;
+#endif
+
+#ifdef ARCH_IS_IA64
+extern TRANSFER_8TO16SUB transfer_8to16sub_ia64;
+#endif
 
 /*****************************************************************************
  * transfer8to16 + substraction *readonly* op API
@@ -98,9 +116,12 @@ typedef TRANSFER_8TO16SUBRO *TRANSFER_8TO16SUBRO_PTR;
 extern TRANSFER_8TO16SUBRO_PTR transfer_8to16subro;
 
 /* Implemented functions */
-TRANSFER_8TO16SUBRO transfer_8to16subro_c;
-TRANSFER_8TO16SUBRO transfer_8to16subro_mmx;
-TRANSFER_8TO16SUBRO transfer_8to16subro_3dne;
+extern TRANSFER_8TO16SUBRO transfer_8to16subro_c;
+
+#ifdef ARCH_IS_IA32
+extern TRANSFER_8TO16SUBRO transfer_8to16subro_mmx;
+extern TRANSFER_8TO16SUBRO transfer_8to16subro_3dne;
+#endif
 
 /*****************************************************************************
  * transfer8to16 + substraction op API - Bidirectionnal Version
@@ -118,12 +139,17 @@ typedef TRANSFER_8TO16SUB2 *TRANSFER_8TO16SUB2_PTR;
 extern TRANSFER_8TO16SUB2_PTR transfer_8to16sub2;
 
 /* Implemented functions */
-TRANSFER_8TO16SUB2 transfer_8to16sub2_c;
-TRANSFER_8TO16SUB2 transfer_8to16sub2_mmx;
-TRANSFER_8TO16SUB2 transfer_8to16sub2_xmm;
-TRANSFER_8TO16SUB2 transfer_8to16sub2_3dne;
-TRANSFER_8TO16SUB2 transfer_8to16sub2_ia64;
+extern TRANSFER_8TO16SUB2 transfer_8to16sub2_c;
 
+#ifdef ARCH_IS_IA32
+extern TRANSFER_8TO16SUB2 transfer_8to16sub2_mmx;
+extern TRANSFER_8TO16SUB2 transfer_8to16sub2_xmm;
+extern TRANSFER_8TO16SUB2 transfer_8to16sub2_3dne;
+#endif
+
+#ifdef ARCH_IS_IA64
+extern TRANSFER_8TO16SUB2 transfer_8to16sub2_ia64;
+#endif
 
 /*****************************************************************************
  * transfer16to8 + addition op API
@@ -139,10 +165,16 @@ typedef TRANSFER_16TO8ADD *TRANSFER_16TO8ADD_PTR;
 extern TRANSFER_16TO8ADD_PTR transfer_16to8add;
 
 /* Implemented functions */
-TRANSFER_16TO8ADD transfer_16to8add_c;
-TRANSFER_16TO8ADD transfer_16to8add_mmx;
-TRANSFER_16TO8ADD transfer_16to8add_3dne;
-TRANSFER_16TO8ADD transfer_16to8add_ia64;
+extern TRANSFER_16TO8ADD transfer_16to8add_c;
+
+#ifdef ARCH_IS_IA32
+extern TRANSFER_16TO8ADD transfer_16to8add_mmx;
+extern TRANSFER_16TO8ADD transfer_16to8add_3dne;
+#endif
+
+#ifdef ARCH_IS_IA64
+extern TRANSFER_16TO8ADD transfer_16to8add_ia64;
+#endif
 
 /*****************************************************************************
  * transfer8to8 + no op
@@ -158,11 +190,16 @@ typedef TRANSFER8X8_COPY *TRANSFER8X8_COPY_PTR;
 extern TRANSFER8X8_COPY_PTR transfer8x8_copy;
 
 /* Implemented functions */
-TRANSFER8X8_COPY transfer8x8_copy_c;
-TRANSFER8X8_COPY transfer8x8_copy_mmx;
-TRANSFER8X8_COPY transfer8x8_copy_3dne;
-TRANSFER8X8_COPY transfer8x8_copy_ia64;
+extern TRANSFER8X8_COPY transfer8x8_copy_c;
 
+#ifdef ARCH_IS_IA32
+extern TRANSFER8X8_COPY transfer8x8_copy_mmx;
+extern TRANSFER8X8_COPY transfer8x8_copy_3dne;
+#endif
+
+#ifdef ARCH_IS_IA64
+extern TRANSFER8X8_COPY transfer8x8_copy_ia64;
+#endif
 
 static __inline void
 transfer16x16_copy(uint8_t * const dst,
