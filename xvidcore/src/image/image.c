@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: image.c,v 1.26.2.15 2004-02-01 11:32:33 chl Exp $
+ * $Id: image.c,v 1.26.2.16 2004-02-07 10:01:27 chl Exp $
  *
  ****************************************************************************/
 
@@ -617,7 +617,7 @@ image_input(IMAGE * image,
 
 	case XVID_CSP_YVYU:		/* u/v swapped */
 		safe_packed_conv(
-			src[0], src_stride[0], image->y, image->v, image->y,
+			src[0], src_stride[0], image->y, image->v, image->u,
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?yuyvi_to_yv12  :yuyv_to_yv12,
 			interlacing?yuyvi_to_yv12_c:yuyv_to_yv12_c, 2);
