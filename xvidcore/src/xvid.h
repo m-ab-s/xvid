@@ -28,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.6 2002-11-02 15:52:30 chl Exp $
+*  $Id: xvid.h,v 1.17.2.7 2002-11-02 16:08:14 chl Exp $
 *
 *****************************************************************************/
 
@@ -272,7 +272,6 @@ extern "C" {
 #ifdef _SMP
 		int num_threads;		/* number of threads */
 #endif
-#ifdef BFRAMES
 		int global;				/* global/debug options */
 		int max_bframes;		/* max sequential bframes (0=disable bframes) */
 		int bquant_ratio;		/* bframe quantizer multipier (percentage).
@@ -281,7 +280,6 @@ extern "C" {
 								 * quant = ((past_quant + future_quant) * bquant_ratio)/200
 								 */
 		int frame_drop_ratio;   /* frame dropping: 0=drop none... 100=drop all */
-#endif
 		void *handle;			/* [out] encoder instance handle */
 	}
 	XVID_ENC_PARAM;
@@ -336,9 +334,7 @@ extern "C" {
 								 */
 		HINTINFO hint;			/* [in/out] mv hint information */
 
-#ifdef BFRAMES
 		int bquant;				/* [in] bframe quantizer */
-#endif
 
 	}
 	XVID_ENC_FRAME;

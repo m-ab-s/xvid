@@ -38,7 +38,7 @@
  *  22.12.2001  removed some compiler warnings
  *  16.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: divx4.c,v 1.16.2.1 2002-10-05 21:34:35 Isibaar Exp $
+ *  $Id: divx4.c,v 1.16.2.2 2002-11-02 16:11:06 chl Exp $
  *
  *************************************************************************/
 
@@ -367,12 +367,10 @@ encore(void *handle,
 			xparam.max_quantizer = eparam->max_quantizer;
 			xparam.max_key_interval = eparam->max_key_interval;
 
-#ifdef BFRAMES
 			xparam.global = 0;
 			xparam.max_bframes = -1;	/* use "original" IP-frame encoder */
 			xparam.bquant_ratio = 200;
 			xparam.frame_drop_ratio = 0;	/* dont drop frames */
-#endif
 
 			/* Create the encoder session */
 			xerr = encoder_create(&xparam);
