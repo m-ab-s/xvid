@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.54 2003-11-19 15:42:38 syskin Exp $
+ * $Id: encoder.c,v 1.95.2.55 2003-11-20 12:07:19 syskin Exp $
  *
  ****************************************************************************/
 
@@ -776,13 +776,11 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
 				frame->mbs[j*pEnc->mbParam.mb_width + i].dquant = 0;
 			}
 		}
-		frame->mbs[0].quant = data.quant; /* BEFORE2 will not affect the quant in stats */
+		frame->mbs[0].quant = data.quant; /* FRAME will not affect the quant in stats */
 	}
 
 
 }
-
-
 
 
 static __inline void inc_frame_num(Encoder * pEnc)
@@ -800,6 +798,34 @@ static __inline void dec_frame_num(Encoder * pEnc)
 	pEnc->m_framenum--;	/* debug ticker */
 }
 
+static __inline void 
+MBSetDquant(MACROBLOCK * pMB, int x, int y, MBParam * mbParam)
+{
+	if (pMB->cbp == 0) {
+		/* we want to code dquant but the quantizer value will not be used yet
+			let's find out if we can postpone dquant to next MB
+		*/	
+		if (x == mbParam->mb_width-1 && y == mbParam->mb_height-1) {
+			pMB->dquant = 0; /* it's the last MB of all, the easiest case */
+			return;
+		} else {
+			MACROBLOCK * next = pMB + 1;
+			const MACROBLOCK * prev = pMB - 1;
+			if (next->mode != MODE_INTER4V && next->mode != MODE_NOT_CODED)
+				/* mode allows dquant change in the future */
+				if (abs(next->quant - prev->quant) <= 2) {
+					/* quant change is not out of range */
+					pMB->quant = prev->quant;
+					pMB->dquant = 0;
+					next->dquant = next->quant - prev->quant;
+					return;
+				}
+		}		
+	}
+	/* couldn't skip this dquant */
+	pMB->mode = MODE_INTER_Q;
+}
+			
 
 
 static __inline void
@@ -1603,10 +1629,6 @@ FrameCodeP(Encoder * pEnc,
 
 			stop_comp_timer();
 
-			if (pMB->dquant != 0) {
-				pMB->mode = MODE_INTER_Q;
-			}
-
 			pMB->field_pred = 0;
 
 			if (pMB->mode != MODE_NOT_CODED)
@@ -1614,6 +1636,10 @@ FrameCodeP(Encoder * pEnc,
 					MBTransQuantInter(&pEnc->mbParam, current, pMB, x, y,
 									  dct_codes, qcoeff);
 			}
+
+			if (pMB->dquant != 0)
+				MBSetDquant(pMB, x, y, &pEnc->mbParam);
+
 
 			if (pMB->cbp || pMB->mvs[0].x || pMB->mvs[0].y ||
 				   pMB->mvs[1].x || pMB->mvs[1].y || pMB->mvs[2].x ||
