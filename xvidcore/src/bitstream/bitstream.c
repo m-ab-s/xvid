@@ -464,17 +464,18 @@ BitstreamReadHeaders(Bitstream * bs,
 			DPRINTF(DPRINTF_STARTCODE, "</visual_object_sequence>");
 
 		} else if (start_code == VISOBJ_START_CODE) {
+			int visobj_ver_id;
 
 			DPRINTF(DPRINTF_STARTCODE, "<visual_object>");
 
 			BitstreamSkip(bs, 32);	// visual_object_start_code
 			if (BitstreamGetBit(bs))	// is_visual_object_identified
 			{
-				vol_ver_id = BitstreamGetBits(bs, 4);	// visual_object_ver_id
+				visobj_ver_id = BitstreamGetBits(bs, 4);	// visual_object_ver_id
 				DPRINTF(DPRINTF_HEADER,"ver_id %i", vol_ver_id);
 				BitstreamSkip(bs, 3);	// visual_object_priority
 			} else {
-				vol_ver_id = 1;
+				visobj_ver_id = 1;
 			}
 
 			if (BitstreamShowBits(bs, 4) != VISOBJ_TYPE_VIDEO)	// visual_object_type
@@ -1117,10 +1118,28 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	static const unsigned int vo_id = 0;
 	static const unsigned int vol_id = 0;
 	int vol_ver_id=1;
+	int profile = 0x03;	/* simple profile/level 3 */
 
 	if ( pParam->m_quarterpel ||  (frame->global_flags & XVID_GMC) || 
 		 (pParam->global & XVID_GLOBAL_REDUCED))
 		vol_ver_id = 2;
+
+	if ((pParam->global & XVID_GLOBAL_REDUCED))
+		profile = 0x93;	/* advanced realtime simple profile/level 3 */
+
+	if (pParam->m_quarterpel ||  (frame->global_flags & XVID_GMC))
+		profile = 0xf3;	/* advanced simple profile/level 2 */
+
+	// visual_object_sequence_start_code
+	BitstreamPad(bs);
+	BitstreamPutBits(bs, VISOBJSEQ_START_CODE, 32);
+	BitstreamPutBits(bs, profile, 8);
+
+	// visual_object_start_code
+	BitstreamPad(bs);
+	BitstreamPutBits(bs, VISOBJ_START_CODE, 32);
+	BitstreamPutBits(bs, 0, 1);		// is_visual_object_identifier
+	BitstreamPutBits(bs, VISOBJ_TYPE_VIDEO, 4);		// visual_object_type
 	
 	// video object_start_code & vo_id
 	BitstreamPad(bs);
