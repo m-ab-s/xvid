@@ -23,6 +23,11 @@
  *
  *	History:
  *
+ *	23.03.2002	daniel smith <danielsmith@astroboymail.com>
+ *				changed inter4v to only be in modes 5 or 6
+ *				fixed null mode crash ?
+ *				merged foxer's alternative 2-pass code
+ *				added DEBUGERR output on errors instead of returning
  *	16.03.2002	daniel smith <danielsmith@astroboymail.com>
  *				changed BITMAPV4HEADER to BITMAPINFOHEADER
  *					- prevents memcpy crash in compress_get_format()
@@ -56,7 +61,7 @@ int get_colorspace(BITMAPINFOHEADER * hdr)
 {
 	if (hdr->biHeight < 0) 
 	{
-		DEBUG("colorspace: inverted input format not supported");
+		DEBUGERR("colorspace: inverted input format not supported");
 		return XVID_CSP_NULL;
 	}
 	
@@ -228,7 +233,6 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	switch (codec->config.mode) 
 	{
 	case DLG_MODE_CBR :
-		DEBUG1("bitrate: ", codec->config.bitrate);
 		param.bitrate = codec->config.bitrate;
 		param.rc_buffersize = codec->config.rc_buffersize;
 		break;
@@ -243,11 +247,14 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 		param.bitrate = 0;
 		break;
 
-	case DLG_MODE_2PASS_1:
-	case DLG_MODE_2PASS_2_INT:
-	case DLG_MODE_2PASS_2_EXT:
+	case DLG_MODE_2PASS_1 :
+	case DLG_MODE_2PASS_2_INT :
+	case DLG_MODE_2PASS_2_EXT :
 		param.bitrate = 0;
 		break;
+
+	case DLG_MODE_NULL :
+		return ICERR_OK;
 
 	default :
 		break;
@@ -339,7 +346,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 
 	frame.general |= XVID_HALFPEL;
 
-	if(codec->config.motion_search > 3)
+	if(codec->config.motion_search > 4)
 		frame.general |= XVID_INTER4V;
 
 	if(((codec->config.mode == DLG_MODE_2PASS_1) ? 0 : codec->config.lum_masking) == 1)
@@ -390,7 +397,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		return ICERR_OK;
 
 	default :
-		DEBUG("Invalid encoding mode");
+		DEBUGERR("Invalid encoding mode");
 		return ICERR_ERROR;
 	}
 
@@ -631,14 +638,14 @@ int codec_2pass_init(CODEC* codec)
 		twopass->stats1 = CreateFile(codec->config.stats1, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 		if (twopass->stats1 == INVALID_HANDLE_VALUE) 
 		{
-			DEBUG("2pass init error - couldn't create stats1");
+			DEBUGERR("2pass init error - couldn't create stats1");
 			return ICERR_ERROR;
 		}
 		if (WriteFile(twopass->stats1, &version, sizeof(DWORD), &wrote, 0) == 0 || wrote != sizeof(DWORD)) 
 		{
 			CloseHandle(twopass->stats1);
 			twopass->stats1 = INVALID_HANDLE_VALUE;
-			DEBUG("2pass init error - couldn't write to stats1");
+			DEBUGERR("2pass init error - couldn't write to stats1");
 			return ICERR_ERROR;
 		}
 		break;
@@ -648,21 +655,21 @@ int codec_2pass_init(CODEC* codec)
 		twopass->stats1 = CreateFile(codec->config.stats1, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 		if (twopass->stats1 == INVALID_HANDLE_VALUE) 
 		{
-			DEBUG("2pass init error - couldn't open stats1");
+			DEBUGERR("2pass init error - couldn't open stats1");
 			return ICERR_ERROR;
 		}
 		if (ReadFile(twopass->stats1, &version, sizeof(DWORD), &read, 0) == 0 || read != sizeof(DWORD)) 
 		{
 			CloseHandle(twopass->stats1);
 			twopass->stats1 = INVALID_HANDLE_VALUE;
-			DEBUG("2pass init error - couldn't read from stats1");
+			DEBUGERR("2pass init error - couldn't read from stats1");
 			return ICERR_ERROR;
 		}
 		if (version != -20)
 		{
 			CloseHandle(twopass->stats1);
 			twopass->stats1 = INVALID_HANDLE_VALUE;
-			DEBUG("2pass init error - wrong .stats version");
+			DEBUGERR("2pass init error - wrong .stats version");
 			return ICERR_ERROR;
 		}
 
@@ -679,7 +686,7 @@ int codec_2pass_init(CODEC* codec)
 			{
 				CloseHandle(twopass->stats1);
 				twopass->stats1 = INVALID_HANDLE_VALUE;
-				DEBUG("2pass init error - couldn't open stats2");
+				DEBUGERR("2pass init error - couldn't open stats2");
 				return ICERR_ERROR;
 			}
 			if (ReadFile(twopass->stats2, &version, sizeof(DWORD), &read, 0) == 0 || read != sizeof(DWORD)) 
@@ -688,7 +695,7 @@ int codec_2pass_init(CODEC* codec)
 				twopass->stats1 = INVALID_HANDLE_VALUE;
 				CloseHandle(twopass->stats2);
 				twopass->stats2 = INVALID_HANDLE_VALUE;
-				DEBUG("2pass init error - couldn't read from stats2");
+				DEBUGERR("2pass init error - couldn't read from stats2");
 				return ICERR_ERROR;
 			}
 			if (version != -20)
@@ -697,7 +704,7 @@ int codec_2pass_init(CODEC* codec)
 				twopass->stats1 = INVALID_HANDLE_VALUE;
 				CloseHandle(twopass->stats2);
 				twopass->stats2 = INVALID_HANDLE_VALUE;
-				DEBUG("2pass init error - wrong .stats version");
+				DEBUGERR("2pass init error - wrong .stats version");
 				return ICERR_ERROR;
 			}
 
@@ -718,7 +725,7 @@ int codec_2pass_init(CODEC* codec)
 						CloseHandle(twopass->stats2);
 						twopass->stats1 = INVALID_HANDLE_VALUE;
 						twopass->stats2 = INVALID_HANDLE_VALUE;
-						DEBUG("2pass init error - incomplete stats1/stats2 record?");
+						DEBUGERR("2pass init error - incomplete stats1/stats2 record?");
 						return ICERR_ERROR;
 					}
 				}
@@ -749,6 +756,50 @@ int codec_2pass_init(CODEC* codec)
 			// perform prepass to compensate for over/undersizing
 			frames = 0;
 
+			if (codec->config.use_alt_curve)
+			{
+				twopass->alt_curve_low = twopass->average_frame - twopass->average_frame * (double)codec->config.alt_curve_low_dist / 100.0;
+				twopass->alt_curve_low_diff = twopass->average_frame - twopass->alt_curve_low;
+				twopass->alt_curve_high = twopass->average_frame + twopass->average_frame * (double)codec->config.alt_curve_high_dist / 100.0;
+				twopass->alt_curve_high_diff = twopass->alt_curve_high - twopass->average_frame;
+				if (codec->config.alt_curve_use_auto)
+				{
+					if (twopass->movie_curve > 1.0f)
+					{
+						codec->config.alt_curve_min_rel_qual = (int)(100.0 - (100.0 - 100.0 / twopass->movie_curve) * (double)codec->config.alt_curve_auto_str / 100.0);
+						if (codec->config.alt_curve_min_rel_qual < 20)
+							codec->config.alt_curve_min_rel_qual = 20;
+					}
+					else
+						codec->config.alt_curve_min_rel_qual = 100;
+				}
+				twopass->alt_curve_mid_qual = (1.0 + (double)codec->config.alt_curve_min_rel_qual / 100.0) / 2.0;
+				twopass->alt_curve_qual_dev = 1.0 - twopass->alt_curve_mid_qual;
+				if (codec->config.alt_curve_low_dist > 100)
+				{
+					switch(codec->config.alt_curve_type)
+					{
+					case 2: // Sine Curve (high aggressiveness)
+						twopass->alt_curve_qual_dev *= 2.0 / (1.0 + 
+							sin(DEG2RAD * (twopass->average_frame * 90.0 / twopass->alt_curve_low_diff)));
+						twopass->alt_curve_mid_qual = 1.0 - twopass->alt_curve_qual_dev *
+							sin(DEG2RAD * (twopass->average_frame * 90.0 / twopass->alt_curve_low_diff));
+						break;
+					case 1: // Linear (medium aggressiveness)
+						twopass->alt_curve_qual_dev *= 2.0 / (1.0 +
+							twopass->average_frame / twopass->alt_curve_low_diff);
+						twopass->alt_curve_mid_qual = 1.0 - twopass->alt_curve_qual_dev *
+							twopass->average_frame / twopass->alt_curve_low_diff;
+						break;
+					case 0: // Cosine Curve (low aggressiveness)
+						twopass->alt_curve_qual_dev *= 2.0 / (1.0 + 
+							(1.0 - cos(DEG2RAD * (twopass->average_frame * 90.0 / twopass->alt_curve_low_diff))));
+						twopass->alt_curve_mid_qual = 1.0 - twopass->alt_curve_qual_dev *
+							(1.0 - cos(DEG2RAD * (twopass->average_frame * 90.0 / twopass->alt_curve_low_diff)));
+					}
+				}
+			}
+
 			while (1)
 			{
 				if (!ReadFile(twopass->stats1, &twopass->nns1, sizeof(NNSTATS), &read, NULL) || read != sizeof(NNSTATS) ||
@@ -766,7 +817,7 @@ int codec_2pass_init(CODEC* codec)
 						CloseHandle(twopass->stats2);
 						twopass->stats1 = INVALID_HANDLE_VALUE;
 						twopass->stats2 = INVALID_HANDLE_VALUE;
-						DEBUG("2pass init error - incomplete stats1/stats2 record?");
+						DEBUGERR("2pass init error - incomplete stats1/stats2 record?");
 						return ICERR_ERROR;
 					}
 				}
@@ -777,15 +828,65 @@ int codec_2pass_init(CODEC* codec)
 					double dbytes = twopass->nns2.bytes / twopass->movie_curve;
 					total1 += dbytes;
 
-					if (dbytes > twopass->average_frame)
+					if (codec->config.use_alt_curve)
 					{
-						total2 += ((double)dbytes + (twopass->average_frame - dbytes) *
-							codec->config.curve_compression_high / 100.0);
+						if (dbytes > twopass->average_frame)
+						{
+							if (dbytes >= twopass->alt_curve_high)
+								total2 += dbytes * (twopass->alt_curve_mid_qual - twopass->alt_curve_qual_dev);
+							else
+							{
+								switch(codec->config.alt_curve_type)
+								{
+								case 2:
+								total2 += dbytes * (twopass->alt_curve_mid_qual - twopass->alt_curve_qual_dev *
+									sin(DEG2RAD * ((dbytes - twopass->average_frame) * 90.0 / twopass->alt_curve_high_diff)));
+									break;
+								case 1:
+								total2 += dbytes * (twopass->alt_curve_mid_qual - twopass->alt_curve_qual_dev *
+									(dbytes - twopass->average_frame) / twopass->alt_curve_high_diff);
+									break;
+								case 0:
+								total2 += dbytes * (twopass->alt_curve_mid_qual - twopass->alt_curve_qual_dev *
+									(1.0 - cos(DEG2RAD * ((dbytes - twopass->average_frame) * 90.0 / twopass->alt_curve_high_diff))));
+								}
+							}
+						}
+						else
+						{
+							if (dbytes <= twopass->alt_curve_low)
+								total2 += dbytes;
+							else
+							{
+								switch(codec->config.alt_curve_type)
+								{
+								case 2:
+								total2 += dbytes * (twopass->alt_curve_mid_qual - twopass->alt_curve_qual_dev *
+									sin(DEG2RAD * ((dbytes - twopass->average_frame) * 90.0 / twopass->alt_curve_low_diff)));
+									break;
+								case 1:
+								total2 += dbytes * (twopass->alt_curve_mid_qual - twopass->alt_curve_qual_dev *
+									(dbytes - twopass->average_frame) / twopass->alt_curve_low_diff);
+									break;
+								case 0:
+								total2 += dbytes * (twopass->alt_curve_mid_qual + twopass->alt_curve_qual_dev *
+									(1.0 - cos(DEG2RAD * ((dbytes - twopass->average_frame) * 90.0 / twopass->alt_curve_low_diff))));
+								}
+							}
+						}
 					}
 					else
 					{
-						total2 += ((double)dbytes + (twopass->average_frame - dbytes) *
-							codec->config.curve_compression_low / 100.0);
+						if (dbytes > twopass->average_frame)
+						{
+							total2 += ((double)dbytes + (twopass->average_frame - dbytes) *
+								codec->config.curve_compression_high / 100.0);
+						}
+						else
+						{
+							total2 += ((double)dbytes + (twopass->average_frame - dbytes) *
+								codec->config.curve_compression_low / 100.0);
+						}
 					}
 				}
 
@@ -794,6 +895,7 @@ int codec_2pass_init(CODEC* codec)
 
 			twopass->curve_comp_scale = total1 / total2;
 
+			if (!codec->config.use_alt_curve)
 			{
 				int asymmetric_average_frame;
 				char s[100];
@@ -822,7 +924,7 @@ int codec_2pass_init(CODEC* codec)
 					{
 						CloseHandle(twopass->stats1);
 						twopass->stats1 = INVALID_HANDLE_VALUE;
-						DEBUG("2pass init error - incomplete stats2 record?");
+						DEBUGERR("2pass init error - incomplete stats2 record?");
 						return ICERR_ERROR;
 					}
 				}
@@ -914,6 +1016,50 @@ int codec_2pass_init(CODEC* codec)
 			// perform prepass to compensate for over/undersizing
 			frames = 0;
 
+			if (codec->config.use_alt_curve)
+			{
+				twopass->alt_curve_low = twopass->average_frame - twopass->average_frame * (double)codec->config.alt_curve_low_dist / 100.0;
+				twopass->alt_curve_low_diff = twopass->average_frame - twopass->alt_curve_low;
+				twopass->alt_curve_high = twopass->average_frame + twopass->average_frame * (double)codec->config.alt_curve_high_dist / 100.0;
+				twopass->alt_curve_high_diff = twopass->alt_curve_high - twopass->average_frame;
+				if (codec->config.alt_curve_use_auto)
+				{
+					if (twopass->movie_curve > 1.0f)
+					{
+						codec->config.alt_curve_min_rel_qual = (int)(100.0 - (100.0 - 100.0 / twopass->movie_curve) * (double)codec->config.alt_curve_auto_str / 100.0);
+						if (codec->config.alt_curve_min_rel_qual < 20)
+							codec->config.alt_curve_min_rel_qual = 20;
+					}
+					else
+						codec->config.alt_curve_min_rel_qual = 100;
+				}
+				twopass->alt_curve_mid_qual = (1.0 + (double)codec->config.alt_curve_min_rel_qual / 100.0) / 2.0;
+				twopass->alt_curve_qual_dev = 1.0 - twopass->alt_curve_mid_qual;
+				if (codec->config.alt_curve_low_dist > 100)
+				{
+					switch(codec->config.alt_curve_type)
+					{
+					case 2: // Sine Curve (high aggressiveness)
+						twopass->alt_curve_qual_dev *= 2.0 / (1.0 + 
+							sin(DEG2RAD * (twopass->average_frame * 90.0 / twopass->alt_curve_low_diff)));
+						twopass->alt_curve_mid_qual = 1.0 - twopass->alt_curve_qual_dev *
+							sin(DEG2RAD * (twopass->average_frame * 90.0 / twopass->alt_curve_low_diff));
+						break;
+					case 1: // Linear (medium aggressiveness)
+						twopass->alt_curve_qual_dev *= 2.0 / (1.0 +
+							twopass->average_frame / twopass->alt_curve_low_diff);
+						twopass->alt_curve_mid_qual = 1.0 - twopass->alt_curve_qual_dev *
+							twopass->average_frame / twopass->alt_curve_low_diff;
+						break;
+					case 0: // Cosine Curve (low aggressiveness)
+						twopass->alt_curve_qual_dev *= 2.0 / (1.0 + 
+							(1.0 - cos(DEG2RAD * (twopass->average_frame * 90.0 / twopass->alt_curve_low_diff))));
+						twopass->alt_curve_mid_qual = 1.0 - twopass->alt_curve_qual_dev *
+							(1.0 - cos(DEG2RAD * (twopass->average_frame * 90.0 / twopass->alt_curve_low_diff)));
+					}
+				}
+			}
+
 			while (1)
 			{
 				if (!ReadFile(twopass->stats1, &twopass->nns1, sizeof(NNSTATS), &read, NULL) || read != sizeof(NNSTATS))
@@ -928,7 +1074,7 @@ int codec_2pass_init(CODEC* codec)
 					{
 						CloseHandle(twopass->stats1);
 						twopass->stats1 = INVALID_HANDLE_VALUE;
-						DEBUG("2pass init error - incomplete stats2 record?");
+						DEBUGERR("2pass init error - incomplete stats2 record?");
 						return ICERR_ERROR;
 					}
 				}
@@ -939,15 +1085,65 @@ int codec_2pass_init(CODEC* codec)
 					double dbytes = twopass->nns1.bytes / twopass->movie_curve;
 					total1 += dbytes;
 
-					if (dbytes > twopass->average_frame)
+					if (codec->config.use_alt_curve)
 					{
-						total2 += ((double)dbytes + (twopass->average_frame - dbytes) *
-							codec->config.curve_compression_high / 100.0);
+						if (dbytes > twopass->average_frame)
+						{
+							if (dbytes >= twopass->alt_curve_high)
+								total2 += dbytes * (twopass->alt_curve_mid_qual - twopass->alt_curve_qual_dev);
+							else
+							{
+								switch(codec->config.alt_curve_type)
+								{
+								case 2:
+								total2 += dbytes * (twopass->alt_curve_mid_qual - twopass->alt_curve_qual_dev *
+									sin(DEG2RAD * ((dbytes - twopass->average_frame) * 90.0 / twopass->alt_curve_high_diff)));
+									break;
+								case 1:
+								total2 += dbytes * (twopass->alt_curve_mid_qual - twopass->alt_curve_qual_dev *
+									(dbytes - twopass->average_frame) / twopass->alt_curve_high_diff);
+									break;
+								case 0:
+								total2 += dbytes * (twopass->alt_curve_mid_qual - twopass->alt_curve_qual_dev *
+									(1.0 - cos(DEG2RAD * ((dbytes - twopass->average_frame) * 90.0 / twopass->alt_curve_high_diff))));
+								}
+							}
+						}
+						else
+						{
+							if (dbytes <= twopass->alt_curve_low)
+								total2 += dbytes;
+							else
+							{
+								switch(codec->config.alt_curve_type)
+								{
+								case 2:
+								total2 += dbytes * (twopass->alt_curve_mid_qual - twopass->alt_curve_qual_dev *
+									sin(DEG2RAD * ((dbytes - twopass->average_frame) * 90.0 / twopass->alt_curve_low_diff)));
+									break;
+								case 1:
+								total2 += dbytes * (twopass->alt_curve_mid_qual - twopass->alt_curve_qual_dev *
+									(dbytes - twopass->average_frame) / twopass->alt_curve_low_diff);
+									break;
+								case 0:
+								total2 += dbytes * (twopass->alt_curve_mid_qual + twopass->alt_curve_qual_dev *
+									(1.0 - cos(DEG2RAD * ((dbytes - twopass->average_frame) * 90.0 / twopass->alt_curve_low_diff))));
+								}
+							}
+						}
 					}
 					else
 					{
-						total2 += ((double)dbytes + (twopass->average_frame - dbytes) *
-							codec->config.curve_compression_low / 100.0);
+						if (dbytes > twopass->average_frame)
+						{
+							total2 += ((double)dbytes + (twopass->average_frame - dbytes) *
+								codec->config.curve_compression_high / 100.0);
+						}
+						else
+						{
+							total2 += ((double)dbytes + (twopass->average_frame - dbytes) *
+								codec->config.curve_compression_low / 100.0);
+						}
 					}
 				}
 
@@ -956,6 +1152,7 @@ int codec_2pass_init(CODEC* codec)
 
 			twopass->curve_comp_scale = total1 / total2;
 
+			if (!codec->config.use_alt_curve)
 			{
 				int asymmetric_average_frame;
 				char s[100];
@@ -966,6 +1163,15 @@ int codec_2pass_init(CODEC* codec)
 			}
 
 			SetFilePointer(twopass->stats1, sizeof(DWORD), 0, FILE_BEGIN);
+		}
+
+		if (codec->config.use_alt_curve)
+		{
+			if (codec->config.alt_curve_use_auto_bonus_bias)
+				codec->config.alt_curve_bonus_bias = codec->config.alt_curve_min_rel_qual;
+
+			twopass->curve_bias_bonus = (total1 - total2) * (double)codec->config.alt_curve_bonus_bias / 100.0 / (double)(frames - credits_frames - i_frames);
+			twopass->curve_comp_scale = ((total1 - total2) * (1.0 - (double)codec->config.alt_curve_bonus_bias / 100.0) + total2) / total2;
 		}
 
 		twopass->overflow = 0;
@@ -995,7 +1201,7 @@ int codec_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 				break;
 
 			default :
-				DEBUG("Can't use credits size mode in quality mode");
+				DEBUGERR("Can't use credits size mode in quality mode");
 				return ICERR_ERROR;
 			}
 		}
@@ -1021,7 +1227,7 @@ int codec_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 				break;
 
 			default :
-				DEBUG("Can't use credits size mode in quantizer mode");
+				DEBUGERR("Can't use credits size mode in quantizer mode");
 				return ICERR_ERROR;
 			}
 		}
@@ -1050,7 +1256,7 @@ int codec_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 		return ICERR_OK;
 
 	default:
-		DEBUG("get quant: invalid mode");
+		DEBUGERR("get quant: invalid mode");
 		return ICERR_ERROR;
 	}
 }
@@ -1084,14 +1290,14 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 
 	if (ReadFile(twopass->stats1, &twopass->nns1, sizeof(NNSTATS), &read, 0) == 0 || read != sizeof(NNSTATS)) 
 	{
-		DEBUG("2ndpass quant: couldn't read from stats1");
+		DEBUGERR("2ndpass quant: couldn't read from stats1");
 		return ICERR_ERROR;	
 	}
 	if (codec->config.mode == DLG_MODE_2PASS_2_EXT)
 	{
 		if (ReadFile(twopass->stats2, &twopass->nns2, sizeof(NNSTATS), &read, 0) == 0 || read != sizeof(NNSTATS)) 
 		{
-			DEBUG("2ndpass quant: couldn't read from stats2");
+			DEBUGERR("2ndpass quant: couldn't read from stats2");
 			return ICERR_ERROR;	
 		}
 	}
@@ -1187,7 +1393,66 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 
 		curve_comp_error -= bytes2;
 
-		if ((codec->config.curve_compression_high + codec->config.curve_compression_low) &&
+		if (codec->config.use_alt_curve)
+		{
+			if (!frame->intra)
+			{
+				if (dbytes > twopass->average_frame)
+				{
+					if (dbytes >= twopass->alt_curve_high)
+						curve_temp = dbytes * (twopass->alt_curve_mid_qual - twopass->alt_curve_qual_dev);
+					else
+					{
+						switch(codec->config.alt_curve_type)
+						{
+						case 2:
+						curve_temp = dbytes * (twopass->alt_curve_mid_qual - twopass->alt_curve_qual_dev *
+							sin(DEG2RAD * ((dbytes - twopass->average_frame) * 90.0 / twopass->alt_curve_high_diff)));
+							break;
+						case 1:
+						curve_temp = dbytes * (twopass->alt_curve_mid_qual - twopass->alt_curve_qual_dev *
+							(dbytes - twopass->average_frame) / twopass->alt_curve_high_diff);
+							break;
+						case 0:
+						curve_temp = dbytes * (twopass->alt_curve_mid_qual - twopass->alt_curve_qual_dev *
+							(1.0 - cos(DEG2RAD * ((dbytes - twopass->average_frame) * 90.0 / twopass->alt_curve_high_diff))));
+						}
+					}
+				}
+				else
+				{
+					if (dbytes <= twopass->alt_curve_low)
+						curve_temp = dbytes;
+					else
+					{
+						switch(codec->config.alt_curve_type)
+						{
+						case 2:
+						curve_temp = dbytes * (twopass->alt_curve_mid_qual - twopass->alt_curve_qual_dev *
+							sin(DEG2RAD * ((dbytes - twopass->average_frame) * 90.0 / twopass->alt_curve_low_diff)));
+							break;
+						case 1:
+						curve_temp = dbytes * (twopass->alt_curve_mid_qual - twopass->alt_curve_qual_dev *
+							(dbytes - twopass->average_frame) / twopass->alt_curve_low_diff);
+							break;
+						case 0:
+						curve_temp = dbytes * (twopass->alt_curve_mid_qual + twopass->alt_curve_qual_dev *
+							(1.0 - cos(DEG2RAD * ((dbytes - twopass->average_frame) * 90.0 / twopass->alt_curve_low_diff))));
+						}
+					}
+				}
+				curve_temp = curve_temp * twopass->curve_comp_scale + twopass->curve_bias_bonus;
+
+				bytes2 += ((int)curve_temp);
+				curve_comp_error += curve_temp - ((int)curve_temp);
+			}
+			else
+			{
+				curve_comp_error += dbytes - ((int)dbytes);
+				bytes2 += ((int)dbytes);
+			}
+		}
+		else if ((codec->config.curve_compression_high + codec->config.curve_compression_low) &&
 			!frame->intra)
 		{
 			if (dbytes > twopass->average_frame)
@@ -1385,7 +1650,7 @@ int codec_2pass_update(CODEC* codec, XVID_ENC_FRAME* frame, XVID_ENC_STATS* stat
 		
 		if (WriteFile(codec->twopass.stats1, &nns1, sizeof(NNSTATS), &wrote, 0) == 0 || wrote != sizeof(NNSTATS))
 		{
-			DEBUG("stats1: WriteFile error");
+			DEBUGERR("stats1: WriteFile error");
 			return ICERR_ERROR;	
 		}
 		break;

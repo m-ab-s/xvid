@@ -20,6 +20,7 @@
 // { char tmp[120]; wsprintf(tmp, "%s %i %i %i %i %i", (X), (A), (B), (C), (D), (E)); OutputDebugString(tmp); }
 #define DEBUGFOURCC(X,Y)
 // { char tmp[120]; wsprintf(tmp, "%s %c %c %c %c", (X), (Y)&0xff, ((Y)>>8)&0xff, ((Y)>>16)&0xff, ((Y)>>24)&0xff); OutputDebugString(tmp); }
+#define DEBUGERR(X) OutputDebugString(X)
 #define DEBUG2P(X) OutputDebugString(X)
 #define DEBUG1ST(A,B,C,D,E,F,G) { char tmp[120]; wsprintf(tmp, "1st-pass: size:%d total-kbytes:%d %s quant:%d %s kblocks:%d mblocks:%d", (A), (B), (C) ? "intra" : "inter", (D), (E), (F), (G)); OutputDebugString(tmp); }
 #define DEBUG2ND(A,B,C,D,E,F,G,H) { char tmp[120]; wsprintf(tmp, "2nd-pass: quant:%d %s %s stats1:%d scaled:%d actual:%d overflow:%d %s", (A), (B), (C) ? "intra" : "inter", (D), (E), (F), (G), (H) ? "credits" : "movie"); OutputDebugString(tmp); }
@@ -104,6 +105,13 @@ typedef struct
 
 	double average_frame;
 	double curve_comp_scale;
+	double curve_bias_bonus;
+	double alt_curve_low;
+	double alt_curve_high;
+	double alt_curve_low_diff;
+	double alt_curve_high_diff;
+	double alt_curve_mid_qual;
+	double alt_curve_qual_dev;
 	int overflow;
 
 	NNSTATS nns1;

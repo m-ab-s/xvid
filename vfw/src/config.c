@@ -23,6 +23,12 @@
  *
  *	History:
  *
+ *	23.03.2002	daniel smith <danielsmith@astroboymail.com>
+ *				added load defaults button
+ *				merged foxer's alternative 2-pass code (2-pass alt tab)
+ *				added proper tooltips
+ *				moved registry data into reg_ints/reg_strs arrays
+ *				added DEBUGERR output on errors instead of returning
  *	16.03.2002	daniel smith <danielsmith@astroboymail.com>
  *				rewrote/restructured most of file
  *				added tooltips (kind of - dirty message hook method)
@@ -49,10 +55,70 @@
 #include "resource.h"
 
 
+/* registry info structs */
+
+CONFIG reg;
+
+REG_INT const reg_ints[] = {
+	{"mode",					&reg.mode,						DLG_MODE_CBR},
+	{"bitrate",					&reg.bitrate,					900000},
+	{"quality",					&reg.quality,					85},
+	{"quant",					&reg.quant,						5},
+	{"rc_buffersize",			&reg.rc_buffersize,				2048000},
+
+	{"motion_search",			&reg.motion_search,				5},
+	{"quant_type",				&reg.quant_type,				0},
+	{"fourcc_used",				&reg.fourcc_used,				0},
+	{"max_key_interval",		&reg.max_key_interval,			300},
+	{"lum_masking",				&reg.lum_masking,				0},
+
+	{"min_iquant",				&reg.min_iquant,				1},
+	{"max_iquant",				&reg.max_iquant,				31},
+	{"min_pquant",				&reg.min_pquant,				1},
+	{"max_pquant",				&reg.max_pquant,				31},
+
+	{"desired_size",			&reg.desired_size,				570000},
+	{"keyframe_boost",			&reg.keyframe_boost,			20},
+	{"min_key_interval",		&reg.min_key_interval,			6},
+	{"discard1pass",			&reg.discard1pass,				1},
+	{"dummy2pass",				&reg.dummy2pass,				0},
+	{"curve_compression_high",	&reg.curve_compression_high,	25},
+	{"curve_compression_low",	&reg.curve_compression_low,		10},
+	{"use_alt_curve",			&reg.use_alt_curve,				0},
+	{"alt_curve_use_auto",		&reg.alt_curve_use_auto,		1},
+	{"alt_curve_auto_str",		&reg.alt_curve_auto_str,		50},
+	{"alt_curve_use_auto_bonus_bias",	&reg.alt_curve_use_auto_bonus_bias,	1},
+	{"alt_curve_bonus_bias",	&reg.alt_curve_bonus_bias,		50},
+	{"alt_curve_type",			&reg.alt_curve_type,			1},
+	{"alt_curve_high_dist",		&reg.alt_curve_high_dist,		300},
+	{"alt_curve_low_dist",		&reg.alt_curve_low_dist,		300},
+	{"alt_curve_min_rel_qual",	&reg.alt_curve_min_rel_qual,	50},
+	{"bitrate_payback_delay",	&reg.bitrate_payback_delay,		240},
+	{"bitrate_payback_method",	&reg.bitrate_payback_method,	0},
+
+	{"credits_start",			&reg.credits_start,				0},
+	{"credits_start_begin",		&reg.credits_start_begin,		0},
+	{"credits_start_end",		&reg.credits_start_end,			0},
+	{"credits_end",				&reg.credits_end,				0},
+	{"credits_end_begin",		&reg.credits_end_begin,			0},
+	{"credits_end_end",			&reg.credits_end_end,			0},
+
+	{"credits_mode",			&reg.credits_mode,				0},
+	{"credits_rate",			&reg.credits_rate,				20},
+	{"credits_quant_i",			&reg.credits_quant_i,			20},
+	{"credits_quant_p",			&reg.credits_quant_p,			20},
+	{"credits_start_size",		&reg.credits_start_size,		10000},
+	{"credits_end_size",		&reg.credits_end_size,			10000}
+};
+
+REG_STR const reg_strs[] = {
+	{"stats1",					reg.stats1,						CONFIG_2PASS_1_FILE},
+	{"stats2",					reg.stats2,						CONFIG_2PASS_2_FILE}
+//	{"build",					reg.build,						XVID_BUILD}
+};
+
 /* get config settings from registry */
 
-#define REG_GET_N(X, Y, Z) size=sizeof(int);if(RegQueryValueEx(hKey, X, 0, 0, (LPBYTE)&Y, &size) != ERROR_SUCCESS) {Y=Z;}
-#define REG_GET_S(X, Y, Z) size=MAX_PATH;if(RegQueryValueEx(hKey, X, 0, 0, Y, &size) != ERROR_SUCCESS) {lstrcpy(Y, Z);}
 #define REG_GET_B(X, Y, Z) size=sizeof((Z));if(RegQueryValueEx(hKey, X, 0, 0, Y, &size) != ERROR_SUCCESS) {memcpy(Y, Z, sizeof((Z)));}
 
 void config_reg_get(CONFIG * config)
@@ -60,6 +126,7 @@ void config_reg_get(CONFIG * config)
 	HKEY hKey;
 	DWORD size;
 	XVID_INIT_PARAM init_param;
+	int i;
 
 	init_param.cpu_flags = 0;
 	xvid_init(0, 0, &init_param, NULL);
@@ -67,48 +134,25 @@ void config_reg_get(CONFIG * config)
 
 	RegOpenKeyEx(XVID_REG_KEY, XVID_REG_PARENT "\\" XVID_REG_CHILD, 0, KEY_READ, &hKey);
 
-	REG_GET_N("mode",					config->mode,					DLG_MODE_CBR);
-	REG_GET_N("bitrate",				config->bitrate,				900000);
-	REG_GET_N("quality",				config->quality,				85);
-	REG_GET_N("quant",					config->quant,					5);
-	REG_GET_N("rc_buffersize",			config->rc_buffersize,			2048000);
+	for (i=0 ; i<sizeof(reg_ints)/sizeof(REG_INT) ; ++i)
+	{
+		size = sizeof(int);
 
-	REG_GET_N("motion_search",			config->motion_search,			5);
-	REG_GET_N("quant_type",				config->quant_type,				0);
-	REG_GET_N("fourcc_used",			config->fourcc_used,			0);
-	REG_GET_N("max_key_interval",		config->max_key_interval,		300);
-	REG_GET_N("lum_masking",			config->lum_masking,			0);
+		if (RegQueryValueEx(hKey, reg_ints[i].reg_value, 0, 0, (LPBYTE)reg_ints[i].config_int, &size) != ERROR_SUCCESS)
+		{
+			*reg_ints[i].config_int = reg_ints[i].def;
+		}
+	}
 
-	REG_GET_N("min_iquant",				config->min_iquant,				1);
-	REG_GET_N("max_iquant",				config->max_iquant,				31);
-	REG_GET_N("min_pquant",				config->min_pquant,				1);
-	REG_GET_N("max_pquant",				config->max_pquant,				31);
+	for (i=0 ; i<sizeof(reg_strs)/sizeof(REG_STR) ; ++i)
+	{
+		size = MAX_PATH;
 
-	REG_GET_N("desired_size",			config->desired_size,			570000);
-	REG_GET_N("keyframe_boost",			config->keyframe_boost,			20);
-	REG_GET_N("min_key_interval",		config->min_key_interval,		6);
-	REG_GET_N("discard1pass",			config->discard1pass,			1);
-	REG_GET_N("dummy2pass",				config->dummy2pass,				0);
-	REG_GET_N("curve_compression_high", config->curve_compression_high,	25);
-	REG_GET_N("curve_compression_low",	config->curve_compression_low,	10);
-	REG_GET_N("bitrate_payback_delay",	config->bitrate_payback_delay,	240);
-	REG_GET_N("bitrate_payback_method",	config->bitrate_payback_method, 0);
-	REG_GET_S("stats1",					config->stats1,					CONFIG_2PASS_1_FILE);
-	REG_GET_S("stats2",					config->stats2,					CONFIG_2PASS_2_FILE);
-
-	REG_GET_N("credits_start",			config->credits_start,			0);
-	REG_GET_N("credits_start_begin",	config->credits_start_begin,	0);
-	REG_GET_N("credits_start_end",		config->credits_start_end,		0);
-	REG_GET_N("credits_end",			config->credits_end,			0);
-	REG_GET_N("credits_end_begin",		config->credits_end_begin,		0);
-	REG_GET_N("credits_end_end",		config->credits_end_end,		0);
-
-	REG_GET_N("credits_mode",			config->credits_mode,			0);
-	REG_GET_N("credits_rate",			config->credits_rate,			20);
-	REG_GET_N("credits_quant_i",		config->credits_quant_i,		20);
-	REG_GET_N("credits_quant_p",		config->credits_quant_p,		20);
-	REG_GET_N("credits_start_size",		config->credits_start_size,		10000);
-	REG_GET_N("credits_end_size",		config->credits_end_size,		10000);
+		if (RegQueryValueEx(hKey, reg_strs[i].reg_value, 0, 0, (LPBYTE)reg_strs[i].config_str, &size) != ERROR_SUCCESS)
+		{
+			memcpy(reg_strs[i].config_str, reg_strs[i].def, MAX_PATH);
+		}
+	}
 
 	{
 		BYTE default_qmatrix_intra[] = {
@@ -133,9 +177,11 @@ void config_reg_get(CONFIG * config)
 			23,24,25,27,28,30,31,33
 		};
 
-		REG_GET_B("qmatrix_intra", config->qmatrix_intra, default_qmatrix_intra);
-		REG_GET_B("qmatrix_inter", config->qmatrix_inter, default_qmatrix_inter);
+		REG_GET_B("qmatrix_intra", reg.qmatrix_intra, default_qmatrix_intra);
+		REG_GET_B("qmatrix_inter", reg.qmatrix_inter, default_qmatrix_inter);
 	}
+
+	memcpy(config, &reg, sizeof(CONFIG));
 
 	RegCloseKey(hKey);
 }
@@ -143,14 +189,13 @@ void config_reg_get(CONFIG * config)
 
 /* put config settings in registry */
 
-#define REG_SET_N(X, Y) RegSetValueEx(hKey, X, 0, REG_DWORD, (LPBYTE)&Y, sizeof(int))
-#define REG_SET_S(X, Y) RegSetValueEx(hKey, X, 0, REG_SZ, Y, lstrlen(Y)+1)
 #define REG_SET_B(X, Y) RegSetValueEx(hKey, X, 0, REG_BINARY, Y, sizeof((Y)))
 
 void config_reg_set(CONFIG * config)
 {
 	HKEY hKey;
 	DWORD dispo;
+	int i;
 
 	if (RegCreateKeyEx(
 			XVID_REG_KEY,
@@ -167,50 +212,20 @@ void config_reg_set(CONFIG * config)
 		return;
 	}
 
-	REG_SET_N("mode",					config->mode);
-	REG_SET_N("bitrate",				config->bitrate);
-	REG_SET_N("quality",				config->quality);
-	REG_SET_N("quant",					config->quant);
-	REG_SET_N("rc_buffersize",			config->rc_buffersize);
+	memcpy(&reg, config, sizeof(CONFIG));
 
-	REG_SET_N("motion_search",			config->motion_search);
-	REG_SET_N("quant_type",				config->quant_type);
-	REG_SET_N("fourcc_used",			config->fourcc_used);
-	REG_SET_N("max_key_interval",		config->max_key_interval);
-	REG_SET_N("lum_masking",			config->lum_masking);
+	for (i=0 ; i<sizeof(reg_ints)/sizeof(REG_INT) ; ++i)
+	{
+		RegSetValueEx(hKey, reg_ints[i].reg_value, 0, REG_DWORD, (LPBYTE)reg_ints[i].config_int, sizeof(int));
+	}
 
-	REG_SET_N("min_iquant",				config->min_iquant);
-	REG_SET_N("max_iquant",				config->max_iquant);
-	REG_SET_N("min_pquant",				config->min_pquant);
-	REG_SET_N("max_pquant",				config->max_pquant);
-	REG_SET_B("qmatrix_intra",			config->qmatrix_intra);
-	REG_SET_B("qmatrix_inter",			config->qmatrix_inter);
+	for (i=0 ; i<sizeof(reg_strs)/sizeof(REG_STR) ; ++i)
+	{
+		RegSetValueEx(hKey, reg_strs[i].reg_value, 0, REG_SZ, reg_strs[i].config_str, lstrlen(reg_strs[i].config_str)+1);
+	}
 
-	REG_SET_N("desired_size",			config->desired_size);
-	REG_SET_N("keyframe_boost",			config->keyframe_boost);
-	REG_SET_N("min_key_interval",		config->min_key_interval);
-	REG_SET_N("discard1pass",			config->discard1pass);
-	REG_SET_N("dummy2pass",				config->dummy2pass);
-	REG_SET_N("curve_compression_high",	config->curve_compression_high);
-	REG_SET_N("curve_compression_low",	config->curve_compression_low);
-	REG_SET_N("bitrate_payback_delay",	config->bitrate_payback_delay);
-	REG_SET_N("bitrate_payback_method",	config->bitrate_payback_method);
-	REG_SET_S("stats1",					config->stats1);
-	REG_SET_S("stats2",					config->stats2);
-
-	REG_SET_N("credits_start",			config->credits_start);
-	REG_SET_N("credits_start_begin",	config->credits_start_begin);
-	REG_SET_N("credits_start_end",		config->credits_start_end);
-	REG_SET_N("credits_end",			config->credits_end);
-	REG_SET_N("credits_end_begin",		config->credits_end_begin);
-	REG_SET_N("credits_end_end",		config->credits_end_end);
-
-	REG_SET_N("credits_mode",			config->credits_mode);
-	REG_SET_N("credits_rate",			config->credits_rate);
-	REG_SET_N("credits_quant_i",		config->credits_quant_i);
-	REG_SET_N("credits_quant_p",		config->credits_quant_p);
-	REG_SET_N("credits_start_size",		config->credits_start_size);
-	REG_SET_N("credits_end_size",		config->credits_end_size);
+	REG_SET_B("qmatrix_intra", reg.qmatrix_intra);
+	REG_SET_B("qmatrix_inter", reg.qmatrix_inter);
 
 	RegCloseKey(hKey);
 }
@@ -228,13 +243,15 @@ void config_reg_default(CONFIG * config)
 		return;
 	}
 
-	if (RegDeleteKey(XVID_REG_KEY, XVID_REG_CHILD))
+	if (RegDeleteKey(hKey, XVID_REG_CHILD))
 	{
 		DEBUG1("Couldn't delete registry key - ", GetLastError());
 		return;
 	}
 
+	RegCloseKey(hKey);
 	config_reg_get(config);
+	config_reg_set(config);
 }
 
 
@@ -394,6 +411,7 @@ void adv_dialog(HWND hParent, CONFIG * config)
 	psp[DLG_GLOBAL].pszTemplate		= MAKEINTRESOURCE(IDD_GLOBAL);
 	psp[DLG_QUANT].pszTemplate		= MAKEINTRESOURCE(IDD_QUANT);
 	psp[DLG_2PASS].pszTemplate		= MAKEINTRESOURCE(IDD_2PASS);
+	psp[DLG_2PASSALT].pszTemplate	= MAKEINTRESOURCE(IDD_2PASSALT);
 	psp[DLG_CREDITS].pszTemplate	= MAKEINTRESOURCE(IDD_CREDITS);
 	psp[DLG_CPU].pszTemplate		= MAKEINTRESOURCE(IDD_CPU);
 
@@ -420,6 +438,8 @@ void adv_dialog(HWND hParent, CONFIG * config)
 
 #define CONTROLDLG(X,Y) EnableWindow(GetDlgItem(hDlg, (X)), (Y))
 #define ISDLGSET(X)	(IsDlgButtonChecked(hDlg, (X)) == BST_CHECKED)
+
+#define MOD_CBR
 
 void adv_mode(HWND hDlg, int mode)
 {
@@ -485,6 +505,15 @@ void adv_mode(HWND hDlg, int mode)
 	int i;
 
 	// first perform checkbox-based enable/disable
+	CONTROLDLG(IDC_USEAUTO,				ISDLGSET(IDC_USEALT));
+	CONTROLDLG(IDC_AUTOSTR,				ISDLGSET(IDC_USEALT) && ISDLGSET(IDC_USEAUTO));
+	CONTROLDLG(IDC_USEAUTOBONUS,		ISDLGSET(IDC_USEALT));
+	CONTROLDLG(IDC_BONUSBIAS,			(ISDLGSET(IDC_USEALT) && !(ISDLGSET(IDC_USEAUTOBONUS))));
+	CONTROLDLG(IDC_CURVETYPE,			ISDLGSET(IDC_USEALT));
+	CONTROLDLG(IDC_ALTCURVEHIGH,		ISDLGSET(IDC_USEALT));
+	CONTROLDLG(IDC_ALTCURVELOW,			ISDLGSET(IDC_USEALT));
+	CONTROLDLG(IDC_MINQUAL,				ISDLGSET(IDC_USEALT) && !(ISDLGSET(IDC_USEAUTO)));
+
 	CONTROLDLG(IDC_CREDITS_START_BEGIN,	ISDLGSET(IDC_CREDITS_START));
 	CONTROLDLG(IDC_CREDITS_START_END,	ISDLGSET(IDC_CREDITS_START));
 
@@ -547,6 +576,21 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 
 		SetDlgItemText(hDlg, IDC_STATS1, config->stats1);
 		SetDlgItemText(hDlg, IDC_STATS2, config->stats2);
+		break;
+
+	case DLG_2PASSALT :
+		CheckDlgButton(hDlg, IDC_USEALT, config->use_alt_curve ? BST_CHECKED : BST_UNCHECKED);
+
+		SendDlgItemMessage(hDlg, IDC_CURVETYPE, CB_SETCURSEL, config->alt_curve_type, 0);
+		SetDlgItemInt(hDlg, IDC_ALTCURVEHIGH, config->alt_curve_high_dist, FALSE);
+		SetDlgItemInt(hDlg, IDC_ALTCURVELOW, config->alt_curve_low_dist, FALSE);
+		SetDlgItemInt(hDlg, IDC_MINQUAL, config->alt_curve_min_rel_qual, FALSE);
+
+		CheckDlgButton(hDlg, IDC_USEAUTO, config->alt_curve_use_auto ? BST_CHECKED : BST_UNCHECKED);
+		SetDlgItemInt(hDlg, IDC_AUTOSTR, config->alt_curve_auto_str, FALSE);
+
+		CheckDlgButton(hDlg, IDC_USEAUTOBONUS, config->alt_curve_use_auto_bonus_bias ? BST_CHECKED : BST_UNCHECKED);
+		SetDlgItemInt(hDlg, IDC_BONUSBIAS, config->alt_curve_bonus_bias, FALSE);
 		break;
 
 	case DLG_CREDITS :
@@ -647,6 +691,21 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 		CONSTRAINVAL(config->curve_compression_low, 0, 100);
 		break;
 
+	case DLG_2PASSALT :
+		config->use_alt_curve = ISDLGSET(IDC_USEALT);
+
+		config->alt_curve_use_auto = ISDLGSET(IDC_USEAUTO);
+		config->alt_curve_auto_str = config_get_int(hDlg, IDC_AUTOSTR, config->alt_curve_auto_str);
+
+		config->alt_curve_use_auto_bonus_bias = ISDLGSET(IDC_USEAUTOBONUS);
+		config->alt_curve_bonus_bias = config_get_int(hDlg, IDC_BONUSBIAS, config->alt_curve_bonus_bias);
+
+		config->alt_curve_type = SendDlgItemMessage(hDlg, IDC_CURVETYPE, CB_GETCURSEL, 0, 0);
+		config->alt_curve_high_dist = config_get_int(hDlg, IDC_ALTCURVEHIGH, config->alt_curve_high_dist);
+		config->alt_curve_low_dist = config_get_int(hDlg, IDC_ALTCURVELOW, config->alt_curve_low_dist);
+		config->alt_curve_min_rel_qual = config_get_int(hDlg, IDC_MINQUAL, config->alt_curve_min_rel_qual);
+		break;
+
 	case DLG_CREDITS :
 		config->credits_start = ISDLGSET(IDC_CREDITS_START);
 		config->credits_start_begin = GetDlgItemInt(hDlg, IDC_CREDITS_START_BEGIN, NULL, FALSE);
@@ -726,64 +785,27 @@ void quant_download(HWND hDlg, CONFIG* config)
 	}
 }
 
-/* monitor mouse events to dialog controls for help text */
 
-HHOOK hHook;
-HWND hParent;
+/* enumerates child windows, assigns tooltips */
 
-LRESULT CALLBACK msg_proc(int nCode, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK enum_tooltips(HWND hWnd, LPARAM lParam)
 {
-	MSG* pmsg = (MSG *)lParam;
+	char help[500];
 
-	if (pmsg->message == WM_MOUSEMOVE)
+	if (LoadString(hInst, GetDlgCtrlID(hWnd), help, 500))
 	{
-		if (pmsg->hwnd == hParent)
-		{
-			SetDlgItemText(hParent, IDC_STATIC_HELP, XVID_HELP);
-		}
-		else if (IsChild(hParent, pmsg->hwnd))
-		{
-			char *message;
-			char help[500];
+		TOOLINFO ti;
 
-			int mode = SendDlgItemMessage(hParent, IDC_MODE, CB_GETCURSEL, 0, 0);
-			int item = GetDlgCtrlID(pmsg->hwnd);
+		ti.cbSize = sizeof(TOOLINFO);
+		ti.uFlags = TTF_SUBCLASS | TTF_IDISHWND;
+		ti.hwnd = GetParent(hWnd);
+		ti.uId	= (LPARAM)hWnd;
+		ti.lpszText = help;
 
-			if (item == IDC_VALUE || item == IDC_SLIDER)
-			{
-				switch (mode)
-				{
-				case DLG_MODE_2PASS_2_INT :
-					if (item == IDC_VALUE)
-					{
-						message = "Set the desired video size in Kilobytes";
-						break;
-					}
-				default :
-				case DLG_MODE_CBR :
-					message = "Set the target video bitrate";
-					break;
-
-				case DLG_MODE_VBR_QUAL :
-					message = "Set the target video quality";
-					break;
-
-				case DLG_MODE_VBR_QUANT :
-					message = "Set the fixed quantizer for encoding";
-					break;
-				}
-				lstrcpy(help, message);
-			}
-			else if (!LoadString(hInst, GetDlgCtrlID(pmsg->hwnd), help, 500))
-			{
-				lstrcpy(help, XVID_HELP);
-			}
-
-			SetDlgItemText(hParent, IDC_STATIC_HELP, help);
-		}
+		SendMessage(hTooltip, TTM_ADDTOOL, 0, (LPARAM)&ti);
 	}
 
-	return (CallNextHookEx(hHook, nCode, wParam, lParam));
+	return TRUE;
 }
 
 
@@ -810,23 +832,22 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		SendDlgItemMessage(hDlg, IDC_MODE, CB_SETCURSEL, config->mode, 0);
 		SetDlgItemInt(hDlg, IDC_CBRBUFFER, config->rc_buffersize, FALSE);
-		SetDlgItemText(hDlg, IDC_STATIC_HELP, XVID_HELP);
 
-		hHook = SetWindowsHookEx(WH_GETMESSAGE, msg_proc, 0, GetCurrentThreadId());
+		InitCommonControls();
+
+		if (hTooltip = CreateWindow(TOOLTIPS_CLASS, NULL, TTS_ALWAYSTIP,
+				CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+				NULL, NULL, hInst, NULL))
+		{
+			SetWindowPos(hTooltip, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
+			SendMessage(hTooltip, TTM_SETDELAYTIME, TTDT_AUTOMATIC, MAKELONG(1500, 0));
+			SendMessage(hTooltip, TTM_SETMAXTIPWIDTH, 0, 400);
+
+			EnumChildWindows(hDlg, enum_tooltips, 0);
+		}
 
 		main_slider(hDlg, config);
 		main_value(hDlg, config);
-		break;
-
-	case WM_ACTIVATE :
-		if (LOWORD(wParam) != WA_INACTIVE)
-		{
-			hParent = hDlg;
-		}
-		return 0;
-
-	case WM_DESTROY :
-		UnhookWindowsHookEx(hHook);
 		break;
 
 	case WM_HSCROLL :
@@ -855,6 +876,16 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			{
 				config_reg_set(config);
 			}
+		}
+		else if (LOWORD(wParam) == IDC_DEFAULTS && HIWORD(wParam) == BN_CLICKED)
+		{
+			config_reg_default(config);
+
+			SendDlgItemMessage(hDlg, IDC_MODE, CB_SETCURSEL, config->mode, 0);
+			SetDlgItemInt(hDlg, IDC_CBRBUFFER, config->rc_buffersize, FALSE);
+
+			main_slider(hDlg, config);
+			main_value(hDlg, config);
 		}
 		else if (HIWORD(wParam) == EN_UPDATE && LOWORD(wParam) == IDC_VALUE)
 		{
@@ -935,8 +966,18 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DIVX");
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DX50");
 		}
+		else if (psi->page == DLG_2PASSALT)
+		{
+			SendDlgItemMessage(hDlg, IDC_CURVETYPE, CB_ADDSTRING, 0, (LPARAM)"Low");
+			SendDlgItemMessage(hDlg, IDC_CURVETYPE, CB_ADDSTRING, 0, (LPARAM)"Medium");
+			SendDlgItemMessage(hDlg, IDC_CURVETYPE, CB_ADDSTRING, 0, (LPARAM)"High");
+		}
 
-		SetDlgItemText(hDlg, IDC_STATIC_HELP, XVID_HELP);
+		if (hTooltip)
+		{
+			EnumChildWindows(hDlg, enum_tooltips, 0);
+		}
+
 		adv_upload(hDlg, psi->page, psi->config);
 		adv_mode(hDlg, psi->config->mode);
 		break;
@@ -946,6 +987,9 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 			switch (LOWORD(wParam))
 			{
+			case IDC_USEALT :
+			case IDC_USEAUTO :
+			case IDC_USEAUTOBONUS :
 			case IDC_CREDITS_START :
 			case IDC_CREDITS_END :
 			case IDC_CREDITS_RATE_RADIO :
@@ -1001,10 +1045,6 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_NOTIFY :
 		switch (((NMHDR *)lParam)->code)
 		{
-		case PSN_SETACTIVE :
-			hParent = hDlg;
-			break;
-
 		case PSN_KILLACTIVE :	
 			/* validate */
 			adv_download(hDlg, psi->page, psi->config);
@@ -1040,14 +1080,12 @@ BOOL CALLBACK quantmatrix_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 		SetWindowLong(hDlg, GWL_USERDATA, lParam);
 		config = (CONFIG*)lParam;
 		quant_upload(hDlg, config);
-		break;
 
-	case WM_ACTIVATE :
-		if (LOWORD(wParam) != WA_INACTIVE)
+		if (hTooltip)
 		{
-			hParent = hDlg;
+			EnumChildWindows(hDlg, enum_tooltips, 0);
 		}
-		return 0;
+		break;
 
 	case WM_COMMAND :
 		if (LOWORD(wParam) == IDOK && HIWORD(wParam) == BN_CLICKED)
@@ -1091,13 +1129,13 @@ BOOL CALLBACK quantmatrix_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 					if (hFile == INVALID_HANDLE_VALUE)
 					{
-						DEBUG("Couldn't save quant matrix");
+						DEBUGERR("Couldn't save quant matrix");
 					}
 					else
 					{
 						if (!WriteFile(hFile, quant_data, 128, &wrote, 0))
 						{
-							DEBUG("Couldnt write quant matrix");
+							DEBUGERR("Couldnt write quant matrix");
 						}
 					}
 
@@ -1113,13 +1151,13 @@ BOOL CALLBACK quantmatrix_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 					if (hFile == INVALID_HANDLE_VALUE)
 					{
-						DEBUG("Couldn't load quant matrix");
+						DEBUGERR("Couldn't load quant matrix");
 					}
 					else
 					{
 						if (!ReadFile(hFile, quant_data, 128, &read, 0))
 						{
-							DEBUG("Couldnt read quant matrix");
+							DEBUGERR("Couldnt read quant matrix");
 						}
 						else
 						{
@@ -1156,7 +1194,7 @@ BOOL CALLBACK about_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			HFONT hFont;
 			LOGFONT lfData;
 
-			SetDlgItemText(hDlg, IDC_BUILD, __TIME__ ", " __DATE__);
+			SetDlgItemText(hDlg, IDC_BUILD, XVID_BUILD);
 
 			xvid_init(NULL, 0, &init_param, 0);
 			wsprintf(core, "Core Version %d.%d", (init_param.api_version>>16),(init_param.api_version&0xFFFFU));

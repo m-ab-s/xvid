@@ -23,7 +23,6 @@
  *
  *	History:
  *
- *	... ???
  *	01.12.2001	inital version; (c)2001 peter ross <suxen_drol@hotmail.com>
  *
  *************************************************************************/
@@ -74,7 +73,9 @@ __declspec(dllexport) LRESULT WINAPI DriverProc(
 			{
 				return DRV_CANCEL;
 			}
+
 			codec = malloc(sizeof(CODEC));
+
 			if (codec == NULL)
 			{
 				if (icopen != NULL)
@@ -83,8 +84,16 @@ __declspec(dllexport) LRESULT WINAPI DriverProc(
 				}
 				return 0;
 			}
+
 			codec->ehandle = codec->dhandle = NULL;
 			config_reg_get(&codec->config);
+
+			/* bad things happen if this is uncommented
+			if (lstrcmp(XVID_BUILD, codec->config.build))
+			{
+				config_reg_default(&codec->config);
+			}
+			*/
 
 			if (icopen != NULL)
 			{
