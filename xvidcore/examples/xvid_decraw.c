@@ -20,7 +20,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_decraw.c,v 1.10.2.1 2004-04-07 22:02:56 edgomez Exp $
+ * $Id: xvid_decraw.c,v 1.10.2.2 2004-04-10 10:05:47 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -57,6 +57,9 @@
 /* max number of frames */
 #define ABS_MAXFRAMENR 9999
 
+#define USE_PNM 0
+#define USE_TGA 1
+
 static int XDIM = 0;
 static int YDIM = 0;
 static int ARG_SAVEDECOUTPUT = 0;
@@ -64,6 +67,7 @@ static int ARG_SAVEMPEGSTREAM = 0;
 static char *ARG_INPUTFILE = NULL;
 static int CSP = XVID_CSP_I420;
 static int BPP = 1;
+static int FORMAT = USE_PNM;
 
 static char filepath[256] = "./";
 static void *dec_handle = NULL;
@@ -158,6 +162,13 @@ int main(int argc, char *argv[])
 				CSP = XVID_CSP_I420;
 				BPP = 1;
 			}
+		} else if (strcmp("-f", argv[i]) == 0 && i < argc -1) {
+			i++;
+			if (strcmp(argv[i], "tga") == 0) {
+				FORMAT = USE_TGA;
+			} else {
+				FORMAT = USE_PNM;
+			}
 		} else if (strcmp("-help", argv[i]) == 0) {
 			usage();
 			return(0);
@@ -181,6 +192,11 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Error opening input file %s\n", ARG_INPUTFILE);
 			return(-1);
 		}
+	}
+
+	/* PNM/PGM format can't handle 16/32 bit data */
+	if (BPP != 1 && BPP != 3 && FORMAT == USE_PNM) {
+		FORMAT = USE_TGA;
 	}
 
 /*****************************************************************************
@@ -318,8 +334,8 @@ int main(int argc, char *argv[])
 				
 		/* Save output frame if required */
 		if (ARG_SAVEDECOUTPUT) {
-			sprintf(filename, "%sdec%05d.tga", filepath, filenr);
-			if(write_tga(filename,out_buffer)) {
+			sprintf(filename, "%sdec%05d", filepath, filenr);
+			if(write_image(filename, out_buffer)) {
 				fprintf(stderr,
 						"Error writing decoded PGM frame %s\n",
 						filename);
@@ -359,8 +375,8 @@ int main(int argc, char *argv[])
 			
 		/* Save output frame if required */
 		if (ARG_SAVEDECOUTPUT) {
-			sprintf(filename, "%sdec%05d.tga", filepath, filenr);
-			if(write_tga(filename, out_buffer)) {
+			sprintf(filename, "%sdec%05d", filepath, filenr);
+			if(write_image(filename, out_buffer)) {
 				fprintf(stderr,
 						"Error writing decoded PGM frame %s\n",
 						filename);
@@ -411,7 +427,8 @@ static void usage()
 	fprintf(stderr, " -asm           : use assembly optimizations (default=disabled)\n");
 	fprintf(stderr, " -i string      : input filename (default=stdin)\n");
 	fprintf(stderr, " -d             : save decoder output\n");
-	fprintf(stderr, " -c csp         : choose colorspace output (csp can be one of rgb16, rgb24, rgb32, yv12, i420)\n");
+	fprintf(stderr, " -c csp         : choose colorspace output (rgb16, rgb24, rgb32, yv12, i420)\n");
+	fprintf(stderr, " -f format      : choose output file format (tga, pnm, pgm)\n");
 	fprintf(stderr, " -m             : save mpeg4 raw stream to individual files\n");
 	fprintf(stderr, " -help          : This help message\n");
 	fprintf(stderr, " (* means default)\n");
@@ -440,6 +457,34 @@ msecond()
 /*****************************************************************************
  *              output functions
  ****************************************************************************/
+
+int write_image(char *prefix, unsigned char *image)
+{
+	char filename[1024];
+	char *ext;
+	int ret;
+
+	if (FORMAT == USE_PNM && BPP == 1) {
+		ext = "pgm";
+	} else if (FORMAT == USE_PNM && BPP == 3) {
+		ext = "pnm";
+	} else if (FORMAT == USE_TGA) {
+		ext = "tga";
+	} else {
+		fprintf(stderr, "Bug: should not reach this path code -- please report to xvid-devel@xvid.org with command line options used");
+		exit(-1);
+	}
+
+	sprintf(filename, "%s.%s", prefix, ext);
+
+	if (FORMAT == USE_PNM) {
+		ret = write_pnm(filename, image);
+	} else {
+		ret = write_tga(filename, image);
+	}
+
+	return(ret);
+}
 
 int write_tga(char *filename, unsigned char *image)
 {
@@ -510,8 +555,8 @@ int write_tga(char *filename, unsigned char *image)
 
 		/* Write the two chrominance planes */
 		for (i=0; i<YDIM/2; i++) {
-			fwrite(image+XDIM*YDIM+XDIM/2*i, 1, XDIM/2, f);
-			fwrite(image+5*XDIM*YDIM/4 + XDIM/2*i, 1, XDIM/2, f);
+			fwrite(image+XDIM*YDIM + i*XDIM/2, 1, XDIM/2, f);
+			fwrite(image+5*XDIM*YDIM/4 + i*XDIM/2, 1, XDIM/2, f);
 		}
 	}
 
@@ -522,6 +567,45 @@ int write_tga(char *filename, unsigned char *image)
 	return(0);
 }
 
+int write_pnm(char *filename, unsigned char *image)
+{
+	FILE * f;
+
+	f = fopen(filename, "wb");
+	if ( f == NULL) {
+		return -1;
+	}
+
+	if (BPP == 1) {
+		int i;
+		fprintf(f, "P5\n#xvid\n%i %i\n255\n", XDIM, YDIM*3/2);
+
+		fwrite(image, 1, XDIM*YDIM, f);
+
+		for (i=0; i<YDIM/2;i++) {
+			fwrite(image+XDIM*YDIM + i*XDIM/2, 1, XDIM/2, f);
+			fwrite(image+5*XDIM*YDIM/4 + i*XDIM/2, 1, XDIM/2, f);
+		}
+	} else if (BPP == 3) {
+		int i;
+		fprintf(f, "P6\n#xvid\n%i %i\n255\n", XDIM, YDIM);
+		for (i=0; i<XDIM*YDIM*3; i+=3) {
+#ifdef ARCH_IS_LITTLE_ENDIAN
+			fputc(image[i+2], f);
+			fputc(image[i+1], f);
+			fputc(image[i+0], f);
+#else
+			fputc(image[i+0], f);
+			fputc(image[i+1], f);
+			fputc(image[i+2], f);
+#endif
+		}
+	}
+
+	fclose(f);
+
+	return 0;
+}
 /*****************************************************************************
  * Routines for decoding: init decoder, use, and stop decoder
  ****************************************************************************/
