@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_bvop.c,v 1.1.2.8 2003-12-18 02:02:08 Isibaar Exp $
+ * $Id: estimation_bvop.c,v 1.1.2.9 2003-12-18 02:53:30 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -38,7 +38,6 @@
 #include "motion.h"
 #include "sad.h"
 #include "motion_inlines.h"
-
 
 static int32_t
 ChromaSAD2(const int fx, const int fy, const int bx, const int by,
@@ -712,6 +711,8 @@ SearchInterpolate(const IMAGE * const f_Ref,
 {
 	int i, j;
 	int b_range[4], f_range[4];
+	int threshA = (MotionFlags & XVID_ME_FAST_MODEINTERPOLATE) ? 0 : 500;
+	int threshB = (MotionFlags & XVID_ME_FAST_MODEINTERPOLATE) ? 0 : 300;
 
 	Data->qpel_precision = 0;
 	*Data->iMinSAD = 4096*256;
@@ -780,7 +781,7 @@ SearchInterpolate(const IMAGE * const f_Ref,
 
 	/* qpel refinement */
 	if (Data->qpel) {
-		if (*Data->iMinSAD > *best_sad + 500) return;
+		if (*Data->iMinSAD > *best_sad + threshA) return;
 		Data->qpel_precision = 1;
 		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4, pParam->width, pParam->height, fcode, 2, 0);
 		
@@ -789,7 +790,7 @@ SearchInterpolate(const IMAGE * const f_Ref,
 		Data->currentQMV[1].x = 2 * Data->currentMV[1].x;
 		Data->currentQMV[1].y = 2 * Data->currentMV[1].y;
 		SubpelRefine_dir(Data, CheckCandidateInt, 1);
-		if (*Data->iMinSAD > *best_sad + 300) return;
+		if (*Data->iMinSAD > *best_sad + threshB) return;
 		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4, pParam->width, pParam->height, bcode, 2, 0);
 		SubpelRefine_dir(Data, CheckCandidateInt, 2);
 	}
@@ -867,6 +868,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 		for (i = 0; i < pParam->mb_width; i++) {
 			MACROBLOCK * const pMB = frame->mbs + i + j * pParam->mb_width;
 			const MACROBLOCK * const b_mb = b_mbs + i + j * pParam->mb_width;
+			int interpol_search;
 
 /* special case, if collocated block is SKIPed in P-VOP: encoding is forward (0,0), cpb=0 without further ado */
 			if (b_reference->coding_type != S_VOP)
@@ -914,15 +916,22 @@ MotionEstimationBVOP(MBParam * const pParam,
 						MODE_BACKWARD, &Data);
 
 			/* interpolate search comes last, because it uses data from forward and backward as prediction */
-			SearchInterpolate(f_ref, f_refH->y, f_refV->y, f_refHV->y,
-						b_ref, b_refH->y, b_refV->y, b_refHV->y,
-						i, j,
-						frame->fcode, frame->bcode,
-						frame->motion_flags,
-						pParam,
-						&f_predMV, &b_predMV,
-						pMB, &best_sad,
-						&Data);
+			if (frame->motion_flags & XVID_ME_FAST_MODEINTERPOLATE)
+				interpol_search = (best_sad > Data.iQuant * 3 * MAX_SAD00_FOR_SKIP * (Data.chroma ? 3:2));
+			else
+				interpol_search = 1;
+
+			if (interpol_search) {
+				SearchInterpolate(f_ref, f_refH->y, f_refV->y, f_refHV->y,
+							   	  b_ref, b_refH->y, b_refV->y, b_refHV->y,
+								  i, j,
+							  	  frame->fcode, frame->bcode,
+								  frame->motion_flags,
+								  pParam,
+								  &f_predMV, &b_predMV,
+								  pMB, &best_sad,
+								  &Data);
+			}
 
 			/* final skip decision */
 			if ( (skip_sad < Data.iQuant * MAX_SAD00_FOR_SKIP * (Data.chroma ? 3:2) )
