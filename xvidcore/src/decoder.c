@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.3 2002-10-10 12:16:00 Isibaar Exp $
+ *  $Id: decoder.c,v 1.37.2.4 2002-10-11 00:44:49 Isibaar Exp $
  *
  *************************************************************************/
 
@@ -749,7 +749,6 @@ decoder_pframe(DECODER * dec,
 								rounding);
 			} else				// not coded
 			{
-				DEBUG2("P-frame MB at (X,Y)=",x,y);
 				mb->mode = MODE_NOT_CODED;
 				mb->mvs[0].x = mb->mvs[1].x = mb->mvs[2].x = mb->mvs[3].x = 0;
 				mb->mvs[0].y = mb->mvs[1].y = mb->mvs[2].y = mb->mvs[3].y = 0;
@@ -964,7 +963,6 @@ decoder_bf_mbinter(DECODER * dec,
 	stop_transfer_timer();
 }
 
-
 // add by MinChen <chenm001@163.com>
 // decode an B-frame direct &  inter macroblock
 void
@@ -1082,24 +1080,24 @@ decoder_bf_interpolate_mbinter(DECODER * dec,
 						dec->refn[2].y + (16 * y_pos * stride) + 16 * x_pos + 8,
 						stride, 0);
 
-	interpolate8x8_avg2(dec->cur.y + (16 * (y_pos + 8) * stride) + 16 * x_pos,
-						dec->cur.y + (16 * (y_pos + 8) * stride) + 16 * x_pos,
-						dec->refn[2].y + (16 * (y_pos + 8) * stride) + 16 * x_pos,
+	interpolate8x8_avg2(dec->cur.y + ((16 * y_pos + 8) * stride) + 16 * x_pos,
+						dec->cur.y + ((16 * y_pos + 8) * stride) + 16 * x_pos,
+						dec->refn[2].y + ((16 * y_pos + 8) * stride) + 16 * x_pos,
 						stride, 0);
 
-	interpolate8x8_avg2(dec->cur.y + (16 * (y_pos + 8) * stride) + 16 * x_pos + 8,
-						dec->cur.y + (16 * (y_pos + 8) * stride) + 16 * x_pos + 8,
-						dec->refn[2].y + (16 * (y_pos + 8) * stride) + 16 * x_pos + 8,
+	interpolate8x8_avg2(dec->cur.y + ((16 * y_pos + 8) * stride) + 16 * x_pos + 8,
+						dec->cur.y + ((16 * y_pos + 8) * stride) + 16 * x_pos + 8,
+						dec->refn[2].y + ((16 * y_pos + 8) * stride) + 16 * x_pos + 8,
 						stride, 0);
 
-	interpolate8x8_avg2(dec->cur.u + (8 * y_pos * stride) + 8 * x_pos,
-						dec->cur.u + (8 * y_pos * stride) + 8 * x_pos,
-						dec->refn[2].u + (8 * y_pos * stride) + 8 * x_pos,
+	interpolate8x8_avg2(dec->cur.u + (8 * y_pos * stride2) + 8 * x_pos,
+						dec->cur.u + (8 * y_pos * stride2) + 8 * x_pos,
+						dec->refn[2].u + (8 * y_pos * stride2) + 8 * x_pos,
 						stride2, 0);
 
-	interpolate8x8_avg2(dec->cur.v + (8 * y_pos * stride) + 8 * x_pos,
-						dec->cur.v + (8 * y_pos * stride) + 8 * x_pos,
-						dec->refn[2].v + (8 * y_pos * stride) + 8 * x_pos,
+	interpolate8x8_avg2(dec->cur.v + (8 * y_pos * stride2) + 8 * x_pos,
+						dec->cur.v + (8 * y_pos * stride2) + 8 * x_pos,
+						dec->refn[2].v + (8 * y_pos * stride2) + 8 * x_pos,
 						stride2, 0);
 
 	stop_comp_timer();
@@ -1387,6 +1385,11 @@ decoder_decode(DECODER * dec,
 
 	BitstreamInit(&bs, frame->bitstream, frame->length);
 
+	if(BitstreamShowBits(&bs, 8) == 0x7f) {
+		BitstreamGetBits(&bs, 8);
+		return XVID_ERR_FAIL;
+	}
+
 	// add by chenm001 <chenm001@163.com>
 	// for support B-frame to reference last 2 frame
 	dec->frames++;
@@ -1428,6 +1431,9 @@ decoder_decode(DECODER * dec,
 	case N_VOP:				// vop not coded
 		// when low_delay==0, N_VOP's should interpolate between the past and future frames
 		image_copy(&dec->cur, &dec->refn[0], dec->edged_width, dec->height);
+#ifdef BFRAMES_DEC
+		DEBUG1("N_VOP  Time=", dec->time);
+#endif
 		break;
 
 	default:
