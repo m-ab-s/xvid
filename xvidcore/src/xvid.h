@@ -28,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.11 2002-11-08 10:30:59 suxen_drol Exp $
+*  $Id: xvid.h,v 1.17.2.12 2002-11-19 13:21:25 suxen_drol Exp $
 *
 *****************************************************************************/
 
@@ -327,6 +327,7 @@ extern "C" {
 								 * eg. 200 = x2 multiplier
 								 * quant = ((past_quant + future_quant) * bquant_ratio)/200
 								 */
+		int bquant_offset;		/* bquant += bquant_offset */
 		int frame_drop_ratio;   /* frame dropping: 0=drop none... 100=drop all */
 		void *handle;			/* [out] encoder instance handle */
 	}

@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.19 2002-11-19 13:03:57 syskin Exp $
+ *  $Id: encoder.c,v 1.76.2.20 2002-11-19 13:21:25 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -327,6 +327,7 @@ encoder_create(XVID_ENC_PARAM * pParam)
 	pEnc->global = pParam->global;
 	pEnc->mbParam.max_bframes = pParam->max_bframes;
 	pEnc->bquant_ratio = pParam->bquant_ratio;
+	pEnc->bquant_offset = pParam->bquant_offset;
 	pEnc->frame_drop_ratio = pParam->frame_drop_ratio;
 	pEnc->bframes = NULL;
 
@@ -728,7 +729,7 @@ ipvop_loop:
 
 		BitstreamPad(&bs);
 		pFrame->length = BitstreamLength(&bs);
-		pFrame->intra = 0;
+		pFrame->intra = 2;
 
 		if (input_valid)
 			queue_image(pEnc, pFrame);
@@ -763,7 +764,7 @@ ipvop_loop:
 			pEnc->current->seconds = tmp;
 
 			pFrame->length = BitstreamLength(&bs);
-			pFrame->intra = 0;
+			pFrame->intra = 4;
 
 			if (input_valid)
 				queue_image(pEnc, pFrame);
@@ -839,7 +840,7 @@ bvop_loop:
 				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size);
 
 			BitstreamPutBits(&bs, 0x7f, 8);
-			pFrame->intra = 0;
+			pFrame->intra = 5;
 		}
 
 		pFrame->length = BitstreamLength(&bs);
@@ -926,7 +927,6 @@ bvop_loop:
 	 * ivop/pvop/bvop selection
 	 * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
 
-
 	if (pEnc->iFrameNum == 0 || pFrame->intra == 1 || pEnc->bframenum_dx50bvop >= 0 ||
 		(pFrame->intra < 0 && pEnc->iMaxKeyInterval > 0 &&
 		 pEnc->iFrameNum >= pEnc->iMaxKeyInterval)
@@ -989,6 +989,7 @@ bvop_loop:
 		 *      go screwy with divx 5.00
 		 */
 	} else if (pEnc->bframenum_tail >= pEnc->mbParam.max_bframes || mode != 0) {
+// 	} else if (pFrame->intra == 0 || pEnc->bframenum_tail >= pEnc->mbParam.max_bframes || mode != 0) { 
 		/*
 		 * This will be coded as a Predicted Frame
 		 */
@@ -1022,24 +1023,21 @@ bvop_loop:
 		}
 
 		if (pFrame->bquant < 1) {
-			pEnc->current->quant =
-				((pEnc->reference->quant +
-				  pEnc->current->quant) * pEnc->bquant_ratio) / 200;
+			pEnc->current->quant = ((((pEnc->reference->quant + pEnc->current->quant) * 
+				pEnc->bquant_ratio) / 2) + pEnc->bquant_offset)/100;
+
 		} else {
 			pEnc->current->quant = pFrame->bquant;
 		}
-                if (pEnc->current->quant < 1)
-                        pEnc->current->quant = 1;
 
-                if (pEnc->current->quant > 31)
-                        pEnc->current->quant = 31;
+		if (pEnc->current->quant < 1)
+			pEnc->current->quant = 1;
+		else if (pEnc->current->quant > 31)
+            pEnc->current->quant = 31;
  
-
-			DPRINTF(DPRINTF_DEBUG,"*** BFRAME (store) bf: head=%i tail=%i   queue: head=%i tail=%i size=%i  quant=%i\n",
-                                pEnc->bframenum_head, pEnc->bframenum_tail,
-                                pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size,pEnc->current->quant);
-
-
+		DPRINTF(DPRINTF_DEBUG,"*** BFRAME (store) bf: head=%i tail=%i   queue: head=%i tail=%i size=%i  quant=%i\n",
+				pEnc->bframenum_head, pEnc->bframenum_tail,
+				pEnc->queue_head, pEnc->queue_tail, pEnc->queue_size,pEnc->current->quant);
 
 		/* store frame into bframe buffer & swap ref back to current */
 		SWAP(pEnc->current, pEnc->bframes[pEnc->bframenum_tail]);
@@ -1047,7 +1045,8 @@ bvop_loop:
 
 		pEnc->bframenum_tail++;
 
-		pFrame->intra = 0;
+// bframe report by koepi 
+		pFrame->intra = 2;
 		pFrame->length = 0;
 
 		input_valid = 0;

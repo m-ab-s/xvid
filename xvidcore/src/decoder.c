@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.11 2002-11-12 15:53:36 Isibaar Exp $
+ *  $Id: decoder.c,v 1.37.2.12 2002-11-19 13:21:24 suxen_drol Exp $
  *
  *************************************************************************/
 
@@ -1463,6 +1463,7 @@ decoder_decode(DECODER * dec,
 	uint32_t intra_dc_threshold;
 	VECTOR gmc_mv[5];
 	uint32_t vop_type;
+	int success = 0;
 
 	start_global_timer();
 
@@ -1493,6 +1494,9 @@ xxx:
 			&quant, &fcode_forward, &fcode_backward, &intra_dc_threshold, gmc_mv);
 
 	DPRINTF(DPRINTF_HEADER, "vop_type=%i", vop_type);
+
+	if (vop_type == -1 && success)
+		goto done;
 
 	if (vop_type == -2 || vop_type == -3)
 	{
@@ -1563,6 +1567,8 @@ xxx:
 	default:
 		if (stats)
 			stats->notify = 0;
+
+		emms();
 		return XVID_ERR_FAIL;
 	}
 
@@ -1609,8 +1615,12 @@ xxx:
 			mb_swap(&dec->mbs, &dec->last_mbs);
 	}
 
+	success = 1;
+
 	if (frame->length > BitstreamPos(&bs) / 8)	// multiple vops packed together
 		goto start;
+
+done :
 
 	frame->length = BitstreamPos(&bs) / 8;
 

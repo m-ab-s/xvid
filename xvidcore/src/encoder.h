@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.18.2.4 2002-11-02 15:52:30 chl Exp $
+ *  $Id: encoder.h,v 1.18.2.5 2002-11-19 13:21:25 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -179,6 +179,7 @@ typedef struct
 	/* constants */
 	int global;
 	int bquant_ratio;
+	int bquant_offset;
 	int frame_drop_ratio;
 
 	/* image queue */
