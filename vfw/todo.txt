@@ -1,0 +1,16 @@
+todo
+
+
+*** codec ***
+
+- cosmetics
+	friendlier error boxes
+
+- about screen
+        display core version/build info [Done]
+
+
+*** documentation ***
+
+- windows help, plain text or maybe just plain html?
+(since the quicktime frontend will have an identical interface)
