@@ -5,6 +5,796 @@
 # relevent
 #
 
+2003-10-04 16:04:30 GMT	                                	patch-63
+
+    Summary:
+      Removed legacy 2pass code from vfw
+    Revision:
+      xvidcore--devapi4--1.0--patch-63
+
+    Removed legacy 2pass code from vfw
+    
+
+    removed files:
+     vfw/src/.arch-ids/2pass.c.id vfw/src/.arch-ids/2pass.h.id
+     vfw/src/2pass.c vfw/src/2pass.h
+
+
+2003-10-04 00:41:38 GMT	                                	patch-62
+
+    Summary:
+      Working VFW mingw/cygwin build system.
+    Revision:
+      xvidcore--devapi4--1.0--patch-62
+
+    This patch fixes the VFW building process. Now it should work out
+    of the box using these steps:
+     # cd ${xvidcore}
+     # cd build/generic
+     # ./bootstrap.sh <-- only needed for CVS checkouts.
+     # ./configure
+     # make
+     # cd ../../vfw/bin
+     # make -f Makefile.cygwin
+    
+    Then install as usual clicking on the inf file or "make install"
+    in the vfw/bin dir.
+
+    modified files:
+     vfw/bin/Makefile.cygwin vfw/src/config.rc vfw/src/debug.h
+     vfw/src/driverproc.c
+
+
+2003-10-03 17:00:53 GMT	                                	patch-61
+
+    Summary:
+      Fixes for alternate scan and interlacing support.
+    Revision:
+      xvidcore--devapi4--1.0--patch-61
+
+    Fixes from CVS (by sysKin) for:
+     - added alternate scan support with VHQ
+     - fixed interlacing support in s/b-frames. May fix a potential problem
+       as field_pred struct field seemed not to be initialized anywhere.
+       As it's not supported yet, write an hardcoded 0 bit.
+    
+    Fixes from me for the fixes from syKin:
+     - scan_table effectively used in MBCodingBVOP
+     - Block_CalcBits(Intra) fixes to data->scan_table (implies prototype
+       change and code modification every where the functions were used)
+    
+    I also increased BS version as it might result in different bitstreams
+    It's now at version 20.
+
+    modified files:
+     src/bitstream/mbcoding.c src/bitstream/mbcoding.h
+     src/decoder.c src/encoder.c src/motion/estimation.h
+     src/motion/estimation_rd_based.c src/xvid.h
+
+
+2003-10-03 15:41:37 GMT	                                	patch-60
+
+    Summary:
+      Removed BIGLUT support.
+    Revision:
+      xvidcore--devapi4--1.0--patch-60
+
+    Remobed legacy code for BIGLUT support. It was unused and RD based
+    Motion Estimation was not even compatible with this type of VLC coding.
+
+    modified files:
+     build/generic/configure.in src/bitstream/mbcoding.c
+     src/bitstream/mbcoding.h src/prediction/mbprediction.c
+
+
+2003-10-03 13:25:17 GMT	                                	patch-59
+
+    Summary:
+      Bugfix for PFrames+ Ext Search.
+    Revision:
+      xvidcore--devapi4--1.0--patch-59
+
+    In Qpel mode, the code was doing a diamond search for wrong predictors.
+    This resulted in poor performance as the diamond search was sitting there
+    for sometime.
+
+    modified files:
+     src/motion/estimation.h src/motion/estimation_pvop.c
+
+
+2003-10-02 16:50:51 GMT	                                	patch-58
+
+    Summary:
+      Added VFW makefile for cygwin/minsys
+    Revision:
+      xvidcore--devapi4--1.0--patch-58
+
+    Added VFW makefile for cygwin/minsys. I can't test it so it is probably not
+    right out of the box. Waiting for feedback in order to fix it.
+
+    new files:
+     vfw/bin/.arch-ids/Makefile.cygwin.id
+     vfw/bin/.arch-ids/Makefile.inc.id vfw/bin/Makefile.cygwin
+     vfw/bin/Makefile.inc vfw/src/w32api/.arch-ids/=id
+     vfw/src/w32api/.arch-ids/vfw.h.id vfw/src/w32api/vfw.h
+
+    new directories:
+     vfw/src/w32api vfw/src/w32api/.arch-ids
+
+
+2003-10-02 13:35:15 GMT	                                	patch-57
+
+    Summary:
+      Cleaned up the lumimasking code.
+    Revision:
+      xvidcore--devapi4--1.0--patch-57
+
+    The lumimasking code was not very plugin oriented as it has been ported
+    from old XviD versions. This patch cleans up the code and integrates it
+    better with plugin design. No changes done in teh functionnal code.
+
+    modified files:
+     src/plugins/plugin_lumimasking.c
+
+
+2003-10-01 23:07:07 GMT	                                	patch-56
+
+    Summary:
+      Cleaned up trailing space chars.
+    Revision:
+      xvidcore--devapi4--1.0--patch-56
+
+    The kind of patch we would love to avoid as they make merging
+    a nightmare while they're kind of useless patches.
+    
+    Applied sed 's/[ \t]*$//' to all c/h files.
+
+    modified files:
+     src/bitstream/bitstream.c src/bitstream/bitstream.h
+     src/bitstream/cbp.c src/bitstream/mbcoding.c src/dct/idct.c
+     src/dct/simple_idct.c src/decoder.c src/decoder.h
+     src/encoder.c src/encoder.h src/global.h
+     src/image/colorspace.c src/image/colorspace.h src/image/font.c
+     src/image/image.c src/image/image.h src/image/interpolate8x8.c
+     src/image/interpolate8x8.h src/image/qpel.c src/image/qpel.h
+     src/image/reduced.c src/motion/estimation_rd_based.c
+     src/motion/gmc.c src/motion/gmc.h src/motion/motion.h
+     src/motion/sad.c src/plugins/plugin_2pass1.c
+     src/plugins/plugin_2pass2.c src/plugins/plugin_fixed.c
+     src/plugins/plugin_psnr.c src/plugins/plugin_single.c
+     src/portab.h src/prediction/mbprediction.c
+     src/utils/mbtransquant.c src/utils/timer.c src/xvid.c
+     src/xvid.h
+
+
+2003-09-30 18:10:18 GMT	                                	patch-55
+
+    Summary:
+      Code cleanups.
+    Revision:
+      xvidcore--devapi4--1.0--patch-55
+
+    It's been a while since the last ISOC89 conformance cleanup.
+    
+    Using the following switches help a lot :-)
+     -Wall -Wsign-compare -Wredundant-decls -Wunreachable-code -Wnested-externs \
+     -ansi
+    
+    Result: 0 warning/0 error
+
+    modified files:
+     src/bitstream/vlc_codes.h src/global.h src/image/qpel.h
+     src/motion/estimation.h src/motion/estimation_bvop.c
+     src/motion/estimation_gmc.c src/motion/estimation_pvop.c
+     src/motion/estimation_rd_based.c src/motion/gmc.c
+     src/motion/gmc.h src/motion/motion_inlines.h
+     src/motion/vop_type_decision.c
+
+
+2003-09-29 00:31:32 GMT	                                	patch-54
+
+    Summary:
+      Memory leakage fixes.
+    Revision:
+      xvidcore--devapi4--1.0--patch-54
+
+    The pEnc->queue was allocated but not freed when bframes == 0.
+    And queue images were not freed as well.
+
+    modified files:
+     examples/Makefile src/encoder.c src/image/image.c
+     src/utils/mem_align.c
+
+
+2003-09-28 16:45:02 GMT	                                	patch-53
+
+    Summary:
+      Fixes the unitialized mcsel bit in RD based ME
+    Revision:
+      xvidcore--devapi4--1.0--patch-53
+
+    Fixes the unitialized mcsel bit in RD based ME
+    
+
+    modified files:
+     src/motion/estimation_rd_based.c
+
+
+2003-09-28 01:00:06 GMT	                                	patch-52
+
+    Summary:
+      Fix the XviD constant version initialization
+    Revision:
+      xvidcore--devapi4--1.0--patch-52
+
+    Fix the XviD constant version initialization
+    
+
+    modified files:
+     src/xvid.h
+
+
+2003-09-28 00:47:05 GMT	                                	patch-51
+
+    Summary:
+      Fix to the build system (the come back).
+    Revision:
+      xvidcore--devapi4--1.0--patch-51
+
+    Ok this one fixes the way we build the targets. The VPATH thingy really
+    works with the library targets. My understanding of the VPATH mechanism
+    was wrong. Now it should be ok (i promess).
+
+    modified files:
+     build/generic/Makefile
+
+
+2003-09-27 11:45:18 GMT	                                	patch-50
+
+    Summary:
+      Small fix to previous patch.
+    Revision:
+      xvidcore--devapi4--1.0--patch-50
+
+    A pair ofdouble quotes prevented "make" to sort out the VPATH
+    dependences in "=build". This resulted in compiling all the
+    sources, all the time, whether a file changed or not.
+
+    modified files:
+     build/generic/Makefile
+
+
+2003-09-26 22:39:44 GMT	                                	patch-49
+
+    Summary:
+      Updated the build files for *nix.
+    Revision:
+      xvidcore--devapi4--1.0--patch-49
+
+    - Fixed MacOSX build (w/o module option). The subversion was not right
+      it was just minor version though it has to be major.minor.
+    - Fixed bootstrap.sh for MacOSX environment, it now looks for
+      glibtoolize if libtoolize is not found.
+    - The unified Makefile now builds XviD out of source tree in the directory
+      =build. It's cleaner, and clashes much less w/ arch/tla source linting.
+    - Tuned the tagging regexps so:
+      + autoconf files are ignored (considered backup => not erased, not copied
+        and not commited/imported)
+      + =build is also considered backup.
+
+    modified files:
+     build/generic/Makefile build/generic/bootstrap.sh
+     build/generic/configure.in build/generic/platform.inc.in
+     build/generic/sources.inc examples/Makefile
+     {arch}/=tagging-method
+
+
+2003-09-24 01:38:03 GMT	                                	patch-48
+
+    Summary:
+      Bug fix to decoder (mcsel/acpred bits swapped)
+    Revision:
+      xvidcore--devapi4--1.0--patch-48
+
+    As reported here:
+    http://www.xvid.org/modules.php?op=modload&name=phpBB2&file=viewtopic&t=1513&highlight=
+    
+    <quote>
+    in the spec, 'there is 'mcsel' before 'ac_pred_flag'.
+    however, if you see the code, it's changed.
+    </quote>
+    
+    We were doing the opposite, ac_pred before mcsel.
+
+    modified files:
+     src/decoder.c
+
+
+2003-09-11 17:19:35 GMT	                                	patch-47
+
+    Summary:
+      Small fix to GMC+QuarterPel -- BS version bumped to 19
+    Revision:
+      xvidcore--devapi4--1.0--patch-47
+
+    During the split up, a line has been disabled that prevented good
+    quartelpel+GMC. Fixed.
+    
+    This fix + patch-43 are a good reason to bump up the bitstream
+    version to 19.
+
+    modified files:
+     src/motion/gmc.h src/xvid.h
+
+
+2003-09-11 17:11:28 GMT	                                	patch-46
+
+    Summary:
+      Build process fix for MacOSX+module option
+    Revision:
+      xvidcore--devapi4--1.0--patch-46
+
+    This patch fixes the install rule of the MacOSX module style library.
+    It adds a PRE_SHARED_LIB == SHARED_LIB for all platforms except
+    MacOSX that uses it a different way, and exploits the fact
+    $(SPECIFIC_LDFLAGS) is the last var of the build line to insert a
+    command for post linking the right .so file.
+
+    modified files:
+     build/generic/Makefile build/generic/configure.in
+     build/generic/platform.inc.in
+
+
+2003-09-11 13:56:40 GMT	                                	patch-45
+
+    Summary:
+      Tree cleanup and build files updated.
+    Revision:
+      xvidcore--devapi4--1.0--patch-45
+
+    * Win32 files switched to Unix format.
+      Ok, on IRC, we sorted out what was b0rking the project files each
+      time I commit them in DOS format. In fact the Unix CVS does upload
+      DOS format files if i commit them, and then Win32 CVS users get
+      double \r\n files. So the best is to use unix format in CVS. This
+      way, the checked out versions are right for Win32 users.
+    
+      NB: this imply a unix2dos conversion when doing a release from a
+          Unix box. I think it's better than current policy, but automatic
+          tarballs/zip of the tree should take care of that.
+    
+    * odivx and xvid_stat examples removed. Associated project files have
+      been removed as well.
+    
+    * The divx4 compatibility layer has been removed. Associated options
+      in the configure script removed. libxvidcore.def has no more need
+      to be an autoconf generated file.
+    
+    * rawdec removed. It has never been used and will never be.
+    
+    * Added major api appending to the macosx module build.
+
+    removed files:
+     build/win32/.arch-ids/odivx_enc_dec.dsp.id
+     build/win32/.arch-ids/xvid_stat.dsp.id
+     build/win32/odivx_enc_dec.dsp build/win32/xvid_stat.dsp
+     examples/.arch-ids/odivx_enc_dec.c.id
+     examples/.arch-ids/xvid_stat.c.id examples/odivx_enc_dec.c
+     examples/xvid_stat.c rawdec/.arch-ids/=id
+     rawdec/.arch-ids/rawdec.c.id rawdec/.arch-ids/rawdec.dsp.id
+     rawdec/rawdec.c rawdec/rawdec.dsp src/.arch-ids/divx4.c.id
+     src/.arch-ids/divx4.h.id src/divx4.c src/divx4.h
+
+    modified files:
+     build/generic/Makefile build/generic/configure.in
+     build/generic/libxvidcore.def build/win32/libxvidcore.dsp
+     build/win32/xvid_decraw.dsp build/win32/xvid_encraw.dsp
+     build/win32/xvidcore.dsw
+
+    renamed files:
+     build/generic/.arch-ids/libxvidcore.def.in.id
+       ==> build/generic/.arch-ids/libxvidcore.def.id
+     build/generic/libxvidcore.def.in
+       ==> build/generic/libxvidcore.def
+
+    removed directories:
+     rawdec rawdec/.arch-ids
+
+
+2003-09-11 12:59:19 GMT	                                	patch-44
+
+    Summary:
+      Replaced malloc.h header file with stdlib.h
+    Revision:
+      xvidcore--devapi4--1.0--patch-44
+
+    Replaced malloc.h header file with stdlib.h
+    
+
+    modified files:
+     src/plugins/plugin_lumimasking.c
+
+
+2003-09-10 22:33:04 GMT	                                	patch-43
+
+    Summary:
+      Fixed a problem for 'power of 2' framerates
+    Revision:
+      xvidcore--devapi4--1.0--patch-43
+
+    Fixed a problem for 'power of 2' framerates
+    
+
+    modified files:
+     src/bitstream/bitstream.c
+
+
+2003-09-10 21:57:12 GMT	                                	patch-42
+
+    Summary:
+      Motion Estimation module splitting.
+    Revision:
+      xvidcore--devapi4--1.0--patch-42
+
+    The motion estimation module was the biggest file of the source
+    tree. After some previous attempts, sysKin decided to split it
+    up again. This time he's done it right.
+    
+    This split up just changes the organization of ME functions
+    inside different files. This should help a bit in keeping the
+    motion estimation being manageable by a normal human ;-)
+    
+    Here is the splitting logic quoted from sysKin's email to
+    xvid-devel:
+     - estimation.h: header files #included in all ME modules:
+                     + deftypes,
+                     + macros
+                     + constants
+                     NB: no code.
+     - estimation_bvop.c: motion estimation for b-vops.
+                          everything in it :)
+     - estimation_common.c: functions shared among all ME
+                            modules:
+                            + diamonds
+                            + subpel
+                            + refinement
+                            + picture
+                            + manipulation
+                            + tables
+                            + ...  etc.
+     - estimation_gmc.c: gruel's GME code
+     - estimation_pvop.c: ME for p-vops. Also SAD-based mode
+                          decision
+     - estimation_rd_based.c: everything R-D-based: mode
+                              decison (including _Fast) and ME.
+     - gmc.c, gmc.h: no change.
+
+    new files:
+     src/motion/.arch-ids/estimation.h.id
+     src/motion/.arch-ids/estimation_bvop.c.id
+     src/motion/.arch-ids/estimation_common.c.id
+     src/motion/.arch-ids/estimation_gmc.c.id
+     src/motion/.arch-ids/estimation_pvop.c.id
+     src/motion/.arch-ids/estimation_rd_based.c.id
+     src/motion/.arch-ids/motion_inlines.h.id
+     src/motion/.arch-ids/vop_type_decision.c.id
+     src/motion/estimation.h src/motion/estimation_bvop.c
+     src/motion/estimation_common.c src/motion/estimation_gmc.c
+     src/motion/estimation_pvop.c src/motion/estimation_rd_based.c
+     src/motion/motion_inlines.h src/motion/vop_type_decision.c
+
+    removed files:
+     src/motion/.arch-ids/motion_est.c.id
+     src/motion/.arch-ids/motion_est.h.id
+     src/motion/.arch-ids/smp_motion_est.c.id
+     src/motion/.arch-ids/smp_motion_est.h.id
+     src/motion/motion_est.c src/motion/motion_est.h
+     src/motion/smp_motion_est.c src/motion/smp_motion_est.h
+
+    modified files:
+     build/generic/sources.inc build/win32/libxvidcore.dsp
+     src/bitstream/mbcoding.h src/motion/gmc.c src/motion/gmc.h
+     src/motion/motion.h src/motion/motion_comp.c src/motion/sad.c
+     src/motion/sad.h src/prediction/mbprediction.c
+     src/prediction/mbprediction.h src/utils/mbfunctions.h
+
+
+2003-09-10 00:40:44 GMT	                                	patch-41
+
+    Summary:
+      Cleanups and fix to (trellis+thresholding) logic
+    Revision:
+      xvidcore--devapi4--1.0--patch-41
+
+    Cleanups to some functions (loop unrolling, call to functions
+    through function array pointers)...
+    
+    Fix to the trellis+thresholding logic. It was comparing the
+    return value of trellis with a threshold but the trellis function
+    returns the last non zero coeff index... this was basically
+    comparing apples with oranges... funny but wrong. Trellis now
+    returns the sum of absolute coeffs, so the comparison is logical.
+    Btw, as discussed on the devel ML, this is probably uneeded as
+    trellis does an RD optimized coeff distribution.
+
+    modified files:
+     src/utils/mbtransquant.c
+
+
+2003-09-09 13:13:58 GMT	                                	patch-40
+
+    Summary:
+      Missing ressource for dshow frontend
+    Revision:
+      xvidcore--devapi4--1.0--patch-40
+
+    Missing ressource for dshow frontend
+    
+
+    new files:
+     dshow/src/.arch-ids/XviD_logo.bmp.id dshow/src/XviD_logo.bmp
+
+
+2003-09-08 11:02:10 GMT	                                	patch-39
+
+    Summary:
+      Small fixes for fast mode decision
+    Revision:
+      xvidcore--devapi4--1.0--patch-39
+
+    Small fixes for fast mode decision
+    
+
+    modified files:
+     src/motion/motion_est.c src/xvid.h
+
+
+2003-09-05 23:45:48 GMT	                                	patch-38
+
+    Summary:
+      New RD mode decision and subpel refinement.
+    Revision:
+      xvidcore--devapi4--1.0--patch-38
+
+    New stuff from michael. It deals with mode decision and subpel
+    refinement. Integration of these new flags are not settled.
+    
+    Wait and see. Further testing is needed.
+
+    modified files:
+     src/motion/motion_est.c src/motion/motion_est.h src/xvid.h
+
+
+2003-08-29 13:56:30 GMT	                                	patch-37
+
+    Summary:
+      Still more ME tuning
+    Revision:
+      xvidcore--devapi4--1.0--patch-37
+
+    Still more ME tuning
+    
+
+    modified files:
+     src/motion/motion_est.c
+
+
+2003-08-28 12:43:22 GMT	                                	patch-36
+
+    Summary:
+      Removed expanded the cvs Id field
+    Revision:
+      xvidcore--devapi4--1.0--patch-36
+
+    Removed expanded the cvs Id field
+    
+
+    modified files:
+     src/image/x86_asm/qpel_mmx.asm
+
+
+2003-08-28 12:39:44 GMT	                                	patch-35
+
+    Summary:
+      More motion est cleanup and bugfixes.
+    Revision:
+      xvidcore--devapi4--1.0--patch-35
+
+    Still more bugfixes, cleanups and improvements to the Motion Est
+    by sysKin
+
+    modified files:
+     src/motion/motion_est.c src/motion/motion_est.h
+
+
+2003-08-26 13:57:39 GMT	                                	patch-34
+
+    Summary:
+      Added final bits of Aspect Ratio flag.
+    Revision:
+      xvidcore--devapi4--1.0--patch-34
+
+    Peter did think of the AR flag since the very beginning of devapi4.
+    He just forgot to code the final bits to effectively write it to
+    the bitstream. This patch adds these missing final bits so XviD now
+    reads and writes AR flags.
+
+    modified files:
+     ./src/bitstream/bitstream.c ./src/encoder.c ./src/encoder.h
+     ./src/xvid.h
+
+
+2003-08-25 16:41:09 GMT	                                	patch-33
+
+    Summary:
+      Small motion estimation cleanup.
+    Revision:
+      xvidcore--devapi4--1.0--patch-33
+
+    Cleanups from sysKin.
+
+    modified files:
+     ./src/motion/motion_est.c ./src/motion/motion_est.h
+
+
+2003-08-25 14:59:28 GMT	                                	patch-32
+
+    Summary:
+      Frame padding bug.
+    Revision:
+      xvidcore--devapi4--1.0--patch-32
+
+    We were edging the image repeating pixels from the image directly,
+    but the standard says we must repeat from a 16 pixel boundary.
+    
+    See Chapter 7.6.4 of the standard.
+
+    modified files:
+     ./src/image/image.c
+
+
+2003-08-23 15:07:44 GMT	                                	patch-31
+
+    Summary:
+      New Qpel code.
+    Revision:
+      xvidcore--devapi4--1.0--patch-31
+
+    Isibaar commited a new piece of QPel code that seems to be optimized
+    for ia32(mmx) architectures. I had to clean it up a bit to make it
+    respectful of architecture separations. This code is disabled for
+    non ia32 arch, a comment mention it's only faster on ia32... i wonder
+    if it's true, some tests have to be done on sourceforge compile farm
+    in order to confirm that.
+    
+    Compared to the bared CVS commit, this patch includes:
+     - fixes the unix build.
+     - better architecture separation.
+     - CodingStyle respected.
+
+    new files:
+     ./src/image/.arch-ids/qpel.c.id
+     ./src/image/.arch-ids/qpel.h.id ./src/image/qpel.c
+     ./src/image/qpel.h
+     ./src/image/x86_asm/.arch-ids/qpel_mmx.asm.id
+     ./src/image/x86_asm/qpel_mmx.asm
+
+    modified files:
+     ./build/generic/sources.inc ./build/win32/libxvidcore.dsp
+     ./src/encoder.c ./src/motion/motion_comp.c ./src/xvid.c
+
+
+2003-08-22 13:20:36 GMT	                                	patch-30
+
+    Summary:
+      sad32v does really what it's expected (ie 32x32 SAD :-)
+    Revision:
+      xvidcore--devapi4--1.0--patch-30
+
+    sad32v does really what it's expected (ie 32x32 SAD :-)
+    
+
+    modified files:
+     ./src/motion/sad.c
+
+
+2003-08-18 19:00:49 GMT	                                	patch-29
+
+    Summary:
+      64bit fix.
+    Revision:
+      xvidcore--devapi4--1.0--patch-29
+
+    The interpolation code was unsafe on 64bit platforms, the offset was
+    badly sized, resulting in segfaults.
+
+    modified files:
+     ./src/image/interpolate8x8.h
+
+
+2003-08-17 14:08:48 GMT	                                	patch-28
+
+    Summary:
+      Greyscale mode fixes.
+    Revision:
+      xvidcore--devapi4--1.0--patch-28
+
+    We were missing some greyscale tests in the encoder loop... noticeably
+    in the PVOP function when coding an intra block, and in BVOP function
+    when coding all types.
+    
+    I added the cbp trick in the cases discussed above.
+
+    modified files:
+     ./src/encoder.c
+
+
+2003-08-13 11:47:33 GMT	                                	patch-27
+
+    Summary:
+      Forgotten bit for IA64 separation
+    Revision:
+      xvidcore--devapi4--1.0--patch-27
+
+    Forgotten bit for IA64 separation
+    
+
+    modified files:
+     ./src/image/interpolate8x8.h
+
+
+2003-08-11 15:42:30 GMT	                                	patch-26
+
+    Summary:
+      Some qpel changes (sync with Isibaar)
+    Revision:
+      xvidcore--devapi4--1.0--patch-26
+
+    Some qpel changes (sync with Isibaar)
+    
+
+    modified files:
+     ./examples/xvid_encraw.c
+
+
+2003-08-11 15:30:04 GMT	                                	patch-25
+
+    Summary:
+      Better architecture separation.
+    Revision:
+      xvidcore--devapi4--1.0--patch-25
+
+    Architecture depending functions were declared whatever arch you
+    were compiling. This patch fixes that.
+    
+    I also removed the simple_idct hack in decoder.c as it was simply
+    not used. Better not have ugly code in there.
+    
+    xvid_bench, should now compile and run on all archs. However I did
+    not put the cpu definitions for each arch, i just separated
+    ARCH_IS_IA32 so even ARCH_IS_GENERIC can compile
+
+    modified files:
+     ./examples/xvid_bench.c ./src/bitstream/cbp.h ./src/dct/fdct.h
+     ./src/dct/idct.h ./src/decoder.c ./src/image/colorspace.h
+     ./src/image/interpolate8x8.h ./src/image/reduced.h
+     ./src/motion/sad.h ./src/quant/quant_h263.h
+     ./src/quant/quant_mpeg4.h ./src/utils/emms.h
+
+
+2003-08-09 20:47:42 GMT	                                	patch-24
+
+    Summary:
+      Updated changelog
+    Revision:
+      xvidcore--devapi4--1.0--patch-24
+
+    Updated changelog
+    
+
+    modified files:
+     ./changelog.txt
+
 
 2003-08-09 20:31:17 GMT	                                	patch-23
 
