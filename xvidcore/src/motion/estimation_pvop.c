@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_pvop.c,v 1.1.2.10 2003-12-03 11:51:28 syskin Exp $
+ * $Id: estimation_pvop.c,v 1.1.2.11 2003-12-18 02:02:08 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -205,86 +205,6 @@ CheckCandidate32(const int x, const int y, SearchData * const data, const unsign
 		data->iMinSAD[3] = data->temp[2]; data->currentMV[3].x = x; data->currentMV[3].y = y; }
 	if (data->temp[3] < data->iMinSAD[4]) {
 		data->iMinSAD[4] = data->temp[3]; data->currentMV[4].x = x; data->currentMV[4].y = y; }
-}
-
-static void
-SubpelRefine_Fast(SearchData * data, CheckFunc * CheckCandidate)
-{
-/* Do a fast q-pel refinement */
-	VECTOR centerMV;
-	VECTOR second_best;
-	int best_sad = *data->iMinSAD;
-	int xo, yo, xo2, yo2;
-	int size = 2;
-	data->iMinSAD2 = 0;
-
-	/* check all halfpixel positions near our best halfpel position */
-	centerMV = *data->currentQMV;
-	*data->iMinSAD = 256 * 4096;
-
-	CHECK_CANDIDATE(centerMV.x, centerMV.y - size, 0);
-	CHECK_CANDIDATE(centerMV.x + size, centerMV.y - size, 0);
-	CHECK_CANDIDATE(centerMV.x + size, centerMV.y, 0);
-	CHECK_CANDIDATE(centerMV.x + size, centerMV.y + size, 0);
-
-	CHECK_CANDIDATE(centerMV.x, centerMV.y + size, 0);
-	CHECK_CANDIDATE(centerMV.x - size, centerMV.y + size, 0);
-	CHECK_CANDIDATE(centerMV.x - size, centerMV.y, 0);
-	CHECK_CANDIDATE(centerMV.x - size, centerMV.y - size, 0);
-
-	second_best = *data->currentQMV;
-
-	/* after second_best has been found, go back to the vector we began with */
-
-	data->currentQMV[0] = centerMV;
-	*data->iMinSAD = best_sad;
-
-	xo = centerMV.x;
-	yo = centerMV.y;
-	xo2 = second_best.x;
-	yo2 = second_best.y;
-
-	data->iMinSAD2 = 256 * 4096;
-
-	if (yo == yo2) {
-		CHECK_CANDIDATE((xo+xo2)>>1, yo, 0);
-		CHECK_CANDIDATE(xo, yo-1, 0);
-		CHECK_CANDIDATE(xo, yo+1, 0);
-
-		if(best_sad <= data->iMinSAD2) return;
-
-		if(data->currentQMV[0].x == data->currentQMV2.x) {
-			CHECK_CANDIDATE((xo+xo2)>>1, yo-1, 0);
-			CHECK_CANDIDATE((xo+xo2)>>1, yo+1, 0);
-		} else {
-			CHECK_CANDIDATE((xo+xo2)>>1,
-				(data->currentQMV[0].x == xo) ? data->currentQMV[0].y : data->currentQMV2.y, 0);
-		}
-		return;
-	}
-
-	if (xo == xo2) {
-		CHECK_CANDIDATE(xo, (yo+yo2)>>1, 0);
-		CHECK_CANDIDATE(xo-1, yo, 0);
-		CHECK_CANDIDATE(xo+1, yo, 0);
-
-		if(best_sad < data->iMinSAD2) return;
-
-		if(data->currentQMV[0].y == data->currentQMV2.y) {
-			CHECK_CANDIDATE(xo-1, (yo+yo2)>>1, 0);
-			CHECK_CANDIDATE(xo+1, (yo+yo2)>>1, 0);
-		} else {
-			CHECK_CANDIDATE((data->currentQMV[0].y == yo) ? data->currentQMV[0].x : data->currentQMV2.x, (yo+yo2)>>1, 0);
-		}
-		return;
-	}
-
-	CHECK_CANDIDATE(xo, (yo+yo2)>>1, 0);
-	CHECK_CANDIDATE((xo+xo2)>>1, yo, 0);
-
-	if(best_sad <= data->iMinSAD2) return;
-
-	CHECK_CANDIDATE((xo+xo2)>>1, (yo+yo2)>>1, 0);
 }
 
 int

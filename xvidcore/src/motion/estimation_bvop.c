@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_bvop.c,v 1.1.2.7 2003-12-03 19:46:50 edgomez Exp $
+ * $Id: estimation_bvop.c,v 1.1.2.8 2003-12-18 02:02:08 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -298,6 +298,44 @@ CheckCandidate16no4v(const int x, const int y, SearchData * const data, const un
 	}
 }
 
+void
+CheckCandidate16no4v_qpel(const int x, const int y, SearchData * const data, const unsigned int Direction)
+{
+	int32_t sad, xc, yc;
+	const uint8_t * Reference;
+	uint32_t t;
+
+	if ( (x > data->max_dx) || ( x < data->min_dx)
+		|| (y > data->max_dy) || (y < data->min_dy) ) return;
+
+	if (data->rrv && (!(x&1) && x !=0) | (!(y&1) && y !=0) ) return; /* non-zero even value */
+
+	Reference = xvid_me_interpolate16x16qpel(x, y, 0, data);
+
+	xc = x/2; yc = y/2;
+	t = d_mv_bits(x, y, data->predMV, data->iFcode,
+					data->qpel^data->qpel_precision, data->rrv);
+
+	sad = sad16(data->Cur, Reference, data->iEdgedWidth, 256*4096);
+	sad += (data->lambda16 * t * sad)>>10;
+
+	if (data->chroma && sad < *data->iMinSAD)
+		sad += xvid_me_ChromaSAD((xc >> 1) + roundtab_79[xc & 0x3],
+								(yc >> 1) + roundtab_79[yc & 0x3], data);
+
+	if (sad < *(data->iMinSAD)) {
+		data->iMinSAD2 = *(data->iMinSAD);
+		data->currentQMV2.x = data->currentQMV->x;
+		data->currentQMV2.y = data->currentQMV->y;
+
+		data->iMinSAD[0] = sad;
+		data->currentQMV[0].x = x; data->currentQMV[0].y = y;
+	} else if (sad < data->iMinSAD2) {
+		data->iMinSAD2 = sad;
+		data->currentQMV2.x = x; data->currentQMV2.y = y;
+	}
+}
+
 static __inline VECTOR
 ChoosePred(const MACROBLOCK * const pMB, const uint32_t mode)
 {
@@ -409,7 +447,13 @@ SearchBF(	const IMAGE * const pRef,
 		Data->qpel_precision = 1;
 		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
 					pParam->width, pParam->height, iFcode, 2, 0);
-		xvid_me_SubpelRefine(Data, CheckCandidate16no4v);
+
+		if (MotionFlags & XVID_ME_QUARTERPELREFINE16) {
+			if(MotionFlags & XVID_ME_FASTREFINE16)
+				SubpelRefine_Fast(Data, CheckCandidate16no4v_qpel);
+			else
+				xvid_me_SubpelRefine(Data, CheckCandidate16no4v);
+		}
 	}
 
 	/* three bits are needed to code backward mode. four for forward */
@@ -575,13 +619,15 @@ SearchDirect(const IMAGE * const f_Ref,
 	*Data->iMinSAD += Data->lambda16;
 	skip_sad = *Data->iMinSAD;
 
-	if (MotionFlags & XVID_ME_USESQUARES16) MainSearchPtr = xvid_me_SquareSearch;
-		else if (MotionFlags & XVID_ME_ADVANCEDDIAMOND16) MainSearchPtr = xvid_me_AdvDiamondSearch;
-			else MainSearchPtr = xvid_me_DiamondSearch;
+	if (!(MotionFlags & XVID_ME_SKIP_DELTASEARCH)) {
+		if (MotionFlags & XVID_ME_USESQUARES16) MainSearchPtr = xvid_me_SquareSearch;
+			else if (MotionFlags & XVID_ME_ADVANCEDDIAMOND16) MainSearchPtr = xvid_me_AdvDiamondSearch;
+				else MainSearchPtr = xvid_me_DiamondSearch;
 
-	MainSearchPtr(0, 0, Data, 255, CheckCandidate);
+		MainSearchPtr(0, 0, Data, 255, CheckCandidate);
 
-	xvid_me_SubpelRefine(Data, CheckCandidate);
+		xvid_me_SubpelRefine(Data, CheckCandidate);
+	}
 
 	*best_sad = *Data->iMinSAD;
 

@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation.h,v 1.1.2.7 2003-12-03 11:51:28 syskin Exp $
+ * $Id: estimation.h,v 1.1.2.8 2003-12-18 02:02:08 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -151,6 +151,9 @@ MainSearchFunc xvid_me_DiamondSearch, xvid_me_AdvDiamondSearch, xvid_me_SquareSe
 
 void
 xvid_me_SubpelRefine(SearchData * const data, CheckFunc * const CheckCandidate);
+
+void
+SubpelRefine_Fast(SearchData * data, CheckFunc * CheckCandidate);
 
 void
 xvid_me_ModeDecision_RD(SearchData * const Data,
