@@ -21,7 +21,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.39 2003-12-16 09:24:48 chl Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.40 2003-12-17 08:38:06 chl Exp $
  *
  ****************************************************************************/
 
@@ -1094,8 +1094,6 @@ enc_main(unsigned char *image,
 
 	/* Set up core's general features */
 	xvid_enc_frame.vop_flags = vop_presets[ARG_QUALITY];
-	if (ARG_GMC)
-		xvid_enc_frame.vol_flags |= XVID_ME_GME_REFINE;
 
     if (ARG_VOPDEBUG) {
         xvid_enc_frame.vop_flags |= XVID_VOP_DEBUG;
@@ -1109,6 +1107,9 @@ enc_main(unsigned char *image,
 
 	/* Set up motion estimation flags */
 	xvid_enc_frame.motion = motion_presets[ARG_QUALITY];
+
+	if (ARG_GMC)
+		xvid_enc_frame.motion |= XVID_ME_GME_REFINE;
 
 	if (ARG_QPEL)
 		xvid_enc_frame.motion |= XVID_ME_QUARTERPELREFINE16;
