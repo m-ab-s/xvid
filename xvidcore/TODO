@@ -8,12 +8,7 @@ Active Items to work on:
 ------------------------
 
 * update vfw & dshow decoder frontends
-  - GUI isn't perfect for vfw and dshow still links against xvid.dll
-    which doesn't export internal functions anymore because of the
-    license change. 
-* decide on vfw & dshow linking policy. presently we statically link,
-    however this increases the size of zips/packages where both vfw &
-    dshow are included.
+  - GUI isn't perfect for vfw
 * update/fix CBR plugin
   - misses target bitrate, bitrate burst in static motion/high motion
     transitions
@@ -52,5 +47,6 @@ Already completed items:
 * thread safe mpeg quantizing (michael)
 * Interlacing for bvop and svop (syskin)
 * YV12/I420/USER clarification (christoph)
+* vfw and dshow link dynamically to xvidcore.dll (syskin)
 
-Last edited: $Date: 2003-12-27 10:50:50 $
+Last edited: $Date: 2004-01-22 14:51:09 $
