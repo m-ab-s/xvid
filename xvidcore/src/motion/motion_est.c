@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.c,v 1.58.2.18 2003-06-19 09:58:57 syskin Exp $
+ * $Id: motion_est.c,v 1.58.2.19 2003-06-26 11:50:37 syskin Exp $
  *
  ****************************************************************************/
 
@@ -667,7 +667,7 @@ CheckCandidateBits16(const int x, const int y, const int Direction, int * const 
 	for(i = 0; i < 4; i++) {
 		int s = 8*((i&1) + (i>>1)*data->iEdgedWidth);
 		transfer_8to16subro(in, data->Cur + s, ptr + s, data->iEdgedWidth);
-		bits += data->temp[i] = Block_CalcBits(coeff, in, data->iQuant, data->quant_type, &cbp, i);
+		bits += data->temp[i] = Block_CalcBits(coeff, in, data->dctSpace + 128, data->iQuant, data->quant_type, &cbp, i);
 	}
 
 	bits += t = BITS_MULT*d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
@@ -692,13 +692,13 @@ CheckCandidateBits16(const int x, const int y, const int Direction, int * const 
 	/* chroma U */
 	ptr = interpolate8x8_switch2(data->RefQ + 64, data->RefP[4], 0, 0, xc, yc,  data->iEdgedWidth/2, data->rounding);
 	transfer_8to16subro(in, ptr, data->CurU, data->iEdgedWidth/2);
-	bits += Block_CalcBits(coeff, in, data->iQuant, data->quant_type, &cbp, 4);
+	bits += Block_CalcBits(coeff, in, data->dctSpace + 128, data->iQuant, data->quant_type, &cbp, 4);
 	if (bits >= data->iMinSAD[0]) return;
 
 	/* chroma V */
 	ptr = interpolate8x8_switch2(data->RefQ + 64, data->RefP[5], 0, 0, xc, yc,  data->iEdgedWidth/2, data->rounding);
 	transfer_8to16subro(in, ptr, data->CurV, data->iEdgedWidth/2);
-	bits += Block_CalcBits(coeff, in, data->iQuant, data->quant_type, &cbp, 5);
+	bits += Block_CalcBits(coeff, in, data->dctSpace + 128, data->iQuant, data->quant_type, &cbp, 5);
 
 	bits += BITS_MULT*mcbpc_inter_tab[(MODE_INTER & 7) | ((cbp & 3) << 3)].len;
 
@@ -731,7 +731,7 @@ CheckCandidateBits8(const int x, const int y, const int Direction, int * const d
 	}
 
 	transfer_8to16subro(in, data->Cur, ptr, data->iEdgedWidth);
-	bits = Block_CalcBits(coeff, in, data->iQuant, data->quant_type, &cbp, 5);
+	bits = Block_CalcBits(coeff, in, data->dctSpace + 128, data->iQuant, data->quant_type, &cbp, 5);
 	bits += BITS_MULT*d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
 
 	if (bits < data->iMinSAD[0]) {
@@ -1089,7 +1089,7 @@ MotionEstimation(MBParam * const pParam,
 	VECTOR currentMV[5];
 	VECTOR currentQMV[5];
 	int32_t iMinSAD[5];
-	DECLARE_ALIGNED_MATRIX(dct_space, 2, 64, int16_t, CACHE_LINE);
+	DECLARE_ALIGNED_MATRIX(dct_space, 3, 64, int16_t, CACHE_LINE);
 	SearchData Data;
 	memset(&Data, 0, sizeof(SearchData));
 	Data.iEdgedWidth = iEdgedWidth;
@@ -2161,24 +2161,26 @@ MEanalyzeMB (	const uint8_t * const pRef,
 	}
 }
 
-#define INTRA_THRESH	1700
-#define INTER_THRESH	1200
+#define INTRA_THRESH	2200
+#define INTER_THRESH	50
+#define INTRA_THRESH2	95
 
 int
 MEanalysis(	const IMAGE * const pRef,
 			const FRAMEINFO * const Current,
 			const MBParam * const pParam,
-			const int maxIntra, /* maximum number if non-I frames */
-			const int intraCount, /* number of non-I frames after last I frame; 0 if we force P/B frame */
-			const int bCount,  /* number of B frames in a row */
+			const int maxIntra, //maximum number if non-I frames
+			const int intraCount, //number of non-I frames after last I frame; 0 if we force P/B frame
+			const int bCount,  // number of B frames in a row
 			const int b_thresh)
 {
 	uint32_t x, y, intra = 0;
 	int sSAD = 0;
 	MACROBLOCK * const pMBs = Current->mbs;
 	const IMAGE * const pCurrent = &Current->image;
-	int IntraThresh = INTRA_THRESH, InterThresh = INTER_THRESH + 10*b_thresh;
+	int IntraThresh = INTRA_THRESH, InterThresh = INTER_THRESH + b_thresh;
 	int s = 0, blocks = 0;
+	int complexity = 0;
 
 	int32_t iMinSAD[5], temp[5];
 	VECTOR currentMV[5];
@@ -2190,26 +2192,27 @@ MEanalysis(	const IMAGE * const pRef,
 	Data.temp = temp;
 	CheckCandidate = CheckCandidate32I;
 
+
 	if (intraCount != 0) {
-		if (intraCount < 10) /* we're right after an I frame */
+		if (intraCount < 10) // we're right after an I frame
 			IntraThresh += 15* (intraCount - 10) * (intraCount - 10);
 		else
-			if ( 5*(maxIntra - intraCount) < maxIntra) /* we're close to maximum. 2 sec when max is 10 sec */
+			if ( 5*(maxIntra - intraCount) < maxIntra) // we're close to maximum. 2 sec when max is 10 sec
 				IntraThresh -= (IntraThresh * (maxIntra - 8*(maxIntra - intraCount)))/maxIntra;
 	}
 
-	InterThresh -= (350 - 8*b_thresh) * bCount;
-	if (InterThresh < 300 + 5*b_thresh) InterThresh = 300 + 5*b_thresh;
+	InterThresh -= 12 * bCount;
+	if (InterThresh < 15 + b_thresh) InterThresh = 15 + b_thresh;
 
 	if (sadInit) (*sadInit) ();
 
 	for (y = 1; y < pParam->mb_height-1; y += 2) {
 		for (x = 1; x < pParam->mb_width-1; x += 2) {
 			int i;
-			blocks += 4;
+			blocks += 10;
 
 			if (bCount == 0) pMBs[x + y * pParam->mb_width].mvs[0] = zeroMV;
-			else { /* extrapolation of the vector found for last frame */
+			else { //extrapolation of the vector found for last frame
 				pMBs[x + y * pParam->mb_width].mvs[0].x =
 					(pMBs[x + y * pParam->mb_width].mvs[0].x * (bCount+1) ) / bCount;
 				pMBs[x + y * pParam->mb_width].mvs[0].y =
@@ -2221,33 +2224,32 @@ MEanalysis(	const IMAGE * const pRef,
 			for (i = 0; i < 4; i++) {
 				int dev;
 				MACROBLOCK *pMB = &pMBs[x+(i&1) + (y+(i>>1)) * pParam->mb_width];
-				if (pMB->sad16 > IntraThresh) {
-					dev = dev16(pCurrent->y + (x + (i&1) + (y + (i>>1)) * pParam->edged_width) * 16,
-									pParam->edged_width);
-					if (dev + IntraThresh < pMB->sad16) {
-						pMB->mode = MODE_INTRA;
-						if (++intra > ((pParam->mb_height-2)*(pParam->mb_width-2))/2) return I_VOP;
-					}
+				dev = dev16(pCurrent->y + (x + (i&1) + (y + (i>>1)) * pParam->edged_width) * 16,
+								pParam->edged_width);
+	
+				complexity += dev;
+				if (dev + IntraThresh < pMB->sad16) {
+					pMB->mode = MODE_INTRA;
+					if (++intra > ((pParam->mb_height-2)*(pParam->mb_width-2))/2) return I_VOP;
 				}
-				if (pMB->mvs[0].x == 0 && pMB->mvs[0].y == 0) s++;
+
+				if (pMB->mvs[0].x == 0 && pMB->mvs[0].y == 0) 
+					if (dev > 500 && pMB->sad16 < 1000)
+						sSAD += 1000;
 
 				sSAD += pMB->sad16;
 			}
 		}
 	}
+	complexity >>= 7;
 
-	sSAD /= blocks;
+	sSAD /= complexity + 4*blocks;
 
-	if (b_thresh < 20) {
-		s = (10*s) / blocks;
-		if (s > 4) sSAD += (s - 2) * (40 - 2*b_thresh); /* static block - looks bad when in bframe... */
-	}
-
+	if (intraCount > 12 && sSAD > INTRA_THRESH2 ) return I_VOP;
 	if (sSAD > InterThresh ) return P_VOP;
 	emms();
 	return B_VOP;
 }
-
 
 static WARPPOINTS
 GlobalMotionEst(const MACROBLOCK * const pMBs,
@@ -2621,14 +2623,14 @@ CountMBBitsInter4v(const SearchData * const Data,
 	/* chroma U */
 	ptr = interpolate8x8_switch2(Data->RefQ + 64, Data->RefP[4], 0, 0, sumx, sumy, Data->iEdgedWidth/2, Data->rounding);
 	transfer_8to16subro(in, Data->CurU, ptr, Data->iEdgedWidth/2);
-	bits += Block_CalcBits(coeff, in, Data->iQuant, Data->quant_type, &cbp, 4);
+	bits += Block_CalcBits(coeff, in, Data->dctSpace + 128, Data->iQuant, Data->quant_type, &cbp, 4);
 
 	if (bits >= *Data->iMinSAD) return bits;
 
 	/* chroma V */
 	ptr = interpolate8x8_switch2(Data->RefQ + 64, Data->RefP[5], 0, 0, sumx, sumy, Data->iEdgedWidth/2, Data->rounding);
 	transfer_8to16subro(in, Data->CurV, ptr, Data->iEdgedWidth/2);
-	bits += Block_CalcBits(coeff, in, Data->iQuant, Data->quant_type, &cbp, 5);
+	bits += Block_CalcBits(coeff, in, Data->dctSpace + 128, Data->iQuant, Data->quant_type, &cbp, 5);
 
 	bits += BITS_MULT*mcbpc_inter_tab[(MODE_INTER4V & 7) | ((cbp & 3) << 3)].len;
 
@@ -2645,7 +2647,7 @@ CountMBBitsIntra(const SearchData * const Data)
 	for(i = 0; i < 4; i++) {
 		int s = 8*((i&1) + (i>>1)*Data->iEdgedWidth);
 		transfer_8to16copy(in, Data->Cur + s, Data->iEdgedWidth);
-		bits += Block_CalcBitsIntra(coeff, in, Data->iQuant, Data->quant_type, &cbp, i, &dc);
+		bits += Block_CalcBitsIntra(coeff, in, Data->dctSpace + 128, Data->iQuant, Data->quant_type, &cbp, i, &dc);
 
 		if (bits >= Data->iMinSAD[0]) return bits;
 	}
@@ -2654,13 +2656,13 @@ CountMBBitsIntra(const SearchData * const Data)
 
 	/*chroma U */
 	transfer_8to16copy(in, Data->CurU, Data->iEdgedWidth/2);
-	bits += Block_CalcBitsIntra(coeff, in, Data->iQuant, Data->quant_type, &cbp, 4, &dc);
+	bits += Block_CalcBitsIntra(coeff, in, Data->dctSpace + 128, Data->iQuant, Data->quant_type, &cbp, 4, &dc);
 	
 	if (bits >= Data->iMinSAD[0]) return bits;
 
 	/* chroma V */
 	transfer_8to16copy(in, Data->CurV, Data->iEdgedWidth/2);
-	bits += Block_CalcBitsIntra(coeff, in, Data->iQuant, Data->quant_type, &cbp, 5, &dc);
+	bits += Block_CalcBitsIntra(coeff, in, Data->dctSpace + 128, Data->iQuant, Data->quant_type, &cbp, 5, &dc);
 
 	bits += BITS_MULT*mcbpc_inter_tab[(MODE_INTRA & 7) | ((cbp & 3) << 3)].len;
 

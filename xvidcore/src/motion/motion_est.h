@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.h,v 1.3.2.10 2003-06-19 09:59:37 syskin Exp $
+ * $Id: motion_est.h,v 1.3.2.11 2003-06-26 11:50:27 syskin Exp $
  *
  ****************************************************************************/
 
@@ -302,18 +302,19 @@ CountMBBitsIntra(const SearchData * const Data);
 int CodeCoeffIntra_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag);
 int CodeCoeffInter_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag);
 
-#define LAMBDA		( (int)(1.0*BITS_MULT) )
+/* one over lambda for R-D mode decision and motion search */
+#define LAMBDA		( (int)(BITS_MULT/1.0) )
 
 static __inline unsigned int
 Block_CalcBits(	int16_t * const coeff, 
 				int16_t * const data,
+				int16_t * const dqcoeff,
 				const uint32_t quant, const int quant_type,
 				uint32_t * cbp,
 				const int block)
 {
 	int sum;
 	int bits;
-	const int lambda = LAMBDA*quant*quant;
 	int distortion = 0;
 	int i;
 
@@ -327,14 +328,14 @@ Block_CalcBits(	int16_t * const coeff,
 		bits = BITS_MULT * CodeCoeffInter_CalcBits(coeff, scan_tables[0]);
 	} else bits = 0;
 
-	if (quant_type == 0) dequant_inter(coeff, coeff, quant);
-	else dequant4_inter(coeff, coeff, quant);
+	if (quant_type == 0) dequant_inter(dqcoeff, coeff, quant);
+	else dequant4_inter(dqcoeff, coeff, quant);
 
 	for (i = 0; i < 64; i++) {
-		distortion += (data[i] - coeff[i])*(data[i] - coeff[i]);
+		distortion += (data[i] - dqcoeff[i])*(data[i] - dqcoeff[i]);
 	}
-	bits += (BITS_MULT*BITS_MULT*distortion)/lambda;
 
+	bits += (LAMBDA*distortion)/(quant*quant);
 
 	return bits;
 }
@@ -342,13 +343,13 @@ Block_CalcBits(	int16_t * const coeff,
 static __inline unsigned int
 Block_CalcBitsIntra(int16_t * const coeff, 
 					int16_t * const data,
+					int16_t * const dqcoeff,
 					const uint32_t quant, const int quant_type,
 					uint32_t * cbp,
 					const int block,
 					int * dcpred)
 {
 	int bits, i;
-	const int lambda = LAMBDA*quant*quant;
 	int distortion = 0;
 	uint32_t iDcScaler = get_dc_scaler(quant, block < 4);
 	int b_dc;
@@ -356,8 +357,8 @@ Block_CalcBitsIntra(int16_t * const coeff,
 	fdct(data);
 	data[0] -= 1024;
 
-	if (quant_type == 0) quant_intra_c(coeff, data, quant, iDcScaler); // MUST BE _C
-	else quant4_intra_c(coeff, data, quant, iDcScaler); // MUST BE _C
+	if (quant_type == 0) quant_intra(coeff, data, quant, iDcScaler);
+	else quant4_intra(coeff, data, quant, iDcScaler);
 
 	b_dc = coeff[0];
 	if (block < 4) {
@@ -372,17 +373,16 @@ Block_CalcBitsIntra(int16_t * const coeff,
 	else bits += BITS_MULT*dcc_tab[coeff[0] + 255].len;
 
 	coeff[0] = b_dc;
-	if (quant_type == 0) dequant_intra(coeff, coeff, quant, iDcScaler);
-	else dequant4_intra(coeff, coeff, quant, iDcScaler);
+	if (quant_type == 0) dequant_intra(dqcoeff, coeff, quant, iDcScaler);
+	else dequant4_intra(dqcoeff, coeff, quant, iDcScaler);
 
 	for (i = 0; i < 64; i++) {
-		distortion += (data[i] - coeff[i])*(data[i] - coeff[i]);
+		distortion += (data[i] - dqcoeff[i])*(data[i] - dqcoeff[i]);
 	}
 
-	bits += (BITS_MULT*BITS_MULT*distortion)/lambda;
+	bits += (LAMBDA*distortion)/(quant*quant);
 
 	return bits;
 }
-
 
 #endif							/* _MOTION_EST_H_ */
