@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.22 2002-11-27 11:50:33 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.76.2.23 2002-11-28 14:45:21 syskin Exp $
  *
  ****************************************************************************/
 
@@ -926,6 +926,7 @@ bvop_loop:
 	/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	 * ivop/pvop/bvop selection
 	 * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
+	pEnc->iFrameNum++;
 
 	if (pEnc->iFrameNum == 0 || pFrame->intra == 1 || pEnc->bframenum_dx50bvop >= 0 ||
 		(pFrame->intra < 0 && pEnc->iMaxKeyInterval > 0 &&
@@ -1062,8 +1063,6 @@ bvop_loop:
 		input_valid = 0;
 		goto bvop_loop;
 	}
-
-	pEnc->iFrameNum++;
 
 	BitstreamPad(&bs);
 	pFrame->length = BitstreamLength(&bs);
