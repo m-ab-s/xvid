@@ -20,6 +20,9 @@ SRC_GENERIC = \
 	$(SRCDIR)/motion/smp_motion_est.c \
 	$(SRCDIR)/motion/sad.c \
 	$(SRCDIR)/prediction/mbprediction.c \
+    $(SRCDIR)/plugins/plugin_dump.c \
+    $(SRCDIR)/plugins/plugin_psnr.c \
+    $(SRCDIR)/plugins/plugin_lumimasking.c \
 	$(SRCDIR)/quant/adapt_quant.c \
 	$(SRCDIR)/quant/quant_h263.c \
 	$(SRCDIR)/quant/quant_matrix.c \
