@@ -108,9 +108,9 @@ const profile_t profiles[] =
 {
 /*    name                 p@l,    w    h  fps  obj  Tvmv  vmv    vcv   ac%     vbv      pkt   kbps  flags */
     { "Simple @ L0",       0x08,  176, 144, 15,  1,  198,   99,   1485, 100,  10*16368,  2048,   64, 0 },
-            /* simple@l0: max f_code=1, intra_dc_vlc_threshold=0
-            /* if ac preidition is used, adaptive quantization must not be used */
-            /* <=qcif must be used */
+	/* simple@l0: max f_code=1, intra_dc_vlc_threshold=0 */
+	/* if ac preidition is used, adaptive quantization must not be used */
+	/* <=qcif must be used */
 	{ "Simple @ L1",       0x01,  176, 144, 15,  4,  198,   99,   1485, 100,  10*16368,  2048,   64, PROFILE_ADAPTQUANT },
 	{ "Simple @ L2",       0x02,  352, 288, 15,  4,  792,  396,   5940, 100,  40*16368,  4096,  128, PROFILE_ADAPTQUANT },
 	{ "Simple @ L3",       0x03,  352, 288, 15,  4,  792,  396,  11880, 100,  40*16368,  8192,  384, PROFILE_ADAPTQUANT },
@@ -1388,7 +1388,6 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_NOTIFY :
         {
             NMHDR * n = (NMHDR*)lParam;
-            int idc = (int)wParam;
 
             if (n->code == NM_DBLCLK) {
                  NMLISTVIEW * nmlv = (NMLISTVIEW*) lParam;
