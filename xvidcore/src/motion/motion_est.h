@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.h,v 1.3.2.16 2003-08-25 15:10:30 syskin Exp $
+ * $Id: motion_est.h,v 1.3.2.17 2003-08-26 09:25:25 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -179,14 +179,14 @@ get_range(int32_t * const min_dx,
 	}
 
 	k = (int)(width - (x<<block_sz))<<precision;
-	*max_dx = min(high, k);
+	*max_dx = MIN(high, k);
 	k = (int)(height -  (y<<block_sz))<<precision;
-	*max_dy = min(high, k);
+	*max_dy = MIN(high, k);
 	
 	k = (-(int)((x+1)<<block_sz))<<precision;
-	*min_dx = max(low, k);
+	*min_dx = MAX(low, k);
 	k = (-(int)((y+1)<<block_sz))<<precision;
-	*min_dy = max(low, k);
+	*min_dy = MAX(low, k);
 }
 
 typedef void MainSearchFunc(int x, int y, const SearchData * const Data, int bDirection);
