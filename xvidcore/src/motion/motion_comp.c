@@ -24,8 +24,8 @@
 #endif
 
 /* assume b>0 */
-#ifndef ROUNDED_DIV
-#define ROUNDED_DIV(a,b) (((a)>0 ? (a) + ((b)>>1) : (a) - ((b)>>1))/(b))
+#ifndef RDIV
+#define RDIV(a,b) (((a)>0 ? (a) + ((b)>>1) : (a) - ((b)>>1))/(b))
 #endif
 
 
@@ -543,6 +543,252 @@ MBMotionCompensationBVOP(MBParam * pParam,
 
 
 
+void generate_GMCparameters( const int num_wp, const int res,
+                       const WARPPOINTS *const warp,
+                       const int width, const int height,
+                       GMC_DATA *const gmc)
+{
+  const int du0 = warp->duv[0].x;
+  const int dv0 = warp->duv[0].y;
+  const int du1 = warp->duv[1].x;
+  const int dv1 = warp->duv[1].y;
+  const int du2 = warp->duv[2].x;
+  const int dv2 = warp->duv[2].y;
+
+  gmc->W = width;
+  gmc->H = height;
+
+  gmc->rho = 4 - log2bin(res-1);  // = {3,2,1,0} for res={2,4,8,16}
+
+  gmc->alpha = log2bin(gmc->W-1);
+  gmc->Ws = (1 << gmc->alpha); 
+  
+  gmc->dxF = 16*gmc->Ws + RDIV( 8*gmc->Ws*du1, gmc->W );
+  gmc->dxG =         	  RDIV( 8*gmc->Ws*dv1, gmc->W );
+  gmc->Fo  = (res*du0 + 1) << (gmc->alpha+gmc->rho-1);
+  gmc->Go  = (res*dv0 + 1) << (gmc->alpha+gmc->rho-1);
+
+  if (num_wp==2) {
+    gmc->dyF = -gmc->dxG;
+    gmc->dyG =  gmc->dxF;
+  }
+  else if (num_wp==3) {
+    gmc->beta = log2bin(gmc->H-1);
+    gmc->Hs = (1 << gmc->beta); 
+    gmc->dyF =              RDIV( 8*gmc->Hs*du2, gmc->H );
+    gmc->dyG = 16*gmc->Hs + RDIV( 8*gmc->Hs*dv2, gmc->H );
+    if (gmc->beta > gmc->alpha) {
+      gmc->dxF <<= (gmc->beta - gmc->alpha);
+      gmc->dxG <<= (gmc->beta - gmc->alpha);
+      gmc->alpha = gmc->beta;
+      gmc->Ws = 1<< gmc->beta;
+    }
+    else {
+      gmc->dyF <<= gmc->alpha - gmc->beta;
+      gmc->dyG <<= gmc->alpha - gmc->beta;
+    }
+  }
+
+  gmc->cFo = gmc->dxF + gmc->dyF + (1 << (gmc->alpha+gmc->rho+1));
+  gmc->cFo += 16*gmc->Ws*(du0-1);
+
+  gmc->cGo = gmc->dxG + gmc->dyG + (1 << (gmc->alpha+gmc->rho+1));
+  gmc->cGo += 16*gmc->Ws*(dv0-1);
+}
+
+void 
+generate_GMCimage(	const GMC_DATA *const gmc_data, 	// [input] precalculated data
+					const IMAGE *const pRef,			// [input] 
+					const int mb_width, 
+					const int mb_height,
+					const int stride,
+					const int stride2, 
+					const int fcode, 					// [input] some parameters...
+  					const int32_t quarterpel,			// [input] for rounding avgMV
+					const int reduced_resolution,		// [input] ignored
+					const int32_t rounding,			// [input] for rounding image data
+					MACROBLOCK *const pMBs, 	// [output] average motion vectors
+					IMAGE *const pGMC)			// [output] full warped image
+{
+
+	unsigned int mj,mi;
+	VECTOR avgMV;
+	
+	for (mj=0;mj<mb_height;mj++)
+	for (mi=0;mi<mb_width; mi++)
+	{
+		avgMV = generate_GMCimageMB(gmc_data, pRef, mi, mj, 
+					stride, stride2, quarterpel, rounding, pGMC);
+
+		pMBs[mj*mb_width+mi].amv.x = gmc_sanitize(avgMV.x, quarterpel, fcode);
+		pMBs[mj*mb_width+mi].amv.y = gmc_sanitize(avgMV.y, quarterpel, fcode);
+		pMBs[mj*mb_width+mi].mcsel = 0; /* until mode decision */
+	}
+}
+
+
+
+#define MLT(i)  (((16-(i))<<16) + (i))
+static const uint32_t MTab[16] = {
+  MLT( 0), MLT( 1), MLT( 2), MLT( 3), MLT( 4), MLT( 5), MLT( 6), MLT(7),
+  MLT( 8), MLT( 9), MLT(10), MLT(11), MLT(12), MLT(13), MLT(14), MLT(15)
+};
+#undef MLT
+
+VECTOR generate_GMCimageMB( const GMC_DATA *const gmc_data,
+                      const IMAGE *const pRef,
+                      const int mi, const int mj,
+                      const int stride,
+                      const int stride2,
+                      const int quarterpel,
+                      const int rounding,
+                      IMAGE *const pGMC)
+{
+  const int W = gmc_data->W;
+  const int H = gmc_data->H;
+
+  const int rho = gmc_data->rho; 
+  const int alpha = gmc_data->alpha; 
+
+  const int rounder = ( 128 - (rounding<<(rho+rho)) ) << 16;
+
+  const int dxF = gmc_data->dxF;
+  const int dyF = gmc_data->dyF;
+  const int dxG = gmc_data->dxG;
+  const int dyG = gmc_data->dyG;
+  
+  uint8_t *dstY, *dstU, *dstV;
+
+  int I,J;
+  VECTOR avgMV = {0,0};
+
+  int32_t Fj, Gj;
+
+  dstY = &pGMC->y[(mj*16)*stride+mi*16] + 16;
+
+  Fj = gmc_data->Fo + dyF*mj*16 + dxF*mi*16;
+  Gj = gmc_data->Go + dyG*mj*16 + dxG*mi*16;
+  for (J=16; J>0; --J)
+  {
+    int32_t Fi, Gi;
+    
+    Fi = Fj; Fj += dyF;
+    Gi = Gj; Gj += dyG;
+    for (I=-16; I<0; ++I)
+    {
+      int32_t F, G;
+      uint32_t ri, rj;
+
+      F = ( Fi >> (alpha+rho) ) << rho; Fi += dxF;
+      G = ( Gi >> (alpha+rho) ) << rho; Gi += dxG;
+
+      avgMV.x += F;
+      avgMV.y += G;
+
+      ri = MTab[F&15];
+      rj = MTab[G&15];
+
+      F >>= 4;
+      G >>= 4;
+
+      if (F< -1) F=-1;
+      else if (F>W) F=W;
+      if (G< -1) G=-1;
+      else if (G>H) G=H;
+
+      {     // MMX-like bilinear...
+        const int offset = G*stride + F;
+        uint32_t f0, f1;
+        f0  = pRef->y[ offset +0 ];
+        f0 |= pRef->y[ offset +1 ] << 16;
+        f1  = pRef->y[ offset+stride +0 ];
+        f1 |= pRef->y[ offset+stride +1 ] << 16;
+        f0 = (ri*f0)>>16;
+        f1 = (ri*f1) & 0x0fff0000;
+        f0 |= f1; 
+        f0 = ( rj*f0 + rounder ) >> 24;
+
+        dstY[I] = (uint8_t)f0;
+      }
+    }
+    dstY += stride;
+  }
+
+  dstU = &pGMC->u[(mj*8)*stride2+mi*8] + 8;
+  dstV = &pGMC->v[(mj*8)*stride2+mi*8] + 8;
+
+  Fj = gmc_data->cFo + dyF*4 *mj*8 + dxF*4 *mi*8;
+  Gj = gmc_data->cGo + dyG*4 *mj*8 + dxG*4 *mi*8;
+  for (J=8; J>0; --J)
+  {
+    int32_t Fi, Gi;
+    Fi = Fj; Fj += 4*dyF; 
+    Gi = Gj; Gj += 4*dyG;
+
+    for (I=-8; I<0; ++I)
+    {
+      int32_t F, G;
+      uint32_t ri, rj;
+
+      F = ( Fi >> (alpha+rho+2) ) << rho; Fi += 4*dxF;
+      G = ( Gi >> (alpha+rho+2) ) << rho; Gi += 4*dxG;
+
+      ri = MTab[F&15];
+      rj = MTab[G&15];
+
+      F >>= 4;
+      G >>= 4;
+
+      if (F< -1) F=-1;
+      else if (F>=W/2) F=W/2;
+      if (G< -1) G=-1;
+      else if (G>=H/2) G=H/2;
+
+      {
+        const int offset = G*stride2 + F;
+        uint32_t f0, f1;
+
+        f0  = pRef->u[ offset         +0 ];
+        f0 |= pRef->u[ offset         +1 ] << 16;
+        f1  = pRef->u[ offset+stride2 +0 ];
+        f1 |= pRef->u[ offset+stride2 +1 ] << 16;
+        f0 = (ri*f0)>>16;
+        f1 = (ri*f1) & 0x0fff0000;
+        f0 |= f1; 
+        f0 = ( rj*f0 + rounder ) >> 24;
+
+        dstU[I] = (uint8_t)f0;
+
+
+        f0  = pRef->v[ offset         +0 ];
+        f0 |= pRef->v[ offset         +1 ] << 16;
+        f1  = pRef->v[ offset+stride2 +0 ];
+        f1 |= pRef->v[ offset+stride2 +1 ] << 16;
+        f0 = (ri*f0)>>16;
+        f1 = (ri*f1) & 0x0fff0000;
+        f0 |= f1; 
+        f0 = ( rj*f0 + rounder ) >> 24;
+
+        dstV[I] = (uint8_t)f0;    
+      }
+    }
+    dstU += stride2;
+    dstV += stride2;
+  }
+
+
+  avgMV.x -= 16*((256*mi+120)<<4);    // 120 = 15*16/2
+  avgMV.y -= 16*((256*mj+120)<<4);
+
+  avgMV.x = RSHIFT( avgMV.x, (4+7-quarterpel) );
+  avgMV.y = RSHIFT( avgMV.y, (4+7-quarterpel) );
+
+  return avgMV;
+}
+ 
+ 
+ 
+#ifdef OLD_GRUEL_GMC
 void 
 generate_GMCparameters(	const int num_wp,			// [input]: number of warppoints
 						const int res, 			// [input]: resolution 
@@ -852,3 +1098,4 @@ type | variable name  |   ISO name (TeX-style) |  value or range  |  usage
 	return avgMV;	/* clipping to fcode area is done outside! */
 }
 
+#endif

@@ -56,18 +56,22 @@ typedef struct
 	int j0s;
 	int i1s;
 	int j1s;
-//	int i2s;
-//	int j2s;
+	int i2s;
+	int j2s;
 	
 	int i1ss; 
 	int j1ss; 
-//	int i2ss; 
-//	int j2ss; 
+	int i2ss; 
+	int j2ss; 
 
 	int alpha;
-//	int beta;
+	int beta;
 	int Ws; 
-//	int Hs; 
+	int Hs; 
+	
+	int dxF, dyF, dxG, dyG; 
+	int Fo, Go;
+	int cFo, cGo;
 }
 GMC_DATA;
 
