@@ -11,7 +11,7 @@ include Makefile.inc
 
 
 CC = gcc
-CFLAGS = -Wall -DARCH_X86
+CFLAGS = -Wall -DARCH_X86 -DBFRAMES
 # CFLAGS += -funroll-loops -ffast-math -fstrict-aliasing -fomit-frame-pointer
 # CFLAGS += -fPIC
 # CFLAGS += -m486
@@ -22,7 +22,7 @@ CFLAGS = -Wall -DARCH_X86
 AS = nasm
 AFLAGS = -f coff -DPREFIX -DFORMAT_COFF
 %.o: %.asm
-	$(AS) $(AFLAGS) $< -o $@
+	$(AS) $(AFLAGS) -I$(<D) $< -o $@
 
 
 RM = deltree /y

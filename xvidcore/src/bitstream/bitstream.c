@@ -131,40 +131,122 @@ bs_get_matrix(Bitstream * bs,
 // for BVOP addbits == max(fcode,bcode) - 1
 // returns mbpos
 int
-read_video_packet_header(Bitstream *bs, const int addbits, int * quant)
+read_video_packet_header(Bitstream *bs, 
+						DECODER * dec, 
+						const int addbits, 
+						int * quant, 
+						int * fcode_forward,
+						int  * fcode_backward,
+						int * intra_dc_threshold)
 {
-	int nbits;
+	int startcode_bits = NUMBITS_VP_RESYNC_MARKER + addbits;
+	int mbnum_bits = log2bin(dec->mb_width *  dec->mb_height - 1);
 	int mbnum;
-	int hec;
-	
-	nbits = NUMBITS_VP_RESYNC_MARKER + addbits;
+	int hec = 0;
 
 	BitstreamSkip(bs, BitstreamNumBitsToByteAlign(bs));
-	BitstreamSkip(bs, nbits);
+	BitstreamSkip(bs, startcode_bits);
 
 	DPRINTF(DPRINTF_STARTCODE, "<video_packet_header>");
 
-	// if (dec->shape != VIDOBJLAY_SHAPE_RECTANGULAR) {
-		// hec
-		// vop_width
-		// marker_bit
-		// vop_height
-		// marker_bit
+	if (dec->shape != VIDOBJLAY_SHAPE_RECTANGULAR)
+	{
+		hec = BitstreamGetBit(bs);		/* header_extension_code */
+		if (hec && !(dec->sprite_enable == SPRITE_STATIC /* && current_coding_type = I_VOP */)) 
+		{
+			BitstreamSkip(bs, 13);			/* vop_width */
+			READ_MARKER();
+			BitstreamSkip(bs, 13);			/* vop_height */
+			READ_MARKER();
+			BitstreamSkip(bs, 13);			/* vop_horizontal_mc_spatial_ref */
+			READ_MARKER();
+			BitstreamSkip(bs, 13);			/* vop_vertical_mc_spatial_ref */
+			READ_MARKER();
+		}
+	}
 
-	//}
-
-	mbnum = BitstreamGetBits(bs, 9);
+	mbnum = BitstreamGetBits(bs, mbnum_bits);		/* macroblock_number */
 	DPRINTF(DPRINTF_HEADER, "mbnum %i", mbnum);
 
-	// if (dec->shape != VIDOBJLAY_SHAPE_BINARYONLY)
-	*quant = BitstreamGetBits(bs, 5);
-	DPRINTF(DPRINTF_HEADER, "quant %i", *quant);
+	if (dec->shape != VIDOBJLAY_SHAPE_BINARY_ONLY)
+	{
+		*quant = BitstreamGetBits(bs, 5);	/* quant_scale */
+		DPRINTF(DPRINTF_HEADER, "quant %i", *quant);
+	}
 
-	// if (dec->shape != VIDOBJLAY_SHAPE_RECTANGULAR)
-	hec = BitstreamGetBit(bs);
+	if (dec->shape == VIDOBJLAY_SHAPE_RECTANGULAR)
+		hec = BitstreamGetBit(bs);		/* header_extension_code */
+
+
 	DPRINTF(DPRINTF_HEADER, "header_extension_code %i", hec);
-	// if (hec)
-	//   .. decoder hec-header ...
+	if (hec)
+	{
+		int time_base;
+		int time_increment;
+		int coding_type;
+
+		for (time_base=0; BitstreamGetBit(bs)!=0; time_base++);		/* modulo_time_base */
+		READ_MARKER();
+		if (dec->time_inc_bits)
+			time_increment = (BitstreamGetBits(bs, dec->time_inc_bits));	/* vop_time_increment */
+		READ_MARKER();
+		DPRINTF(DPRINTF_HEADER,"time %i:%i", time_base, time_increment);
+
+		coding_type = BitstreamGetBits(bs, 2);
+		DPRINTF(DPRINTF_HEADER,"coding_type %i", coding_type);
+	
+		if (dec->shape != VIDOBJLAY_SHAPE_RECTANGULAR)
+		{
+			BitstreamSkip(bs, 1);	/* change_conv_ratio_disable */
+			if (coding_type != I_VOP)
+				BitstreamSkip(bs, 1);	/* vop_shape_coding_type */
+		}
+
+		if (dec->shape != VIDOBJLAY_SHAPE_BINARY_ONLY)
+		{
+			*intra_dc_threshold = intra_dc_threshold_table[BitstreamGetBits(bs, 3)];
+
+			if (dec->sprite_enable == SPRITE_GMC && coding_type == S_VOP &&
+				dec->sprite_warping_points > 0)
+			{
+				// TODO: sprite trajectory
+			}
+			if (dec->reduced_resolution_enable && 
+				dec->shape == VIDOBJLAY_SHAPE_RECTANGULAR &&
+				(coding_type == P_VOP || coding_type == I_VOP))
+			{
+				BitstreamSkip(bs, 1); /* vop_reduced_resolution */
+			}
+
+			if (coding_type != I_VOP && fcode_forward)
+			{
+				*fcode_forward = BitstreamGetBits(bs, 3);
+				DPRINTF(DPRINTF_HEADER,"fcode_forward %i", *fcode_forward);
+			}
+
+			if (coding_type == B_VOP && fcode_backward)
+			{
+				*fcode_backward = BitstreamGetBits(bs, 3);
+				DPRINTF(DPRINTF_HEADER,"fcode_backward %i", fcode_backward);
+			}
+		}
+
+	}
+
+	if (dec->newpred_enable)
+	{
+		int vop_id;
+		int vop_id_for_prediction;
+		
+		vop_id = BitstreamGetBits(bs, MIN(dec->time_inc_bits + 3, 15));
+		DPRINTF(DPRINTF_HEADER, "vop_id %i", vop_id);
+		if (BitstreamGetBit(bs))	/* vop_id_for_prediction_indication */
+		{
+			vop_id_for_prediction = BitstreamGetBits(bs, MIN(dec->time_inc_bits + 3, 15));
+			DPRINTF(DPRINTF_HEADER, "vop_id_for_prediction %i", vop_id_for_prediction);
+		}
+		READ_MARKER();
+	}
 
 	return mbnum;
 }
@@ -183,19 +265,22 @@ int
 BitstreamReadHeaders(Bitstream * bs,
 					 DECODER * dec,
 					 uint32_t * rounding,
+					 uint32_t * reduced_resolution,
 					 uint32_t * quant,
 					 uint32_t * fcode_forward,
 					 uint32_t * fcode_backward,
-					 uint32_t * intra_dc_threshold)
+					 uint32_t * intra_dc_threshold,
+					 VECTOR * gmc_mv)
 {
 	uint32_t vol_ver_id;
-	static uint32_t time_increment_resolution;
 	uint32_t coding_type;
 	uint32_t start_code;
 	uint32_t time_incr = 0;
 	int32_t time_increment;
+	int resize = 0;
 
 	do {
+
 		BitstreamByteAlign(bs);
 		start_code = BitstreamShowBits(bs, 32);
 
@@ -269,7 +354,12 @@ BitstreamReadHeaders(Bitstream * bs,
 			BitstreamSkip(bs, 1);	// random_accessible_vol
 
 			// video_object_type_indication
-			if (BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_SIMPLE && BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_CORE && BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_MAIN && BitstreamShowBits(bs, 8) != 0)	// BUGGY DIVX
+			if (BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_SIMPLE && 
+				BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_CORE && 
+				BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_MAIN && 
+				BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_ACE && 
+				BitstreamShowBits(bs, 8) != VIDOBJLAY_TYPE_ART_SIMPLE &&
+				BitstreamShowBits(bs, 8) != 0)	// BUGGY DIVX
 			{
 				DPRINTF(DPRINTF_ERROR,"video_object_type_indication %i not supported ",
 					BitstreamShowBits(bs, 8));
@@ -288,11 +378,13 @@ BitstreamReadHeaders(Bitstream * bs,
 				vol_ver_id = 1;
 			}
 
-			if (BitstreamGetBits(bs, 4) == VIDOBJLAY_AR_EXTPAR)	// aspect_ratio_info
+			dec->aspect_ratio = BitstreamGetBits(bs, 4);
+
+			if (dec->aspect_ratio == VIDOBJLAY_AR_EXTPAR)	// aspect_ratio_info
 			{
 				DPRINTF(DPRINTF_HEADER, "+ aspect_ratio_info");
-				BitstreamSkip(bs, 8);	// par_width
-				BitstreamSkip(bs, 8);	// par_height
+				dec->par_width = BitstreamGetBits(bs, 8);	// par_width
+				dec->par_height = BitstreamGetBits(bs, 8);	// par_height
 			}
 
 			if (BitstreamGetBit(bs))	// vol_control_parameters
@@ -315,12 +407,16 @@ BitstreamReadHeaders(Bitstream * bs,
 					READ_MARKER();
 					BitstreamSkip(bs, 15);	// latter_half_vbv_occupancy
 					READ_MARKER();
-
 				}
 			}
 
 			dec->shape = BitstreamGetBits(bs, 2);	// video_object_layer_shape
+
 			DPRINTF(DPRINTF_HEADER, "shape %i", dec->shape);
+			if (dec->shape != VIDOBJLAY_SHAPE_RECTANGULAR)
+			{
+				DPRINTF(DPRINTF_ERROR,"non-rectangular shapes are not supported");
+			}
 
 			if (dec->shape == VIDOBJLAY_SHAPE_GRAYSCALE && vol_ver_id != 1) {
 				BitstreamSkip(bs, 4);	// video_object_layer_shape_extension
@@ -329,14 +425,13 @@ BitstreamReadHeaders(Bitstream * bs,
 			READ_MARKER();
 
 // *************************** for decode B-frame time ***********************
-			time_increment_resolution = BitstreamGetBits(bs, 16);	// vop_time_increment_resolution
+			dec->time_inc_resolution = BitstreamGetBits(bs, 16);	// vop_time_increment_resolution
+			DPRINTF(DPRINTF_HEADER,"vop_time_increment_resolution %i", dec->time_inc_resolution);
 
-			DPRINTF(DPRINTF_HEADER,"vop_time_increment_resolution %i", time_increment_resolution);
+//			dec->time_inc_resolution--;
 
-//			time_increment_resolution--;
-
-			if (time_increment_resolution > 0) {
-				dec->time_inc_bits = log2bin(time_increment_resolution-1);
+			if (dec->time_inc_resolution > 0) {
+				dec->time_inc_bits = log2bin(dec->time_inc_resolution-1);
 			} else {
 				// dec->time_inc_bits = 0;
 				// for "old" xvid compatibility, set time_inc_bits = 1
@@ -365,21 +460,21 @@ BitstreamReadHeaders(Bitstream * bs,
 					DPRINTF(DPRINTF_HEADER, "width %i", width);
 					DPRINTF(DPRINTF_HEADER, "height %i", height);
 
-					// for auto set width & height
-					if (dec->width == 0)
+					if (dec->width != width || dec->height != height)
+					{
+						if (dec->fixed_dimensions)
+						{
+							DPRINTF(DPRINTF_ERROR, "XVID_DEC_PARAM width/height does not match bitstream");
+							return -1;
+						}
+						resize = 1;
 						dec->width = width;
-					if (dec->height == 0)
 						dec->height = height;
-
-					if (width != dec->width || height != dec->height) {
-						DPRINTF(DPRINTF_ERROR, "XVID_DEC_PARAM width/height does not match bitstream");
-						return -1;
 					}
-
 				}
 
 				dec->interlacing = BitstreamGetBit(bs);
-				DPRINTF(DPRINTF_HEADER, "interlace", dec->interlacing);
+				DPRINTF(DPRINTF_HEADER, "interlacing %i", dec->interlacing);
 
 				if (!BitstreamGetBit(bs))	// obmc_disable
 				{
@@ -388,10 +483,34 @@ BitstreamReadHeaders(Bitstream * bs,
 					// fucking divx4.02 has this enabled
 				}
 
-				if (BitstreamGetBits(bs, (vol_ver_id == 1 ? 1 : 2)))	// sprite_enable
+				dec->sprite_enable = BitstreamGetBits(bs, (vol_ver_id == 1 ? 1 : 2));	// sprite_enable
+
+				if (dec->sprite_enable == SPRITE_STATIC || dec->sprite_enable == SPRITE_GMC)
 				{
-					DPRINTF(DPRINTF_ERROR, "spriate_enabled not supported");
-					return -1;
+					int low_latency_sprite_enable;
+
+					if (dec->sprite_enable != SPRITE_GMC)
+					{
+						int sprite_width;
+						int sprite_height;
+						int sprite_left_coord;
+						int sprite_top_coord;
+						sprite_width = BitstreamGetBits(bs, 13);		// sprite_width
+						READ_MARKER();
+						sprite_height = BitstreamGetBits(bs, 13);	// sprite_height
+						READ_MARKER();
+						sprite_left_coord = BitstreamGetBits(bs, 13);	// sprite_left_coordinate
+						READ_MARKER();
+						sprite_top_coord = BitstreamGetBits(bs, 13);	// sprite_top_coordinate
+						READ_MARKER();
+					}
+					dec->sprite_warping_points = BitstreamGetBits(bs, 6);		// no_of_sprite_warping_points
+					dec->sprite_warping_accuracy = BitstreamGetBits(bs, 2);		// sprite_warping_accuracy
+					dec->sprite_brightness_change = BitstreamGetBits(bs, 1);		// brightness_change
+					if (dec->sprite_enable != SPRITE_GMC)
+					{
+						low_latency_sprite_enable = BitstreamGetBits(bs, 1);		// low_latency_sprite_enable
+					}
 				}
 
 				if (vol_ver_id != 1 &&
@@ -449,8 +568,8 @@ BitstreamReadHeaders(Bitstream * bs,
 
 
 				if (vol_ver_id != 1) {
-					DEBUG("QUARTERPEL BITSTREAM");
 					dec->quarterpel = BitstreamGetBit(bs);	// quarter_sample
+					DPRINTF(DPRINTF_HEADER,"quarterpel %i", dec->quarterpel);
 				}
 				else
 					dec->quarterpel = 0;
@@ -471,17 +590,24 @@ BitstreamReadHeaders(Bitstream * bs,
 				}
 
 				if (vol_ver_id != 1) {
-					if (BitstreamGetBit(bs))	// newpred_enable
+					dec->newpred_enable = BitstreamGetBit(bs);
+					if (dec->newpred_enable)	// newpred_enable
 					{
 						DPRINTF(DPRINTF_HEADER, "+ newpred_enable");
 						BitstreamSkip(bs, 2);	// requested_upstream_message_type
 						BitstreamSkip(bs, 1);	// newpred_segment_type
 					}
-					if (BitstreamGetBit(bs))	// reduced_resolution_vop_enable
+					dec->reduced_resolution_enable = BitstreamGetBit(bs);
+					if (dec->reduced_resolution_enable)	// reduced_resolution_vop_enable
 					{
 						DPRINTF(DPRINTF_ERROR, "reduced_resolution_vop not supported");
-						return -1;
+						//return -1;
 					}
+				}
+				else
+				{
+					dec->newpred_enable = 0;
+					dec->reduced_resolution_enable = 0;
 				}
 
 				if ((dec->scalability = BitstreamGetBit(bs)))	// scalability
@@ -501,6 +627,8 @@ BitstreamReadHeaders(Bitstream * bs,
 				BitstreamSkip(bs, 1);	// resync_marker_disable
 
 			}
+
+			return (resize ? -3 : -2 );	/* VOL */
 
 		} else if (start_code == GRPOFVOP_START_CODE) {
 
@@ -543,7 +671,7 @@ BitstreamReadHeaders(Bitstream * bs,
 			DPRINTF(DPRINTF_HEADER, "time_increment %i", time_increment);
 
 			DPRINTF(DPRINTF_TIMECODE, "%c %i:%i", 
-				coding_type == I_VOP ? 'I' : coding_type == P_VOP ? 'P' : 'B',
+				coding_type == I_VOP ? 'I' : coding_type == P_VOP ? 'P' : coding_type == B_VOP ? 'B' : 'S',
 				time_incr, time_increment);
 
 			if (coding_type != B_VOP) {
@@ -551,19 +679,19 @@ BitstreamReadHeaders(Bitstream * bs,
 				dec->time_base += time_incr;
 				dec->time = time_increment;
 
-/*					dec->time_base * time_increment_resolution +
+/*					dec->time_base * dec->time_inc_resolution +
 					time_increment;
 */				dec->time_pp = (uint32_t) 
-					(time_increment_resolution + dec->time - dec->last_non_b_time)%time_increment_resolution;
+					(dec->time_inc_resolution + dec->time - dec->last_non_b_time)%dec->time_inc_resolution;
 				dec->last_non_b_time = dec->time;
 			} else {
 				dec->time = time_increment; 
 /*
 					(dec->last_time_base +
-					 time_incr) * time_increment_resolution + time_increment; 
+					 time_incr) * dec->time_inc_resolution + time_increment; 
 */
 				dec->time_bp = (uint32_t) 
-					(time_increment_resolution + dec->last_non_b_time - dec->time)%time_increment_resolution;
+					(dec->time_inc_resolution + dec->last_non_b_time - dec->time)%dec->time_inc_resolution;
 			}
 
 			READ_MARKER();
@@ -574,40 +702,61 @@ BitstreamReadHeaders(Bitstream * bs,
 				return N_VOP;
 			}
 
-			/* if (newpred_enable)
-			   {
-			   }
-			 */
+			if (dec->newpred_enable)
+			{
+				int vop_id;
+				int vop_id_for_prediction;
+				
+				vop_id = BitstreamGetBits(bs, MIN(dec->time_inc_bits + 3, 15));
+				DPRINTF(DPRINTF_HEADER, "vop_id %i", vop_id);
+				if (BitstreamGetBit(bs))	/* vop_id_for_prediction_indication */
+				{
+					vop_id_for_prediction = BitstreamGetBits(bs, MIN(dec->time_inc_bits + 3, 15));
+					DPRINTF(DPRINTF_HEADER, "vop_id_for_prediction %i", vop_id_for_prediction);
+				}
+				READ_MARKER();
+			}
+
+		
 
 			// fix a little bug by MinChen <chenm002@163.com>
 			if ((dec->shape != VIDOBJLAY_SHAPE_BINARY_ONLY) &&
-				( (coding_type == P_VOP) || (coding_type == S_VOP) ) ) {
+				( (coding_type == P_VOP) || (coding_type == S_VOP && dec->sprite_enable == SPRITE_GMC) ) ) {
 				*rounding = BitstreamGetBit(bs);	// rounding_type
 				DPRINTF(DPRINTF_HEADER, "rounding %i", *rounding);
 			}
 
-			/* if (reduced_resolution_enable)
-			   {
-			   }
-			 */
+			if (dec->reduced_resolution_enable &&
+				dec->shape == VIDOBJLAY_SHAPE_RECTANGULAR &&
+				(coding_type == P_VOP || coding_type == I_VOP)) {
+
+				*reduced_resolution = BitstreamGetBit(bs);
+			}
+			else
+			{
+				*reduced_resolution = 0;
+			}
 
 			if (dec->shape != VIDOBJLAY_SHAPE_RECTANGULAR) {
-				uint32_t width, height;
-				uint32_t horiz_mc_ref, vert_mc_ref;
+				if(!(dec->sprite_enable == SPRITE_STATIC && coding_type == I_VOP)) {
 
-				width = BitstreamGetBits(bs, 13);
-				READ_MARKER();
-				height = BitstreamGetBits(bs, 13);
-				READ_MARKER();
-				horiz_mc_ref = BitstreamGetBits(bs, 13);
-				READ_MARKER();
-				vert_mc_ref = BitstreamGetBits(bs, 13);
-				READ_MARKER();
+					uint32_t width, height;
+					uint32_t horiz_mc_ref, vert_mc_ref;
 
-				DPRINTF(DPRINTF_HEADER, "width %i", width);
-				DPRINTF(DPRINTF_HEADER, "height %i", height);
-				DPRINTF(DPRINTF_HEADER, "horiz_mc_ref %i", horiz_mc_ref);
-				DPRINTF(DPRINTF_HEADER, "vert_mc_ref %i", vert_mc_ref);
+					width = BitstreamGetBits(bs, 13);
+					READ_MARKER();
+					height = BitstreamGetBits(bs, 13);
+					READ_MARKER();
+					horiz_mc_ref = BitstreamGetBits(bs, 13);
+					READ_MARKER();
+					vert_mc_ref = BitstreamGetBits(bs, 13);
+					READ_MARKER();
+
+					DPRINTF(DPRINTF_HEADER, "width %i", width);
+					DPRINTF(DPRINTF_HEADER, "height %i", height);
+					DPRINTF(DPRINTF_HEADER, "horiz_mc_ref %i", horiz_mc_ref);
+					DPRINTF(DPRINTF_HEADER, "vert_mc_ref %i", vert_mc_ref);
+				}
 
 				BitstreamSkip(bs, 1);	// change_conv_ratio_disable
 				if (BitstreamGetBit(bs))	// vop_constant_alpha
@@ -615,7 +764,6 @@ BitstreamReadHeaders(Bitstream * bs,
 					BitstreamSkip(bs, 8);	// vop_constant_alpha_value
 				}
 			}
-
 
 			if (dec->shape != VIDOBJLAY_SHAPE_BINARY_ONLY) {
 				// intra_dc_vlc_threshold
@@ -634,9 +782,51 @@ BitstreamReadHeaders(Bitstream * bs,
 				}
 			}
 
+			if ((dec->sprite_enable == SPRITE_STATIC || dec->sprite_enable== SPRITE_GMC) && coding_type == S_VOP) {
+
+				int i;
+
+				for (i = 0 ; i < dec->sprite_warping_points; i++)
+				{
+					int length;
+					int x = 0, y = 0;
+
+					/* sprite code borowed from ffmpeg; thx Michael Niedermayer <michaelni@gmx.at> */
+					length = bs_get_spritetrajectory(bs);
+					if(length){
+						x= BitstreamGetBits(bs, length);
+						if ((x >> (length - 1)) == 0) /* if MSB not set it is negative*/
+							x = - (x ^ ((1 << length) - 1));
+					}
+					READ_MARKER();
+        
+					length = bs_get_spritetrajectory(bs);
+					if(length){
+						y = BitstreamGetBits(bs, length);
+						if ((y >> (length - 1)) == 0) /* if MSB not set it is negative*/
+							y = - (y ^ ((1 << length) - 1));
+					}
+					READ_MARKER();
+
+					gmc_mv[i].x = x;
+					gmc_mv[i].y = y;
+
+					DPRINTF(DPRINTF_HEADER,"sprite_warping_point[%i] xy=(%i,%i)", i, x, y);
+				}
+
+				if (dec->sprite_brightness_change)
+				{
+					// XXX: brightness_change_factor()
+				}
+				if (dec->sprite_enable == SPRITE_STATIC)
+				{
+					// XXX: todo
+				}
+
+			}
+
 			if ((*quant = BitstreamGetBits(bs, dec->quant_bits)) < 1)	// vop_quant
 				*quant = 1;
-
 			DPRINTF(DPRINTF_HEADER, "quant %i", *quant);
 
 			if (coding_type != I_VOP) {
@@ -751,7 +941,7 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 
 	WRITE_MARKER();
 
-	/* time_increment_resolution; ignored by current decore versions
+	/* time_inc_resolution; ignored by current decore versions
 	   eg. 2fps     res=2       inc=1
 	   25fps        res=25      inc=1
 	   29.97fps res=30000   inc=1001
@@ -843,6 +1033,7 @@ BitstreamWriteVopHeader(Bitstream * const bs,
 	BitstreamPutBits(bs, VOP_START_CODE, 32);
 
 	BitstreamPutBits(bs, frame->coding_type, 2);
+	DPRINTF(DPRINTF_HEADER, "coding_type = %i", frame->coding_type);
 
 	for (i = 0; i < frame->seconds; i++) {
 		BitstreamPutBit(bs, 1);
@@ -854,7 +1045,7 @@ BitstreamWriteVopHeader(Bitstream * const bs,
 	// time_increment: value=nth_of_sec, nbits = log2(resolution)
 
 	BitstreamPutBits(bs, frame->ticks, log2bin(pParam->fbase));
-	/*DPRINTF("[%i:%i] %c\n", frame->seconds, frame->ticks,
+	/*DPRINTF("[%i:%i] %c", frame->seconds, frame->ticks,
 			frame->coding_type == I_VOP ? 'I' : frame->coding_type ==
 			P_VOP ? 'P' : 'B');*/
 
@@ -890,6 +1081,17 @@ BitstreamWriteVopHeader(Bitstream * const bs,
 			else
 				bs_put_spritetrajectory(bs, frame->GMC_MV.y ); // dv[0] 
 			WRITE_MARKER();
+
+
+			if (pParam->m_quarterpel)
+			{
+				DPRINTF(DPRINTF_HEADER,"sprite_warping_point[%i] xy=(%i,%i) *QPEL*", 0, frame->GMC_MV.x/2, frame->GMC_MV.y/2);
+			}
+			else
+			{
+				DPRINTF(DPRINTF_HEADER,"sprite_warping_point[%i] xy=(%i,%i)", 0, frame->GMC_MV.x, frame->GMC_MV.y);
+			}
+
 		}
 /* GMC is halfpel in bitstream, even though GMC_MV was pseudo-qpel (2*halfpel) */
 

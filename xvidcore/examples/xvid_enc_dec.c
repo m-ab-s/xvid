@@ -231,7 +231,7 @@ int dec_main(unsigned char *m4v_buffer, unsigned char *rgb_buffer, int m4v_size)
         xframe.bitstream = m4v_buffer;
         xframe.length = m4v_size;
         xframe.image = rgb_buffer;
-        xframe.stride = XDIM;
+        xframe.stride = XDIM*3;
 	xframe.colorspace = XVID_CSP_RGB24;		// XVID_CSP_USER is fastest (no memcopy involved)
 
 /*       

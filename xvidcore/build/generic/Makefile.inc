@@ -53,12 +53,9 @@ SRC_INTEL = \
 	$(SRCDIR)/dct/x86_asm/fdct_mmx.asm \
 	$(SRCDIR)/dct/x86_asm/idct_mmx.asm \
 	$(SRCDIR)/image/x86_asm/interpolate8x8_mmx.asm \
-	$(SRCDIR)/image/x86_asm/rgb_to_yv12_mmx.asm \
-	$(SRCDIR)/image/x86_asm/yuv_to_yv12_mmx.asm \
-	$(SRCDIR)/image/x86_asm/yuyv_to_yv12_mmx.asm \
-	$(SRCDIR)/image/x86_asm/yv12_to_rgb24_mmx.asm \
-	$(SRCDIR)/image/x86_asm/yv12_to_rgb32_mmx.asm \
-	$(SRCDIR)/image/x86_asm/yv12_to_yuyv_mmx.asm \
+	$(SRCDIR)/image/x86_asm/colorspace_rgb_mmx.asm \
+	$(SRCDIR)/image/x86_asm/colorspace_yuyv_mmx.asm \
+	$(SRCDIR)/image/x86_asm/colorspace_yuv_mmx.asm \
 	$(SRCDIR)/motion/x86_asm/sad_mmx.asm \
 	$(SRCDIR)/quant/x86_asm/quantize4_mmx.asm \
 	$(SRCDIR)/quant/x86_asm/quantize_mmx.asm \

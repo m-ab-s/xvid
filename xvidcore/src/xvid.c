@@ -37,7 +37,7 @@
  *  - 22.12.2001  API change: added xvid_init() - Isibaar
  *  - 16.12.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: xvid.c,v 1.33.2.10 2002-11-02 16:11:07 chl Exp $
+ *  $Id: xvid.c,v 1.33.2.11 2002-11-07 10:28:15 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -243,24 +243,44 @@ xvid_init(void *handle,
 	colorspace_init();
 
 	/* All colorspace transformation functions User Format->YV12 */
-	rgb555_to_yv12 = rgb555_to_yv12_c;
-	rgb565_to_yv12 = rgb565_to_yv12_c;
-	rgb24_to_yv12  = rgb24_to_yv12_c;
-	rgb32_to_yv12  = rgb32_to_yv12_c;
-	yuv_to_yv12    = yuv_to_yv12_c;
-	yuyv_to_yv12   = yuyv_to_yv12_c;
-	uyvy_to_yv12   = uyvy_to_yv12_c;
+	yv12_to_yv12    = yv12_to_yv12_c;
+	rgb555_to_yv12  = rgb555_to_yv12_c;
+	rgb565_to_yv12  = rgb565_to_yv12_c;
+	bgr_to_yv12     = bgr_to_yv12_c;
+	bgra_to_yv12    = bgra_to_yv12_c;
+	abgr_to_yv12    = abgr_to_yv12_c;
+	rgba_to_yv12    = rgba_to_yv12_c;
+	yuyv_to_yv12    = yuyv_to_yv12_c;
+	uyvy_to_yv12    = uyvy_to_yv12_c;
+
+	rgb555i_to_yv12 = rgb555i_to_yv12_c;
+	rgb565i_to_yv12 = rgb565i_to_yv12_c;
+	bgri_to_yv12    = bgri_to_yv12_c;
+	bgrai_to_yv12   = bgrai_to_yv12_c;
+	abgri_to_yv12   = abgri_to_yv12_c;
+	rgbai_to_yv12   = rgbai_to_yv12_c;
+	yuyvi_to_yv12   = yuyvi_to_yv12_c;
+	uyvyi_to_yv12   = uyvyi_to_yv12_c;
+
 
 	/* All colorspace transformation functions YV12->User format */
-	yv12_to_rgb555 = yv12_to_rgb555_c;
-	yv12_to_rgb565 = yv12_to_rgb565_c;
-	yv12_to_rgb24  = yv12_to_rgb24_c;
-	yv12_to_rgb32  = yv12_to_rgb32_c;
-	yv12_to_abgr  = yv12_to_abgr_c;
-	yv12_to_rgba  = yv12_to_rgba_c;
-	yv12_to_yuv    = yv12_to_yuv_c;
-	yv12_to_yuyv   = yv12_to_yuyv_c;
-	yv12_to_uyvy   = yv12_to_uyvy_c;
+	yv12_to_rgb555  = yv12_to_rgb555_c;
+	yv12_to_rgb565  = yv12_to_rgb565_c;
+	yv12_to_bgr     = yv12_to_bgr_c;
+	yv12_to_bgra    = yv12_to_bgra_c;
+	yv12_to_abgr    = yv12_to_abgr_c;
+	yv12_to_rgba    = yv12_to_rgba_c;
+	yv12_to_yuyv    = yv12_to_yuyv_c;
+	yv12_to_uyvy    = yv12_to_uyvy_c;
+ 
+	yv12_to_rgb555i = yv12_to_rgb555i_c;
+	yv12_to_rgb565i = yv12_to_rgb565i_c;
+	yv12_to_bgri    = yv12_to_bgri_c;
+	yv12_to_bgrai   = yv12_to_bgrai_c;
+	yv12_to_abgri   = yv12_to_abgri_c;
+	yv12_to_rgbai   = yv12_to_rgbai_c;
+	yv12_to_yuyvi   = yv12_to_yuyvi_c;
+	yv12_to_uyvyi   = yv12_to_uyvyi_c;
 
 	/* Functions used in motion estimation algorithms */
 	calc_cbp = calc_cbp_c;
@@ -274,14 +294,20 @@ xvid_init(void *handle,
 //	Halfpel8_Refine = Halfpel8_Refine_c;
 
 #ifdef ARCH_X86
+
+	if ((cpu_flags & XVID_CPU_MMX) || (cpu_flags & XVID_CPU_MMXEXT) ||
+		(cpu_flags & XVID_CPU_3DNOW) || (cpu_flags & XVID_CPU_3DNOWEXT) ||
+		(cpu_flags & XVID_CPU_SSE) || (cpu_flags & XVID_CPU_SSE2))
+	{
+		/* Restore FPU context : emms_c is a nop functions */
+		emms = emms_mmx;
+	}
+
 	if ((cpu_flags & XVID_CPU_MMX) > 0) {
 
 		/* Forward and Inverse Discrete Cosine Transformation functions */
 		fdct = fdct_mmx;
 		idct = idct_mmx;
-
-		/* To restore FPU context after mmx use */
-		emms = emms_mmx;
 
 		/* Quantization related functions */
 		quant_intra   = quant_intra_mmx;
@@ -316,18 +342,21 @@ xvid_init(void *handle,
 //		interpolate8x8_avg2 = interpolate8x8_avg2_mmx;
 		interpolate8x8_avg4 = interpolate8x8_avg4_mmx;
 
-		/* Image RGB->YV12 related functions */
-		rgb24_to_yv12 = rgb24_to_yv12_mmx;
-		rgb32_to_yv12 = rgb32_to_yv12_mmx;
-		yuv_to_yv12   = yuv_to_yv12_mmx;
+		/* image input xxx_to_yv12 related functions */
+		yv12_to_yv12  = yv12_to_yv12_mmx;
+		bgr_to_yv12   = bgr_to_yv12_mmx;
+		bgra_to_yv12  = bgra_to_yv12_mmx;
 		yuyv_to_yv12  = yuyv_to_yv12_mmx;
 		uyvy_to_yv12  = uyvy_to_yv12_mmx;
 
-		/* Image YV12->RGB related functions */
-		yv12_to_rgb24 = yv12_to_rgb24_mmx;
-		yv12_to_rgb32 = yv12_to_rgb32_mmx;
+		/* image output yv12_to_xxx related functions */
+		yv12_to_bgr   = yv12_to_bgr_mmx;
+		yv12_to_bgra  = yv12_to_bgra_mmx;
 		yv12_to_yuyv  = yv12_to_yuyv_mmx;
 		yv12_to_uyvy  = yv12_to_uyvy_mmx;
+		
+		yv12_to_yuyvi = yv12_to_yuyvi_mmx;
+		yv12_to_uyvyi = yv12_to_uyvyi_mmx;
 
 		/* Motion estimation related functions */
 		calc_cbp = calc_cbp_mmx;
@@ -346,6 +375,9 @@ xvid_init(void *handle,
 		/* ME functions */
 		sad16bi = sad16bi_3dn;
 		sad8bi  = sad8bi_3dn;
+
+		yuyv_to_yv12  = yuyv_to_yv12_3dn;
+		uyvy_to_yv12  = uyvy_to_yv12_3dn;
 	}
 
 
@@ -367,7 +399,9 @@ xvid_init(void *handle,
 		transfer_8to16sub2 = transfer_8to16sub2_xmm;
 
 		/* Colorspace transformation */
-		yuv_to_yv12 = yuv_to_yv12_xmm;
+		yv12_to_yv12  = yv12_to_yv12_xmm;
+		yuyv_to_yv12  = yuyv_to_yv12_xmm;
+		uyvy_to_yv12  = yuyv_to_yv12_xmm;
 
 		/* ME functions */
 		sad16 = sad16_xmm;
@@ -471,7 +505,7 @@ xvid_decore(void *handle,
 {
 	switch (opt) {
 	case XVID_DEC_DECODE:
-		return decoder_decode((DECODER *) handle, (XVID_DEC_FRAME *) param1);
+		return decoder_decode((DECODER *) handle, (XVID_DEC_FRAME *) param1, (XVID_DEC_STATS*) param2);
 
 	case XVID_DEC_CREATE:
 		return decoder_create((XVID_DEC_PARAM *) param1);

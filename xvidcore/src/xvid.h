@@ -28,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.8 2002-11-04 10:53:49 syskin Exp $
+*  $Id: xvid.h,v 1.17.2.9 2002-11-07 10:28:15 suxen_drol Exp $
 *
 *****************************************************************************/
 
@@ -151,6 +151,32 @@ extern "C" {
 		void *handle;
 	}
 	XVID_DEC_PARAM;
+
+
+#define XVID_DEC_VOP	0
+#define XVID_DEC_VOL	1
+
+	typedef struct
+	{
+		int notify;			/* [out]	output 'mode' */
+		union
+		{
+			struct	/* XVID_DEC_VOP */
+			{
+				int time_base;		/* [out]	time base */
+				int time_increment;	/* [out]	time increment */
+			} vop;
+			struct	/* XVID_DEC_VOL */
+			{
+				int general;		/* [out]	flags: eg. frames are interlaced */
+				int width;			/* [out]	width */
+				int height;			/* [out]	height */
+				int aspect_ratio;	/* [out]	aspect ratio */
+				int par_width;		/* [out]	aspect ratio width */
+				int par_height;		/* [out]	aspect ratio height */
+			} vol;
+		} data;
+	} XVID_DEC_STATS;
 
 
 	typedef struct
@@ -325,6 +351,7 @@ extern "C" {
 		int length;				/* [out] bitstream length (bytes) */
 
 		void *image;			/* [in] image ptr */
+		int stride;
 		int colorspace;			/* [in] source colorspace */
 
 		unsigned char *quant_intra_matrix;	// [in] custom intra qmatrix */

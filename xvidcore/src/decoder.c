@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.7 2002-10-30 23:11:48 Isibaar Exp $
+ *  $Id: decoder.c,v 1.37.2.8 2002-11-07 10:28:15 suxen_drol Exp $
  *
  *************************************************************************/
 
@@ -91,25 +91,28 @@
 #include "utils/mem_align.h"
 
 int
-decoder_create(XVID_DEC_PARAM * param)
+decoder_resize(DECODER * dec)
 {
-	DECODER *dec;
+	/* free existing */
 
-	dec = xvid_malloc(sizeof(DECODER), CACHE_LINE);
-	if (dec == NULL) {
-		return XVID_ERR_MEMORY;
-	}
-	param->handle = dec;
+	image_destroy(&dec->refn[0], dec->edged_width, dec->edged_height);
+	image_destroy(&dec->refn[1], dec->edged_width, dec->edged_height);
+	image_destroy(&dec->refn[2], dec->edged_width, dec->edged_height);
+	image_destroy(&dec->refh, dec->edged_width, dec->edged_height);
+	image_destroy(&dec->cur, dec->edged_width, dec->edged_height);
 
-	dec->width = param->width;
-	dec->height = param->height;
+	if (dec->last_mbs) 
+		xvid_free(dec->last_mbs);
+	if (dec->mbs)
+		xvid_free(dec->mbs);
+
+	/* realloc */
 
 	dec->mb_width = (dec->width + 15) / 16;
 	dec->mb_height = (dec->height + 15) / 16;
 
 	dec->edged_width = 16 * dec->mb_width + 2 * EDGE_SIZE;
 	dec->edged_height = 16 * dec->mb_height + 2 * EDGE_SIZE;
-	dec->low_delay = 0;
 
 	if (image_create(&dec->cur, dec->edged_width, dec->edged_height)) {
 		xvid_free(dec);
@@ -121,6 +124,7 @@ decoder_create(XVID_DEC_PARAM * param)
 		xvid_free(dec);
 		return XVID_ERR_MEMORY;
 	}
+
 	// add by chenm001 <chenm001@163.com>
 	// for support B-frame to reference last 2 frame
 	if (image_create(&dec->refn[1], dec->edged_width, dec->edged_height)) {
@@ -158,7 +162,6 @@ decoder_create(XVID_DEC_PARAM * param)
 		xvid_free(dec);
 		return XVID_ERR_MEMORY;
 	}
-
 	memset(dec->mbs, 0, sizeof(MACROBLOCK) * dec->mb_width * dec->mb_height);
 
 	// add by chenm001 <chenm001@163.com>
@@ -179,14 +182,49 @@ decoder_create(XVID_DEC_PARAM * param)
 
 	memset(dec->last_mbs, 0, sizeof(MACROBLOCK) * dec->mb_width * dec->mb_height);
 
+	return XVID_ERR_OK;
+}
+
+
+int
+decoder_create(XVID_DEC_PARAM * param)
+{
+	DECODER *dec;
+
+	dec = xvid_malloc(sizeof(DECODER), CACHE_LINE);
+	if (dec == NULL) {
+		return XVID_ERR_MEMORY;
+	}
+	memset(dec, 0, sizeof(DECODER));
+
+	param->handle = dec;
+
+	dec->width = param->width;
+	dec->height = param->height;
+
+	image_null(&dec->cur);
+	image_null(&dec->refn[0]);
+	image_null(&dec->refn[1]);
+	image_null(&dec->refn[2]);
+	image_null(&dec->refh);
+
+	dec->mbs = NULL;
+	dec->last_mbs = NULL;
+
 	init_timer();
 
 	// add by chenm001 <chenm001@163.com>
 	// for support B-frame to save reference frame's time
 	dec->frames = -1;
 	dec->time = dec->time_base = dec->last_time_base = 0;
+	dec->low_delay = 0;
 
-	return XVID_ERR_OK;
+	dec->fixed_dimensions = (dec->width > 0 && dec->height > 0);
+
+	if (dec->fixed_dimensions)
+		return decoder_resize(dec);
+	else
+		return XVID_ERR_OK;		
 }
 
 
@@ -492,16 +530,25 @@ decoder_mbinter(DECODER * dec,
 void
 decoder_iframe(DECODER * dec,
 			   Bitstream * bs,
+			   int reduced_resolution,
 			   int quant,
 			   int intra_dc_threshold)
 {
 	uint32_t bound;
 	uint32_t x, y;
+	int mb_width = dec->mb_width;
+	int mb_height = dec->mb_height;
+	
+	if (reduced_resolution)
+	{
+		mb_width /= 2;
+		mb_height /= 2;
+	}
 
 	bound = 0;
 
-	for (y = 0; y < dec->mb_height; y++) {
-		for (x = 0; x < dec->mb_width; x++) {
+	for (y = 0; y < mb_height; y++) {
+		for (x = 0; x < mb_width; x++) {
 			MACROBLOCK *mb;
 			uint32_t mcbpc;
 			uint32_t cbpc;
@@ -514,7 +561,8 @@ decoder_iframe(DECODER * dec,
 
 			if (check_resync_marker(bs, 0))
 			{
-				bound = read_video_packet_header(bs, 0, &quant);
+				bound = read_video_packet_header(bs, dec, 0, 
+							&quant, NULL, NULL, &intra_dc_threshold);
 				x = bound % dec->mb_width;
 				y = bound / dec->mb_width;
 			}
@@ -552,10 +600,10 @@ decoder_iframe(DECODER * dec,
 
 			decoder_mbintra(dec, mb, x, y, acpred_flag, cbp, bs, quant,
 							intra_dc_threshold, bound);
+
 		}
 		if(dec->out_frm)
 		  output_slice(&dec->cur, dec->edged_width,dec->width,dec->out_frm,0,y,dec->mb_width);
-
 	}
 
 }
@@ -604,17 +652,34 @@ get_motion_vector(DECODER * dec,
 
 	mv->x = mv_x;
 	mv->y = mv_y;
-
 }
 
 
+
+static __inline int gmc_sanitize(int value, int quarterpel, int fcode)
+{
+	int length = 1 << (fcode+4);
+
+	if (quarterpel) value *= 2;
+
+	if (value < -length) 
+		return -length;
+	else if (value >= length) 
+		return length-1;
+	else return value;
+}
+
+
+/* for P_VOP set gmc_mv to NULL */
 void
 decoder_pframe(DECODER * dec,
 			   Bitstream * bs,
 			   int rounding,
+			   int reduced_resolution,
 			   int quant,
 			   int fcode,
-			   int intra_dc_threshold)
+			   int intra_dc_threshold,
+			   VECTOR * gmc_mv)
 {
 
 	uint32_t x, y;
@@ -639,7 +704,8 @@ decoder_pframe(DECODER * dec,
 
 			if (check_resync_marker(bs, fcode - 1))
 			{
-				bound = read_video_packet_header(bs, fcode - 1, &quant);
+				bound = read_video_packet_header(bs, dec, fcode - 1, 
+					&quant, &fcode, NULL, &intra_dc_threshold);
 				x = bound % dec->mb_width;
 				y = bound / dec->mb_width;
 			}
@@ -656,6 +722,7 @@ decoder_pframe(DECODER * dec,
 				uint32_t cbpy;
 				uint32_t cbp;
 				uint32_t intra;
+				int mcsel = 0;		// mcsel: '0'=local motion, '1'=GMC
 
 				cp_mb++;
 				mcbpc = get_mcbpc_inter(bs);
@@ -670,6 +737,11 @@ decoder_pframe(DECODER * dec,
 
 				if (intra) {
 					acpred_flag = BitstreamGetBit(bs);
+				}
+
+				if (gmc_mv && (mb->mode == MODE_INTER || mb->mode == MODE_INTER_Q))
+				{
+					mcsel = BitstreamGetBit(bs);
 				}
 
 				cbpy = get_cbpy(bs, intra);
@@ -710,7 +782,13 @@ decoder_pframe(DECODER * dec,
 				}
 
 				if (mb->mode == MODE_INTER || mb->mode == MODE_INTER_Q) {
-					if (dec->interlacing && mb->field_pred) {
+
+					if (mcsel)
+					{
+						mb->mvs[0].x = mb->mvs[1].x = mb->mvs[2].x = mb->mvs[3].x = gmc_sanitize(gmc_mv[0].x, dec->quarterpel, fcode);
+						mb->mvs[0].y = mb->mvs[1].y = mb->mvs[2].y = mb->mvs[3].y = gmc_sanitize(gmc_mv[0].y, dec->quarterpel, fcode);
+
+					} else if (dec->interlacing && mb->field_pred) {
 						get_motion_vector(dec, bs, x, y, 0, &mb->mvs[0],
 										  fcode, bound);
 						get_motion_vector(dec, bs, x, y, 0, &mb->mvs[1],
@@ -742,12 +820,20 @@ decoder_pframe(DECODER * dec,
 
 				decoder_mbinter(dec, mb, x, y, acpred_flag, cbp, bs, quant,
 								rounding);
-			} else				// not coded
+
+			} 
+			else if (gmc_mv)	/* not coded S_VOP macroblock */
+			{
+				mb->mode = MODE_NOT_CODED;
+				mb->mvs[0].x = mb->mvs[1].x = mb->mvs[2].x = mb->mvs[3].x = gmc_sanitize(gmc_mv[0].x, dec->quarterpel, fcode);
+				mb->mvs[0].y = mb->mvs[1].y = mb->mvs[2].y = mb->mvs[3].y = gmc_sanitize(gmc_mv[0].y, dec->quarterpel, fcode);
+				decoder_mbinter(dec, mb, x, y, 0, 0, bs, quant, rounding);
+			}
+			else	/* not coded P_VOP macroblock */
 			{
 				mb->mode = MODE_NOT_CODED;
 				mb->mvs[0].x = mb->mvs[1].x = mb->mvs[2].x = mb->mvs[3].x = 0;
 				mb->mvs[0].y = mb->mvs[1].y = mb->mvs[2].y = mb->mvs[3].y = 0;
-
 				// copy macroblock directly from ref to cur
 
 				start_timer();
@@ -785,7 +871,9 @@ decoder_pframe(DECODER * dec,
 								 dec->refn[0].v +
 								 (8 * y) * dec->edged_width / 2 + (8 * x),
 								 dec->edged_width / 2);
+				
 				stop_transfer_timer();
+
 				if(dec->out_frm && cp_mb > 0) {
 				  output_slice(&dec->cur, dec->edged_width,dec->width,dec->out_frm,st_mb,y,cp_mb);
 				  cp_mb = 0;
@@ -1363,15 +1451,17 @@ mb_swap(MACROBLOCK ** mb1,
 
 int
 decoder_decode(DECODER * dec,
-			   XVID_DEC_FRAME * frame)
+			   XVID_DEC_FRAME * frame, XVID_DEC_STATS * stats)
 {
 
 	Bitstream bs;
 	uint32_t rounding;
+	uint32_t reduced_resolution;
 	uint32_t quant;
 	uint32_t fcode_forward;
 	uint32_t fcode_backward;
 	uint32_t intra_dc_threshold;
+	VECTOR gmc_mv[5];
 	uint32_t vop_type;
 
 	start_global_timer();
@@ -1380,29 +1470,65 @@ decoder_decode(DECODER * dec,
 
 	BitstreamInit(&bs, frame->bitstream, frame->length);
 
+#ifdef BFRAMES_DEC
+	// XXX: 0x7f is only valid whilst decoding vfw xvid/divx5 avi's
 	if(BitstreamShowBits(&bs, 8) == 0x7f)
+	{
+		if (stats)
+			stats->notify = XVID_DEC_VOP;
+		frame->length = 1;
+		image_output(&dec->cur, dec->width, dec->height, dec->edged_width,
+					 frame->image, frame->stride, frame->colorspace, dec->interlacing);
 		return XVID_ERR_OK;
+	}
+#endif
 
 	// add by chenm001 <chenm001@163.com>
 	// for support B-frame to reference last 2 frame
 	dec->frames++;
+
+xxx:
 	vop_type =
-		BitstreamReadHeaders(&bs, dec, &rounding, &quant, &fcode_forward,
-							 &fcode_backward, &intra_dc_threshold);
+		BitstreamReadHeaders(&bs, dec, &rounding, &reduced_resolution, 
+			&quant, &fcode_forward, &fcode_backward, &intra_dc_threshold, gmc_mv);
+
+	DPRINTF(DPRINTF_HEADER, "vop_type=%i", vop_type);
+
+	if (vop_type == -2 || vop_type == -3)
+	{
+		if (vop_type == -3)
+			decoder_resize(dec);
+			
+		if (stats)
+		{
+			stats->notify = XVID_DEC_VOL;
+			stats->data.vol.general = 0;
+			if (dec->interlacing)
+				stats->data.vol.general |= XVID_INTERLACING;
+			stats->data.vol.width = dec->width;
+			stats->data.vol.height = dec->height;
+			stats->data.vol.aspect_ratio = dec->aspect_ratio;
+			stats->data.vol.par_width = dec->par_width;
+			stats->data.vol.par_height = dec->par_height;
+			frame->length = BitstreamPos(&bs) / 8;
+			return XVID_ERR_OK;
+		}
+		goto xxx;
+	} 
 
 	dec->p_bmv.x = dec->p_bmv.y = dec->p_fmv.y = dec->p_fmv.y = 0;	// init pred vector to 0
 
 	switch (vop_type) {
 	case P_VOP:
-		decoder_pframe(dec, &bs, rounding, quant, fcode_forward,
-					   intra_dc_threshold);
+		decoder_pframe(dec, &bs, rounding, reduced_resolution, quant, 
+						fcode_forward, intra_dc_threshold, NULL);
 #ifdef BFRAMES_DEC
 		DEBUG1("P_VOP  Time=", dec->time);
 #endif
 		break;
 
 	case I_VOP:
-		decoder_iframe(dec, &bs, quant, intra_dc_threshold);
+		decoder_iframe(dec, &bs, reduced_resolution, quant, intra_dc_threshold);
 #ifdef BFRAMES_DEC
 		DEBUG1("I_VOP  Time=", dec->time);
 #endif
@@ -1421,6 +1547,11 @@ decoder_decode(DECODER * dec,
 #endif
 		break;
 
+	case S_VOP :
+		decoder_pframe(dec, &bs, rounding, reduced_resolution, quant, 
+						fcode_forward, intra_dc_threshold, gmc_mv);
+		break;
+
 	case N_VOP:				// vop not coded
 		// when low_delay==0, N_VOP's should interpolate between the past and future frames
 		image_copy(&dec->cur, &dec->refn[0], dec->edged_width, dec->height);
@@ -1430,6 +1561,8 @@ decoder_decode(DECODER * dec,
 		break;
 
 	default:
+		if (stats)
+			stats->notify = 0;
 		return XVID_ERR_FAIL;
 	}
 
@@ -1443,30 +1576,30 @@ decoder_decode(DECODER * dec,
 
 #ifdef BFRAMES_DEC
 	// test if no B_VOP
-        if (dec->low_delay || dec->frames == 0) {
+	if (dec->low_delay || dec->frames == 0) {
 #endif
-	image_output(&dec->cur, dec->width, dec->height, dec->edged_width,
-					 frame->image, frame->stride, frame->colorspace);
+		image_output(&dec->cur, dec->width, dec->height, dec->edged_width,
+					 frame->image, frame->stride, frame->colorspace, dec->interlacing);
 
 #ifdef BFRAMES_DEC
 	} else {
-                if (dec->frames >= 1) {
+		if (dec->frames >= 1) {
 			start_timer();
-			if ((vop_type == I_VOP || vop_type == P_VOP)) {
+			if ((vop_type == I_VOP || vop_type == P_VOP || vop_type == S_VOP)) {
 				image_output(&dec->refn[0], dec->width, dec->height,
 							 dec->edged_width, frame->image, frame->stride,
-							 frame->colorspace);
+							 frame->colorspace, dec->interlacing);
 			} else if (vop_type == B_VOP) {
 				image_output(&dec->cur, dec->width, dec->height,
 							 dec->edged_width, frame->image, frame->stride,
-							 frame->colorspace);
+							 frame->colorspace, dec->interlacing);
 			}
 			stop_conv_timer();
 		}
 	}
 #endif
 
-	if (vop_type == I_VOP || vop_type == P_VOP) {
+	if (vop_type == I_VOP || vop_type == P_VOP || vop_type == S_VOP) {
 		image_swap(&dec->refn[0], &dec->refn[1]);
 		image_swap(&dec->cur, &dec->refn[0]);
 
@@ -1480,6 +1613,13 @@ decoder_decode(DECODER * dec,
                 //if (!dec->low_delay && vop_type == P_VOP)
                 if (vop_type == P_VOP)
 			mb_swap(&dec->mbs, &dec->last_mbs);
+	}
+
+	if (stats)
+	{
+		stats->notify = XVID_DEC_VOP;
+		stats->data.vop.time_base = (int)dec->time_base;
+		stats->data.vop.time_increment = 0;	//XXX: todo
 	}
 
 	emms();

@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.15 2002-11-02 16:12:27 chl Exp $
+ *  $Id: encoder.c,v 1.76.2.16 2002-11-07 10:28:15 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -105,13 +105,6 @@ static int DQtab[4] = {
 static int iDQtab[5] = {
 	1, 0, NO_CHANGE, 2, 3
 };
-
-
-static void __inline
-image_null(IMAGE * image)
-{
-	image->y = image->u = image->v = NULL;
-}
 
 
 /*****************************************************************************
@@ -623,7 +616,7 @@ queue_image(Encoder * pEnc, XVID_ENC_FRAME * pFrame)
 	start_timer();
 	if (image_input
 		(&pEnc->queue[pEnc->queue_tail], pEnc->mbParam.width, pEnc->mbParam.height,
-		 pEnc->mbParam.edged_width, pFrame->image, pFrame->colorspace))
+		 pEnc->mbParam.edged_width, pFrame->image, pFrame->stride, pFrame->colorspace, pFrame->general & XVID_INTERLACING))
 		return;
 	stop_conv_timer();
 
@@ -718,6 +711,8 @@ ipvop_loop:
 			pFrame->length = BitstreamLength(&bs);
 			pFrame->intra = 0;
 
+			emms();
+
 			return XVID_ERR_OK;
 		}
 
@@ -735,6 +730,8 @@ ipvop_loop:
 
 		if (input_valid)
 			queue_image(pEnc, pFrame);
+
+		emms();
 
 		return XVID_ERR_OK;
 	}
@@ -769,6 +766,8 @@ ipvop_loop:
 			if (input_valid)
 				queue_image(pEnc, pFrame);
 
+			emms();
+
 			return XVID_ERR_OK;
 		}
 	}
@@ -799,8 +798,11 @@ bvop_loop:
 		start_timer();
 		if (image_input
 			(&pEnc->current->image, pEnc->mbParam.width, pEnc->mbParam.height,
-			pEnc->mbParam.edged_width, pFrame->image, pFrame->colorspace))
+			pEnc->mbParam.edged_width, pFrame->image, pFrame->stride, pFrame->colorspace, pFrame->general & XVID_INTERLACING))
+		{
+			emms();
 			return XVID_ERR_FORMAT;
+		}
 		stop_conv_timer();
 
 		// queue input frame, and dequue next image
@@ -839,6 +841,7 @@ bvop_loop:
 		}
 
 		pFrame->length = BitstreamLength(&bs);
+		emms();
 		return XVID_ERR_OK;
 	}
 
@@ -1076,6 +1079,7 @@ bvop_loop:
 	stop_global_timer();
 	write_timer();
 
+	emms();
 	return XVID_ERR_OK;
 }
 
@@ -1130,7 +1134,7 @@ encoder_encode(Encoder * pEnc,
 	start_timer();
 	if (image_input
 		(&pEnc->current->image, pEnc->mbParam.width, pEnc->mbParam.height,
-		 pEnc->mbParam.edged_width, pFrame->image, pFrame->colorspace) < 0)
+		 pEnc->mbParam.edged_width, pFrame->image, pFrame->stride, pFrame->colorspace, pFrame->general & XVID_INTERLACING) < 0)
 		return XVID_ERR_FORMAT;
 	stop_conv_timer();
 
@@ -1621,6 +1625,7 @@ FrameCodeP(Encoder * pEnc,
 
 	if (pEnc->current->global_flags & XVID_GMC) {
 //		printf("Global Motion = %d %d quarterpel=%d\n", pEnc->current->GMC_MV.x, pEnc->current->GMC_MV.y,pEnc->current->quarterpel);
+		DPRINTF(DPRINTF_HEADER, "Global Motion = %d %d quarterpel=%d\n", pEnc->current->GMC_MV.x, pEnc->current->GMC_MV.y,pEnc->current->quarterpel);
 		pEnc->current->coding_type = S_VOP;
 	} else
 		pEnc->current->coding_type = P_VOP;

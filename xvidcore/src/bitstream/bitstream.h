@@ -82,6 +82,15 @@
 //#define VIDOBJLAY_TYPE_SIMPLE_SCALABLE    2
 #define VIDOBJLAY_TYPE_CORE				3
 #define VIDOBJLAY_TYPE_MAIN				4
+//#define VIDOBJLAY_TYPE_NBIT				5
+//#define VIDOBJLAY_TYPE_ANIM_TEXT			6
+//#define VIDOBJLAY_TYPE_ANIM_MESH			7
+//#define VIDOBJLAY_TYPE_SIMPLE_FACE		8
+//#define VIDOBJLAY_TYPE_STILL_SCALABLE		9
+#define VIDOBJLAY_TYPE_ART_SIMPLE		10
+//#define VIDOBJLAY_TYPE_CORE_SCALABLE		11
+#define VIDOBJLAY_TYPE_ACE				12
+//#define VIDOBJLAY_TYPE_SIMPLE_FBA			13
 
 
 //#define VIDOBJLAY_AR_SQUARE           1
@@ -96,6 +105,12 @@
 #define VIDOBJLAY_SHAPE_BINARY			1
 #define VIDOBJLAY_SHAPE_BINARY_ONLY		2
 #define VIDOBJLAY_SHAPE_GRAYSCALE		3
+
+
+#define SPRITE_NONE		0
+#define SPRITE_STATIC	1
+#define SPRITE_GMC		2
+
 
 #define VO_START_CODE	0x8
 #define VOL_START_CODE	0x12
@@ -117,18 +132,25 @@
 #define RESYNC_MARKER 1
 
 
-int
-read_video_packet_header(Bitstream *bs, const int addbits, int * quant);
+int read_video_packet_header(Bitstream *bs, 
+						DECODER * dec, 
+						const int addbits, 
+						int * quant, 
+						int * fcode_forward,
+						int  * fcode_backward,
+						int * intra_dc_threshold);
 
 
 // header stuff
 int BitstreamReadHeaders(Bitstream * bs,
 						 DECODER * dec,
 						 uint32_t * rounding,
+						 uint32_t * reduced_resolution,
 						 uint32_t * quant,
 						 uint32_t * fcode_forward,
 						 uint32_t * fcode_backward,
-						 uint32_t * intra_dc_threshold);
+						 uint32_t * intra_dc_threshold,
+						 VECTOR * gmc_mv);
 
 
 void BitstreamWriteVolHeader(Bitstream * const bs,

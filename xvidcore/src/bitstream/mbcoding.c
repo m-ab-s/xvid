@@ -83,6 +83,19 @@ void bs_put_spritetrajectory(Bitstream * bs, const int val)
 	if (len) BitstreamPutBits(bs, code, len);
 }
 
+int bs_get_spritetrajectory(Bitstream * bs)
+{
+	int i;
+	for (i = 0; i < 12; i++)
+	{
+		if (BitstreamShowBits(bs, sprite_trajectory_len[i].len) == sprite_trajectory_len[i].code)
+		{
+			BitstreamSkip(bs, sprite_trajectory_len[i].len);
+			return i;
+		}
+	}
+	return -1;
+}
 
 void
 init_vlc_tables(void)

@@ -10,6 +10,7 @@ void init_vlc_tables(void);
 int check_resync_marker(Bitstream * bs, int addbits);
 
 void bs_put_spritetrajectory(Bitstream * bs, const int val);
+int bs_get_spritetrajectory(Bitstream * bs);
 
 int get_mcbpc_intra(Bitstream * bs);
 int get_mcbpc_inter(Bitstream * bs);

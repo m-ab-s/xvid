@@ -33,7 +33,7 @@
  *
  *  - 13.06.2002 Added legal header - Cosmetic
  *
- *  $Id: decoder.h,v 1.10 2002-07-19 11:15:21 albeu Exp $
+ *  $Id: decoder.h,v 1.10.2.1 2002-11-07 10:28:15 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -51,20 +51,36 @@
 
 typedef struct
 {
-	// bitstream
+	// vol bitstream
+
+	int time_inc_resolution;
+	int fixed_time_inc;
+	uint32_t time_inc_bits;
 
 	uint32_t shape;
-	uint32_t time_inc_bits;
 	uint32_t quant_bits;
 	uint32_t quant_type;
 	uint32_t quarterpel;
 
-	uint32_t interlacing;
+	int interlacing;
 	uint32_t top_field_first;
 	uint32_t alternate_vertical_scan;
 
+	int aspect_ratio;
+	int par_width;
+	int par_height;
+
+	int sprite_enable;
+	int sprite_warping_points;
+	int sprite_warping_accuracy;
+	int sprite_brightness_change;
+
+	int newpred_enable;
+	int reduced_resolution_enable;
+
 	// image
 
+	int fixed_dimensions;
 	uint32_t width;
 	uint32_t height;
 	uint32_t edged_width;
@@ -110,7 +126,7 @@ void init_decoder(uint32_t cpu_flags);
 int decoder_create(XVID_DEC_PARAM * param);
 int decoder_destroy(DECODER * dec);
 int decoder_decode(DECODER * dec,
-				   XVID_DEC_FRAME * frame);
+				   XVID_DEC_FRAME * frame, XVID_DEC_STATS * stats);
 
 
 #endif

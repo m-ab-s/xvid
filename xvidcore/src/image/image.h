@@ -18,6 +18,13 @@ IMAGE;
 
 void init_image(uint32_t cpu_flags);
 
+
+static void __inline
+image_null(IMAGE * image)
+{
+	image->y = image->u = image->v = NULL;
+}
+
 int32_t image_create(IMAGE * image,
 					 uint32_t edged_width,
 					 uint32_t edged_height);
@@ -57,7 +64,9 @@ int image_input(IMAGE * image,
 				int height,
 				uint32_t edged_width,
 				uint8_t * src,
-				int csp);
+				int src_stride,
+				int csp,
+				int interlaced);
 
 int image_output(IMAGE * image,
 				 uint32_t width,
@@ -65,7 +74,8 @@ int image_output(IMAGE * image,
 				 uint32_t edged_width,
 				 uint8_t * dst,
 				 uint32_t dst_stride,
-				 int csp);
+				 int csp,
+				 int interlaced);
 
 
 

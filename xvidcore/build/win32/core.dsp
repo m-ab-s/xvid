@@ -377,6 +377,115 @@ SOURCE=..\..\src\dct\idct.c
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\src\image\x86_asm\colorspace_mmx.inc
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
+
+!IF  "$(CFG)" == "core - Win32 Release"
+
+# Begin Custom Build - Assembling $(InputPath)
+InputDir=\xvid-dev\xvidcore\src\image\x86_asm
+IntDir=.\Release
+InputPath=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
+InputName=colorspace_rgb_mmx
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	nasm -f win32 -DPREFIX -I$(InputDir) -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "core - Win32 Debug"
+
+# Begin Custom Build - Assembling $(InputPath)
+InputDir=\xvid-dev\xvidcore\src\image\x86_asm
+IntDir=.\Debug
+InputPath=..\..\src\image\x86_asm\colorspace_rgb_mmx.asm
+InputName=colorspace_rgb_mmx
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	nasm -f win32 -DPREFIX -I$(InputDir) -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "core - Win32 Release _SMP"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
+
+!IF  "$(CFG)" == "core - Win32 Release"
+
+# Begin Custom Build - Assembling $(InputPath)
+InputDir=\xvid-dev\xvidcore\src\image\x86_asm
+IntDir=.\Release
+InputPath=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
+InputName=colorspace_yuv_mmx
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	nasm -f win32 -DPREFIX -I$(InputDir) -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "core - Win32 Debug"
+
+# Begin Custom Build - Assembling $(InputPath)
+InputDir=\xvid-dev\xvidcore\src\image\x86_asm
+IntDir=.\Debug
+InputPath=..\..\src\image\x86_asm\colorspace_yuv_mmx.asm
+InputName=colorspace_yuv_mmx
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	nasm -f win32 -DPREFIX -I$(InputDir) -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "core - Win32 Release _SMP"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
+
+!IF  "$(CFG)" == "core - Win32 Release"
+
+# Begin Custom Build - Assembling $(InputPath)
+InputDir=\xvid-dev\xvidcore\src\image\x86_asm
+IntDir=.\Release
+InputPath=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
+InputName=colorspace_yuyv_mmx
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	nasm -f win32 -DPREFIX -I$(InputDir) -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "core - Win32 Debug"
+
+# Begin Custom Build - Assembling $(InputPath)
+InputDir=\xvid-dev\xvidcore\src\image\x86_asm
+IntDir=.\Debug
+InputPath=..\..\src\image\x86_asm\colorspace_yuyv_mmx.asm
+InputName=colorspace_yuyv_mmx
+
+"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	nasm -f win32 -DPREFIX -I$(InputDir) -o $(IntDir)\$(InputName).obj $(InputPath)
+
+# End Custom Build
+
+!ELSEIF  "$(CFG)" == "core - Win32 Release _SMP"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\image\x86_asm\interpolate8x8_3dn.asm
 
 !IF  "$(CFG)" == "core - Win32 Release"
@@ -495,264 +604,6 @@ InputName=interpolate8x8_xmm
 IntDir=.\Release_SMP
 InputPath=..\..\src\image\x86_asm\interpolate8x8_xmm.asm
 InputName=interpolate8x8_xmm
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\src\image\x86_asm\rgb_to_yv12_mmx.asm
-
-!IF  "$(CFG)" == "core - Win32 Release"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Release
-InputPath=..\..\src\image\x86_asm\rgb_to_yv12_mmx.asm
-InputName=rgb_to_yv12_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "core - Win32 Debug"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Debug
-InputPath=..\..\src\image\x86_asm\rgb_to_yv12_mmx.asm
-InputName=rgb_to_yv12_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "core - Win32 Release _SMP"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Release_SMP
-InputPath=..\..\src\image\x86_asm\rgb_to_yv12_mmx.asm
-InputName=rgb_to_yv12_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\src\image\x86_asm\yuv_to_yv12_mmx.asm
-
-!IF  "$(CFG)" == "core - Win32 Release"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Release
-InputPath=..\..\src\image\x86_asm\yuv_to_yv12_mmx.asm
-InputName=yuv_to_yv12_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "core - Win32 Debug"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Debug
-InputPath=..\..\src\image\x86_asm\yuv_to_yv12_mmx.asm
-InputName=yuv_to_yv12_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "core - Win32 Release _SMP"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Release_SMP
-InputPath=..\..\src\image\x86_asm\yuv_to_yv12_mmx.asm
-InputName=yuv_to_yv12_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\src\image\x86_asm\yuyv_to_yv12_mmx.asm
-
-!IF  "$(CFG)" == "core - Win32 Release"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Release
-InputPath=..\..\src\image\x86_asm\yuyv_to_yv12_mmx.asm
-InputName=yuyv_to_yv12_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "core - Win32 Debug"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Debug
-InputPath=..\..\src\image\x86_asm\yuyv_to_yv12_mmx.asm
-InputName=yuyv_to_yv12_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "core - Win32 Release _SMP"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Release_SMP
-InputPath=..\..\src\image\x86_asm\yuyv_to_yv12_mmx.asm
-InputName=yuyv_to_yv12_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\src\image\x86_asm\yv12_to_rgb24_mmx.asm
-
-!IF  "$(CFG)" == "core - Win32 Release"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Release
-InputPath=..\..\src\image\x86_asm\yv12_to_rgb24_mmx.asm
-InputName=yv12_to_rgb24_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "core - Win32 Debug"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Debug
-InputPath=..\..\src\image\x86_asm\yv12_to_rgb24_mmx.asm
-InputName=yv12_to_rgb24_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "core - Win32 Release _SMP"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Release_SMP
-InputPath=..\..\src\image\x86_asm\yv12_to_rgb24_mmx.asm
-InputName=yv12_to_rgb24_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\src\image\x86_asm\yv12_to_rgb32_mmx.asm
-
-!IF  "$(CFG)" == "core - Win32 Release"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Release
-InputPath=..\..\src\image\x86_asm\yv12_to_rgb32_mmx.asm
-InputName=yv12_to_rgb32_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "core - Win32 Debug"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Debug
-InputPath=..\..\src\image\x86_asm\yv12_to_rgb32_mmx.asm
-InputName=yv12_to_rgb32_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "core - Win32 Release _SMP"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Release_SMP
-InputPath=..\..\src\image\x86_asm\yv12_to_rgb32_mmx.asm
-InputName=yv12_to_rgb32_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\src\image\x86_asm\yv12_to_yuyv_mmx.asm
-
-!IF  "$(CFG)" == "core - Win32 Release"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Release
-InputPath=..\..\src\image\x86_asm\yv12_to_yuyv_mmx.asm
-InputName=yv12_to_yuyv_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "core - Win32 Debug"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Debug
-InputPath=..\..\src\image\x86_asm\yv12_to_yuyv_mmx.asm
-InputName=yv12_to_yuyv_mmx
-
-"$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
-
-# End Custom Build
-
-!ELSEIF  "$(CFG)" == "core - Win32 Release _SMP"
-
-# Begin Custom Build - Assembling $(InputPath)
-IntDir=.\Release_SMP
-InputPath=..\..\src\image\x86_asm\yv12_to_yuyv_mmx.asm
-InputName=yv12_to_yuyv_mmx
 
 "$(IntDir)\$(InputName).obj" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
 	nasm -f win32 -DPREFIX -o $(IntDir)\$(InputName).obj $(InputPath)
@@ -986,6 +837,10 @@ InputName=sad_xmm
 # Begin Source File
 
 SOURCE=..\..\src\motion\motion.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\motion\motion_est.h
 # End Source File
 # Begin Source File
 

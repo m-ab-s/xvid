@@ -1,7 +1,7 @@
 ;/**************************************************************************
 ; *
 ; *	XVID MPEG-4 VIDEO CODEC
-; *	colorspace 
+; *	colorspace rgb
 ; *
 ; *	This program is free software; you can redistribute it and/or modify
 ; *	it under the terms of the GNU General Public License as published by
@@ -94,18 +94,18 @@ section .text
 
 
 ;------------------------------------------------------------------------------
-; RGB_TO_YV12( BYTES )
+; BGR_TO_YV12( BYTES )
 ;
-; BYTES		3=rgb24, 4=rgb32
+; BYTES		3=bgr(24bit), 4=bgra(32-bit)
 ;
 ; bytes=3/4, pixels = 2, vpixels=2
 ;------------------------------------------------------------------------------
-%macro RGB_TO_YV12_INIT		2
+%macro BGR_TO_YV12_INIT		2
 		movq mm7, [y_mul]		
 %endmacro
 
 
-%macro RGB_TO_YV12			2
+%macro BGR_TO_YV12			2
 		; y_out
 		pxor mm4, mm4
 		pxor mm5, mm5
@@ -194,18 +194,18 @@ section .text
 
 
 ;------------------------------------------------------------------------------
-; YV12_TO_RGB( BYTES )
+; YV12_TO_BGR( BYTES )
 ;
-; BYTES		3=rgb24, 4=rgb32
+; BYTES		3=bgr(24-bit), 4=bgra(32-bit)
 ;
 ; bytes=3/4, pixels = 8, vpixels=2
 ;------------------------------------------------------------------------------
-%macro YV12_TO_RGB_INIT		2
+%macro YV12_TO_BGR_INIT		2
 		pxor mm7, mm7			; clear mm7
 %endmacro
 
 
-%macro YV12_TO_RGB			2
+%macro YV12_TO_BGR			2
 %define TEMP_Y1  esp
 %define TEMP_Y2  esp + 8
 %define TEMP_G1  esp + 16
@@ -370,7 +370,7 @@ section .text
 	punpcklbw mm0, mm3		; 0r5g5b50r4g4b4 -> mm0
 	punpckhbw mm5, mm3		; 0r7g7b70r6g6b6 -> mm5
 
-%if %1 == 3		; RGB24
+%if %1 == 3		; BGR (24-bit)
 	movd [edi], mm2			
 	psrlq mm2, 32
 
@@ -430,7 +430,7 @@ section .text
 
 	movd [edi+edx + 21], mm5
 
-%else		; RGB32
+%else		; BGRA (32-bit)
 	movq [edi], mm2			
 	movq [edi + 8], mm4		
 	movq [edi + 16], mm0	
@@ -475,11 +475,11 @@ section .text
 
 ; input
 
-MAKE_COLORSPACE  rgb24_to_yv12_mmx,0,   3,2,2,  RGB_TO_YV12,  3, -1
-MAKE_COLORSPACE  rgb32_to_yv12_mmx,0,   4,2,2,  RGB_TO_YV12,  4, -1
+MAKE_COLORSPACE  bgr_to_yv12_mmx,0,    3,2,2,  BGR_TO_YV12,  3, -1
+MAKE_COLORSPACE  bgra_to_yv12_mmx,0,   4,2,2,  BGR_TO_YV12,  4, -1
 
 ; output
 
-MAKE_COLORSPACE  yv12_to_rgb24_mmx,48,  3,8,2,  YV12_TO_RGB,  3, -1
-MAKE_COLORSPACE  yv12_to_rgb32_mmx,48,  4,8,2,  YV12_TO_RGB,  4, -1
+MAKE_COLORSPACE  yv12_to_bgr_mmx,48,   3,8,2,  YV12_TO_BGR,  3, -1
+MAKE_COLORSPACE  yv12_to_bgra_mmx,48,  4,8,2,  YV12_TO_BGR,  4, -1
 

@@ -756,7 +756,6 @@ MotionEstimation(MBParam * const pParam,
 	const IMAGE *const pCurrent = &current->image;
 	const IMAGE *const pRef = &reference->image;
 
-	FILE * debug;
 	const VECTOR zeroMV = { 0, 0 };
 
 	uint32_t x, y;

@@ -15,7 +15,7 @@
 
 #ifdef _DEBUG
 // debug level
-#define DPRINTF_LEVEL		0x00000000
+#define DPRINTF_LEVEL		0x0000000f
 #else
 #define DPRINTF_LEVEL		0x0
 #endif

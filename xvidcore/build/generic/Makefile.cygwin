@@ -29,7 +29,7 @@ AS = nasm
 AFLAGS = -f win32 -DPREFIX
 
 %.o: %.asm
-	$(AS) $(AFLAGS) $< -o $@
+	$(AS) $(AFLAGS) -I$(<D) $< -o $@
 
 RM = rm -rf
 
