@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.5 2002-09-29 15:53:42 chl Exp $
+ *  $Id: encoder.c,v 1.76.2.6 2002-09-29 15:56:21 chl Exp $
  *
  ****************************************************************************/
 
@@ -640,14 +640,14 @@ set_timecodes(FRAMEINFO* pCur,FRAMEINFO *pRef, int32_t time_base)
 		
 		//HEAVY DEBUG OUTPUT	remove when timecodes prove to be stable 
 
-		fprintf(stderr,"WriteVop:   %d - %d \n",
+/*		fprintf(stderr,"WriteVop:   %d - %d \n",
 			((int32_t)pCur->stamp / time_base), ((int32_t)pRef->stamp / time_base));
 		fprintf(stderr,"set_timecodes: VOP %1d   stamp=%lld ref_stamp=%lld  base=%d\n",
 			pCur->coding_type, pCur->stamp, pRef->stamp, time_base);
 		fprintf(stderr,"set_timecodes: VOP %1d   seconds=%d   ticks=%d   (ref-sec=%d  ref-tick=%d)\n",
 			pCur->coding_type, pCur->seconds, pCur->ticks, pRef->seconds, pRef->ticks);
 
-
+*/
 }
 
 
