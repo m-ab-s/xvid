@@ -20,7 +20,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_decraw.c,v 1.7.2.4 2003-08-09 09:52:02 chl Exp $
+ * $Id: xvid_decraw.c,v 1.7.2.5 2003-08-09 17:19:15 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -67,7 +67,7 @@ static char *ARG_INPUTFILE = NULL;
 static char filepath[256] = "./";
 static void *dec_handle = NULL;
 
-# define BUFFER_SIZE (2*1024*1024)
+#define BUFFER_SIZE (2*1024*1024)
 
 /*****************************************************************************
  *               Local prototypes
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 	unsigned char *mp4_buffer = NULL;
 	unsigned char *mp4_ptr    = NULL;
 	unsigned char *out_buffer = NULL;
-	int still_left_in_buffer;
+	int useful_bytes;
 	xvid_dec_stats_t xvid_dec_stats;
 	
 	double totaldectime;
@@ -132,26 +132,20 @@ int main(int argc, char *argv[])
  
 		if (strcmp("-asm", argv[i]) == 0 ) {
 			use_assembler = 1;
-		}
-		else if (strcmp("-d", argv[i]) == 0) {
+		} else if (strcmp("-d", argv[i]) == 0) {
 			ARG_SAVEDECOUTPUT = 1;
-		}
-		else if (strcmp("-i", argv[i]) == 0 && i < argc - 1 ) {
+		} else if (strcmp("-i", argv[i]) == 0 && i < argc - 1 ) {
 			i++;
 			ARG_INPUTFILE = argv[i];
-		}
-		else if (strcmp("-m", argv[i]) == 0) {
+		} else if (strcmp("-m", argv[i]) == 0) {
 			ARG_SAVEMPEGSTREAM = 1;
-		}
-		else if (strcmp("-help", argv[i]) == 0) {
+		} else if (strcmp("-help", argv[i]) == 0) {
 			usage();
 			return(0);
-		}
-		else {		
+		} else {
 			usage();
 			exit(-1);
 		}
-
 	}
   
 /*****************************************************************************
@@ -197,7 +191,7 @@ int main(int argc, char *argv[])
  ****************************************************************************/
 
 	/* Fill the buffer */
-	still_left_in_buffer = fread(mp4_buffer, 1, BUFFER_SIZE, in_file);
+	useful_bytes = fread(mp4_buffer, 1, BUFFER_SIZE, in_file);
 
 	totaldectime = 0;
 	totalsize = 0;
@@ -205,8 +199,6 @@ int main(int argc, char *argv[])
 	mp4_ptr = mp4_buffer;
 
 	do {
-
-		int mp4_size = (mp4_buffer + BUFFER_SIZE - mp4_ptr);
 		int used_bytes = 0;
 		double dectime;
 
@@ -214,13 +206,12 @@ int main(int argc, char *argv[])
 		 * If the buffer is half empty or there are no more bytes in it
 		 * then fill it.
 		 */
-		if (mp4_ptr > mp4_buffer + BUFFER_SIZE/2 ||
-			still_left_in_buffer <= 0) {
-			int rest = (mp4_buffer + BUFFER_SIZE - mp4_ptr);
+		if (mp4_ptr > mp4_buffer + BUFFER_SIZE/2) {
+			int already_in_buffer = (mp4_buffer + BUFFER_SIZE - mp4_ptr);
 
 			/* Move data if needed */
-			if (rest)
-				memcpy(mp4_buffer, mp4_ptr, rest);
+			if (already_in_buffer > 0)
+				memcpy(mp4_buffer, mp4_ptr, already_in_buffer);
 
 			/* Update mp4_ptr */
 			mp4_ptr = mp4_buffer; 
@@ -229,10 +220,9 @@ int main(int argc, char *argv[])
             if(feof(in_file))
 				break;
 
-			still_left_in_buffer = fread(mp4_buffer + rest,
-										 1,
-										 BUFFER_SIZE - rest,
-										 in_file);
+			useful_bytes += fread(mp4_buffer + already_in_buffer,
+								  1, BUFFER_SIZE - already_in_buffer,
+								  in_file);
 
 		}
 
@@ -242,37 +232,45 @@ int main(int argc, char *argv[])
 
 			/* Decode frame */
 			dectime = msecond();
-			used_bytes = dec_main(mp4_ptr, out_buffer, mp4_size, &xvid_dec_stats);
+			used_bytes = dec_main(mp4_ptr, out_buffer, useful_bytes, &xvid_dec_stats);
 			dectime = msecond() - dectime;
 
 			/* Resize image buffer if needed */
 			if(xvid_dec_stats.type == XVID_TYPE_VOL) {
 
-				/* Free old output buffer*/
-				if(out_buffer) free(out_buffer);
+				/* Check if old buffer is smaller */
+				if(XDIM*YDIM < xvid_dec_stats.data.vol.width*xvid_dec_stats.data.vol.height) {
 
-				/* Copy witdh and height from the vol structure */
-				XDIM = xvid_dec_stats.data.vol.width;
-				YDIM = xvid_dec_stats.data.vol.height;
+					/* Copy new witdh and new height from the vol structure */
+					XDIM = xvid_dec_stats.data.vol.width;
+					YDIM = xvid_dec_stats.data.vol.height;
 
-				/* Allocate the new buffer */
-				if((out_buffer = (unsigned char*)malloc(XDIM*YDIM*4)) == NULL)
-					goto free_all_memory;
+					/* Free old output buffer*/
+					if(out_buffer) free(out_buffer);
+
+					/* Allocate the new buffer */
+					out_buffer = (unsigned char*)malloc(XDIM*YDIM*4);
+					if(out_buffer == NULL)
+						goto free_all_memory;
+
+					fprintf(stderr, "Resized frame buffer to %dx%d\n", XDIM, YDIM);
+				}
 			}
 
 			/* Update buffer pointers */
 			if(used_bytes > 0) {
 				mp4_ptr += used_bytes;
-				still_left_in_buffer -= used_bytes;
+				useful_bytes -= used_bytes;
 
 				/* Total size */
 				totalsize += used_bytes;
 			}
 
-		}while(xvid_dec_stats.type <= 0 && still_left_in_buffer > 0);
+		}while(xvid_dec_stats.type <= 0 && useful_bytes > 0);
 
-		/* Negative buffer would mean we went too far */
-        if(still_left_in_buffer <= 0)
+		/* Check if there is a negative number of useful bytes left in buffer
+		 * This means we went too far */
+        if(useful_bytes < 0)
             break;
 		
     	/* Updated data - Count only usefull decode time */
@@ -393,7 +391,6 @@ static void usage()
 	fprintf(stderr, "Options :\n");
 	fprintf(stderr, " -asm           : use assembly optimizations (default=disabled)\n");
 	fprintf(stderr, " -i string      : input filename (default=stdin)\n");
-	fprintf(stderr, " -t integer     : input data type (raw=0, mp4u=1)\n");
 	fprintf(stderr, " -d             : save decoder output\n");
 	fprintf(stderr, " -m             : save mpeg4 raw stream to individual files\n");
 	fprintf(stderr, " -help          : This help message\n");

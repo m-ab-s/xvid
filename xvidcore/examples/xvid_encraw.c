@@ -21,7 +21,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.33 2003-08-09 16:46:46 Isibaar Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.34 2003-08-09 17:19:20 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -130,7 +130,6 @@ static int NUM_ZONES = 0;
 static int ARG_STATS = 0;
 static int ARG_DUMP = 0;
 static int ARG_LUMIMASKING = 0;
-static int ARG_QUARTERPEL = 0;
 static int ARG_BITRATE = 0;
 static int ARG_SINGLE = 0;
 static char *ARG_PASS1 = 0;
@@ -151,6 +150,8 @@ static int ARG_MAXBFRAMES = 0;
 static int ARG_PACKED = 0;
 static int ARG_DEBUG = 0;
 static int ARG_VOPDEBUG = 0;
+static int ARG_GMC = 0;
+static int ARG_QPEL = 0;
 
 #ifndef READ_PNM
 #define IMAGE_SIZE(x,y) ((x)*(y)*3/2)
@@ -322,8 +323,6 @@ main(int argc,
 			ARG_DUMP = 1;
 		} else if (strcmp("-lumimasking", argv[i]) == 0) {
 			ARG_LUMIMASKING = 1;
-		} else if (strcmp("-quarterpel", argv[i]) == 0) {
-			ARG_QUARTERPEL = 1;
 		} else if (strcmp("-type", argv[i]) == 0 && i < argc - 1) {
 			i++;
 			ARG_INPUTTYPE = atoi(argv[i]);
@@ -340,6 +339,10 @@ main(int argc,
 			ARG_OUTPUTFILE = argv[i];
 		} else if (strcmp("-vop_debug", argv[i]) == 0) {
 			ARG_VOPDEBUG = 1;
+		} else if (strcmp("-qpel", argv[i]) == 0) {
+			ARG_QPEL = 1;
+		} else if (strcmp("-gmc", argv[i]) == 0) {
+			ARG_GMC = 1;
 		} else if (strcmp("-help", argv[i])) {
 			usage();
 			return (0);
@@ -685,7 +688,8 @@ usage()
 	fprintf(stderr, "Other options\n");
 	fprintf(stderr, " -asm            : use assembly optmized code\n");
 	fprintf(stderr, " -quality integer: quality ([0..%d])\n", ME_ELEMENTS - 1);
-	fprintf(stderr, " -quarterpel     : use quarterpel refinement\n");
+	fprintf(stderr, " -qpel           : use quarter pixel ME\n");
+	fprintf(stderr, " -gmc            : use global motion compensation\n");
 	fprintf(stderr, " -packed         : packed mode\n");
 	fprintf(stderr, " -lumimasking    : use lumimasking algorithm\n");
 	fprintf(stderr, " -stats          : print stats about encoded frames\n");
@@ -1069,15 +1073,23 @@ enc_main(unsigned char *image,
 	}
 
 	/* Set up core's general features */
-	xvid_enc_frame.vol_flags = XVID_VOL_GMC;
+	xvid_enc_frame.vol_flags = 0;
 	if (ARG_STATS)
 		xvid_enc_frame.vol_flags |= XVID_VOL_EXTRASTATS;
-
-	if (ARG_QUARTERPEL)
+	if (ARG_QPEL)
 		xvid_enc_frame.vol_flags |= XVID_VOL_QUARTERPEL;
+	if (ARG_GMC)
+		xvid_enc_frame.vol_flags |= XVID_VOL_GMC;
 
 	/* Set up core's general features */
 	xvid_enc_frame.vop_flags = vop_presets[ARG_QUALITY];
+	if (ARG_QPEL && (xvid_enc_frame.vop_flags & XVID_ME_HALFPELREFINE16))
+		xvid_enc_frame.vop_flags |= XVID_ME_QUARTERPELREFINE16;
+	if (ARG_QPEL && (xvid_enc_frame.vop_flags & XVID_ME_HALFPELREFINE8))
+		xvid_enc_frame.vop_flags |= XVID_ME_QUARTERPELREFINE8;
+	if (ARG_GMC)
+		xvid_enc_frame.vop_flags |= XVID_ME_GME_REFINE;
+
     if (ARG_VOPDEBUG) {
         xvid_enc_frame.vop_flags |= XVID_VOP_DEBUG;
     }
@@ -1091,17 +1103,13 @@ enc_main(unsigned char *image,
 	/* Set up motion estimation flags */
 	xvid_enc_frame.motion = motion_presets[ARG_QUALITY];
 
-	if (ARG_QUARTERPEL)
-		xvid_enc_frame.motion |= (XVID_ME_QUARTERPELREFINE16 | XVID_ME_QUARTERPELREFINE8); 
-
 	/* We don't use special matrices */
 	xvid_enc_frame.quant_intra_matrix = NULL;
 	xvid_enc_frame.quant_inter_matrix = NULL;
 
 	/* Encode the frame */
-	ret =
-		xvid_encore(enc_handle, XVID_ENC_ENCODE, &xvid_enc_frame,
-					&xvid_enc_stats);
+	ret = xvid_encore(enc_handle, XVID_ENC_ENCODE, &xvid_enc_frame,
+					  &xvid_enc_stats);
 
 	*key = (xvid_enc_frame.out_flags & XVID_KEYFRAME);
 	*stats_type = xvid_enc_stats.type;
