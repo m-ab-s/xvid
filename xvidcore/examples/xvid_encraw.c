@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.2 2003-03-09 16:45:24 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.3 2003-03-11 01:08:10 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -84,6 +84,7 @@ static xvid_vop_t const vop_presets[] = {
 /* Maximum number of frames to encode */
 #define ABS_MAXFRAMENR 9999
 
+static int   ARG_STATS = 0;
 static int   ARG_BITRATE = 900;
 static int   ARG_QUANTI = 0;
 static int   ARG_QUALITY = 5;
@@ -217,6 +218,9 @@ int main(int argc, char *argv[])
 			i++;
 			ARG_INPUTFILE = argv[i];
 		}
+		else if (strcmp("-s", argv[i]) == 0) {
+			ARG_STATS = 1;
+		}
 		else if (strcmp("-t", argv[i]) == 0 && i < argc - 1 ) {
 			i++;
 			ARG_INPUTTYPE = atoi(argv[i]);
@@ -229,9 +233,8 @@ int main(int argc, char *argv[])
 			i++;
 			ARG_QUANTI = atoi(argv[i]);
 		}
-		else if (strcmp("-m", argv[i]) == 0 && i < argc - 1 ) {
-			i++;
-			ARG_SAVEMPEGSTREAM = atoi(argv[i]);
+		else if (strcmp("-m", argv[i]) == 0) {
+			ARG_SAVEMPEGSTREAM = 1;
 		}
 		else if (strcmp("-o", argv[i]) == 0 && i < argc - 1 ) {
 			i++;
@@ -391,15 +394,20 @@ int main(int argc, char *argv[])
 			break;
 		}		
 
-		printf("Frame %5d: type = %s, enctime(ms) =%6.1f, length(bytes) =%7d, "
-			   "psnr y = %2.2f, psnr u = %2.2f, psnr v = %2.2f\n",
+		printf("Frame %5d: type = %s, enctime(ms) =%6.1f, length(bytes) =%7d",
 			   (int)filenr,
 			   type,
 			   (float)enctime,
-			   (int)m4v_size,
-			   (stats[0] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[0]/((float)(XDIM)*(YDIM))),
-			   (stats[1] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[1]/((float)(XDIM)*(YDIM)/4)),
-			   (stats[2] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[2]/((float)(XDIM)*(YDIM)/4)));
+			   (int)m4v_size);
+
+		if(ARG_STATS) {
+			printf(", psnr y = %2.2f, psnr u = %2.2f, psnr v = %2.2f",
+				   (stats[0] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[0]/((float)(XDIM)*(YDIM))),
+				   (stats[1] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[1]/((float)(XDIM)*(YDIM)/4)),
+				   (stats[2] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[2]/((float)(XDIM)*(YDIM)/4)));
+		}
+
+		printf("\n");
 
 		/* Update encoding time stats */
 		totalenctime += enctime;
@@ -516,11 +524,12 @@ static void usage()
 	fprintf(stderr, " -bqo integer   : bframe quantizer offset (default=100)\n");
 	fprintf(stderr, " -f float       : target framerate (>0)\n");
 	fprintf(stderr, " -i string      : input filename (default=stdin)\n");
+	fprintf(stderr, " -s             : print stats about encoded frames\n");
 	fprintf(stderr, " -t integer     : input data type (yuv=0, pgm=1)\n");
 	fprintf(stderr, " -n integer     : number of frames to encode\n");
 	fprintf(stderr, " -q integer     : quality ([0..5])\n");
 	fprintf(stderr, " -d boolean     : save decoder output (0 False*, !=0 True)\n");
-	fprintf(stderr, " -m boolean     : save mpeg4 raw stream (0 False*, !=0 True)\n");
+	fprintf(stderr, " -m             : save mpeg4 raw stream\n");
 	fprintf(stderr, " -o string      : output container filename (only usefull when -m 1 is used) :\n");
 	fprintf(stderr, "                  When this option is not used : one file per encoded frame\n");
 	fprintf(stderr, "                  When this option is used : save to 'string' file\n");
@@ -675,7 +684,7 @@ static int enc_init(int use_assembler)
 	xvid_enc_create.frame_drop_ratio = 0;
 
 	/* Global encoder options */
-	xvid_enc_create.global = XVID_EXTRASTATS_ENABLE;
+	xvid_enc_create.global = (ARG_STATS)?XVID_EXTRASTATS_ENABLE:0;
 
 	/* I use a small value here, since will not encode whole movies, but short clips */
 	xerr = xvid_encore(NULL, XVID_ENC_CREATE, &xvid_enc_create, NULL);
@@ -746,7 +755,7 @@ static int enc_main(unsigned char* image,
 	xvid_enc_stats[0].sse_u = 0;
 
 	/* Encode the frame */
-	xvid_enc_frame.vop_flags |= XVID_EXTRASTATS;
+	xvid_enc_frame.vop_flags |= (ARG_STATS)?XVID_EXTRASTATS:0;
 	ret = xvid_encore(enc_handle, XVID_ENC_ENCODE, &xvid_enc_frame, &xvid_enc_stats);
 
 	*frametype = xvid_enc_stats[0].type;
