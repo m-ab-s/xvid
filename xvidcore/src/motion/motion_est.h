@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion_est.h,v 1.1.2.9 2002-12-08 14:57:09 syskin Exp $
+ *  $Id: motion_est.h,v 1.1.2.10 2002-12-11 10:32:29 syskin Exp $
  *
  ***************************************************************************/
 
@@ -100,6 +100,8 @@ static const int DQtab[4] = {
 	-1, -2, 1, 2
 };
 
+#define RRV_MV_SCALEDOWN(a)	( (a)>=0 ? (a+1)/2 : (a-1)/2 )
+#define RRV_MV_SCALEUP(a)	( (a)>0 ? 2*(a)-1 : (a)<0 ? 2*(a)+1 : (a) )
 
 typedef struct
 	{
@@ -127,6 +129,7 @@ typedef struct
 		int * temp;
 		int qpel, qpel_precision;
 		int chroma;
+		int rrv;
 //fields for interpolate and direct mode
 		const uint8_t *bRef;
 		const uint8_t *bRefH;
@@ -171,6 +174,34 @@ get_range(int32_t * const min_dx,
 	const int search_range = 32 << (fcode - 1);
 	const int high = search_range - 1;
 	const int low = -search_range;
+
+	k = 2 * (int)(width - x*block_sz);
+	*max_dx = MIN(high, k);
+	k = 2 * (int)(height -  y*block_sz);
+	*max_dy = MIN(high, k);
+	
+	k = -2 * (int)((x+1) * block_sz);
+	*min_dx = MAX(low, k);
+	k = -2 * (int)((y+1) * block_sz);
+	*min_dy = MAX(low, k);
+}
+
+static void __inline
+get_range_rrv(int32_t * const min_dx,
+		  int32_t * const max_dx,
+		  int32_t * const min_dy,
+		  int32_t * const max_dy,
+		  const uint32_t x,
+		  const uint32_t y,
+		  const uint32_t block_sz,	/* block dimension, 8 or 16 */
+		  const uint32_t width,
+		  const uint32_t height,
+		  const uint32_t fcode)
+{
+	int k;
+	const int search_range = 32 << (fcode - 1);
+	const int high = RRV_MV_SCALEUP(search_range - 1); //halfzero -> halfpel, because we do our search in halfpel
+	const int low = RRV_MV_SCALEUP(-search_range);
 
 	k = 2 * (int)(width - x*block_sz);
 	*max_dx = MIN(high, k);
@@ -250,17 +281,5 @@ SearchP(const IMAGE * const pRef,
 		const MACROBLOCK * const prevMBs,
 		int inter4v,
 		MACROBLOCK * const pMB);
-
-
-#ifdef _SMP
-bool
-SMP_MotionEstimation(MBParam * const pParam,
-				 FRAMEINFO * const current,
-				 FRAMEINFO * const reference,
-				 const IMAGE * const pRefH,
-				 const IMAGE * const pRefV,
-				 const IMAGE * const pRefHV,
-				 const uint32_t iLimit);
-#endif
 
 #endif							/* _MOTION_EST_H_ */

@@ -249,6 +249,20 @@ uint32_t sad16v_c(const uint8_t * const cur,
 	return sad[0]+sad[1]+sad[2]+sad[3];
 }
 
+uint32_t sad32v_c(const uint8_t * const cur, 
+			   const uint8_t * const ref, 
+			   const uint32_t stride, 
+			   int32_t *sad)
+{
+	sad[0] = sad16(cur, ref, stride, 256*4096);
+	sad[1] = sad16(cur + 8, ref + 8, stride, 256*4096);
+	sad[2] = sad16(cur + 8*stride, ref + 8*stride, stride, 256*4096);
+	sad[3] = sad16(cur + 8*stride + 8, ref + 8*stride + 8, stride, 256*4096);
+	
+	return sad[0]+sad[1]+sad[2]+sad[3];
+}
+
+
 
 #define MRSAD16_CORRFACTOR 8
 uint32_t

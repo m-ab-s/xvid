@@ -82,6 +82,7 @@ extern sad16vFuncPtr sad16v;
 sad16vFunc sad16v_xmm;
 sad16vFunc sad16v_mmx;
 sad16vFunc sad16v_c;
+sad16vFunc sad32v_c;
 sad16vFunc mrsad16v;
 sad16vFunc mrsad16v_c;
 

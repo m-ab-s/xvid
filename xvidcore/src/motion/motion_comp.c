@@ -180,7 +180,7 @@ MBMotionCompensation(MACROBLOCK * const mb,
 		int32_t dx = (quarterpel ? mb->qmvs[0].x : mb->mvs[0].x);
 		int32_t dy = (quarterpel ? mb->qmvs[0].y : mb->mvs[0].y);
 
-		if ( (mb->mode == MODE_NOT_CODED) && (dx==0) && (dy==0) ) {	/* quick copy */
+		if ( (!reduced_resolution) && (mb->mode == MODE_NOT_CODED) && (dx==0) && (dy==0) ) {	/* quick copy */
 			transfer16x16_copy(cur->y + 16 * (i + j * edged_width),
 							   ref->y + 16 * (i + j * edged_width),
 							   edged_width);
