@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: global.h,v 1.21.2.7 2003-06-28 15:50:55 chl Exp $
+ * $Id: global.h,v 1.21.2.8 2003-07-13 09:58:26 syskin Exp $
  *
  ****************************************************************************/
 
@@ -152,7 +152,7 @@ struct NEW_GMC_DATA
                         uint8_t *uDst, const uint8_t *uSrc,
                         uint8_t *vDst, const uint8_t *vSrc,
                         int dststride, int srcstride, int x, int y, int rounding);
-  void (*get_average_mv)(NEW_GMC_DATA *Dsp, VECTOR * const mv,
+  void (*get_average_mv)(const NEW_GMC_DATA * const Dsp, VECTOR * const mv,
                          int x, int y, int qpel);
 };
 
