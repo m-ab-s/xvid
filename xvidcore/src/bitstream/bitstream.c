@@ -1114,8 +1114,8 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 						const MBParam * pParam,
 						const FRAMEINFO * const frame)
 {
-	static const vo_id = 0;
-	static const vol_id = 0;
+	static const unsigned int vo_id = 0;
+	static const unsigned int vol_id = 0;
 	int vol_ver_id=1;
 
 	if ( pParam->m_quarterpel ||  (frame->global_flags & XVID_GMC) || 
