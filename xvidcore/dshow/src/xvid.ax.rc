@@ -13,7 +13,7 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Deutsch (Deutschland) resources
+// German (Germany) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
 #ifdef _WIN32
@@ -27,12 +27,12 @@ LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
 //
 
 IDB_LOGO                BITMAP  DISCARDABLE     "XviD_logo.bmp"
-#endif    // Deutsch (Deutschland) resources
+#endif    // German (Germany) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////////////////////////////////
-// Englisch (Australien) resources
+// English (Australia) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENA)
 #ifdef _WIN32
@@ -99,7 +99,8 @@ BEGIN
     CONTROL         103,IDC_STATIC,"Static",SS_BITMAP,36,7,142,27
     GROUPBOX        "Brightness",IDC_STATIC,7,54,202,43
     CONTROL         "Slider1",IDC_BRIGHTNESS,"msctls_trackbar32",
-                    TBS_AUTOTICKS | TBS_BOTH | WS_TABSTOP,17,65,181,27
+                    TBS_AUTOTICKS | TBS_BOTH | WS_DISABLED | WS_TABSTOP,17,
+                    65,181,27
     GROUPBOX        "Postprocessing",IDC_STATIC,7,102,202,46
     CONTROL         "Deblocking (UV)",IDC_DEBLOCK_UV,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,128,115,68,10
@@ -108,13 +109,13 @@ BEGIN
     GROUPBOX        "Output",IDC_STATIC,7,153,202,36
     CONTROL         "Flip video",IDC_FLIPVIDEO,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,23,168,46,10
-    COMBOBOX        IDC_COLORSPACE,72,166,63,30,CBS_DROPDOWNLIST | CBS_SORT | 
+    COMBOBOX        IDC_COLORSPACE,72,166,63,67,CBS_DROPDOWNLIST | 
                     WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "Reset",IDC_RESET,143,166,50,12
     CONTROL         "Film Effect",IDC_FILMEFFECT,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,128,130,49,10
     CONTROL         "Dering",IDC_DERING,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,23,130,37,10
+                    WS_DISABLED | WS_TABSTOP,23,130,37,10
 END
 
 
@@ -128,7 +129,7 @@ BEGIN
     IDS_ABOUT               "About"
 END
 
-#endif    // Englisch (Australien) resources
+#endif    // English (Australia) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

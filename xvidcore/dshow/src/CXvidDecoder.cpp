@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.cpp,v 1.1.2.8 2004-01-02 13:18:28 syskin Exp $
+ * $Id: CXvidDecoder.cpp,v 1.1.2.9 2004-01-07 13:50:28 syskin Exp $
  *
  ****************************************************************************/
 
@@ -212,6 +212,8 @@ CXvidDecoder::CXvidDecoder(LPUNKNOWN punk, HRESULT *phr) :
 	memset(&init, 0, sizeof(init));
 	init.version = XVID_VERSION;
 
+	ar_x = ar_y = 0;
+
 	m_hdll = LoadLibrary(XVID_DLL_NAME);
 	if (m_hdll == NULL) {
 		DPRINTF("dll load failed");
@@ -337,11 +339,15 @@ HRESULT CXvidDecoder::CheckInputType(const CMediaType * mtIn)
 	{
 		VIDEOINFOHEADER * vih = (VIDEOINFOHEADER *) mtIn->Format();
 		hdr = &vih->bmiHeader;
+		ar_x = vih->bmiHeader.biXPelsPerMeter*hdr->biWidth;
+		ar_y = vih->bmiHeader.biYPelsPerMeter*hdr->biHeight;
 	}
 	else if (*mtIn->FormatType() == FORMAT_VideoInfo2)
 	{
 		VIDEOINFOHEADER2 * vih2 = (VIDEOINFOHEADER2 *) mtIn->Format();
 		hdr = &vih2->bmiHeader;
+		ar_x = vih2->dwPictAspectRatioX;
+		ar_y = vih2->dwPictAspectRatioY;
 	}
 	else
 	{
@@ -390,7 +396,7 @@ HRESULT CXvidDecoder::GetMediaType(int iPosition, CMediaType *mtOut)
 		return E_UNEXPECTED;
 	}
 
-	VIDEOINFOHEADER * vih = (VIDEOINFOHEADER *) mtOut->ReallocFormatBuffer(sizeof(VIDEOINFOHEADER));
+	VIDEOINFOHEADER2 * vih = (VIDEOINFOHEADER2 *) mtOut->ReallocFormatBuffer(sizeof(VIDEOINFOHEADER2));
 	if (vih == NULL)
 	{
 		return E_OUTOFMEMORY;
@@ -409,23 +415,8 @@ HRESULT CXvidDecoder::GetMediaType(int iPosition, CMediaType *mtOut)
 
 	switch(iPosition)
 	{
-	case 0	:
-if ( USE_IYUV )
-{
-		vih->bmiHeader.biCompression = CLSID_MEDIASUBTYPE_IYUV.Data1;
-		vih->bmiHeader.biBitCount = 12;
-		mtOut->SetSubtype(&CLSID_MEDIASUBTYPE_IYUV);
-		break;
-}
-	case 1	:
-if ( USE_YV12 )
-{
-		vih->bmiHeader.biCompression = MEDIASUBTYPE_YV12.Data1;
-		vih->bmiHeader.biBitCount = 12;
-		mtOut->SetSubtype(&MEDIASUBTYPE_YV12);
-		break;
-}
-	case 2:
+
+	case 0:
 if ( USE_YUY2 )
 {
 		vih->bmiHeader.biCompression = MEDIASUBTYPE_YUY2.Data1;
@@ -433,7 +424,7 @@ if ( USE_YUY2 )
 		mtOut->SetSubtype(&MEDIASUBTYPE_YUY2);
 		break;
 }
-	case 3 :
+	case 1 :
 if ( USE_YVYU )
 {
 		vih->bmiHeader.biCompression = MEDIASUBTYPE_YVYU.Data1;
@@ -441,12 +432,28 @@ if ( USE_YVYU )
 		mtOut->SetSubtype(&MEDIASUBTYPE_YVYU);
 		break;
 }
-	case 4 :
+	case 2 :
 if ( USE_UYVY )
 {
 		vih->bmiHeader.biCompression = MEDIASUBTYPE_UYVY.Data1;
 		vih->bmiHeader.biBitCount = 16;
 		mtOut->SetSubtype(&MEDIASUBTYPE_UYVY);
+		break;
+}
+	case 3	:
+		if ( USE_IYUV )
+{
+		vih->bmiHeader.biCompression = CLSID_MEDIASUBTYPE_IYUV.Data1;
+		vih->bmiHeader.biBitCount = 12;
+		mtOut->SetSubtype(&CLSID_MEDIASUBTYPE_IYUV);
+		break;
+}
+	case 4	:
+if ( USE_YV12 )
+{
+		vih->bmiHeader.biCompression = MEDIASUBTYPE_YV12.Data1;
+		vih->bmiHeader.biBitCount = 12;
+		mtOut->SetSubtype(&MEDIASUBTYPE_YV12);
 		break;
 }
 	case 5 :
@@ -487,8 +494,16 @@ if ( USE_RG565 )
 
 	vih->bmiHeader.biSizeImage = GetBitmapSize(&vih->bmiHeader);
 
+	if (ar_x != 0 && ar_y != 0) {
+		vih->dwPictAspectRatioX = ar_x;
+		vih->dwPictAspectRatioY = ar_y;
+	} else { // just to be safe
+		vih->dwPictAspectRatioX = m_create.width;
+		vih->dwPictAspectRatioY = m_create.height;
+	}
+
 	mtOut->SetType(&MEDIATYPE_Video);
-	mtOut->SetFormatType(&FORMAT_VideoInfo);
+	mtOut->SetFormatType(&FORMAT_VideoInfo2);
 	mtOut->SetTemporalCompression(FALSE);
 	mtOut->SetSampleSize(vih->bmiHeader.biSizeImage);
 
@@ -699,18 +714,8 @@ HRESULT CXvidDecoder::Transform(IMediaSample *pIn, IMediaSample *pOut)
 	if (PPSettings.bFilmEffect)
 		m_frame.general |= XVID_FILMEFFECT;
 
-	if (PPSettings.bFlipVideo) {
-		if (rgb_flip)
-			m_frame.output.csp &= ~XVID_CSP_VFLIP;
-		else
-			m_frame.output.csp |= XVID_CSP_VFLIP;
-	}
-	else {
-		if (rgb_flip)
-			m_frame.output.csp |= XVID_CSP_VFLIP;
-		else
-			m_frame.output.csp &= ~XVID_CSP_VFLIP;
-	}
+	m_frame.output.csp &= ~XVID_CSP_VFLIP;
+	m_frame.output.csp |= rgb_flip^(PPSettings.bFlipVideo ? XVID_CSP_VFLIP : 0);
 
 repeat :
 
