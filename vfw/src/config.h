@@ -24,7 +24,7 @@ HWND hTooltip;
 
 #define XVID_BUILD		__TIME__ ", " __DATE__
 #define XVID_WEBSITE	"http://www.xvid.org/"
-#define XVID_SPECIAL_BUILD	"sysKin's build - designed for bugs (tm)"
+#define XVID_SPECIAL_BUILD	"(Vanilla CVS Build)"
 
 /* constants */
 #define CONFIG_HINTFILE		"\\hintfile.mvh"

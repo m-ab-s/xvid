@@ -386,6 +386,8 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	frame.general |= XVID_HALFPEL;
 //	frame.general |= XVID_ME_EPZS;
 
+	frame.general |= XVID_HQACPRED;
+
 	if (codec->config.motion_search > 4)
 		frame.general |= XVID_INTER4V;
 
@@ -456,6 +458,41 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	}
 
 	frame.motion |= pmvfast_presets[codec->config.motion_search];
+
+	switch (codec->config.vhq_mode)
+	{
+	case VHQ_MODE_DECISION :
+		frame.general |= XVID_MODEDECISION_BITS;
+		break;
+
+	case VHQ_LIMITED_SEARCH :
+		frame.general |= XVID_MODEDECISION_BITS;
+		frame.motion |= HALFPELREFINE16_BITS;
+		frame.motion |= QUARTERPELREFINE16_BITS;
+		break;
+
+	case VHQ_MEDIUM_SEARCH :
+		frame.general |= XVID_MODEDECISION_BITS;
+		frame.motion |= HALFPELREFINE16_BITS;
+		frame.motion |= HALFPELREFINE8_BITS;
+		frame.motion |= QUARTERPELREFINE16_BITS;
+		frame.motion |= QUARTERPELREFINE8_BITS;
+		frame.motion |= CHECKPREDICTION_BITS;
+		break;
+
+	case VHQ_WIDE_SEARCH :
+		frame.general |= XVID_MODEDECISION_BITS;
+		frame.motion |= HALFPELREFINE16_BITS;
+		frame.motion |= HALFPELREFINE8_BITS;
+		frame.motion |= QUARTERPELREFINE16_BITS;
+		frame.motion |= QUARTERPELREFINE8_BITS;
+		frame.motion |= CHECKPREDICTION_BITS;
+		frame.motion |= EXTSEARCH_BITS;
+		break;
+
+	default :
+		break;
+	}
 
 	frame.image = icc->lpInput;
 	frame.stride = (((icc->lpbiInput->biWidth * icc->lpbiInput->biBitCount) + 31) & ~31) >> 3;
