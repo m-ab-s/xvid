@@ -84,8 +84,6 @@ ChromaSAD(int dx, int dy, const SearchData * const data)
 {
 	int sad;
 	const uint32_t stride = data->iEdgedWidth/2;
-	dx = (dx >> 1) + roundtab_79[dx & 0x3];
-	dy = (dy >> 1) + roundtab_79[dy & 0x3];
 
 	if (dx == data->temp[5] && dy == data->temp[6]) return data->temp[7]; //it has been checked recently
 	data->temp[5]  = dx; data->temp[6] = dy; // backup
@@ -264,7 +262,8 @@ CheckCandidate16(const int x, const int y, const int Direction, int * const dir,
 	data->temp[0] += (data->lambda16 * t * data->temp[0])/1000;
 	data->temp[1] += (data->lambda8 * t * (data->temp[1] + NEIGH_8X8_BIAS))/100;
 
-	if (data->chroma) data->temp[0] += ChromaSAD(xc, yc, data);
+	if (data->chroma) data->temp[0] += ChromaSAD((xc >> 1) + roundtab_79[xc & 0x3],
+													(yc >> 1) + roundtab_79[yc & 0x3], data);
 
 	if (data->temp[0] < data->iMinSAD[0]) {
 		data->iMinSAD[0] = data->temp[0];
@@ -1124,19 +1123,18 @@ SearchP(const IMAGE * const pRef,
 		Search8(Data, 2*x + 1, 2*y + 1, MotionFlags, pParam, pMB, pMBs, 3, &Data8);
 		
 		if (Data->chroma) {
-			int sumx, sumy, dx, dy;
+			int sumx, sumy;
 
 			if(pParam->m_quarterpel) {
-				sumx= pMB->qmvs[0].x/2 + pMB->qmvs[1].x/2 + pMB->qmvs[2].x/2 + pMB->qmvs[3].x/2;
+				sumx = pMB->qmvs[0].x/2 + pMB->qmvs[1].x/2 + pMB->qmvs[2].x/2 + pMB->qmvs[3].x/2;
 				sumy = pMB->qmvs[0].y/2 + pMB->qmvs[1].y/2 + pMB->qmvs[2].y/2 + pMB->qmvs[3].y/2;
 			} else {
 				sumx = pMB->mvs[0].x + pMB->mvs[1].x + pMB->mvs[2].x + pMB->mvs[3].x;
 				sumy = pMB->mvs[0].y + pMB->mvs[1].y + pMB->mvs[2].y + pMB->mvs[3].y;
 			}
-			dx = (sumx >> 3) + roundtab_76[sumx & 0xf];
-			dy = (sumy >> 3) + roundtab_76[sumy & 0xf];
 			
-			Data->iMinSAD[1] += ChromaSAD(dx, dy, Data);
+			Data->iMinSAD[1] += ChromaSAD(	(sumx >> 3) + roundtab_76[sumx & 0xf],
+											(sumy >> 3) + roundtab_76[sumy & 0xf], Data);
 		}
 	}
 
