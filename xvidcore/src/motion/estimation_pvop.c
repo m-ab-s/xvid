@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_pvop.c,v 1.1.2.2 2003-09-30 18:20:31 edgomez Exp $
+ * $Id: estimation_pvop.c,v 1.1.2.3 2003-10-03 12:36:56 syskin Exp $
  *
  ****************************************************************************/
 
@@ -62,106 +62,83 @@ static const int xvid_me_lambda_vec8[32] =
 static void
 CheckCandidate16(const int x, const int y, const SearchData * const data, const unsigned int Direction)
 {
-	int xc, yc;
 	const uint8_t * Reference;
-	VECTOR * current;
 	int32_t sad; uint32_t t;
 
 	if ( (x > data->max_dx) || (x < data->min_dx)
 		|| (y > data->max_dy) || (y < data->min_dy) ) return;
 
-	if (!data->qpel_precision) {
-		Reference = GetReference(x, y, data);
-		current = data->currentMV;
-		xc = x; yc = y;
-	} else { /* x and y are in 1/4 precision */
-		Reference = xvid_me_interpolate16x16qpel(x, y, 0, data);
-		xc = x/2; yc = y/2; /* for chroma sad */
-		current = data->currentQMV;
-	}
+	Reference = GetReference(x, y, data);
 
 	sad = sad16v(data->Cur, Reference, data->iEdgedWidth, data->temp);
-	t = d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
+	t = d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel, 0);
 
 	sad += (data->lambda16 * t * sad)>>10;
 	data->temp[0] += (data->lambda8 * t * (data->temp[0] + NEIGH_8X8_BIAS))>>10;
 
-	if (data->chroma && sad < data->iMinSAD[0])
-		sad += xvid_me_ChromaSAD((xc >> 1) + roundtab_79[xc & 0x3],
-								(yc >> 1) + roundtab_79[yc & 0x3], data);
+	if (data->chroma) {
+		if (sad >= data->iMinSAD[0]) goto no16;
+		sad += xvid_me_ChromaSAD((x >> 1) + roundtab_79[x & 0x3],
+								(y >> 1) + roundtab_79[y & 0x3], data);
+	}
 
 	if (sad < data->iMinSAD[0]) {
 		data->iMinSAD[0] = sad;
-		current[0].x = x; current[0].y = y;
+		data->currentMV[0].x = x; data->currentMV[0].y = y;
 		*data->dir = Direction;
 	}
 
+no16:
 	if (data->temp[0] < data->iMinSAD[1]) {
-		data->iMinSAD[1] = data->temp[0]; current[1].x = x; current[1].y = y; }
+		data->iMinSAD[1] = data->temp[0]; data->currentMV[1].x = x; data->currentMV[1].y = y; }
 	if (data->temp[1] < data->iMinSAD[2]) {
-		data->iMinSAD[2] = data->temp[1]; current[2].x = x; current[2].y = y; }
+		data->iMinSAD[2] = data->temp[1]; data->currentMV[2].x = x; data->currentMV[2].y = y; }
 	if (data->temp[2] < data->iMinSAD[3]) {
-		data->iMinSAD[3] = data->temp[2]; current[3].x = x; current[3].y = y; }
+		data->iMinSAD[3] = data->temp[2]; data->currentMV[3].x = x; data->currentMV[3].y = y; }
 	if (data->temp[3] < data->iMinSAD[4]) {
-		data->iMinSAD[4] = data->temp[3]; current[4].x = x; current[4].y = y; }
+		data->iMinSAD[4] = data->temp[3]; data->currentMV[4].x = x; data->currentMV[4].y = y; }
 }
 
 static void
-CheckCandidate16_subpel(const int x, const int y, const SearchData * const data, const unsigned int Direction)
+CheckCandidate16_qpel(const int x, const int y, const SearchData * const data, const unsigned int Direction)
 {
-	int xc, yc;
 	const uint8_t *Reference;
-	VECTOR *current, *current2;
 	int32_t sad; uint32_t t;
 
 	if ( (x > data->max_dx) || (x < data->min_dx)
 		|| (y > data->max_dy) || (y < data->min_dy) ) return;
 
-	if (!data->qpel_precision) {
-		Reference = GetReference(x, y, data);
-		current = data->currentMV;
-		current2 = data->currentMV2;
-		xc = x; yc = y;
-	} else { /* x and y are in 1/4 precision */
-		Reference = xvid_me_interpolate16x16qpel(x, y, 0, data);
-		xc = x/2; yc = y/2; /* for chroma sad */
-		current = data->currentQMV;
-		current2 = data->currentQMV2;
-	}
+	Reference = xvid_me_interpolate16x16qpel(x, y, 0, data);
 
 	sad = sad16v(data->Cur, Reference, data->iEdgedWidth, data->temp);
-	t = d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
+	t = d_mv_bits(x, y, data->predMV, data->iFcode, 0, 0);
 
 	sad += (data->lambda16 * t * sad)>>10;
 	data->temp[0] += (data->lambda8 * t * (data->temp[0] + NEIGH_8X8_BIAS))>>10;
 
-	if (data->chroma && sad < data->iMinSAD[0])
-		sad += xvid_me_ChromaSAD((xc >> 1) + roundtab_79[xc & 0x3],
-								(yc >> 1) + roundtab_79[yc & 0x3], data);
+	if (data->chroma && (sad < data->iMinSAD[0] || sad < data->iMinSAD2[0]) )
+		sad += xvid_me_ChromaSAD(((x/2) >> 1) + roundtab_79[(x/2) & 0x3],
+								((y/2) >> 1) + roundtab_79[(y/2) & 0x3], data);
 
 	if (data->temp[0] < data->iMinSAD[1]) {
-		data->iMinSAD[1] = data->temp[0]; current[1].x = x; current[1].y = y; }
+		data->iMinSAD[1] = data->temp[0]; data->currentQMV[1].x = x; data->currentQMV[1].y = y; }
 	if (data->temp[1] < data->iMinSAD[2]) {
-		data->iMinSAD[2] = data->temp[1]; current[2].x = x; current[2].y = y; }
+		data->iMinSAD[2] = data->temp[1]; data->currentQMV[2].x = x; data->currentQMV[2].y = y; }
 	if (data->temp[2] < data->iMinSAD[3]) {
-		data->iMinSAD[3] = data->temp[2]; current[3].x = x; current[3].y = y; }
+		data->iMinSAD[3] = data->temp[2]; data->currentQMV[3].x = x; data->currentQMV[3].y = y; }
 	if (data->temp[3] < data->iMinSAD[4]) {
-		data->iMinSAD[4] = data->temp[3]; current[4].x = x; current[4].y = y; }
+		data->iMinSAD[4] = data->temp[3]; data->currentQMV[4].x = x; data->currentQMV[4].y = y; }
 
 	if (sad < data->iMinSAD[0]) {
 		*(data->iMinSAD2) = *(data->iMinSAD);
-		current2->x = current->x; current2->y = current->y;
+		data->currentQMV2->x = data->currentQMV->x;
+		data->currentQMV2->y = data->currentQMV->y;
 
 		data->iMinSAD[0] = sad;
-		current[0].x = x; current[0].y = y;
-		*data->dir = Direction;
-		return;
-	}
-
-	if (sad < *(data->iMinSAD2)) {
+		data->currentQMV[0].x = x; data->currentQMV[0].y = y;
+	} else if (sad < *(data->iMinSAD2)) {
 		*(data->iMinSAD2) = sad;
-		current2->x = x; current2->y = y;
-		*data->dir = Direction;
+		data->currentQMV2->x = x; data->currentQMV2->y = y;
 	}
 }
 
@@ -233,18 +210,16 @@ CheckCandidate32(const int x, const int y, const SearchData * const data, const 
 static void
 SubpelRefine_Fast(SearchData * data, CheckFunc * CheckCandidate)
 {
-/* Do a half-pel or q-pel refinement */
+/* Do a fast q-pel refinement */
 	VECTOR centerMV;
 	VECTOR second_best;
 	int best_sad = *data->iMinSAD;
 	int xo, yo, xo2, yo2;
 	int size = 2;
-	CheckFunc *backupFunc = CheckCandidate;
+	*data->iMinSAD2 = 0;
 
-	if(data->qpel_precision)
-		size = 1;
-
-	centerMV = *data->currentMV;
+	/* check all halfpixel positions near our best halfpel position */
+	centerMV = *data->currentQMV;
 	*data->iMinSAD = 256 * 4096;
 
 	CHECK_CANDIDATE(centerMV.x, centerMV.y - size, 0);
@@ -257,77 +232,59 @@ SubpelRefine_Fast(SearchData * data, CheckFunc * CheckCandidate)
 	CHECK_CANDIDATE(centerMV.x - size, centerMV.y, 0);
 	CHECK_CANDIDATE(centerMV.x - size, centerMV.y - size, 0);
 
-	second_best = *data->currentMV;
+	second_best = *data->currentQMV;
 
-	if(data->qpel_precision) {
-		second_best.x *= 2;	second_best.y *= 2;
-	}
+	/* after second_best has been found, go back to the vector we began with */
 
-	data->currentMV[0] = centerMV;
+	data->currentQMV[0] = centerMV;
 	*data->iMinSAD = best_sad;
-
-    centerMV = data->qpel_precision ? *data->currentQMV : *data->currentMV;
 
 	xo = centerMV.x;
 	yo = centerMV.y;
 	xo2 = second_best.x;
 	yo2 = second_best.y;
 
-	CheckCandidate = CheckCandidate16_subpel;
 	*data->iMinSAD2 = 256 * 4096;
 
-	if (yo == yo2)
-	{
+	if (yo == yo2) {
 		CHECK_CANDIDATE((xo+xo2)>>1, yo, 0);
 		CHECK_CANDIDATE(xo, yo-1, 0);
 		CHECK_CANDIDATE(xo, yo+1, 0);
 
-		if(best_sad <= *data->iMinSAD2)
-			goto ende;
+		if(best_sad <= *data->iMinSAD2) return;
 
 		if(data->currentQMV[0].x == data->currentQMV2[0].x) {
 			CHECK_CANDIDATE((xo+xo2)>>1, yo-1, 0);
 			CHECK_CANDIDATE((xo+xo2)>>1, yo+1, 0);
-			goto ende;
-		}
-		else {
+		} else {
 			CHECK_CANDIDATE((xo+xo2)>>1,
-				(data->currentQMV[0].x == xo) ? data->currentQMV[0].y : data->currentQMV2[0].y,
-				0);
-			goto ende;
+				(data->currentQMV[0].x == xo) ? data->currentQMV[0].y : data->currentQMV2[0].y, 0);
 		}
+		return;
 	}
 
-	if (xo == xo2)
-	{
+	if (xo == xo2) {
 		CHECK_CANDIDATE(xo, (yo+yo2)>>1, 0);
 		CHECK_CANDIDATE(xo-1, yo, 0);
 		CHECK_CANDIDATE(xo+1, yo, 0);
 
-		if(best_sad < *data->iMinSAD2)
-			goto ende;
+		if(best_sad < *data->iMinSAD2) return;
 
 		if(data->currentQMV[0].y == data->currentQMV2[0].y) {
 			CHECK_CANDIDATE(xo-1, (yo+yo2)>>1, 0);
 			CHECK_CANDIDATE(xo+1, (yo+yo2)>>1, 0);
-			goto ende;
-		}
-		else {
+		} else {
 			CHECK_CANDIDATE((data->currentQMV[0].y == yo) ? data->currentQMV[0].x : data->currentQMV2[0].x, (yo+yo2)>>1, 0);
-			goto ende;
 		}
+		return;
 	}
 
 	CHECK_CANDIDATE(xo, (yo+yo2)>>1, 0);
 	CHECK_CANDIDATE((xo+xo2)>>1, yo, 0);
 
-	if(best_sad <= *data->iMinSAD2)
-		goto ende;
+	if(best_sad <= *data->iMinSAD2) return;
 
 	CHECK_CANDIDATE((xo+xo2)>>1, (yo+yo2)>>1, 0);
-
-ende:
-	CheckCandidate = backupFunc;
 }
 
 int
@@ -369,13 +326,12 @@ xvid_me_SkipDecisionP(const IMAGE * current, const IMAGE * reference,
 	 *  [3]: topright neighbour's SAD
 	 */
 
-static __inline int
+static __inline void
 get_pmvdata2(const MACROBLOCK * const mbs,
 		const int mb_width,
 		const int bound,
 		const int x,
 		const int y,
-		const int block,
 		VECTOR * const pmv,
 		int32_t * const psad)
 {
@@ -385,27 +341,9 @@ get_pmvdata2(const MACROBLOCK * const mbs,
 	int lpos, tpos, rpos;
 	int num_cand = 0, last_cand = 1;
 
-	switch (block) {
-	case 0:
-		lx = x - 1;	ly = y;		lz = 1;
-		tx = x;		ty = y - 1;	tz = 2;
-		rx = x + 1;	ry = y - 1;	rz = 2;
-		break;
-	case 1:
-		lx = x;		ly = y;		lz = 0;
-		tx = x;		ty = y - 1;	tz = 3;
-		rx = x + 1;	ry = y - 1;	rz = 2;
-		break;
-	case 2:
-		lx = x - 1;	ly = y;		lz = 3;
-		tx = x;		ty = y;		tz = 0;
-		rx = x;		ry = y;		rz = 1;
-		break;
-	default:
-		lx = x;		ly = y;		lz = 2;
-		tx = x;		ty = y;		tz = 0;
-		rx = x;		ry = y;		rz = 1;
-	}
+	lx = x - 1;	ly = y;		lz = 1;
+	tx = x;		ty = y - 1;	tz = 2;
+	rx = x + 1;	ry = y - 1;	rz = 2;
 
 	lpos = lx + ly * mb_width;
 	rpos = rx + ry * mb_width;
@@ -442,29 +380,21 @@ get_pmvdata2(const MACROBLOCK * const mbs,
 	}
 
 	/* original pmvdata() compatibility hack */
-	if (x == 0 && y == 0 && block == 0) {
+	if (x == 0 && y == 0) {
 		pmv[0] = pmv[1] = pmv[2] = pmv[3] = zeroMV;
 		psad[0] = 0;
 		psad[1] = psad[2] = psad[3] = MV_MAX_ERROR;
-		return 0;
 	}
 
 	/* if only one valid candidate preictor, the invalid candiates are set to the canidate */
 	if (num_cand == 1) {
 		pmv[0] = pmv[last_cand];
 		psad[0] = psad[last_cand];
-#if 0
-		return MVequal(pmv[0], zeroMV); /* no point calculating median mv and minimum sad */
-#endif
-
-		/* original pmvdata() compatibility hack */
-		return y==0 && block <= 1 ? 0 : MVequal(pmv[0], zeroMV);
 	}
 
 	if ((MVequal(pmv[1], pmv[2])) && (MVequal(pmv[1], pmv[3]))) {
 		pmv[0] = pmv[1];
 		psad[0] = MIN(MIN(psad[1], psad[2]), psad[3]);
-		return 1;
 	}
 
 	/* set median, minimum */
@@ -478,7 +408,6 @@ get_pmvdata2(const MACROBLOCK * const mbs,
 
 	psad[0] = MIN(MIN(psad[1], psad[2]), psad[3]);
 
-	return 0;
 }
 
 
@@ -774,7 +703,7 @@ SearchP(const IMAGE * const pRef,
 	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
 						pParam->width, pParam->height, Data->iFcode - Data->qpel, 1, Data->rrv);
 
-	get_pmvdata2(pMBs, pParam->mb_width, 0, x, y, 0, pmv, Data->temp);
+	get_pmvdata2(pMBs, pParam->mb_width, 0, x, y, pmv, Data->temp);
 
 	Data->temp[5] = Data->temp[6] = 0; /* chroma-sad cache */
 	i = Data->rrv ? 2 : 1;
@@ -851,7 +780,10 @@ SearchP(const IMAGE * const pRef,
 		if (MotionFlags & XVID_ME_EXTSEARCH16) {
 			int32_t bSAD;
 			VECTOR startMV = Data->predMV, backupMV = Data->currentMV[0];
-			if (Data->rrv) {
+			if (Data->qpel) {
+				startMV.x /= 2;
+				startMV.y /= 2;
+			} else if (Data->rrv) {
 				startMV.x = RRV_MV_SCALEUP(startMV.x);
 				startMV.y = RRV_MV_SCALEUP(startMV.y);
 			}
@@ -894,9 +826,9 @@ SearchP(const IMAGE * const pRef,
 		Data->qpel_precision = 1;
 		if (MotionFlags & XVID_ME_QUARTERPELREFINE16) {
 			if(MotionFlags & XVID_ME_FASTREFINE16)
-				SubpelRefine_Fast(Data, CheckCandidate);
+				SubpelRefine_Fast(Data, CheckCandidate16_qpel);
 			else
-				xvid_me_SubpelRefine(Data, CheckCandidate);
+				xvid_me_SubpelRefine(Data, CheckCandidate16_qpel);
 		}
 	}
 
@@ -1001,20 +933,18 @@ MotionEstimation(MBParam * const pParam,
 	int32_t temp[8]; uint32_t dir;
 	VECTOR currentMV[5];
 	VECTOR currentQMV[5];
-	VECTOR currentMV2[5];
-	VECTOR currentQMV2[5];
+	VECTOR currentQMV2;
 	int32_t iMinSAD[5];
-	int32_t iMinSAD2[5];
+	int32_t iMinSAD2;
 	DECLARE_ALIGNED_MATRIX(dct_space, 3, 64, int16_t, CACHE_LINE);
 	SearchData Data;
 	memset(&Data, 0, sizeof(SearchData));
 	Data.iEdgedWidth = iEdgedWidth;
 	Data.currentMV = currentMV;
 	Data.currentQMV = currentQMV;
-	Data.currentMV2 = currentMV2;
-	Data.currentQMV2 = currentQMV2;
+	Data.currentQMV2 = &currentQMV2;
 	Data.iMinSAD = iMinSAD;
-	Data.iMinSAD2 = iMinSAD2;
+	Data.iMinSAD2 = &iMinSAD2;
 	Data.temp = temp;
 	Data.dir = &dir;
 	Data.iFcode = current->fcode;
