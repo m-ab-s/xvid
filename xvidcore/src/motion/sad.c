@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: sad.c,v 1.13.2.4 2003-06-09 13:54:46 edgomez Exp $
+ * $Id: sad.c,v 1.13.2.5 2003-08-22 15:20:41 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -228,9 +228,9 @@ uint32_t sad32v_c(const uint8_t * const cur,
 			   int32_t *sad)
 {
 	sad[0] = sad16(cur, ref, stride, 256*4096);
-	sad[1] = sad16(cur + 8, ref + 8, stride, 256*4096);
-	sad[2] = sad16(cur + 8*stride, ref + 8*stride, stride, 256*4096);
-	sad[3] = sad16(cur + 8*stride + 8, ref + 8*stride + 8, stride, 256*4096);
+	sad[1] = sad16(cur + 16, ref + 16, stride, 256*4096);
+	sad[2] = sad16(cur + 16*stride, ref + 16*stride, stride, 256*4096);
+	sad[3] = sad16(cur + 16*stride + 16, ref + 16*stride + 16, stride, 256*4096);
 	
 	return sad[0]+sad[1]+sad[2]+sad[3];
 }
@@ -278,5 +278,3 @@ mrsad16_c(const uint8_t * const cur,
 	return MRSAD16_CORRFACTOR * sad;
 
 }
-
-
