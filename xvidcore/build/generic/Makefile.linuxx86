@@ -4,7 +4,7 @@
 # 
 # Edit this file to enable/disable optimizations
 #
-# $Id: Makefile.linuxx86,v 1.5.2.1 2002-12-14 09:35:11 suxen_drol Exp $
+# $Id: Makefile.linuxx86,v 1.5.2.2 2003-01-13 18:20:20 chl Exp $
 # 
 #############################################################################
 
@@ -170,3 +170,8 @@ install: $(LIBSO) $(LIB)
 install-test: $(LIBSO)
 	cp $(LIBSO) $(LIBDIR)/libtestcore.so
 	/sbin/ldconfig
+
+install-branch: $(LIBSO)
+	cp $(LIBSO) $(LIBDIR)/libxvidbranch.so
+	/sbin/ldconfig 
+
