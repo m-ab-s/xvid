@@ -993,9 +993,17 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 
 	if (twopass->nns_array_pos >= twopass->nns_array_length)
 	{
-		twopass->nns_array_pos = 0;
-		DEBUGERR("ERROR: VIDEO EXCEEDS 1ST PASS!!!");
-		return ICERR_ERROR;
+		// fix for VirtualDub 1.4.13 bframe handling
+		if (codec->config.max_bframes > 0 &&
+			codec->framenum < twopass->nns_array_length + codec->config.max_bframes)
+		{
+			return ICERR_OK;
+		}
+		else
+		{
+			DEBUGERR("ERROR: VIDEO EXCEEDS 1ST PASS!!!");
+			return ICERR_ERROR;
+		}
 	}
 
 	memcpy(&twopass->nns1, &twopass->nns1_array[twopass->nns_array_pos], sizeof(NNSTATS));
@@ -1012,7 +1020,7 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 		twopass->bytes2 = bytes1;
 		twopass->desired_bytes2 = bytes1;
 		frame->intra = 3;
-		return 2;
+		return ICERR_OK;
 	}
 	else if (twopass->nns1.dd_v & NNSTATS_PADFRAME)
 	{
@@ -1020,7 +1028,7 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 		twopass->bytes2 = bytes1;
 		twopass->desired_bytes2 = bytes1;
 		frame->intra = 4;
-		return 2;
+		return ICERR_OK;
 	}
 	else if (twopass->nns1.dd_v & NNSTATS_DELAYFRAME)
 	{
@@ -1028,7 +1036,7 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 		twopass->bytes2 = bytes1;
 		twopass->desired_bytes2 = bytes1;
 		frame->intra = 5;
-		return 2;
+		return ICERR_OK;
 	}
 		
 	overflow = twopass->overflow / 8;
@@ -1473,13 +1481,13 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 		frame->general |= (frame->quant < 4) ? XVID_MPEGQUANT : XVID_H263QUANT;
 		frame->general &= (frame->quant < 4) ? ~XVID_H263QUANT : ~XVID_MPEGQUANT;
 	}
-/*
+
 	if (codec->config.quant_type == QUANT_MODE_MOD_NEW)
 	{
 		frame->general |= (frame->quant < 4) ? XVID_H263QUANT : XVID_MPEGQUANT;
 		frame->general &= (frame->quant < 4) ? ~XVID_MPEGQUANT : ~XVID_H263QUANT;
 	}
-*/
+
 	return ICERR_OK;
 }
 
