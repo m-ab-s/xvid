@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.16 2002-11-07 10:28:15 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.76.2.17 2002-11-11 20:53:34 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -981,7 +981,8 @@ bvop_loop:
 		 * NB : sequences like "IIBB" decode fine with msfdam but,
 		 *      go screwy with divx 5.00
 		 */
-	} else if (pEnc->bframenum_tail >= pEnc->mbParam.max_bframes || mode != 0) {
+	} else if ((pEnc->bframenum_tail >= pEnc->mbParam.max_bframes) || (mode != 0)) {
+
 		/*
 		 * This will be coded as a Predicted Frame
 		 */
@@ -998,7 +999,7 @@ bvop_loop:
 		pFrame->intra = 0;
 		pEnc->flush_bframes = 1;
 
-		if ((pEnc->global & XVID_GLOBAL_PACKED)) {
+		if ((pEnc->global & XVID_GLOBAL_PACKED) && (pEnc->bframenum_tail > 0)) {
 			BitstreamPadAlways(&bs);
 			input_valid = 0;
 			goto ipvop_loop;
