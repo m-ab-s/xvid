@@ -20,7 +20,8 @@
 #endif
 #include <dvdmedia.h>	// VIDEOINFOHEADER2
 
-#include "..\..\xvidcore\src\xvid.h"
+#include <xvid.h>		// XviD API
+
 #include "IXvidDecoder.h"
 #include "CXvidDecoder.h"
 #include "CAbout.h"
