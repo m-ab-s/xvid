@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.h,v 1.3.2.12 2003-06-28 15:51:54 chl Exp $
+ * $Id: motion_est.h,v 1.3.2.13 2003-07-13 09:57:28 syskin Exp $
  *
  ****************************************************************************/
 
@@ -139,6 +139,7 @@ typedef struct
 	int16_t * dctSpace;
 	uint32_t iQuant;
 	uint32_t quant_type;
+	int * cbp;
 
 } SearchData;
 
@@ -347,6 +348,9 @@ CountMBBitsInter4v(const SearchData * const Data,
 static int
 CountMBBitsIntra(const SearchData * const Data);
 
+static int
+CountMBBitsGMC(const SearchData * const Data, const IMAGE * const vGMC, const int x, const int y);
+
 int CodeCoeffIntra_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag);
 int CodeCoeffInter_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag);
 
@@ -368,20 +372,25 @@ Block_CalcBits(	int16_t * const coeff,
 
 	fdct(data);
 
-	if (quant_type == 0) sum = quant_inter(coeff, data, quant);
+	if (quant_type) sum = quant_inter(coeff, data, quant);
 	else sum = quant4_inter(coeff, data, quant);
 
 	if (sum > 0) {
 		*cbp |= 1 << (5 - block);
 		bits = BITS_MULT * CodeCoeffInter_CalcBits(coeff, scan_tables[0]);
-	} else bits = 0;
 
-	if (quant_type == 0) dequant_inter(dqcoeff, coeff, quant);
-	else dequant4_inter(dqcoeff, coeff, quant);
+		if (quant_type) dequant_inter(dqcoeff, coeff, quant);
+		else dequant4_inter(dqcoeff, coeff, quant);
 
-	for (i = 0; i < 64; i++) {
-		distortion += (data[i] - dqcoeff[i])*(data[i] - dqcoeff[i]);
+		for (i = 0; i < 64; i++)
+			distortion += (data[i] - dqcoeff[i])*(data[i] - dqcoeff[i]);
+
+	} else {
+		bits = 0;
+		for (i = 0; i < 64; i++)
+			distortion += data[i]*data[i];
 	}
+
 
 	bits += (LAMBDA*distortion)/(quant*quant);
 
@@ -405,7 +414,7 @@ Block_CalcBitsIntra(int16_t * const coeff,
 	fdct(data);
 	data[0] -= 1024;
 
-	if (quant_type == 0) quant_intra(coeff, data, quant, iDcScaler);
+	if (quant_type) quant_intra(coeff, data, quant, iDcScaler);
 	else quant4_intra(coeff, data, quant, iDcScaler);
 
 	b_dc = coeff[0];
@@ -421,7 +430,7 @@ Block_CalcBitsIntra(int16_t * const coeff,
 	else bits += BITS_MULT*dcc_tab[coeff[0] + 255].len;
 
 	coeff[0] = b_dc;
-	if (quant_type == 0) dequant_intra(dqcoeff, coeff, quant, iDcScaler);
+	if (quant_type) dequant_intra(dqcoeff, coeff, quant, iDcScaler);
 	else dequant4_intra(dqcoeff, coeff, quant, iDcScaler);
 
 	for (i = 0; i < 64; i++) {
