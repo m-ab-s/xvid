@@ -110,7 +110,7 @@ int bs_get_spritetrajectory(Bitstream * bs)
 void
 init_vlc_tables(void)
 {
-	ptr_t i, j, k, intra, last, run,  run_esc, level, level_esc, escape, escape_len, offset;
+	uint32_t i, j, k, intra, last, run,  run_esc, level, level_esc, escape, escape_len, offset;
 	int32_t l;
 
 #ifdef BIGLUT
@@ -127,7 +127,7 @@ init_vlc_tables(void)
 		for (last = 0; last < 2; last++)
 		{
 			for (run = 0; run < 63 + last; run++)
-				for (level = 0; level < 32 << intra; level++)
+				for (level = 0; level < (uint32_t)(32 << intra); level++)
 				{
 #ifdef BIGLUT
 					offset = LEVELOFFSET;
@@ -146,7 +146,7 @@ init_vlc_tables(void)
 #else
 			offset = !intra * LEVELOFFSET;
 #endif
-			for (j = 0; j < 1 << (12 - coeff_tab[intra][i].vlc.len); j++)
+			for (j = 0; j < (uint32_t)(1 << (12 - coeff_tab[intra][i].vlc.len)); j++)
 			{
 				DCT3D[intra][(coeff_tab[intra][i].vlc.code << (12 - coeff_tab[intra][i].vlc.len)) | j].len	 = coeff_tab[intra][i].vlc.len;
 				DCT3D[intra][(coeff_tab[intra][i].vlc.code << (12 - coeff_tab[intra][i].vlc.len)) | j].event = coeff_tab[intra][i].event;
@@ -171,7 +171,7 @@ init_vlc_tables(void)
 		for (last = 0; last < 2; last++)
 			for (run = 0; run < 63 + last; run++)
 			{
-				for (level = 1; level < 32 << intra; level++)
+				for (level = 1; level < (uint32_t)(32 << intra); level++)
 				{
 					if (level <= max_level[intra][last][run] && run <= max_run[intra][last][level])
 					    continue;
@@ -196,7 +196,7 @@ init_vlc_tables(void)
 					}
 					else
 					{
-						if (level <= max_level[intra][last][run_esc] && run_esc <= max_run[intra][last][level])
+						if (run_esc <= max_run[intra][last][level] && level <= max_level[intra][last][run_esc])
 						{
 							escape     = ESCAPE2;
 							escape_len = 7 + 2;
