@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.32 2003-01-03 16:25:14 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.76.2.33 2003-01-05 03:30:44 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -1925,8 +1925,8 @@ FrameCodeB(Encoder * pEnc,
 		   Bitstream * bs,
 		   uint32_t * pBits)
 {
-	int16_t dct_codes[6 * 64];
-	int16_t qcoeff[6 * 64];
+	DECLARE_ALIGNED_MATRIX(dct_codes, 6, 64, int16_t, CACHE_LINE);
+	DECLARE_ALIGNED_MATRIX(qcoeff, 6, 64, int16_t, CACHE_LINE);
 	uint32_t x, y;
 
 	IMAGE *f_ref = &pEnc->reference->image;
