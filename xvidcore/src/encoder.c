@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.6 2003-03-15 16:04:38 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.95.2.7 2003-03-15 17:03:17 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -166,7 +166,8 @@ enc_create(xvid_enc_create_t * create, xvid_enc_rc_t * rc)
     /* framerate */
     pEnc->mbParam.fincr = MAX(create->fincr, 0);
 	pEnc->mbParam.fbase = create->fincr <= 0 ? 25 : create->fbase;
-	simplify_time(&pEnc->mbParam.fincr, &pEnc->mbParam.fbase);
+    if (pEnc->mbParam.fincr>0)
+	    simplify_time(&pEnc->mbParam.fincr, &pEnc->mbParam.fbase);
 
     /* plugin */
     pEnc->num_plugins = create->num_plugins;
@@ -636,7 +637,7 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
 
     data.width = pEnc->mbParam.width;
     data.height = pEnc->mbParam.height;
-    data.fincr = pEnc->mbParam.fincr;
+    data.fincr = frame->fincr;
     data.fbase = pEnc->mbParam.fbase;
 
     data.reference.csp = XVID_CSP_USER;
@@ -750,7 +751,7 @@ static __inline void inc_frame_num(Encoder * pEnc)
     pEnc->current->frame_num = pEnc->m_framenum;
 	pEnc->current->stamp = pEnc->mbParam.m_stamp;	/* first frame is zero */
 	
-    pEnc->mbParam.m_stamp += pEnc->mbParam.fincr;
+    pEnc->mbParam.m_stamp += pEnc->current->fincr;
     pEnc->m_framenum++;	/* debug ticker */
 }
 
@@ -977,6 +978,8 @@ repeat:
 	 * init pEnc->current fields
 	 * %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% */
 
+    
+    pEnc->current->fincr = pEnc->mbParam.fincr>0 ? pEnc->mbParam.fincr : frame->fincr; 
     pEnc->current->vol_flags = pEnc->mbParam.vol_flags;
     pEnc->current->vop_flags = frame->vop_flags;
 	pEnc->current->motion_flags = frame->motion;
