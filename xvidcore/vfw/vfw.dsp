@@ -99,22 +99,6 @@ PostBuild_Cmds=copy ../build/win32/bin/xvidcore.dll bin
 # Begin Group "doc"
 
 # PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=.\authors.txt
-# End Source File
-# Begin Source File
-
-SOURCE=.\gpl.txt
-# End Source File
-# Begin Source File
-
-SOURCE=.\help.txt
-# End Source File
-# Begin Source File
-
-SOURCE=.\todo.txt
-# End Source File
 # End Group
 # Begin Group "Source Files"
 
