@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: gmc.h,v 1.1.2.3 2003-09-10 22:18:59 edgomez Exp $
+ * $Id: gmc.h,v 1.1.2.4 2003-09-11 15:29:32 syskin Exp $
  *
  ****************************************************************************/
 
@@ -32,7 +32,7 @@ gmc_sanitize(int value, int quarterpel, int fcode)
 {
 	int length = 1 << (fcode+4);
 
-	if (quarterpel) value *= 2;
+	// if (quarterpel) value *= 2;
 
 	if (value < -length)
 		return -length;
