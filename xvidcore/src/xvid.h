@@ -28,7 +28,7 @@
 *               ToDo ? : when BFRAMES is defined, the API_VERSION should not
 *                        be the same (3.0 ?)
 *
-*  $Id: xvid.h,v 1.17.2.7 2002-11-02 16:08:14 chl Exp $
+*  $Id: xvid.h,v 1.17.2.8 2002-11-04 10:53:49 syskin Exp $
 *
 *****************************************************************************/
 
@@ -225,11 +225,11 @@ extern "C" {
 #define XVID_ME_PMVFAST			0x00080000
 #define XVID_ME_EPZS			0x00100000
 
-
 #define XVID_GREYSCALE			0x01000000	/* enable greyscale only mode (even for */
 #define XVID_GRAYSCALE			0x01000000  /* color input material chroma is ignored) */
 
-#define XVID_GMC			0x20000000
+#define XVID_GMC				0x20000000
+#define XVID_ME_COLOUR			0x40000000
 
 /* Flags for XVID_ENC_FRAME.motion */
 #define PMV_ADVANCEDDIAMOND8	0x00004000
@@ -252,6 +252,7 @@ extern "C" {
 #define PMV_UNRESTRICTED8   	0x20000000	/* unrestricted ME, not implemented */
 #define PMV_OVERLAPPING8   		0x40000000	/* overlapping ME, not implemented */
 #define PMV_USESQUARES8			0x80000000
+
 
 
 /*****************************************************************************
