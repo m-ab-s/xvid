@@ -4,7 +4,7 @@
 # 
 # Edit this file to enable/disable optimizations
 #
-# $Id: Makefile.linux,v 1.6 2002-07-19 09:56:59 edgomez Exp $
+# $Id: Makefile.linux,v 1.6.2.1 2002-09-04 18:58:27 chl Exp $
 # 
 #############################################################################
 
@@ -162,6 +162,7 @@ clean:
 
 install: libxvidcore.so
 	cp libxvidcore.so $(LIBDIR)			# you have to bee root for this
+	cp $(SRCDIR)/xvid.h /usr/local/include
 	/sbin/ldconfig 
 
 install-test: libxvidcore.so				# if you don't want to overwrite previous compile
