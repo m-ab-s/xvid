@@ -10,7 +10,7 @@ AC_INIT([XviD], [1.0.0 cvs-snapshot], [xvid-devel@xvid.org])
 AC_CONFIG_SRCDIR(configure.in)
 
 dnl Do not forget to increase that when needed.
-API_MAJOR="3"
+API_MAJOR="4"
 API_MINOR="0"
 
 dnl NASM version requirement
