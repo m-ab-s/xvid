@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_inlines.h,v 1.1.2.1 2003-09-10 22:19:00 edgomez Exp $
+ * $Id: motion_inlines.h,v 1.1.2.2 2003-09-29 13:43:40 syskin Exp $
  *
  ****************************************************************************/
 
@@ -78,7 +78,7 @@ static const int mvtab[64] = {
 	10, 11, 11, 11, 11, 11, 11, 12,
 	12, 12, 12, 12, 12, 12, 12, 12,
 	12, 12, 12, 12, 12, 12, 12, 12,
-	12, 12, 12, 12, 12, 12, 12, 12, 12
+	12, 12, 12, 12, 12, 12, 12, 12,
 };
 
 static __inline uint32_t
@@ -133,11 +133,12 @@ ZeroMacroblockP(MACROBLOCK *pMB, const int32_t sad)
 	pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = zeroMV;
 	pMB->qmvs[0] = pMB->qmvs[1] = pMB->qmvs[2] = pMB->qmvs[3] = zeroMV;
 	pMB->sad16 = pMB->sad8[0] = pMB->sad8[1] = pMB->sad8[2] = pMB->sad8[3] = sad;
+	pMB->mcsel = 0;
 }
 
 /* check if given vector is equal to any vector checked before */
 static __inline int
-vector_repeats(const VECTOR * const pmv, const int i)
+vector_repeats(const VECTOR * const pmv, const unsigned int i)
 {
 	unsigned int j;
 	for (j = 0; j < i; j++)
@@ -148,7 +149,7 @@ vector_repeats(const VECTOR * const pmv, const int i)
 /*	make a binary mask that prevents diamonds/squares
 	from checking a vector which has been checked as a prediction */
 static __inline int
-make_mask(const VECTOR * const pmv, const int i, const int current)
+make_mask(const VECTOR * const pmv, const unsigned int i, const unsigned int current)
 {
 	unsigned int mask = 255, j;
 	for (j = 0; j < i; j++) {
