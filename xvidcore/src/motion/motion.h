@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion.h,v 1.13.2.1 2002-09-23 20:36:01 chl Exp $
+ *  $Id: motion.h,v 1.13.2.2 2002-09-25 21:28:48 Isibaar Exp $
  *
  ***************************************************************************/
 
@@ -47,6 +47,10 @@
  * the decision to use interpolation h/v/hv or the normal image is
  * based on dx & dy.
  */
+
+static const uint32_t roundtab[16] =
+		{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2 };
+
 
 static __inline const uint8_t *
 get_ref(const uint8_t * const refn,
@@ -153,6 +157,13 @@ MotionEstimationHinted(	MBParam * const pParam,
 						const IMAGE * const pRefH,
 						const IMAGE * const pRefV,
 						const IMAGE * const pRefHV);
+
+int
+MEanalysis(	const IMAGE * const pRef,	
+			const IMAGE * const pCurrent,
+			MBParam * const pParam,
+			MACROBLOCK * const pMBs,
+			const uint32_t iFcode);
 
 
 #endif							/* _MOTION_H_ */

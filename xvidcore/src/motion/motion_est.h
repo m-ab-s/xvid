@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion_est.h,v 1.1.2.1 2002-09-23 20:36:02 chl Exp $
+ *  $Id: motion_est.h,v 1.1.2.2 2002-09-25 21:27:12 Isibaar Exp $
  *
  ***************************************************************************/
 
@@ -69,7 +69,7 @@ static const int lambda_vec16[32] =
 	(int)(21.2656*NEIGH_TEND_16X16 + 0.5), (int)(24.8580*NEIGH_TEND_16X16 + 0.5),
 	(int)(29.6436*NEIGH_TEND_16X16 + 0.5), (int)(36.4949*NEIGH_TEND_16X16 + 0.5)	};
 
-static const int lambda_vec8[32] =
+static const int lambda_vec8[32] = 
 	{     0    ,(int)(1.00235 * NEIGH_TEND_8X8 + 0.5),
 	(int)(1.15582 + NEIGH_TEND_8X8 + 0.5), (int)(1.31976*NEIGH_TEND_8X8 + 0.5),
 	(int)(1.49591*NEIGH_TEND_8X8 + 0.5), (int)(1.68601*NEIGH_TEND_8X8 + 0.5),
@@ -179,7 +179,8 @@ static void Search8(const SearchData * const OldData,
 			const MBParam * const pParam,
 			MACROBLOCK * const pMB,
 			const MACROBLOCK * const pMBs,
-			const int block);
+			const int block,
+			SearchData * const Data);
 
 bool
 MotionEstimation(MBParam * const pParam,
@@ -200,7 +201,7 @@ SearchP(const uint8_t * const pRef,
 		const int y,
 		const uint32_t MotionFlags,
 		const uint32_t iQuant,
-		const uint32_t iFcode,
+		SearchData * const Data,
 		const MBParam * const pParam,
 		const MACROBLOCK * const pMBs,
 		const MACROBLOCK * const prevMBs,

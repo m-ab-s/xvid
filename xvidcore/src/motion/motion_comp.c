@@ -53,9 +53,6 @@ MBMotionCompensation(MACROBLOCK * const mb,
 					 const uint32_t edged_width,
 					 const uint32_t rounding)
 {
-	static const uint32_t roundtab[16] =
-		{ 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2 };
-
 	if (mb->mode == MODE_NOT_CODED) {
 		transfer8x8_copy(cur->y + 16 * (i + j * edged_width),
 							ref->y + 16 * (i + j * edged_width),
