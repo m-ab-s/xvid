@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.34 2004-02-29 12:57:58 edgomez Exp $
+ * $Id: decoder.c,v 1.49.2.35 2004-03-03 13:18:08 syskin Exp $
  *
  ****************************************************************************/
 
@@ -77,6 +77,8 @@ decoder_resize(DECODER * dec)
 		xvid_free(dec->last_mbs);
 	if (dec->mbs)
 		xvid_free(dec->mbs);
+	if (dec->qscale)
+		xvid_free(dec->qscale);
 
 	/* realloc */
 	dec->mb_width = (dec->width + 15) / 16;
@@ -161,6 +163,13 @@ decoder_resize(DECODER * dec)
 
 	memset(dec->last_mbs, 0, sizeof(MACROBLOCK) * dec->mb_width * dec->mb_height);
 
+	/* nothing happens if that fails */
+	dec->qscale =
+		xvid_malloc(sizeof(int) * dec->mb_width * dec->mb_height, CACHE_LINE);
+	
+	if (dec->qscale)
+		memset(dec->qscale, 0, sizeof(int) * dec->mb_width * dec->mb_height);
+
 	return 0;
 }
 
@@ -200,9 +209,9 @@ decoder_create(xvid_dec_create_t * create)
 	/* image based GMC */
 	image_null(&dec->gmc);
 
-
 	dec->mbs = NULL;
 	dec->last_mbs = NULL;
+	dec->qscale = NULL;
 
 	init_timer();
 	init_postproc(&dec->postproc);
@@ -228,6 +237,7 @@ decoder_destroy(DECODER * dec)
 {
 	xvid_free(dec->last_mbs);
 	xvid_free(dec->mbs);
+	xvid_free(dec->qscale);
 
 	/* image based GMC */
 	image_destroy(&dec->gmc, dec->edged_width, dec->edged_height);
@@ -751,6 +761,20 @@ get_motion_vector(DECODER * dec,
 		mv.y -= range;
 	}
 
+	/* clip to valid range */
+
+	if (mv.x > ((int)(dec->mb_width - x) << (5 + dec->quarterpel)) )
+		mv.x = (int)(dec->mb_width - x) << (5 + dec->quarterpel);
+	
+	else if (mv.x < (int)(-x-1) << (5 + dec->quarterpel))
+		mv.x = (int)(-x-1) << (5 + dec->quarterpel);
+
+	if (mv.y > ((int)(dec->mb_height - y) << (5 + dec->quarterpel)) )
+		mv.y = (int)(dec->mb_height - y) << (5 + dec->quarterpel);
+
+	else if (mv.y < ((int)(-y-1)) << (5 + dec->quarterpel) )
+		mv.y = (int)(-y-1) << (5 + dec->quarterpel);
+
 	ret_mv->x = mv.x;
 	ret_mv->y = mv.y;
 }
@@ -937,7 +961,9 @@ static void
 get_b_motion_vector(Bitstream * bs,
 					VECTOR * mv,
 					int fcode,
-					const VECTOR pmv)
+					const VECTOR pmv,
+					const DECODER * const dec,
+					const int x, const int y)
 {
 	const int scale_fac = 1 << (fcode - 1);
 	const int high = (32 * scale_fac) - 1;
@@ -959,6 +985,20 @@ get_b_motion_vector(Bitstream * bs,
 		mv_y += range;
 	else if (mv_y > high)
 		mv_y -= range;
+
+
+	/* clip to valid range */
+	if (mv_x > ((int)(dec->mb_width - x) << (5 + dec->quarterpel)) )
+		mv_x = (int)(dec->mb_width - x) << (5 + dec->quarterpel);
+	
+	else if (mv_x < (int)(-x-1) << (5 + dec->quarterpel))
+		mv_x = (int)(-x-1) << (5 + dec->quarterpel);
+
+	if (mv_y > ((int)(dec->mb_height - y) << (5 + dec->quarterpel)) )
+		mv_y = (int)(dec->mb_height - y) << (5 + dec->quarterpel);
+
+	else if (mv_y < ((int)(-y-1)) << (5 + dec->quarterpel) )
+		mv_y = (int)(-y-1) << (5 + dec->quarterpel);
 
 	mv->x = mv_x;
 	mv->y = mv_y;
@@ -1052,8 +1092,8 @@ decoder_bf_interpolate_mbinter(DECODER * dec,
 							pMB->mvs[1].x, pMB->mvs[1].y, stride, 0);
 		interpolate8x8_switch(dec->cur.y, forward.y, 16 * x_pos, 16 * y_pos + 8,
 							pMB->mvs[2].x, pMB->mvs[2].y, stride, 0);
-		interpolate8x8_switch(dec->cur.y, forward.y, 16 * x_pos + 8,
-							16 * y_pos + 8, pMB->mvs[3].x, pMB->mvs[3].y, stride, 0);
+		interpolate8x8_switch(dec->cur.y, forward.y, 16 * x_pos + 8, 16 * y_pos + 8,
+							pMB->mvs[3].x, pMB->mvs[3].y, stride, 0);
 	}
 
 	interpolate8x8_switch(dec->cur.u, forward.u, 8 * x_pos, 8 * y_pos, uv_dx,
@@ -1266,7 +1306,7 @@ decoder_bframe(DECODER * dec,
 
 			switch (mb->mode) {
 			case MODE_DIRECT:
-				get_b_motion_vector(bs, &mv, 1, zeromv);
+				get_b_motion_vector(bs, &mv, 1, zeromv, dec, x, y);
 
 			case MODE_DIRECT_NONE_MV:
 				for (i = 0; i < 4; i++) {
@@ -1285,10 +1325,10 @@ decoder_bframe(DECODER * dec,
 				break;
 
 			case MODE_INTERPOLATE:
-				get_b_motion_vector(bs, &mb->mvs[0], fcode_forward, dec->p_fmv);
+				get_b_motion_vector(bs, &mb->mvs[0], fcode_forward, dec->p_fmv, dec, x, y);
 				dec->p_fmv = mb->mvs[1] = mb->mvs[2] = mb->mvs[3] =	mb->mvs[0];
 
-				get_b_motion_vector(bs, &mb->b_mvs[0], fcode_backward, dec->p_bmv);
+				get_b_motion_vector(bs, &mb->b_mvs[0], fcode_backward, dec->p_bmv, dec, x, y);
 				dec->p_bmv = mb->b_mvs[1] = mb->b_mvs[2] = mb->b_mvs[3] = mb->b_mvs[0];
 
 				decoder_bf_interpolate_mbinter(dec, dec->refn[1], dec->refn[0],
@@ -1296,14 +1336,14 @@ decoder_bframe(DECODER * dec,
 				break;
 
 			case MODE_BACKWARD:
-				get_b_motion_vector(bs, &mb->mvs[0], fcode_backward, dec->p_bmv);
+				get_b_motion_vector(bs, &mb->mvs[0], fcode_backward, dec->p_bmv, dec, x, y);
 				dec->p_bmv = mb->mvs[1] = mb->mvs[2] = mb->mvs[3] =	mb->mvs[0];
 
 				decoder_mbinter(dec, mb, x, y, mb->cbp, bs, 0, 0, 0);
 				break;
 
 			case MODE_FORWARD:
-				get_b_motion_vector(bs, &mb->mvs[0], fcode_forward, dec->p_fmv);
+				get_b_motion_vector(bs, &mb->mvs[0], fcode_forward, dec->p_fmv, dec, x, y);
 				dec->p_fmv = mb->mvs[1] = mb->mvs[2] = mb->mvs[3] =	mb->mvs[0];
 
 				decoder_mbinter(dec, mb, x, y, mb->cbp, bs, 0, 0, 1);
@@ -1342,6 +1382,14 @@ void decoder_output(DECODER * dec, IMAGE * img, MACROBLOCK * mbs,
 		stats->type = coding2type(coding_type);
 		stats->data.vop.time_base = (int)dec->time_base;
 		stats->data.vop.time_increment = 0;	/* XXX: todo */
+		stats->data.vop.qscale_stride = dec->mb_width;
+		stats->data.vop.qscale = dec->qscale;
+		if (stats->data.vop.qscale != NULL && mbs != NULL) {
+			int i;
+			for (i = 0; i < dec->mb_width*dec->mb_height; i++)
+				stats->data.vop.qscale[i] = mbs[i].quant;
+		} else 
+			stats->data.vop.qscale = NULL;
 	}
 }
 
@@ -1354,7 +1402,7 @@ decoder_decode(DECODER * dec,
 	Bitstream bs;
 	uint32_t rounding;
 	uint32_t reduced_resolution;
-	uint32_t quant;
+	uint32_t quant = 2;
 	uint32_t fcode_forward;
 	uint32_t fcode_backward;
 	uint32_t intra_dc_threshold;

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.h,v 1.13.2.9 2003-12-21 19:41:58 Isibaar Exp $
+ * $Id: decoder.h,v 1.13.2.10 2004-03-03 13:18:08 syskin Exp $
  *
  ****************************************************************************/
 
@@ -157,6 +157,8 @@ typedef struct
 	NEW_GMC_DATA new_gmc_data;
 
 	xvid_image_t* out_frm;                /* This is used for slice rendering */
+
+	int * qscale;				/* quantization table for decoder's stats */
 }
 DECODER;
 
