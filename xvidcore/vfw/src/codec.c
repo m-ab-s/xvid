@@ -776,8 +776,10 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	if ((frame.input.csp = get_colorspace(inhdr)) == XVID_CSP_NULL)
 		return ICERR_BADFORMAT;
 
-	if (frame.input.csp == XVID_CSP_I420 || frame.input.csp == XVID_CSP_YV12)
-		frame.input.stride[0] = (frame.input.stride[0]*2)/3;
+	if (frame.input.csp == XVID_CSP_I420 || frame.input.csp == XVID_CSP_YV12) {
+		frame.input.stride[0] = (4 * icc->lpbiInput->biWidth + 3) / 4;
+		frame.input.stride[1] = frame.input.stride[2] = frame.input.stride[0] / 2 ;
+	}
 
 	frame.bitstream = icc->lpOutput;
 	frame.length = icc->lpbiOutput->biSizeImage;
