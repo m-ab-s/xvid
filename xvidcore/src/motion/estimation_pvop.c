@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_pvop.c,v 1.1.2.1 2003-09-10 22:18:59 edgomez Exp $
+ * $Id: estimation_pvop.c,v 1.1.2.2 2003-09-30 18:20:31 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -590,7 +590,7 @@ ModeDecision_SAD(SearchData * const Data,
 			pMB->pmvs[0].y = Data->currentMV[0].y - Data->predMV.y;
 		}
 
-	} else if (mode == MODE_INTER ) { // but mcsel == 1
+	} else if (mode == MODE_INTER ) { /* but mcsel == 1 */
 
 		pMB->mcsel = 1;
 		if (Data->qpel) {
@@ -836,7 +836,7 @@ SearchP(const IMAGE * const pRef,
 	else {
 
 		MainSearchFunc * MainSearchPtr;
-		int mask = make_mask(pmv, i, *Data->dir); // all vectors pmv[0..i-1] have been checked
+		int mask = make_mask(pmv, i, *Data->dir); /* all vectors pmv[0..i-1] have been checked */
 
 		if (MotionFlags & XVID_ME_USESQUARES16) MainSearchPtr = xvid_me_SquareSearch;
 		else if (MotionFlags & XVID_ME_ADVANCEDDIAMOND16) MainSearchPtr = xvid_me_AdvDiamondSearch;

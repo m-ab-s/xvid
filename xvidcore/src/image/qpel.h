@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: qpel.h,v 1.1.4.3 2003-08-26 14:07:11 edgomez Exp $
+ * $Id: qpel.h,v 1.1.4.4 2003-09-30 18:20:31 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -51,7 +51,7 @@ typedef struct _XVID_QP_FUNCS {
 	XVID_QP_PASS *V_Pass_Avrg;
 	XVID_QP_PASS *V_Pass_Avrg_Up;
 
-    // filter for QPel 8x? prediction
+    /* filter for QPel 8x? prediction */
 
 	XVID_QP_PASS *H_Pass_8;
 	XVID_QP_PASS *H_Pass_Avrg_8;
@@ -66,16 +66,16 @@ typedef struct _XVID_QP_FUNCS {
  ****************************************************************************/
 extern void xvid_Init_QP();
 
-extern XVID_QP_FUNCS xvid_QP_Funcs_C;       // for P-frames
-extern XVID_QP_FUNCS xvid_QP_Add_Funcs_C;   // for B-frames
+extern XVID_QP_FUNCS xvid_QP_Funcs_C;       /* for P-frames */
+extern XVID_QP_FUNCS xvid_QP_Add_Funcs_C;   /* for B-frames */
 
 #ifdef ARCH_IS_IA32
 extern XVID_QP_FUNCS xvid_QP_Funcs_mmx;
 extern XVID_QP_FUNCS xvid_QP_Add_Funcs_mmx;
 #endif
 
-extern XVID_QP_FUNCS *xvid_QP_Funcs;      // <- main pointer for enc/dec structure
-extern XVID_QP_FUNCS *xvid_QP_Add_Funcs;  // <- main pointer for enc/dec structure
+extern XVID_QP_FUNCS *xvid_QP_Funcs;      /* <- main pointer for enc/dec structure */
+extern XVID_QP_FUNCS *xvid_QP_Add_Funcs;  /* <- main pointer for enc/dec structure */
 
 /*****************************************************************************
  * macros
@@ -119,7 +119,7 @@ new_interpolate16x16_quarterpel(uint8_t * const cur,
 	const int32_t xRef = x*4 + dx;
 	const int32_t yRef = y*4 + dy;
  
-	Ops = xvid_QP_Funcs; // TODO: pass as argument
+	Ops = xvid_QP_Funcs; /* TODO: pass as argument */
 	quads = (dx&3) | ((dy&3)<<2);
  
 	x_int = xRef/4;
@@ -133,7 +133,7 @@ new_interpolate16x16_quarterpel(uint8_t * const cur,
 	dst = cur + y * stride + x;
 	src = refn + y_int * stride + x_int;
 
-	tmp = refh; // we need at least a 16 x stride scratch block
+	tmp = refh; /* we need at least a 16 x stride scratch block */
 
 	switch(quads) {
 	case 0:
@@ -221,7 +221,7 @@ new_interpolate16x8_quarterpel(uint8_t * const cur,
 	const int32_t xRef = x*4 + dx;
 	const int32_t yRef = y*4 + dy;
  
-	Ops = xvid_QP_Funcs; // TODO: pass as argument
+	Ops = xvid_QP_Funcs; /* TODO: pass as argument */
 	quads = (dx&3) | ((dy&3)<<2);
  
 	x_int = xRef/4;
@@ -235,7 +235,7 @@ new_interpolate16x8_quarterpel(uint8_t * const cur,
 	dst = cur + y * stride + x;
 	src = refn + y_int * stride + x_int;
 
-	tmp = refh; // we need at least a 16 x stride scratch block
+	tmp = refh; /* we need at least a 16 x stride scratch block */
 
 	switch(quads) {
 	case 0:
@@ -321,7 +321,7 @@ new_interpolate8x8_quarterpel(uint8_t * const cur,
 	const int32_t xRef = x*4 + dx;
 	const int32_t yRef = y*4 + dy;
  
-	Ops = xvid_QP_Funcs; // TODO: pass as argument
+	Ops = xvid_QP_Funcs; /* TODO: pass as argument */
 	quads = (dx&3) | ((dy&3)<<2);
  
 	x_int = xRef/4;
@@ -335,7 +335,7 @@ new_interpolate8x8_quarterpel(uint8_t * const cur,
 	dst = cur + y * stride + x;
 	src = refn + y_int * stride + x_int;
 
-	tmp = refh; // we need at least a 16 x stride scratch block
+	tmp = refh; /* we need at least a 16 x stride scratch block */
 
 	switch(quads) {
 	case 0:

@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation.h,v 1.1.2.1 2003-09-10 22:18:59 edgomez Exp $
+ * $Id: estimation.h,v 1.1.2.2 2003-09-30 18:20:31 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -145,15 +145,6 @@ MainSearchFunc xvid_me_DiamondSearch, xvid_me_AdvDiamondSearch, xvid_me_SquareSe
 
 void
 xvid_me_SubpelRefine(const SearchData * const data, CheckFunc * const CheckCandidate);
-
-int
-globalSAD(const WARPPOINTS *const wp,
-		const MBParam * const pParam,
-		const MACROBLOCK * const pMBs,
-		const FRAMEINFO * const current,
-		const IMAGE * const pRef,
-		const IMAGE * const pCurr,
-		uint8_t *const GMCblock);
 
 void
 xvid_me_ModeDecision_RD(SearchData * const Data,

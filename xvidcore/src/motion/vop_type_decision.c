@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: vop_type_decision.c,v 1.1.2.1 2003-09-10 22:19:00 edgomez Exp $
+ * $Id: vop_type_decision.c,v 1.1.2.2 2003-09-30 18:20:31 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -137,9 +137,9 @@ int
 MEanalysis(	const IMAGE * const pRef,
 			const FRAMEINFO * const Current,
 			const MBParam * const pParam,
-			const int maxIntra, //maximum number if non-I frames
-			const int intraCount, //number of non-I frames after last I frame; 0 if we force P/B frame
-			const int bCount, // number of B frames in a row
+			const int maxIntra, /* maximum number if non-I frames */
+			const int intraCount, /* number of non-I frames after last I frame; 0 if we force P/B frame */
+			const int bCount, /* number of B frames in a row */
 			const int b_thresh)
 {
 	uint32_t x, y, intra = 0;
@@ -164,10 +164,10 @@ MEanalysis(	const IMAGE * const pRef,
 	Data.qpel_precision = 0;
 
 	if (intraCount != 0) {
-		if (intraCount < 10) // we're right after an I frame
+		if (intraCount < 10) /* we're right after an I frame */
 			IntraThresh += 15* (intraCount - 10) * (intraCount - 10);
 		else
-			if ( 5*(maxIntra - intraCount) < maxIntra) // we're close to maximum. 2 sec when max is 10 sec
+			if ( 5*(maxIntra - intraCount) < maxIntra) /* we're close to maximum. 2 sec when max is 10 sec */
 				IntraThresh -= (IntraThresh * (maxIntra - 8*(maxIntra - intraCount)))/maxIntra;
 	}
 
@@ -182,7 +182,7 @@ MEanalysis(	const IMAGE * const pRef,
 			blocks += 10;
 
 			if (bCount == 0) pMBs[x + y * pParam->mb_width].mvs[0] = zeroMV;
-			else { //extrapolation of the vector found for last frame
+			else { /* extrapolation of the vector found for last frame */
 				pMBs[x + y * pParam->mb_width].mvs[0].x =
 					(pMBs[x + y * pParam->mb_width].mvs[0].x * (bCount+1) ) / bCount;
 				pMBs[x + y * pParam->mb_width].mvs[0].y =

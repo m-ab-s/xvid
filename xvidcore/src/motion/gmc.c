@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: gmc.c,v 1.1.2.4 2003-09-10 22:18:59 edgomez Exp $
+ * $Id: gmc.c,v 1.1.2.5 2003-09-30 18:20:31 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -30,14 +30,13 @@
 
 #include <stdio.h>
 
-/* These are mainly the new GMC routines by -Skal- (C) 2003 */
-
-//////////////////////////////////////////////////////////
-// Pts = 2 or 3
-
-// Warning! *src is the global frame pointer (that is: adress
-// of pixel 0,0), not the macroblock one.
-// Conversely, *dst is the macroblock top-left adress.
+/* ************************************************************
+ * Pts = 2 or 3
+ *
+ * Warning! *src is the global frame pointer (that is: adress
+ * of pixel 0,0), not the macroblock one.
+ * Conversely, *dst is the macroblock top-left adress.
+ */
 
 void Predict_16x16_C(const NEW_GMC_DATA * const This,
 					 uint8_t *dst, const uint8_t *src,
@@ -192,15 +191,16 @@ void get_average_mv_C(const NEW_GMC_DATA * const Dsp, VECTOR * const mv,
 		v = V >> 16; V += Dsp->dV[0]; vy += v;
 	}
 	}
-	vx -= (256*x+120) << (5+Dsp->accuracy);	// 120 = 15*16/2
+	vx -= (256*x+120) << (5+Dsp->accuracy);	/* 120 = 15*16/2 */
 	vy -= (256*y+120) << (5+Dsp->accuracy);
 
 	mv->x = RSHIFT( vx, 8+Dsp->accuracy - qpel );
 	mv->y = RSHIFT( vy, 8+Dsp->accuracy - qpel );
 }
 
-//////////////////////////////////////////////////////////
-// simplified version for 1 warp point
+/* ************************************************************
+ * simplified version for 1 warp point
+ */
 
 void Predict_1pt_16x16_C(const NEW_GMC_DATA * const This,
 						 uint8_t *Dst, const uint8_t *Src, 
@@ -212,7 +212,7 @@ void Predict_1pt_16x16_C(const NEW_GMC_DATA * const This,
 	const int32_t Rounder = ( 128 - (rounding<<(2*rho)) ) << 16;
 
 
-	int32_t uo = This->Uo + (x<<8);	 // ((16*x)<<4)
+	int32_t uo = This->Uo + (x<<8);	 /* ((16*x)<<4) */
 	int32_t vo = This->Vo + (y<<8);
 	const uint32_t ri = MTab[uo & 15];
 	const uint32_t rj = MTab[vo & 15];
@@ -310,10 +310,9 @@ void get_average_mv_1pt_C(const NEW_GMC_DATA * const Dsp, VECTOR * const mv,
 	mv->y = RSHIFT(Dsp->Vo<<qpel, 3);
 }
 
-//////////////////////////////////////////////////////////
-
-
-	// Warning! It's Accuracy being passed, not 'resolution'!
+/* *************************************************************
+ * Warning! It's Accuracy being passed, not 'resolution'!
+ */
 
 void generate_GMCparameters( int nb_pts, const int accuracy,
 								 const WARPPOINTS *const pts,
@@ -325,7 +324,7 @@ void generate_GMCparameters( int nb_pts, const int accuracy,
 	gmc->accuracy = accuracy;
 	gmc->num_wp = nb_pts;
 
-	// reduce the number of points, if possible
+	/* reduce the number of points, if possible */
 	if (nb_pts<3 || (pts->duv[2].x==-pts->duv[1].y && pts->duv[2].y==pts->duv[1].x)) {
 	if (nb_pts<2 || (pts->duv[1].x==0 && pts->duv[1].y==0)) {
 		if (nb_pts<1 || (pts->duv[0].x==0 && pts->duv[0].y==0)) {
@@ -337,18 +336,18 @@ void generate_GMCparameters( int nb_pts, const int accuracy,
 	}
 	else nb_pts = 3;
 	
-	// now, nb_pts stores the actual number of points required for interpolation
+	/* now, nb_pts stores the actual number of points required for interpolation */
 
 	if (nb_pts<=1)
 	{
 	if (nb_pts==1) {
-		// store as 4b fixed point
+		/* store as 4b fixed point */
 		gmc->Uo = pts->duv[0].x << accuracy;
 		gmc->Vo = pts->duv[0].y << accuracy;
-		gmc->Uco = ((pts->duv[0].x>>1) | (pts->duv[0].x&1)) << accuracy;	 // DIV2RND()
-		gmc->Vco = ((pts->duv[0].y>>1) | (pts->duv[0].y&1)) << accuracy;	 // DIV2RND()
+		gmc->Uco = ((pts->duv[0].x>>1) | (pts->duv[0].x&1)) << accuracy;	 /* DIV2RND() */
+		gmc->Vco = ((pts->duv[0].y>>1) | (pts->duv[0].y&1)) << accuracy;	 /* DIV2RND() */
 	}
-	else {	// zero points?!
+	else {	/* zero points?! */
 		gmc->Uo	= gmc->Vo	= 0;
 		gmc->Uco = gmc->Vco = 0;
 	}
@@ -357,26 +356,28 @@ void generate_GMCparameters( int nb_pts, const int accuracy,
 	gmc->predict_8x8	= Predict_1pt_8x8_C;
 	gmc->get_average_mv = get_average_mv_1pt_C;
 	}
-	else {		// 2 or 3 points
-	const int rho	 = 3 - accuracy;	// = {3,2,1,0} for Acc={0,1,2,3}
+	else {		/* 2 or 3 points */
+	const int rho	 = 3 - accuracy;	/* = {3,2,1,0} for Acc={0,1,2,3} */
 	int Alpha = log2bin(width-1);
 	int Ws = 1 << Alpha;
 
-	gmc->dU[0] = 16*Ws + RDIV( 8*Ws*pts->duv[1].x, width );	 // dU/dx
-	gmc->dV[0] =		 RDIV( 8*Ws*pts->duv[1].y, width );	 // dV/dx
+	gmc->dU[0] = 16*Ws + RDIV( 8*Ws*pts->duv[1].x, width );	 /* dU/dx */
+	gmc->dV[0] =		 RDIV( 8*Ws*pts->duv[1].y, width );	 /* dV/dx */
 
 /*	 disabled, because possibly buggy? */
 
-/* if (nb_pts==2) {
-		gmc->dU[1] = -gmc->dV[0];	// -Sin
-		gmc->dV[1] =	gmc->dU[0] ;	//	Cos
+#if 0
+	if (nb_pts==2) {
+		gmc->dU[1] = -gmc->dV[0];	/* -Sin */
+		gmc->dV[1] =	gmc->dU[0] ;	/* Cos */
 	}
-	else */
+	else
+#endif
 	{
 		const int Beta = log2bin(height-1);
 		const int Hs = 1<<Beta;
-		gmc->dU[1] =		 RDIV( 8*Hs*pts->duv[2].x, height );	 // dU/dy
-		gmc->dV[1] = 16*Hs + RDIV( 8*Hs*pts->duv[2].y, height );	 // dV/dy
+		gmc->dU[1] =		 RDIV( 8*Hs*pts->duv[2].x, height );	 /* dU/dy */
+		gmc->dV[1] = 16*Hs + RDIV( 8*Hs*pts->duv[2].y, height );	 /* dV/dy */
 		if (Beta>Alpha) {
 		gmc->dU[0] <<= (Beta-Alpha);
 		gmc->dV[0] <<= (Beta-Alpha);
@@ -388,7 +389,7 @@ void generate_GMCparameters( int nb_pts, const int accuracy,
 		gmc->dV[1] <<= Alpha - Beta;
 		}
 	}
-		// upscale to 16b fixed-point
+	/* upscale to 16b fixed-point */
 	gmc->dU[0] <<= (16-Alpha - rho);
 	gmc->dU[1] <<= (16-Alpha - rho);
 	gmc->dV[0] <<= (16-Alpha - rho);
@@ -407,24 +408,23 @@ void generate_GMCparameters( int nb_pts, const int accuracy,
 	}
 }
 
-//////////////////////////////////////////////////////////
-
-/* quick and dirty routine to generate the full warped image (pGMC != NULL)
-	or just all average Motion Vectors (pGMC == NULL) */
+/* *******************************************************************
+ * quick and dirty routine to generate the full warped image
+ * (pGMC != NULL) or just all average Motion Vectors (pGMC == NULL) */
 
 void
-generate_GMCimage(	const NEW_GMC_DATA *const gmc_data, // [input] precalculated data
-					const IMAGE *const pRef,		// [input]
+generate_GMCimage(	const NEW_GMC_DATA *const gmc_data, /* [input] precalculated data */
+					const IMAGE *const pRef,		/* [input] */
 					const int mb_width,
 					const int mb_height,
 					const int stride,
 					const int stride2,
-					const int fcode, 				// [input] some parameters...
-						const int32_t quarterpel,		// [input] for rounding avgMV
-					const int reduced_resolution,	// [input] ignored
-					const int32_t rounding,			// [input] for rounding image data
-					MACROBLOCK *const pMBs, 		// [output] average motion vectors
-					IMAGE *const pGMC)				// [output] full warped image
+					const int fcode, 				/* [input] some parameters... */
+						const int32_t quarterpel,		/* [input] for rounding avgMV */
+					const int reduced_resolution,	/* [input] ignored */
+					const int32_t rounding,			/* [input] for rounding image data */
+					MACROBLOCK *const pMBs, 		/* [output] average motion vectors */
+					IMAGE *const pGMC)				/* [output] full warped image */
 {
 
 	unsigned int mj,mi;

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: vlc_codes.h,v 1.16.2.2 2003-06-09 13:52:27 edgomez Exp $
+ * $Id: vlc_codes.h,v 1.16.2.3 2003-09-30 18:20:31 edgomez Exp $
  *
  ****************************************************************************/
 #ifndef _VLC_CODES_H_
@@ -68,9 +68,8 @@ VLC_TABLE;
  * common tables between encoder/decoder                          *
  ******************************************************************/
 
-extern short const dc_threshold[];
-
 extern VLC const dc_lum_tab[];
+extern short const dc_threshold[];
 extern VLC_TABLE const coeff_tab[2][102];
 extern uint8_t const max_level[2][2][64];
 extern uint8_t const max_run[2][2][64];
@@ -88,8 +87,5 @@ extern VLC const cbpy_table[64];
 extern VLC const TMNMVtab0[];
 extern VLC const TMNMVtab1[];
 extern VLC const TMNMVtab2[];
-extern short const dc_threshold[];
-extern VLC const dc_lum_tab[];
-
 
 #endif /* _VLC_CODES_H */

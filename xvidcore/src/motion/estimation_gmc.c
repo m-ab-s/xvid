@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_gmc.c,v 1.1.2.1 2003-09-10 22:18:59 edgomez Exp $
+ * $Id: estimation_gmc.c,v 1.1.2.2 2003-09-30 18:20:31 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -42,22 +42,14 @@ static void
 CheckCandidate16I(const int x, const int y, const SearchData * const data, const unsigned int Direction)
 {
 	int sad;
-//	int xc, yc;
 	const uint8_t * Reference;
-//	VECTOR * current;
 
 	if ( (x > data->max_dx) || ( x < data->min_dx)
 		|| (y > data->max_dy) || (y < data->min_dy) ) return;
 
 	Reference = GetReference(x, y, data);
-//	xc = x; yc = y;
 
 	sad = sad16(data->Cur, Reference, data->iEdgedWidth, 256*4096);
-//	sad += d_mv_bits(x, y, data->predMV, data->iFcode, 0, 0);
-
-/*	if (data->chroma) sad += ChromaSAD((xc >> 1) + roundtab_79[xc & 0x3],
-										(yc >> 1) + roundtab_79[yc & 0x3], data);
-*/
 
 	if (sad < data->iMinSAD[0]) {
 		data->iMinSAD[0] = sad;
@@ -172,9 +164,9 @@ GlobalMotionEst(MACROBLOCK * const pMBs,
 				const IMAGE * const pRefHV)
 {
 
-	const int deltax=8;		// upper bound for difference between a MV and it's neighbour MVs
+	const int deltax=8;		/* upper bound for difference between a MV and it's neighbour MVs */
 	const int deltay=8;
-	const unsigned int gradx=512;		// lower bound for gradient in MB (ignore "flat" blocks)
+	const unsigned int gradx=512;		/* lower bound for gradient in MB (ignore "flat" blocks) */
 	const unsigned int grady=512;
 
 	double sol[4] = { 0., 0., 0., 0. };
@@ -185,7 +177,7 @@ GlobalMotionEst(MACROBLOCK * const pMBs,
 
 	int MBh = pParam->mb_height;
 	int MBw = pParam->mb_width;
-	const int minblocks = 9; //MBh*MBw/32+3;		/* just some reasonable number 3% + 3 */
+	const int minblocks = 9; /* was = /MBh*MBw/32+3 */ /* just some reasonable number 3% + 3 */
 	const int maxblocks = MBh*MBw/4;		/* just some reasonable number 3% + 3 */
 
 	int num=0;
@@ -197,7 +189,7 @@ GlobalMotionEst(MACROBLOCK * const pMBs,
 
 	/* block based ME isn't done, yet, so do a quick presearch */
 
-// filter mask of all blocks
+	/* filter mask of all blocks */
 
 	for (my = 0; my < (uint32_t)MBh; my++)
 	for (mx = 0; mx < (uint32_t)MBw; mx++)
@@ -403,22 +395,24 @@ GlobalMotionEstRefine(
 	int gmcminSAD=0;
 	int gmcSAD=0;
 	int direction;
-//	int mx,my;
+#if 0
+	int mx,my;
+#endif
 
-/* use many blocks... */
-/*		for (my = 0; my < (uint32_t)pParam->mb_height; my++)
-		for (mx = 0; mx < (uint32_t)pParam->mb_width; mx++)
-		{
+#if 0
+	/* use many blocks... */
+	for (my = 0; my < (uint32_t)pParam->mb_height; my++) {
+		for (mx = 0; mx < (uint32_t)pParam->mb_width; mx++) {
 			const int mbnum = mx + my * pParam->mb_width;
 			pMBs[mbnum].mcsel=1;
 		}
-*/
+	}
+#endif
 
-/* or rather don't use too many blocks... */
-/*
-		for (my = 1; my < (uint32_t)MBh-1; my++)
-		for (mx = 1; mx < (uint32_t)MBw-1; mx++)
-		{
+#if 0
+	/* or rather don't use too many blocks... */
+	for (my = 1; my < (uint32_t)MBh-1; my++) {
+		for (mx = 1; mx < (uint32_t)MBw-1; mx++) {
 			const int mbnum = mx + my * MBw;
 			if (MBmask[mbnum-1])
 				MBmask[mbnum-1]=0;
@@ -427,25 +421,27 @@ GlobalMotionEstRefine(
 					MBmask[mbnum-1]=0;
 
 		}
-*/
-		gmcminSAD = globalSAD(&bestwp, pParam, pMBs, current, pRef, pCurr, GMCblock);
+	}
+#endif
 
-		if ( (reference->coding_type == S_VOP)
-			&& ( (reference->warp.duv[1].x != bestwp.duv[1].x)
+	gmcminSAD = globalSAD(&bestwp, pParam, pMBs, current, pRef, pCurr, GMCblock);
+
+	if ( (reference->coding_type == S_VOP)
+		 && ( (reference->warp.duv[1].x != bestwp.duv[1].x)
 			  || (reference->warp.duv[1].y != bestwp.duv[1].y)
 			  || (reference->warp.duv[0].x != bestwp.duv[0].x)
 			  || (reference->warp.duv[0].y != bestwp.duv[0].y)
 			  || (reference->warp.duv[2].x != bestwp.duv[2].x)
 			  || (reference->warp.duv[2].y != bestwp.duv[2].y) ) )
-		{
-			gmcSAD = globalSAD(&reference->warp, pParam, pMBs,
-								current, pRef, pCurr, GMCblock);
+	{
+		gmcSAD = globalSAD(&reference->warp, pParam, pMBs,
+						   current, pRef, pCurr, GMCblock);
 
 			if (gmcSAD < gmcminSAD)
 			{	bestwp = reference->warp;
 				gmcminSAD = gmcSAD;
 			}
-		}
+	}
 
 	do {
 		direction = 0;

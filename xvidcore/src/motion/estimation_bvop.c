@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_bvop.c,v 1.1.2.1 2003-09-10 22:18:59 edgomez Exp $
+ * $Id: estimation_bvop.c,v 1.1.2.2 2003-09-30 18:20:31 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -458,14 +458,14 @@ SkipDecisionB(const IMAGE * const pCur,
 					b_Ref->u + (y*8 + b_dy/2) * stride + x*8 + b_dx/2,
 					stride);
 
-	if (sum >= MAX_CHROMA_SAD_FOR_SKIP * Data->iQuant) return; /* no skip */
+	if (sum >= MAX_CHROMA_SAD_FOR_SKIP * (int)Data->iQuant) return; /* no skip */
 
 	sum += sad8bi(pCur->v + 8*x + 8 * y * stride,
 					f_Ref->v + (y*8 + dy/2) * stride + x*8 + dx/2,
 					b_Ref->v + (y*8 + b_dy/2) * stride + x*8 + b_dx/2,
 					stride);
 
-	if (sum < MAX_CHROMA_SAD_FOR_SKIP * Data->iQuant) {
+	if (sum < MAX_CHROMA_SAD_FOR_SKIP * (int)Data->iQuant) {
 		pMB->mode = MODE_DIRECT_NONE_MV; /* skipped */
 		for (k = 0; k < 4; k++) {
 			pMB->qmvs[k] = pMB->mvs[k];
@@ -550,7 +550,7 @@ SearchDirect(const IMAGE * const f_Ref,
 	CheckCandidate(0, 0, Data, 255);
 
 	/* initial (fast) skip decision */
-	if (*Data->iMinSAD < Data->iQuant * INITIAL_SKIP_THRESH * (Data->chroma?3:2)) {
+	if (*Data->iMinSAD < (int)Data->iQuant * INITIAL_SKIP_THRESH * (Data->chroma?3:2)) {
 		/* possible skip */
 		if (Data->chroma) {
 			pMB->mode = MODE_DIRECT_NONE_MV;

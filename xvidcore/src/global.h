@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: global.h,v 1.21.2.8 2003-07-13 09:58:26 syskin Exp $
+ * $Id: global.h,v 1.21.2.9 2003-09-30 18:20:31 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -132,29 +132,33 @@ typedef struct
 	int dxF, dyF, dxG, dyG; 
 	int Fo, Go;
 	int cFo, cGo;
-}
-GMC_DATA;
+} GMC_DATA;
 
-typedef struct NEW_GMC_DATA NEW_GMC_DATA;
-struct NEW_GMC_DATA
+typedef struct _NEW_GMC_DATA
 {
-  int num_wp;   //  0=none, 1=translation, 2,3 = warping
-                //  a value of -1 means: "structure not initialized!"
-  int accuracy;     // {0,1,2,3}  =>   {1/2,1/4,1/8,1/16} pel
+   /*  0=none, 1=translation, 2,3 = warping
+	*  a value of -1 means: "structure not initialized!" */
+	int num_wp;
 
-  int sW, sH;   // sprite size * 16
-  int dU[2], dV[2], Uo, Vo, Uco, Vco;   // gradient, calculated from warp points
+	/* {0,1,2,3}  =>   {1/2,1/4,1/8,1/16} pel */
+	int accuracy;
 
-  void (*predict_16x16)(const NEW_GMC_DATA * const This,
-                        uint8_t *dst, const uint8_t *src,
-                        int dststride, int srcstride, int x, int y, int rounding);
-  void (*predict_8x8)  (const NEW_GMC_DATA * const This,
-                        uint8_t *uDst, const uint8_t *uSrc,
-                        uint8_t *vDst, const uint8_t *vSrc,
-                        int dststride, int srcstride, int x, int y, int rounding);
-  void (*get_average_mv)(const NEW_GMC_DATA * const Dsp, VECTOR * const mv,
-                         int x, int y, int qpel);
-};
+	/* sprite size * 16 */
+	int sW, sH;
+
+	/* gradient, calculated from warp points */
+	int dU[2], dV[2], Uo, Vo, Uco, Vco;
+
+	void (*predict_16x16)(const struct _NEW_GMC_DATA * const This,
+						  uint8_t *dst, const uint8_t *src,
+						  int dststride, int srcstride, int x, int y, int rounding);
+	void (*predict_8x8)  (const struct _NEW_GMC_DATA * const This,
+						  uint8_t *uDst, const uint8_t *uSrc,
+						  uint8_t *vDst, const uint8_t *vSrc,
+						  int dststride, int srcstride, int x, int y, int rounding);
+	void (*get_average_mv)(const struct _NEW_GMC_DATA * const Dsp, VECTOR * const mv,
+						   int x, int y, int qpel);
+} NEW_GMC_DATA;
 
 typedef struct
 {

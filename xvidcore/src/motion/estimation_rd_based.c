@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_rd_based.c,v 1.1.2.2 2003-09-28 16:12:32 syskin Exp $
+ * $Id: estimation_rd_based.c,v 1.1.2.3 2003-09-30 18:20:31 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -318,7 +318,7 @@ findRD_inter4v(const SearchData * const Data,
 		Data8->RefP[2] = Data->RefP[2] + 8*((i&1) + (i>>1)*Data->iEdgedWidth);
 		Data8->RefP[1] = Data->RefP[1] + 8*((i&1) + (i>>1)*Data->iEdgedWidth);
 		Data8->RefP[3] = Data->RefP[3] + 8*((i&1) + (i>>1)*Data->iEdgedWidth);
-		*Data8->cbp = (Data->cbp[1] & (1<<(5-i))) ? 1:0; // copy corresponding cbp bit
+		*Data8->cbp = (Data->cbp[1] & (1<<(5-i))) ? 1:0; /* copy corresponding cbp bit */
 
 		if(Data->qpel) {
 			Data8->predMV = get_qpmv2(pMBs, pParam->mb_width, 0, x, y, i);
@@ -586,7 +586,7 @@ xvid_me_ModeDecision_RD(SearchData * const Data,
 			pMB->pmvs[0].y = Data->currentMV[0].y - Data->predMV.y;
 		}
 
-	} else if (mode == MODE_INTER ) { // but mcsel == 1
+	} else if (mode == MODE_INTER ) { /* but mcsel == 1 */
 
 		pMB->mcsel = 1;
 		if (Data->qpel) {
@@ -734,9 +734,9 @@ xvid_me_ModeDecision_Fast(SearchData * const Data,
 	thresh = 0;
 
 	if((x > 0) && (y > 0) && (x < (int32_t) pParam->mb_width)) {
-		left = (&pMBs[(x-1) + y * pParam->mb_width])->sad16; // left
-		top = (&pMBs[x + (y-1) * pParam->mb_width])->sad16; // top
-		top_right = (&pMBs[(x+1) + (y-1) * pParam->mb_width])->sad16; // top right
+		left = (&pMBs[(x-1) + y * pParam->mb_width])->sad16; /* left */
+		top = (&pMBs[x + (y-1) * pParam->mb_width])->sad16; /* top */
+		top_right = (&pMBs[(x+1) + (y-1) * pParam->mb_width])->sad16; /* top right */
 
 		if(((&pMBs[(x-1) + y * pParam->mb_width])->mode != MODE_INTRA) &&
 		   ((&pMBs[x + (y-1) * pParam->mb_width])->mode != MODE_INTRA) &&
@@ -844,7 +844,7 @@ early_out:
 			pMB->pmvs[0].y = Data->currentMV[0].y - Data->predMV.y;
 		}
 
-	} else if (mode == MODE_INTER ) { // but mcsel == 1
+	} else if (mode == MODE_INTER ) { /* but mcsel == 1 */
 
 		pMB->mcsel = 1;
 		if (Data->qpel) {
