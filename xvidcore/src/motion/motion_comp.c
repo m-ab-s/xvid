@@ -6,7 +6,6 @@
 #include "../encoder.h"
 #include "../utils/mbfunctions.h"
 #include "../image/interpolate8x8.h"
-#include "../image/qpel.h"
 #include "../utils/timer.h"
 #include "motion.h"
 
