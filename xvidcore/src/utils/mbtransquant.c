@@ -72,8 +72,6 @@ MBFIELDTEST_PTR MBFieldTest;
 
 #define TOOSMALL_LIMIT 	1	/* skip blocks having a coefficient sum below this value */
 
-/* this isnt pretty, but its better than 20 ifdefs */
-
 void
 MBTransQuantIntra(const MBParam * pParam,
 				  FRAMEINFO * frame,
@@ -195,6 +193,8 @@ MBTransQuantInter(const MBParam * pParam,
 	stop_interlacing_timer();
 
 	for (i = 0; i < 6; i++) {
+		uint32_t increase_limit = (iQuant == 1) ? 1 : 0;
+
 		/* 
 		 *  no need to transfer 8->16-bit
 		 * (this is performed already in motion compensation) 
@@ -213,7 +213,7 @@ MBTransQuantInter(const MBParam * pParam,
 			stop_quant_timer();
 		}
 
-		if ((sum >= TOOSMALL_LIMIT) || (qcoeff[i*64] != 0) ||
+		if ((sum >= TOOSMALL_LIMIT + increase_limit) || (qcoeff[i*64] != 0) ||
 			(qcoeff[i*64+1] != 0) || (qcoeff[i*64+8] != 0)) {
 
 			if (pParam->m_quant_type == H263_QUANT) {
