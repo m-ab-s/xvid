@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_rd_based.c,v 1.2 2004-03-22 22:36:24 edgomez Exp $
+ * $Id: estimation_rd_based.c,v 1.2.2.1 2004-05-03 23:28:29 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -128,7 +128,7 @@ Block_CalcBitsIntra(MACROBLOCK * pMB,
 	}
 
 	predict_acdc(pMB-(x+mb_width*y), x, y, mb_width, block, qcoeff,
-				quant, iDcScaler, predictors, 0);
+				quant, iDcScaler, predictors, 0, 0);
 	
 	direction = pMB->acpred_directions[block];
 	pCurrent = pMB->pred_values[block];

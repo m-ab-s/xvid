@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.51.2.2 2004-04-19 12:33:34 syskin Exp $
+ * $Id: decoder.c,v 1.51.2.3 2004-05-03 23:28:29 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -303,7 +303,7 @@ decoder_mbintra(DECODER * dec,
 
 		start_timer();
 		predict_acdc(dec->mbs, x_pos, y_pos, dec->mb_width, i, &block[i * 64],
-					 iQuant, iDcScaler, predictors, bound);
+					 iQuant, iDcScaler, predictors, bound, dec->bs_version);
 		if (!acpred_flag) {
 			pMB->acpred_directions[i] = 0;
 		}

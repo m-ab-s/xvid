@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.c,v 1.42.2.1 2004-05-02 10:33:22 edgomez Exp $
+ * $Id: bitstream.c,v 1.42.2.2 2004-05-03 23:28:29 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1272,16 +1272,14 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	}
 
 	/* xvid id */
-#define XVID_ID "XviD" XVID_BS_VERSION
 	{
-		char xvid_id_string[100];
-
-		if (frame->vop_flags & XVID_VOP_CARTOON)
-			sprintf(xvid_id_string, "%sC", XVID_ID);
-		else
-			sprintf(xvid_id_string, "%s", XVID_ID);
-
-		BitstreamWriteUserData(bs, xvid_id_string, strlen(xvid_id_string));
+		const char xvid_user_format[] = "XviD%04d%c";
+		char xvid_user_data[100];
+		sprintf(xvid_user_data,
+				xvid_user_format,
+				XVID_BS_VERSION,
+				(frame->vop_flags & XVID_VOP_CARTOON)?'C':'\0');
+		BitstreamWriteUserData(bs, xvid_user_data, strlen(xvid_user_data));
 	}
 }
 
