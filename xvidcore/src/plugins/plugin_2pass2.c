@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.29 2003-12-07 15:08:15 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.30 2003-12-08 12:38:04 syskin Exp $
  *
  *****************************************************************************/
 
@@ -436,7 +436,14 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	if (data->quant > 0)
 		return(0);
 
-	/* Second case: We are in a Quant zone */
+	/* Second case: insufficent stats data */
+	if (data->frame_num >= rc->num_frames) {
+		DPRINTF(XVID_DEBUG_RC,"[xvid rc] -- stats file too short (now processing frame %d)",
+			data->frame_num);
+		return(0);
+	}
+
+	/* Third case: We are in a Quant zone */
 	if (s->zone_mode == XVID_ZONE_QUANT) {
 		rc->fq_error += s->weight;
 		data->quant = (int)rc->fq_error;
@@ -447,9 +454,6 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 		return(0);
 	}
 
-	/* Third case: insufficent stats data */
-	if (data->frame_num >= rc->num_frames)
-		return(0);
 
 	/*************************************************************************/
 	/*************************************************************************/
