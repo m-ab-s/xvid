@@ -42,6 +42,7 @@ void image_interpolate(const IMAGE * refn,
 					   IMAGE * refhv,
 					   uint32_t edged_width,
 					   uint32_t edged_height,
+					   uint32_t quarterpel,
 					   uint32_t rounding);
 
 float image_psnr(IMAGE * orig_image,

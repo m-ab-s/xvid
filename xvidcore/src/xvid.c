@@ -37,7 +37,7 @@
  *  - 22.12.2001  API change: added xvid_init() - Isibaar
  *  - 16.12.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: xvid.c,v 1.33.2.5 2002-09-25 22:02:04 h Exp $
+ *  $Id: xvid.c,v 1.33.2.6 2002-10-05 21:33:39 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -225,6 +225,16 @@ xvid_init(void *handle,
 	interpolate8x8_halfpel_v  = interpolate8x8_halfpel_v_c;
 	interpolate8x8_halfpel_hv = interpolate8x8_halfpel_hv_c;
 
+	interpolate8x8_lowpass_h = interpolate8x8_lowpass_h_c;
+	interpolate8x8_lowpass_v = interpolate8x8_lowpass_v_c;
+	interpolate8x8_lowpass_hv = interpolate8x8_lowpass_hv_c;
+
+	interpolate8x8_6tap_lowpass_h = interpolate8x8_6tap_lowpass_h_c;
+	interpolate8x8_6tap_lowpass_v = interpolate8x8_6tap_lowpass_v_c;
+
+	interpolate8x8_avg2 = interpolate8x8_avg2_c;
+	interpolate8x8_avg4 = interpolate8x8_avg4_c;
+
 	/* Initialize internal colorspace transformation tables */
 	colorspace_init();
 
@@ -293,6 +303,12 @@ xvid_init(void *handle,
 		interpolate8x8_halfpel_h  = interpolate8x8_halfpel_h_mmx;
 		interpolate8x8_halfpel_v  = interpolate8x8_halfpel_v_mmx;
 		interpolate8x8_halfpel_hv = interpolate8x8_halfpel_hv_mmx;
+
+		interpolate8x8_6tap_lowpass_h = interpolate8x8_6tap_lowpass_h_mmx;
+		interpolate8x8_6tap_lowpass_v = interpolate8x8_6tap_lowpass_v_mmx;
+
+		interpolate8x8_avg2 = interpolate8x8_avg2_mmx;
+		interpolate8x8_avg4 = interpolate8x8_avg4_mmx;
 
 		/* Image RGB->YV12 related functions */
 		rgb24_to_yv12 = rgb24_to_yv12_mmx;

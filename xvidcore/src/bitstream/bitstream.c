@@ -41,15 +41,16 @@
   *                                                                            *
   *  Revision history:                                                         *
   *                                                                            *
+  *  04.10.2002	qpel support - Isibaar										   *
   *  11.07.2002 add VOP width & height return to dec when dec->width           *
   *             or dec->height is 0  (for use in examples/ex1.c)               *
   *             MinChen <chenm001@163.com>                                     *
   *  22.05.2002 bs_put_matrix fix                                              *
   *  20.05.2002 added BitstreamWriteUserData                                   *
-  *  19.06.2002  Fix a little bug in use custom quant matrix                   *
-  *              MinChen <chenm001@163.com>                                    *
-  *  08.05.2002  add low_delay support for B_VOP decode                        *
-  *              MinChen <chenm001@163.com>                                    *
+  *  19.06.2002 Fix a little bug in use custom quant matrix                    *
+  *             MinChen <chenm001@163.com>                                     *
+  *  08.05.2002 add low_delay support for B_VOP decode                         *
+  *             MinChen <chenm001@163.com>                                     *
   *  06.05.2002 low_delay                                                      *
   *  06.05.2002 fixed fincr/fbase error                                        *
   *  01.05.2002 added BVOP support to BitstreamWriteVopHeader                  *
@@ -57,10 +58,10 @@
   *  26.03.2002 interlacing support                                            *
   *  03.03.2002 qmatrix writing                                                *
   *  03.03.2002 merged BITREADER and BITWRITER                                 *
-  *      30.02.2002     intra_dc_threshold support                             *
-  *      04.12.2001     support for additional headers                         *
-  *      16.12.2001     inital version                                         *
-  *
+  *  30.02.2002 intra_dc_threshold support                                     *
+  *  04.12.2001 support for additional headers                                 *
+  *  16.12.2001 inital version                                                 *
+  *																			   *
   ******************************************************************************/
 
 
@@ -714,7 +715,18 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 
 	BitstreamPutBit(bs, 0);		// random_accessible_vol
 	BitstreamPutBits(bs, 0, 8);	// video_object_type_indication
-	BitstreamPutBit(bs, 0);		// is_object_layer_identified (0=not given)
+
+	if (pParam->m_quarterpel == 0)
+	{
+		BitstreamPutBit(bs, 0);				// is_object_layer_identified (0=not given)
+	}
+	else
+	{
+		BitstreamPutBit(bs, 1);		// is_object_layer_identified
+		BitstreamPutBits(bs, 2, 4);	// vol_ver_id == 2
+		BitstreamPutBits(bs, 0, 3); // vol_ver_priority = 0 ??
+	}
+
 	BitstreamPutBits(bs, 1, 4);	// aspect_ratio_info (1=1:1)
 
 	BitstreamPutBit(bs, 1);	// vol_control_parameters
@@ -763,7 +775,16 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 
 	BitstreamPutBit(bs, frame->global_flags & XVID_INTERLACING);	// interlace
 	BitstreamPutBit(bs, 1);		// obmc_disable (overlapped block motion compensation)
-	BitstreamPutBit(bs, 0);		// sprite_enable
+
+	if (pParam->m_quarterpel == 0)
+	{
+		BitstreamPutBit(bs, 0);		// sprite_enable
+	}
+	else
+	{
+		BitstreamPutBits(bs, 0, 2);		// sprite_enable
+	}
+
 	BitstreamPutBit(bs, 0);		// not_in_bit
 
 	// quant_type   0=h.263  1=mpeg4(quantizer tables)
@@ -782,9 +803,21 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 
 	}
 
+	if (pParam->m_quarterpel)
+	{
+		BitstreamPutBit(bs, 1);
+	}
+
 	BitstreamPutBit(bs, 1);		// complexity_estimation_disable
 	BitstreamPutBit(bs, 1);		// resync_marker_disable
 	BitstreamPutBit(bs, 0);		// data_partitioned
+
+	if (pParam->m_quarterpel)
+	{
+		BitstreamPutBit(bs, 0);		// newpred_enable
+		BitstreamPutBit(bs, 0);		// reduced_resolution_vop_enabled
+	}
+
 	BitstreamPutBit(bs, 0);		// scalability
 }
 

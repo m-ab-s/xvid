@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.18.2.2 2002-09-29 15:53:42 chl Exp $
+ *  $Id: encoder.h,v 1.18.2.3 2002-10-05 21:35:35 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -109,6 +109,7 @@ typedef struct
 	uint32_t m_quant_type;
 	uint32_t m_rounding_type;
 	uint32_t m_fcode;
+	uint32_t m_quarterpel;
 
 	HINTINFO *hint;
 

@@ -54,6 +54,7 @@ void MBMotionCompensation(MACROBLOCK * const pMB,
 						  const uint32_t width,
 						  const uint32_t height,
 						  const uint32_t edged_width,
+						  const uint32_t quarterpel,
 						  const uint32_t rounding);
 
 

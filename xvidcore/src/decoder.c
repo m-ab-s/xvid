@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.1 2002-09-26 01:54:54 h Exp $
+ *  $Id: decoder.c,v 1.37.2.2 2002-10-05 21:34:21 Isibaar Exp $
  *
  *************************************************************************/
 
@@ -136,6 +136,15 @@ decoder_create(XVID_DEC_PARAM * param)
 		return XVID_ERR_MEMORY;
 	}
 
+	if (image_create(&dec->refh, dec->edged_width, dec->edged_height)) {
+		image_destroy(&dec->cur, dec->edged_width, dec->edged_height);
+		image_destroy(&dec->refn[0], dec->edged_width, dec->edged_height);
+		image_destroy(&dec->refn[1], dec->edged_width, dec->edged_height);
+		image_destroy(&dec->refn[2], dec->edged_width, dec->edged_height);
+		xvid_free(dec);
+		return XVID_ERR_MEMORY;
+	}
+
 	dec->mbs =
 		xvid_malloc(sizeof(MACROBLOCK) * dec->mb_width * dec->mb_height,
 					CACHE_LINE);
@@ -144,6 +153,7 @@ decoder_create(XVID_DEC_PARAM * param)
 		image_destroy(&dec->refn[0], dec->edged_width, dec->edged_height);
 		image_destroy(&dec->refn[1], dec->edged_width, dec->edged_height);
 		image_destroy(&dec->refn[2], dec->edged_width, dec->edged_height);
+		image_destroy(&dec->refh, dec->edged_width, dec->edged_height);
 		xvid_free(dec);
 		return XVID_ERR_MEMORY;
 	}
@@ -161,6 +171,7 @@ decoder_create(XVID_DEC_PARAM * param)
 		image_destroy(&dec->refn[0], dec->edged_width, dec->edged_height);
 		image_destroy(&dec->refn[1], dec->edged_width, dec->edged_height);
 		image_destroy(&dec->refn[2], dec->edged_width, dec->edged_height);
+		image_destroy(&dec->refh, dec->edged_width, dec->edged_height);
 		xvid_free(dec);
 		return XVID_ERR_MEMORY;
 	}
@@ -186,6 +197,7 @@ decoder_destroy(DECODER * dec)
 	image_destroy(&dec->refn[0], dec->edged_width, dec->edged_height);
 	image_destroy(&dec->refn[1], dec->edged_width, dec->edged_height);
 	image_destroy(&dec->refn[2], dec->edged_width, dec->edged_height);
+	image_destroy(&dec->refh, dec->edged_width, dec->edged_height);
 	image_destroy(&dec->cur, dec->edged_width, dec->edged_height);
 	xvid_free(dec);
 
@@ -381,14 +393,17 @@ decoder_mbinter(DECODER * dec,
 
 	start_timer();
 	if(dec->quarterpel) {
-		DEBUG("QUARTERPEL");
-		interpolate8x8_quarterpel(dec->cur.y, dec->refn[0].y, 16*x_pos, 16*y_pos,
+		interpolate8x8_quarterpel(dec->cur.y, dec->refn[0].y, dec->refh.y, dec->refh.y + 64,
+								  dec->refh.y + 128, 16*x_pos, 16*y_pos,
 								  pMB->mvs[0].x, pMB->mvs[0].y, stride,  rounding);
-		interpolate8x8_quarterpel(dec->cur.y, dec->refn[0].y, 16*x_pos + 8, 16*y_pos,
+		interpolate8x8_quarterpel(dec->cur.y, dec->refn[0].y, dec->refh.y, dec->refh.y + 64,
+								  dec->refh.y + 128, 16*x_pos + 8, 16*y_pos,
 								  pMB->mvs[1].x, pMB->mvs[1].y, stride,  rounding);
-		interpolate8x8_quarterpel(dec->cur.y, dec->refn[0].y, 16*x_pos, 16*y_pos + 8,
+		interpolate8x8_quarterpel(dec->cur.y, dec->refn[0].y, dec->refh.y, dec->refh.y + 64,
+								  dec->refh.y + 128, 16*x_pos, 16*y_pos + 8,
 								  pMB->mvs[2].x, pMB->mvs[2].y, stride,  rounding);
-		interpolate8x8_quarterpel(dec->cur.y, dec->refn[0].y, 16*x_pos + 8, 16*y_pos + 8,
+		interpolate8x8_quarterpel(dec->cur.y, dec->refn[0].y, dec->refh.y, dec->refh.y + 64,
+								  dec->refh.y + 128, 16*x_pos + 8, 16*y_pos + 8,
 								  pMB->mvs[3].x, pMB->mvs[3].y, stride,  rounding);
 	}
 	else {
@@ -1033,18 +1048,36 @@ decoder_bf_interpolate_mbinter(DECODER * dec,
 	interpolate8x8_switch(dec->refn[2].v, backward.v, 8 * x_pos, 8 * y_pos,
 						  b_uv_dx, b_uv_dy, stride2, 0);
 
-	interpolate8x8_c(dec->cur.y, dec->refn[2].y, 16 * x_pos, 16 * y_pos,
-					 stride);
-	interpolate8x8_c(dec->cur.y, dec->refn[2].y, 16 * x_pos + 8, 16 * y_pos,
-					 stride);
-	interpolate8x8_c(dec->cur.y, dec->refn[2].y, 16 * x_pos, 16 * y_pos + 8,
-					 stride);
-	interpolate8x8_c(dec->cur.y, dec->refn[2].y, 16 * x_pos + 8,
-					 16 * y_pos + 8, stride);
-	interpolate8x8_c(dec->cur.u, dec->refn[2].u, 8 * x_pos, 8 * y_pos,
-					 stride2);
-	interpolate8x8_c(dec->cur.v, dec->refn[2].v, 8 * x_pos, 8 * y_pos,
-					 stride2);
+	interpolate8x8_avg2(dec->cur.y + (16 * y_pos * stride) + 16 * x_pos,
+						dec->cur.y + (16 * y_pos * stride) + 16 * x_pos,
+						dec->refn[2].y + (16 * y_pos * stride) + 16 * x_pos,
+						stride, 0);
+
+	interpolate8x8_avg2(dec->cur.y + (16 * y_pos * stride) + 16 * x_pos + 8,
+						dec->cur.y + (16 * y_pos * stride) + 16 * x_pos + 8,
+						dec->refn[2].y + (16 * y_pos * stride) + 16 * x_pos + 8,
+						stride, 0);
+
+	interpolate8x8_avg2(dec->cur.y + (16 * (y_pos + 8) * stride) + 16 * x_pos,
+						dec->cur.y + (16 * (y_pos + 8) * stride) + 16 * x_pos,
+						dec->refn[2].y + (16 * (y_pos + 8) * stride) + 16 * x_pos,
+						stride, 0);
+
+	interpolate8x8_avg2(dec->cur.y + (16 * (y_pos + 8) * stride) + 16 * x_pos + 8,
+						dec->cur.y + (16 * (y_pos + 8) * stride) + 16 * x_pos + 8,
+						dec->refn[2].y + (16 * (y_pos + 8) * stride) + 16 * x_pos + 8,
+						stride, 0);
+
+	interpolate8x8_avg2(dec->cur.u + (8 * y_pos * stride) + 8 * x_pos,
+						dec->cur.u + (8 * y_pos * stride) + 8 * x_pos,
+						dec->refn[2].u + (8 * y_pos * stride) + 8 * x_pos,
+						stride2, 0);
+
+	interpolate8x8_avg2(dec->cur.v + (8 * y_pos * stride) + 8 * x_pos,
+						dec->cur.v + (8 * y_pos * stride) + 8 * x_pos,
+						dec->refn[2].v + (8 * y_pos * stride) + 8 * x_pos,
+						stride2, 0);
+
 	stop_comp_timer();
 
 	for (i = 0; i < 6; i++) {

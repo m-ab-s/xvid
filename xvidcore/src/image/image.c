@@ -32,11 +32,12 @@
  *
  *	History:
  *
+ *  05.10.2002	support for interpolated images in qpel mode - Isibaar
  *	01.05.2002	BFRAME image-based u,v interpolation
  *  22.04.2002  added some B-frame support
  *	14.04.2002	added image_dump_yuvpgm(), added image_mad()
  *              XVID_CSP_USER input support
- *  09.04.2002  PSNR calculations
+ *  09.04.2002  PSNR calculations - Isibaar
  *	06.04.2002	removed interlaced edging from U,V blocks (as per spec)
  *  26.03.2002  interlacing support (field-based edging in set_edges)
  *	26.01.2002	rgb555, rgb565
@@ -261,6 +262,7 @@ image_interpolate(const IMAGE * refn,
 				  IMAGE * refhv,
 				  uint32_t edged_width,
 				  uint32_t edged_height,
+				  uint32_t quarterpel,
 				  uint32_t rounding)
 {
 	const uint32_t offset = EDGE_SIZE * (edged_width + 1);
@@ -287,21 +289,55 @@ image_interpolate(const IMAGE * refn,
 	v_ptr -= offset;
 	hv_ptr -= offset;
 
-	for (y = 0; y < edged_height; y += 8) {
-		for (x = 0; x < edged_width; x += 8) {
-			interpolate8x8_halfpel_h(h_ptr, n_ptr, edged_width, rounding);
-			interpolate8x8_halfpel_v(v_ptr, n_ptr, edged_width, rounding);
-			interpolate8x8_halfpel_hv(hv_ptr, n_ptr, edged_width, rounding);
+	if(quarterpel) {
+		
+		for (y = 0; y < edged_height; y += 8) {
+			for (x = 0; x < edged_width; x += 8) {
+				interpolate8x8_6tap_lowpass_h(h_ptr, n_ptr, edged_width, rounding);
+				interpolate8x8_6tap_lowpass_v(v_ptr, n_ptr, edged_width, rounding);
 
-			n_ptr += 8;
-			h_ptr += 8;
-			v_ptr += 8;
-			hv_ptr += 8;
+				n_ptr += 8;
+				h_ptr += 8;
+				v_ptr += 8;
+			}
+			
+			h_ptr += stride_add;
+			v_ptr += stride_add;
+			n_ptr += stride_add;
 		}
-		h_ptr += stride_add;
-		v_ptr += stride_add;
-		hv_ptr += stride_add;
-		n_ptr += stride_add;
+
+		h_ptr = refh->y;
+		h_ptr -= offset;
+
+		for (y = 0; y < edged_height; y = y + 8) {
+			for (x = 0; x < edged_width; x = x + 8) {
+				interpolate8x8_6tap_lowpass_v(hv_ptr, h_ptr, edged_width, rounding);
+				hv_ptr += 8;
+				h_ptr += 8;
+			}
+			hv_ptr += stride_add;
+			h_ptr += stride_add;
+		}
+	}
+	else {
+
+		for (y = 0; y < edged_height; y += 8) {
+			for (x = 0; x < edged_width; x += 8) {
+				interpolate8x8_halfpel_h(h_ptr, n_ptr, edged_width, rounding);
+				interpolate8x8_halfpel_v(v_ptr, n_ptr, edged_width, rounding);
+				interpolate8x8_halfpel_hv(hv_ptr, n_ptr, edged_width, rounding);
+
+				n_ptr += 8;
+				h_ptr += 8;
+				v_ptr += 8;
+				hv_ptr += 8;
+			}
+			
+			h_ptr += stride_add;
+			v_ptr += stride_add;
+			hv_ptr += stride_add;
+			n_ptr += stride_add;
+		}
 	}
 /*
 #ifdef BFRAMES

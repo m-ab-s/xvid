@@ -60,6 +60,7 @@ typedef struct
 
 	VECTOR mv16;
 	VECTOR pmvs[4];
+	VECTOR qmvs[4];				// mvs in quarter pixel resolution
 
 	int32_t sad8[4];			// SAD values for inter4v-VECTORs
 	int32_t sad16;				// SAD value for inter-VECTOR

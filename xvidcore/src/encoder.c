@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.11 2002-10-03 12:06:42 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.76.2.12 2002-10-05 21:36:35 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -1151,6 +1151,11 @@ encoder_encode(Encoder * pEnc,
 		pEnc->current->quant = pFrame->quant;
 	}
 
+	if ((pEnc->current->global_flags & XVID_QUARTERPEL))
+		pEnc->mbParam.m_quarterpel = 1;
+	else
+		pEnc->mbParam.m_quarterpel = 0;
+
 	if ((pEnc->current->global_flags & XVID_LUMIMASKING)) {
 		int *temp_dquants =
 			(int *) xvid_malloc(pEnc->mbParam.mb_width *
@@ -1580,7 +1585,7 @@ FrameCodeP(Encoder * pEnc,
 	int iLimit;
 	int x, y, k;
 	int iSearchRange;
-	int bIntra;
+	int bIntra, skip_possible;
 	
 	/* IMAGE *pCurrent = &pEnc->current->image; */
 	IMAGE *pRef = &pEnc->reference->image;
@@ -1606,6 +1611,7 @@ FrameCodeP(Encoder * pEnc,
 		image_interpolate(pRef, &pEnc->vInterH, &pEnc->vInterV,
 						  &pEnc->vInterHV, pEnc->mbParam.edged_width,
 						  pEnc->mbParam.edged_height,
+						  pEnc->mbParam.m_quarterpel,
 						  pEnc->current->rounding_type);
 		stop_inter_timer();
 	}
@@ -1660,6 +1666,7 @@ FrameCodeP(Encoder * pEnc,
 									 dct_codes, pEnc->mbParam.width,
 									 pEnc->mbParam.height,
 									 pEnc->mbParam.edged_width,
+									 pEnc->mbParam.m_quarterpel,
 									 pEnc->current->rounding_type);
 				stop_comp_timer();
 
@@ -1705,10 +1712,15 @@ FrameCodeP(Encoder * pEnc,
 
 			/* Finished processing the MB, now check if to CODE or SKIP */
 
-			if ((pMB->mode == MODE_NOT_CODED) ||
-				(pMB->cbp == 0 && pMB->mode == MODE_INTER && pMB->mvs[0].x == 0 &&
-				pMB->mvs[0].y == 0 && pMB->dquant == NO_CHANGE)) {
+			skip_possible = (pMB->cbp == 0) & (pMB->mode == MODE_INTER) &
+							(pMB->dquant == NO_CHANGE);
 
+			if(pEnc->mbParam.m_quarterpel)
+				skip_possible &= (pMB->qmvs[0].x == 0) & (pMB->qmvs[0].y == 0);
+			else
+				skip_possible &= (pMB->mvs[0].x == 0) & (pMB->mvs[0].y == 0);
+
+			if ((pMB->mode == MODE_NOT_CODED) || (skip_possible)) {
 /* This is a candidate for SKIPping, but check intermediate B-frames first */
 
 				int bSkip = 1;
@@ -1728,7 +1740,10 @@ FrameCodeP(Encoder * pEnc,
 				if (!bSkip) 
 				{	
 					VECTOR predMV;
-					predMV = get_pmv2(pEnc->current->mbs, pEnc->mbParam.mb_width, 0, x, y, 0);
+					if(pEnc->mbParam.m_quarterpel)
+						predMV = get_qpmv2(pEnc->current->mbs, pEnc->mbParam.mb_width, 0, x, y, 0);
+					else
+						predMV = get_pmv2(pEnc->current->mbs, pEnc->mbParam.mb_width, 0, x, y, 0);
 					pMB->pmvs[0].x = -predMV.x; pMB->pmvs[0].y = -predMV.y;
 					pMB->mode = MODE_INTER;
 					pMB->cbp = 0;
@@ -1763,14 +1778,14 @@ FrameCodeP(Encoder * pEnc,
 	iSearchRange = 1 << (3 + pEnc->mbParam.m_fcode);
 
 	if ((fSigma > iSearchRange / 3)
-		&& (pEnc->mbParam.m_fcode <= 3))	// maximum search range 128
+		&& (pEnc->mbParam.m_fcode <= (3 + pEnc->mbParam.m_quarterpel)))	// maximum search range 128
 	{
 		pEnc->mbParam.m_fcode++;
 		iSearchRange *= 2;
 	} else if ((fSigma < iSearchRange / 6)
 			   && (pEnc->sStat.fMvPrevSigma >= 0)
 			   && (pEnc->sStat.fMvPrevSigma < iSearchRange / 6)
-			   && (pEnc->mbParam.m_fcode >= 2))	// minimum search range 16
+			&& (pEnc->mbParam.m_fcode >= (2 + pEnc->mbParam.m_quarterpel)))	// minimum search range 16
 	{
 		pEnc->mbParam.m_fcode--;
 		iSearchRange /= 2;
@@ -1842,7 +1857,7 @@ FrameCodeB(Encoder * pEnc,
 	start_timer();
 	image_interpolate(f_ref, &pEnc->f_refh, &pEnc->f_refv, &pEnc->f_refhv,
 					  pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
-					  0);
+					  pEnc->mbParam.m_quarterpel, 0);
 	stop_inter_timer();
 
 	// backward
@@ -1852,7 +1867,7 @@ FrameCodeB(Encoder * pEnc,
 	start_timer();
 	image_interpolate(b_ref, &pEnc->vInterH, &pEnc->vInterV, &pEnc->vInterHV,
 					  pEnc->mbParam.edged_width, pEnc->mbParam.edged_height,
-					  0);
+					  pEnc->mbParam.m_quarterpel, 0);
 	stop_inter_timer();
 
 	start_timer();

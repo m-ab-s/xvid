@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion_est.h,v 1.1.2.3 2002-10-02 10:16:36 syskin Exp $
+ *  $Id: motion_est.h,v 1.1.2.4 2002-10-05 21:37:44 Isibaar Exp $
  *
  ***************************************************************************/
 
@@ -104,13 +104,17 @@ typedef struct
 	{
 // general fields
 		int max_dx, min_dx, max_dy, min_dy;
+		uint32_t rounding;
 		VECTOR predMV;
+		VECTOR predQMV;
 		VECTOR *currentMV;
+		VECTOR *currentQMV;
 		int32_t *iMinSAD;
 		const uint8_t * Ref;
 		const uint8_t * RefH;
 		const uint8_t * RefV;
 		const uint8_t * RefHV;
+		const uint8_t * RefQ;
 		const uint8_t * Cur;
 		uint32_t iQuant;
 		uint32_t iEdgedWidth;
@@ -154,22 +158,24 @@ get_range(int32_t * const min_dx,
 		  const uint32_t block_sz,	/* block dimension, 8 or 16 */
 		  const uint32_t width,
 		  const uint32_t height,
-		  const uint32_t fcode)
+		  const uint32_t fcode,
+		  const uint32_t quarterpel)
 {
 
 	int k;
-	int high = (32 << (fcode - 1)) - 1;
+	const int search_range = 32 << (fcode - 1 - quarterpel);
+	const int high = search_range - 1;
+	const int low = -search_range;
 
 	k = 2 * (int)(width - x*block_sz);
 	*max_dx = MIN(high, k);
 	k = 2 * (int)(height -  y*block_sz);
 	*max_dy = MIN(high, k);
 	
-	high = -(32 << (fcode - 1));
 	k = -2 * (int)((x+1) * block_sz);
-	*min_dx = MAX(high, k);
+	*min_dx = MAX(low, k);
 	k = -2 * (int)((y+1) * block_sz);
-	*min_dy = MAX(high, k);
+	*min_dy = MAX(low, k);
 
 }
 
@@ -201,6 +207,7 @@ SearchP(const uint8_t * const pRef,
 		const uint8_t * const pRefH,
 		const uint8_t * const pRefV,
 		const uint8_t * const pRefHV,
+		const uint8_t * const pRefQ,
 		const IMAGE * const pCur,
 		const int x,
 		const int y,
