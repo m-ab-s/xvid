@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: driverproc.c,v 1.1.2.7 2004-01-03 12:06:11 syskin Exp $
+ * $Id: driverproc.c,v 1.1.2.8 2004-03-31 11:55:34 syskin Exp $
  *
  ****************************************************************************/
 
@@ -43,8 +43,6 @@ BOOL WINAPI DllMain(
     return TRUE;
 }
 
-extern HINSTANCE m_hdll;
-
 /* __declspec(dllexport) */ LRESULT WINAPI DriverProc(
 	DWORD dwDriverId, 
 	HDRVR hDriver, 
@@ -65,7 +63,7 @@ extern HINSTANCE m_hdll;
 
 	case DRV_OPEN :
 		DPRINTF("DRV_OPEN");
-		m_hdll = NULL;
+
 		{
 			ICOPEN * icopen = (ICOPEN *)lParam2;
 			
@@ -85,6 +83,7 @@ extern HINSTANCE m_hdll;
 				return 0;
 			}
             
+			memset(codec, 0, sizeof(CODEC));
             
             codec->status.hDlg = NULL;
             codec->config.ci_valid = 0;
