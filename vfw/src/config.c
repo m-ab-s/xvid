@@ -91,12 +91,16 @@ REG_INT const reg_ints[] = {
 	{"min_key_interval",		&reg.min_key_interval,			1},
 	{"lum_masking",				&reg.lum_masking,				0},
 	{"interlacing",				&reg.interlacing,				0},
+	{"qpel",					&reg.qpel,						0},
+	{"gmc",						&reg.gmc,						0},
+	{"chromame",				&reg.chromame,					0},
 //added by koepi for gruel's greyscale_mode
 	{"greyscale",				&reg.greyscale,					0},
 // end of koepi's additions
 #ifdef BFRAMES
 	{"max_bframes",				&reg.max_bframes,				-1},
-	{"bquant_ratio",			&reg.bquant_ratio,				200},
+	{"bquant_ratio",			&reg.bquant_ratio,				150},
+	{"bquant_offset",			&reg.bquant_offset,				100},
 	{"packed",					&reg.packed,					0},
 	{"dx50bvop",				&reg.dx50bvop,					0},
 	{"debug",					&reg.debug,						0},
@@ -539,9 +543,9 @@ void adv_mode(HWND hDlg, int mode)
 
 	const short twopass2_ext_disable[] = {
 		IDC_CBR_REACTIONDELAY, IDC_CBR_AVERAGINGPERIOD, IDC_CBR_BUFFER,
-		IDC_CREDITS_RATE_RADIO, IDC_CREDITS_QUANT_RADIO, IDC_CREDITS_QUANT_STATIC,
+		IDC_CREDITS_RATE_RADIO, 
 		IDC_CREDITS_SIZE_RADIO, IDC_CREDITS_END_STATIC, IDC_CREDITS_RATE,
-		IDC_CREDITS_QUANTI, IDC_CREDITS_QUANTP, IDC_CREDITS_START_SIZE, IDC_CREDITS_END_SIZE
+		IDC_CREDITS_START_SIZE, IDC_CREDITS_END_SIZE
 	};
 
 	const short twopass2_int_disable[] = {
@@ -639,12 +643,17 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 		SetDlgItemInt(hDlg, IDC_MINKEY, config->min_key_interval, FALSE);
 		CheckDlgButton(hDlg, IDC_LUMMASK, config->lum_masking ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_INTERLACING, config->interlacing ? BST_CHECKED : BST_UNCHECKED);
+
+		CheckDlgButton(hDlg, IDC_QPEL, config->qpel ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg, IDC_GMC, config->gmc ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hDlg, IDC_CHROMAME, config->chromame ? BST_CHECKED : BST_UNCHECKED);
 // added by koepi for gruel's greyscale_mode
 		CheckDlgButton(hDlg, IDC_GREYSCALE, config->greyscale ? BST_CHECKED : BST_UNCHECKED);
 // end of koepi's addition
 #ifdef BFRAMES
 		SetDlgItemInt(hDlg, IDC_MAXBFRAMES, config->max_bframes, TRUE);
 		SetDlgItemInt(hDlg, IDC_BQUANTRATIO, config->bquant_ratio, FALSE);
+		SetDlgItemInt(hDlg, IDC_BQUANTOFFSET, config->bquant_offset, FALSE);
 		CheckDlgButton(hDlg, IDC_PACKED, config->packed ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_DX50BVOP, config->dx50bvop ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_DEBUG, config->debug ? BST_CHECKED : BST_UNCHECKED);
@@ -773,12 +782,17 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 		config->min_key_interval = config_get_uint(hDlg, IDC_MINKEY, config->min_key_interval);
 		config->lum_masking = ISDLGSET(IDC_LUMMASK);
 		config->interlacing = ISDLGSET(IDC_INTERLACING);
+
+		config->qpel = ISDLGSET(IDC_QPEL);
+		config->gmc = ISDLGSET(IDC_GMC);
+		config->chromame = ISDLGSET(IDC_CHROMAME);
 // added by koepi for gruel's greyscale_mode
 		config->greyscale = ISDLGSET(IDC_GREYSCALE);
 // end of koepi's addition
 #ifdef BFRAMES
 		config->max_bframes = config_get_int(hDlg, IDC_MAXBFRAMES, config->max_bframes);
 		config->bquant_ratio = config_get_uint(hDlg, IDC_BQUANTRATIO, config->bquant_ratio);
+		config->bquant_offset = config_get_uint(hDlg, IDC_BQUANTOFFSET, config->bquant_offset);
 		config->packed = ISDLGSET(IDC_PACKED);
 		config->dx50bvop = ISDLGSET(IDC_DX50BVOP);
 		config->debug = ISDLGSET(IDC_DEBUG);
@@ -1121,6 +1135,7 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"MPEG");
 			SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"MPEG-Custom");
 			SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"Modulated");
+			SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"New Modulated HQ");
 
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"XVID");
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DIVX");

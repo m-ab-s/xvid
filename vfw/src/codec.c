@@ -309,6 +309,7 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	if (codec->config.debug) param.global |= XVID_GLOBAL_DEBUG;
 	param.max_bframes = codec->config.max_bframes;
 	param.bquant_ratio = codec->config.bquant_ratio;
+	param.bquant_offset = codec->config.bquant_offset;
 	param.frame_drop_ratio = codec->config.frame_drop_ratio;
 #endif
 
@@ -400,7 +401,17 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	if (codec->config.interlacing)
 		frame.general |= XVID_INTERLACING;
 
+	if (codec->config.qpel) {
+		frame.general |= XVID_QUARTERPEL;
+		frame.motion |= PMV_QUARTERPELREFINE16 | PMV_QUARTERPELREFINE8;
 
+	}
+
+	if (codec->config.gmc)
+		frame.general |= XVID_GMC;
+
+	if (codec->config.chromame)
+		frame.general |= XVID_ME_COLOUR;
 
 // added by koepi for credits greyscale
 
@@ -448,7 +459,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		}
 	}
 
-	frame.motion = pmvfast_presets[codec->config.motion_search];
+	frame.motion |= pmvfast_presets[codec->config.motion_search];
 
 	frame.image = icc->lpInput;
 	// dev-api-3 
@@ -550,7 +561,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		return ICERR_BADFORMAT;	
 	}
 
-	if (frame.intra)
+	if (frame.intra==1)
 	{
 		codec->keyspacing = 0;
 		*icc->lpdwFlags = AVIIF_KEYFRAME;
@@ -589,7 +600,9 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		}
 	}
 
-	codec_2pass_update(codec, &frame, &stats);
+//quick fix for delayed frames
+//	if (frame.intra != 5)
+		codec_2pass_update(codec, &frame, &stats);
 
 	++codec->framenum;
 	++codec->keyspacing;
@@ -611,10 +624,7 @@ LRESULT decompress_query(CODEC * codec, BITMAPINFO *lpbiInput, BITMAPINFO *lpbiO
 		return ICERR_ERROR;
 	}
 
-	if (inhdr->biCompression != FOURCC_XVID && 
-		inhdr->biCompression != FOURCC_DIVX &&
-		inhdr->biCompression != FOURCC_DX50 &&
-		get_colorspace(inhdr) == XVID_CSP_NULL)
+	if (inhdr->biCompression != FOURCC_XVID && inhdr->biCompression != FOURCC_DIVX && inhdr->biCompression != FOURCC_DX50 && get_colorspace(inhdr) == XVID_CSP_NULL)
 	{
 		return ICERR_BADFORMAT;
 	}
@@ -647,6 +657,7 @@ LRESULT decompress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO 
 	}
 
 	/* --- yv12 --- */
+
 	if (get_colorspace(inhdr) != XVID_CSP_NULL) {
 		memcpy(outhdr, inhdr, sizeof(BITMAPINFOHEADER));
 		// XXX: should we set outhdr->biSize ??
@@ -725,39 +736,33 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 	frame.length = icd->lpbiInput->biSizeImage;
 
 	frame.image = icd->lpOutput;
-	//frame.stride = icd->lpbiOutput->biWidth;
-	// dev-api-3: 
+//	frame.stride = icd->lpbiOutput->biWidth;
+	// dev-api-3:
 	frame.stride = (((icd->lpbiOutput->biWidth * icd->lpbiOutput->biBitCount) + 31) & ~31) >> 3;
 
 	/* --- yv12 --- */	
 	if (icd->lpbiInput->biCompression != FOURCC_XVID &&
-		icd->lpbiInput->biCompression != FOURCC_DIVX && 
-		icd->lpbiInput->biCompression != FOURCC_DX50) 
+		 icd->lpbiInput->biCompression != FOURCC_DIVX &&
+		 icd->lpbiInput->biCompression != FOURCC_DX50)
 	{
 		XVID_INIT_CONVERTINFO convert;
-
 		DEBUGFOURCC("input", icd->lpbiInput->biCompression);
 		DEBUGFOURCC("output", icd->lpbiOutput->biCompression);
-
 		convert.input.colorspace = get_colorspace(icd->lpbiInput);
 		convert.input.y = icd->lpInput;
-		convert.input.y_stride = (((icd->lpbiInput->biWidth * icd->lpbiInput->biBitCount) + 31) & ~31) >> 3;
-
+		convert.input.y_stride = (((icd->lpbiInput->biWidth *icd->lpbiInput->biBitCount) + 31) & ~31) >> 3;  
 		convert.output.colorspace = get_colorspace(icd->lpbiOutput);
 		convert.output.y = icd->lpOutput;
-		convert.output.y_stride = (((icd->lpbiOutput->biWidth * icd->lpbiOutput->biBitCount) + 31) & ~31) >> 3;
-		
+		convert.output.y_stride = (((icd->lpbiOutput->biWidth *icd->lpbiOutput->biBitCount) + 31) & ~31) >> 3;
 		convert.width = icd->lpbiInput->biWidth;
 		convert.height = icd->lpbiInput->biHeight;
 		convert.interlacing = 0;
-
 		if (convert.input.colorspace == XVID_CSP_NULL ||
 			convert.output.colorspace == XVID_CSP_NULL ||
 			xvid_init(NULL, XVID_INIT_CONVERT, &convert, NULL) != XVID_ERR_OK)
 		{
-			return ICERR_BADFORMAT;
+			 return ICERR_BADFORMAT;
 		}
-
 		return ICERR_OK;
 	}
 	/* --- yv12 --- */

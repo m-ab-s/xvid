@@ -238,6 +238,10 @@
 #define IDC_GREYSCALE                   1228
 #define IDC_CREDITS_GREYSCALE           1229
 #define IDC_SPECIAL_BUILD               1230
+#define IDC_GMC                         1231
+#define IDC_QPEL                        1232
+#define IDC_CHROMAME                    1233
+#define IDC_BQUANTOFFSET                1234
 
 // Next default values for new objects
 // 
@@ -245,7 +249,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1231
+#define _APS_NEXT_CONTROL_VALUE         1235
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

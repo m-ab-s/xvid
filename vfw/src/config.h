@@ -55,6 +55,7 @@ HWND hTooltip;
 #define QUANT_MODE_MPEG			1
 #define QUANT_MODE_CUSTOM		2
 #define QUANT_MODE_MOD			3
+#define QUANT_MODE_MOD_NEW		4
 
 /* credits modes */
 #define CREDITS_MODE_RATE		0
@@ -89,12 +90,16 @@ typedef struct
 	int min_key_interval;
 	int lum_masking;
 	int interlacing;
+	int qpel;
+	int gmc;
+	int chromame;
 //added by koepi for gruel's greyscale_mode
 	int greyscale;
 // end of koepi's additions
 #ifdef BFRAMES
 	int max_bframes;
 	int bquant_ratio;
+	int bquant_offset;
 	int packed;
 	int dx50bvop;
 	int debug;
