@@ -362,7 +362,18 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	    pass2.version = XVID_VERSION;
         pass2.bitrate = codec->config.bitrate * CONFIG_KBPS;
 		pass2.filename = codec->config.stats;
-		pass2.container_frame_overhead = 24;
+
+        pass2.keyframe_boost = codec->config.keyframe_boost;   /* keyframe boost percentage: [0..100...]; */
+        pass2.payback_method = codec->config.bitrate_payback_method;
+        pass2.bitrate_payback_delay = codec->config.bitrate_payback_delay;
+        pass2.curve_compression_high = codec->config.curve_compression_high;
+        pass2.curve_compression_low = codec->config.curve_compression_low;
+        pass2.max_overflow_improvement = codec->config.twopass_max_overflow_improvement;
+        pass2.max_overflow_degradation = codec->config.twopass_max_overflow_degradation;
+        pass2.kftreshold = codec->config.kftreshold;
+	    pass2.kfreduction = codec->config.kfreduction;
+        pass2.min_key_interval = codec->config.min_key_interval;
+        pass2.container_frame_overhead = 24;    /* AVI */
 
         plugins[create.num_plugins].func = xvid_plugin_2pass2;
         plugins[create.num_plugins].param = &pass2;

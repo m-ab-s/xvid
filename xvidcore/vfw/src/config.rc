@@ -66,7 +66,7 @@ END
 IDD_MAIN DIALOGEX 0, 0, 225, 255
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "XviD Configuration"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
     COMBOBOX        IDC_MODE,88,34,100,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
@@ -481,39 +481,6 @@ BEGIN
     CTEXT           "( SPECIAL BUILD )",IDC_SPECIAL_BUILD,5,102,181,8
 END
 
-IDD_RC_2PASS2_ALT DIALOG DISCARDABLE  0, 0, 212, 212
-STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Alt. Curve"
-FONT 8, "MS Sans Serif"
-BEGIN
-    GROUPBOX        "",IDC_STATIC,8,4,196,152
-    CONTROL         "Use Alternative curve system",IDC_USEALT,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,16,4,107,10
-    COMBOBOX        IDC_CURVETYPE,120,20,76,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
-                    WS_TABSTOP
-    EDITTEXT        IDC_ALTCURVEHIGH,120,36,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    EDITTEXT        IDC_ALTCURVELOW,120,52,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    CONTROL         "Enable automatic minimum relative quality",IDC_USEAUTO,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,16,72,146,10
-    EDITTEXT        IDC_AUTOSTR,120,84,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    EDITTEXT        IDC_MINQUAL,120,100,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    CONTROL         "Enable automatic bonus bias calculation",
-                    IDC_USEAUTOBONUS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    16,124,143,10
-    EDITTEXT        IDC_BONUSBIAS,120,136,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "Minimum relative quality %:",IDC_STATIC,20,100,96,12,
-                    SS_CENTERIMAGE
-    LTEXT           "High distance from average %:",IDC_STATIC,16,36,100,12,
-                    SS_CENTERIMAGE
-    LTEXT           "Low distance from average %:",IDC_STATIC,16,52,100,12,
-                    SS_CENTERIMAGE
-    LTEXT           "Strength %:",IDC_STATIC,20,84,96,12,SS_CENTERIMAGE
-    LTEXT           "Manually set bonus bias:",IDC_STATIC,20,136,96,12,
-                    SS_CENTERIMAGE
-    LTEXT           "Curve aggression:",IDC_STATIC,16,20,80,12,
-                    SS_CENTERIMAGE
-END
-
 IDD_RC_CBR DIALOG DISCARDABLE  0, 0, 212, 212
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "CBR"
@@ -701,13 +668,6 @@ BEGIN
         BOTTOMMARGIN, 158
     END
 
-    IDD_RC_2PASS2_ALT, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 193
-        TOPMARGIN, 7
-    END
-
     IDD_RC_CBR, DIALOG
     BEGIN
         LEFTMARGIN, 7
@@ -769,8 +729,6 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDC_ALTCURVELOW         "Distance from the average framesize where the best quality will be applied"
-    IDC_MINQUAL             "The minimum produced quality in relation to the best produced quality"
     IDC_INTERLACING         "Enables interlaced frame support - only use if your source contains interlacing artifacts (i.e. fields instead of progressive frames)"
     IDC_OVERDEG             "How much of the overflow the codec can eat into during oversized sections - larger values will bridge the gap faster"
     IDC_MAXBFRAMES          "Maximum number of sequential B-frames. When set to < 0 the original IP-frame encoder is used."
@@ -842,15 +800,6 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDC_LOAD                "Load a pair of custom intra/inter matrices"
     IDC_SAVE                "Save the current intra/inter matrices to a file"
-END
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDC_USEALT              "Use Foxer's alternative 2-pass curve system (still uses bias and boost information from other 2-pass tab)"
-    IDC_AUTOSTR             "How much influence a poor desired quality (file size) has on minimum relative quality"
-    IDC_BONUSBIAS           "The percentage of the bonus that will be applied with bias (the rest is proportionally distributed)"
-    IDC_CURVETYPE           "How aggressively the curve affects bitrate distribution"
-    IDC_ALTCURVEHIGH        "Distance from the average framesize where the minimum relative quality will be applied"
 END
 
 STRINGTABLE DISCARDABLE 

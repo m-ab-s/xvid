@@ -115,22 +115,12 @@ typedef struct
 	int discard1pass;
 	int curve_compression_high;
 	int curve_compression_low;
-	int use_alt_curve;
-	int alt_curve_use_auto;
-	int alt_curve_auto_str;
-	int alt_curve_use_auto_bonus_bias;
-	int alt_curve_bonus_bias;
-	int alt_curve_type;
-	int alt_curve_high_dist;
-	int alt_curve_low_dist;
-	int alt_curve_min_rel_qual;
 	int twopass_max_overflow_improvement;
 	int twopass_max_overflow_degradation;
 	int bitrate_payback_delay;
 	int bitrate_payback_method;
 
     /* motion */
-  
 	int motion_search;
 	int vhq_mode;
 	int chromame;

@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.20 2003-05-22 22:56:17 edgomez Exp $
+ * $Id: xvid.h,v 1.27.2.21 2003-06-02 11:46:47 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -442,10 +442,6 @@ typedef struct {
 } xvid_plugin_2pass1_t;
 
 
-#define XVID_CURVE_COSINE   0   /* low aggressiveness */
-#define XVID_CURVE_LINEAR   1   /* medium aggressiveness */
-#define XVID_CURVE_SINE     2   /* high aggressiveness */
-
 #define XVID_PAYBACK_BIAS   0   /* payback with bias */
 #define XVID_PAYBACK_PROP   1   /* payback proportionally */
 
@@ -461,16 +457,6 @@ typedef struct {
     int curve_compression_low;
     int max_overflow_improvement;
     int max_overflow_degradation;
-
-    int use_alt_curve;
-	int alt_curve_high_dist;
-	int alt_curve_low_dist;
-    int alt_curve_use_auto;
-	int alt_curve_auto_str;
-	int alt_curve_type; /* XVID_CURVE_ */
-	int alt_curve_min_rel_qual;
-	int alt_curve_use_auto_bonus_bias;
-    int alt_curve_bonus_bias;
 
     int kftreshold;
 	int kfreduction;

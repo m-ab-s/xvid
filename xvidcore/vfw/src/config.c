@@ -148,6 +148,7 @@ CONFIG reg;
 static const REG_INT reg_ints[] = {
 	{"mode",					&reg.mode,						RC_MODE_1PASS},
 	{"bitrate",					&reg.bitrate,					700},
+ /* {"desired_size",			&reg.desired_size,				570000},   not used */
 
 	{"rc_reaction_delay_factor",&reg.rc_reaction_delay_factor,	16},
 	{"rc_averaging_period",		&reg.rc_averaging_period,		100},
@@ -183,26 +184,17 @@ static const REG_INT reg_ints[] = {
 	{"max_bquant",				&reg.max_bquant,				31},
     {"trellis_quant",           &reg.trellis_quant,             0},
 
-	{"desired_size",			&reg.desired_size,				570000},
 	{"keyframe_boost",			&reg.keyframe_boost,			0},
 	{"discard1pass",			&reg.discard1pass,				1},
 	{"kftreshold",				&reg.kftreshold,				10},
 	{"kfreduction",				&reg.kfreduction,				20},
 	{"curve_compression_high",	&reg.curve_compression_high,	0},
 	{"curve_compression_low",	&reg.curve_compression_low,		0},
-	{"use_alt_curve",			&reg.use_alt_curve,				0},
-	{"alt_curve_use_auto",		&reg.alt_curve_use_auto,		1},
-	{"alt_curve_auto_str",		&reg.alt_curve_auto_str,		30},
-	{"alt_curve_use_auto_bonus_bias",	&reg.alt_curve_use_auto_bonus_bias,	1},
-	{"alt_curve_bonus_bias",	&reg.alt_curve_bonus_bias,		50},
-	{"alt_curve_type",			&reg.alt_curve_type,			1},
-	{"alt_curve_high_dist",		&reg.alt_curve_high_dist,		500},
-	{"alt_curve_low_dist",		&reg.alt_curve_low_dist,		90},
-	{"alt_curve_min_rel_qual",	&reg.alt_curve_min_rel_qual,	50},
-	{"bitrate_payback_delay",	&reg.bitrate_payback_delay,		250},
-	{"bitrate_payback_method",	&reg.bitrate_payback_method,	0},
+    {"bitrate_payback_delay",	&reg.bitrate_payback_delay,		250},
+    {"bitrate_payback_method",	&reg.bitrate_payback_method,	XVID_PAYBACK_BIAS },
 	{"twopass_max_overflow_improvement", &reg.twopass_max_overflow_improvement, 60},
 	{"twopass_max_overflow_degradation", &reg.twopass_max_overflow_degradation, 60},
+
     {"num_zones",               &reg.num_zones,                 1},
 };
 
@@ -626,12 +618,6 @@ void adv_init(HWND hDlg, int idd, CONFIG * config)
 			SendDlgItemMessage(hDlg, IDC_LEVEL_PROFILE, CB_ADDSTRING, 0, (LPARAM)profiles[i].name);
         break;
 		
-    case IDD_RC_2PASS2_ALT :
-		SendDlgItemMessage(hDlg, IDC_CURVETYPE, CB_ADDSTRING, 0, (LPARAM)"Low");
-		SendDlgItemMessage(hDlg, IDC_CURVETYPE, CB_ADDSTRING, 0, (LPARAM)"Medium");
-		SendDlgItemMessage(hDlg, IDC_CURVETYPE, CB_ADDSTRING, 0, (LPARAM)"High");
-        break;
-
     case IDD_ZONE :
         EnableDlgWindow(hDlg, IDC_ZONE_FETCH, 
             config->cur_zone>0 && config->ci_valid && config->ci.ciActiveFrame>0);
@@ -671,7 +657,6 @@ void adv_init(HWND hDlg, int idd, CONFIG * config)
 void adv_mode(HWND hDlg, int idd, CONFIG * config)
 {
     int profile;
-	int use_alt, use_alt_auto, use_alt_auto_bonus;
     int weight_en, quant_en;
     int cpu_force;
     int custom_quant, bvops;
@@ -711,20 +696,6 @@ void adv_mode(HWND hDlg, int idd, CONFIG * config)
         SetDlgItemInt(hDlg, IDC_LEVEL_VCV, profiles[profile].vcv_decoder_rate, FALSE);
         SetDlgItemInt(hDlg, IDC_LEVEL_VBV, profiles[profile].max_vbv_size, FALSE);
         SetDlgItemInt(hDlg, IDC_LEVEL_BITRATE, profiles[profile].max_bitrate, FALSE);
-        break;
-
-    case IDD_RC_2PASS2_ALT :
-	    use_alt				= IsDlgChecked(hDlg, IDC_USEALT);
-	    use_alt_auto		= IsDlgChecked(hDlg, IDC_USEAUTO);
-	    use_alt_auto_bonus	= IsDlgChecked(hDlg, IDC_USEAUTOBONUS);
-	    EnableDlgWindow(hDlg, IDC_USEAUTO,		use_alt);
-	    EnableDlgWindow(hDlg, IDC_AUTOSTR,		use_alt && use_alt_auto);
-	    EnableDlgWindow(hDlg, IDC_USEAUTOBONUS,	use_alt);
-	    EnableDlgWindow(hDlg, IDC_BONUSBIAS,	use_alt && !use_alt_auto_bonus);
-	    EnableDlgWindow(hDlg, IDC_CURVETYPE,	use_alt);
-	    EnableDlgWindow(hDlg, IDC_ALTCURVEHIGH,	use_alt);
-	    EnableDlgWindow(hDlg, IDC_ALTCURVELOW,	use_alt);
-	    EnableDlgWindow(hDlg, IDC_MINQUAL,		use_alt && !use_alt_auto);
         break;
 
     case IDD_ZONE :
@@ -814,23 +785,8 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
 		SetDlgItemInt(hDlg, IDC_CURVECOMPH, config->curve_compression_high, FALSE);
 		SetDlgItemInt(hDlg, IDC_CURVECOMPL, config->curve_compression_low, FALSE);
 		SetDlgItemInt(hDlg, IDC_PAYBACK, config->bitrate_payback_delay, FALSE);
-		CheckDlgButton(hDlg, IDC_PAYBACKBIAS, (config->bitrate_payback_method == 0));
-		CheckDlgButton(hDlg, IDC_PAYBACKPROP, (config->bitrate_payback_method == 1));
-		break;
-
-	case IDD_RC_2PASS2_ALT :
-		CheckDlg(hDlg, IDC_USEALT, config->use_alt_curve);
-
-		SendDlgItemMessage(hDlg, IDC_CURVETYPE, CB_SETCURSEL, config->alt_curve_type, 0);
-		SetDlgItemInt(hDlg, IDC_ALTCURVEHIGH, config->alt_curve_high_dist, FALSE);
-		SetDlgItemInt(hDlg, IDC_ALTCURVELOW, config->alt_curve_low_dist, FALSE);
-		SetDlgItemInt(hDlg, IDC_MINQUAL, config->alt_curve_min_rel_qual, FALSE);
-
-		CheckDlg(hDlg, IDC_USEAUTO, config->alt_curve_use_auto);
-		SetDlgItemInt(hDlg, IDC_AUTOSTR, config->alt_curve_auto_str, FALSE);
-
-		CheckDlg(hDlg, IDC_USEAUTOBONUS, config->alt_curve_use_auto_bonus_bias);
-		SetDlgItemInt(hDlg, IDC_BONUSBIAS, config->alt_curve_bonus_bias, FALSE);
+		CheckDlgButton(hDlg, IDC_PAYBACKBIAS, (config->bitrate_payback_method == XVID_PAYBACK_BIAS));
+		CheckDlgButton(hDlg, IDC_PAYBACKPROP, (config->bitrate_payback_method == XVID_PAYBACK_PROP));
 		break;
 
     case IDD_ZONE :
@@ -946,27 +902,12 @@ void adv_download(HWND hDlg, int idd, CONFIG * config)
 		config->curve_compression_high = GetDlgItemInt(hDlg, IDC_CURVECOMPH, NULL, FALSE);
 		config->curve_compression_low = GetDlgItemInt(hDlg, IDC_CURVECOMPL, NULL, FALSE);
 		config->bitrate_payback_delay = config_get_uint(hDlg, IDC_PAYBACK, config->bitrate_payback_delay);
-		config->bitrate_payback_method = IsDlgChecked(hDlg, IDC_PAYBACKPROP);
+        config->bitrate_payback_method = IsDlgChecked(hDlg, IDC_PAYBACKPROP) ? XVID_PAYBACK_PROP : XVID_PAYBACK_BIAS;
 
 		CONSTRAINVAL(config->bitrate_payback_delay, 1, 10000);
 		CONSTRAINVAL(config->keyframe_boost, 0, 1000);
 		CONSTRAINVAL(config->curve_compression_high, 0, 100);
 		CONSTRAINVAL(config->curve_compression_low, 0, 100);
-		break;
-
-	case IDD_RC_2PASS2_ALT :
-		config->use_alt_curve = IsDlgChecked(hDlg, IDC_USEALT);
-
-		config->alt_curve_use_auto = IsDlgChecked(hDlg, IDC_USEAUTO);
-		config->alt_curve_auto_str = config_get_uint(hDlg, IDC_AUTOSTR, config->alt_curve_auto_str);
-
-		config->alt_curve_use_auto_bonus_bias = IsDlgChecked(hDlg, IDC_USEAUTOBONUS);
-		config->alt_curve_bonus_bias = config_get_uint(hDlg, IDC_BONUSBIAS, config->alt_curve_bonus_bias);
-
-		config->alt_curve_type = SendDlgItemMessage(hDlg, IDC_CURVETYPE, CB_GETCURSEL, 0, 0);
-		config->alt_curve_high_dist = config_get_uint(hDlg, IDC_ALTCURVEHIGH, config->alt_curve_high_dist);
-		config->alt_curve_low_dist = config_get_uint(hDlg, IDC_ALTCURVELOW, config->alt_curve_low_dist);
-		config->alt_curve_min_rel_qual = config_get_uint(hDlg, IDC_MINQUAL, config->alt_curve_min_rel_qual);
 		break;
 
     case IDD_ZONE :
@@ -1063,9 +1004,6 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			switch (LOWORD(wParam))
 			{
             case IDC_BVOP :
-			case IDC_USEALT :
-			case IDC_USEAUTO :
-			case IDC_USEAUTOBONUS :
             case IDC_ZONE_MODE_WEIGHT :
             case IDC_ZONE_MODE_QUANT :
             case IDC_ZONE_BVOPTHRESHOLD_ENABLE :
@@ -1325,7 +1263,7 @@ void main_download(HWND hDlg, CONFIG * config)
 static const int profile_dlgs[] = { IDD_PROFILE, IDD_LEVEL };
 static const int single_dlgs[] = { IDD_RC_CBR };
 static const int pass1_dlgs[] = { IDD_RC_2PASS1 };
-static const int pass2_dlgs[] = { IDD_RC_2PASS2, IDD_RC_2PASS2_ALT};
+static const int pass2_dlgs[] = { IDD_RC_2PASS2 };
 static const int zone_dlgs[] = { IDD_ZONE };
 static const int bitrate_dlgs[] = { IDD_CALC };
 static const int adv_dlgs[] = { IDD_MOTION, IDD_QUANT, IDD_DEBUG};
