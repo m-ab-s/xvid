@@ -130,6 +130,33 @@ compensate8x8_interpolate(int16_t * const dct_codes,
 	}
 }
 
+
+
+/* XXX: slow, inelegant... */
+static void
+interpolate18x18_switch(uint8_t * const cur,
+					  const uint8_t * const refn,
+					  const uint32_t x,
+					  const uint32_t y,
+					  const int32_t dx,
+					  const int dy,
+					  const uint32_t stride,
+					  const uint32_t rounding)
+{
+	interpolate8x8_switch(cur, refn, x-1, y-1, dx, dy, stride, rounding);
+	interpolate8x8_switch(cur, refn, x+7, y-1, dx, dy, stride, rounding);
+	interpolate8x8_switch(cur, refn, x+9, y-1, dx, dy, stride, rounding);
+
+	interpolate8x8_switch(cur, refn, x-1, y+7, dx, dy, stride, rounding);
+	interpolate8x8_switch(cur, refn, x+7, y+7, dx, dy, stride, rounding);
+	interpolate8x8_switch(cur, refn, x+9, y+7, dx, dy, stride, rounding);
+
+	interpolate8x8_switch(cur, refn, x-1, y+9, dx, dy, stride, rounding);
+	interpolate8x8_switch(cur, refn, x+7, y+9, dx, dy, stride, rounding);
+	interpolate8x8_switch(cur, refn, x+9, y+9, dx, dy, stride, rounding);
+}
+
+
 void
 MBMotionCompensation(MACROBLOCK * const mb,
 					 const uint32_t i,
@@ -197,14 +224,16 @@ MBMotionCompensation(MACROBLOCK * const mb,
  			
 			current = cur->u + 16*j*stride + 16*i;
 			reference = refv->u + 16*j*stride + 16*i;
-			interpolate16x16_switch(refv->u, ref->u, 16*i, 16*j, dx, dy, stride, rounding);
+			//interpolate16x16_switch(refv->u, ref->u, 16*i, 16*j, dx, dy, stride, rounding);
+			interpolate18x18_switch(refv->u, ref->u, 16*i, 16*j, dx, dy, stride, rounding);
 			filter_18x18_to_8x8(dct_codes + 4*64, current, stride);
 			filter_diff_18x18_to_8x8(dct_codes + 4*64, reference, stride);
 			transfer16x16_copy(current, reference, stride);
 
 			current = cur->v + 16*j*stride + 16*i;
 			reference = refv->v + 16*j*stride + 16*i;
-			interpolate16x16_switch(refv->v, ref->v, 16*i, 16*j, dx, dy, stride, rounding);
+			//interpolate16x16_switch(refv->v, ref->v, 16*i, 16*j, dx, dy, stride, rounding);
+			interpolate18x18_switch(refv->v, ref->v, 16*i, 16*j, dx, dy, stride, rounding);
 			filter_18x18_to_8x8(dct_codes + 5*64, current, stride);
 			filter_diff_18x18_to_8x8(dct_codes + 5*64, reference, stride);
 			transfer16x16_copy(current, reference, stride);
