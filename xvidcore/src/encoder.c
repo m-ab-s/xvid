@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.14 2002-11-02 15:52:30 chl Exp $
+ *  $Id: encoder.c,v 1.76.2.15 2002-11-02 16:12:27 chl Exp $
  *
  ****************************************************************************/
 
@@ -1620,7 +1620,7 @@ FrameCodeP(Encoder * pEnc,
 	}
 
 	if (pEnc->current->global_flags & XVID_GMC) {
-		printf("Global Motion = %d %d quarterpel=%d\n", pEnc->current->GMC_MV.x, pEnc->current->GMC_MV.y,pEnc->current->quarterpel);
+//		printf("Global Motion = %d %d quarterpel=%d\n", pEnc->current->GMC_MV.x, pEnc->current->GMC_MV.y,pEnc->current->quarterpel);
 		pEnc->current->coding_type = S_VOP;
 	} else
 		pEnc->current->coding_type = P_VOP;
