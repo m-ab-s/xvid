@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.20 2003-04-27 20:36:13 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.21 2003-05-12 00:06:49 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -50,39 +50,67 @@
 /*****************************************************************************
  *                            Quality presets
  ****************************************************************************/
-
 static xvid_motion_t const motion_presets[] = {
-	0,																			/* 0 */
-	XVID_ME_HALFPELREFINE16,													/* 1 */
-	XVID_ME_HALFPELREFINE16,													/* 2 */
-	XVID_ME_HALFPELREFINE16 | XVID_ME_HALFPELREFINE8,							/* 3 */
-	XVID_ME_HALFPELREFINE16 | XVID_ME_HALFPELREFINE8,							/* 4 */
-	XVID_ME_HALFPELREFINE16 | XVID_ME_HALFPELREFINE8 | XVID_ME_EXTSEARCH16 |
-		XVID_ME_USESQUARES16,													/* 5 */
-	XVID_ME_HALFPELREFINE16 | XVID_ME_HALFPELREFINE8 | XVID_ME_EXTSEARCH16 |
-		XVID_ME_USESQUARES16 | XVID_ME_CHROMA16 | XVID_ME_CHROMA8,				/* 6 */
-};
+	/* quality 0 */
+	0,
 
-static xvid_vol_t const vol_presets[] = {
-	XVID_VOL_MPEGQUANT,															/* 0 */
-	0,																			/* 1 */
-	0,																			/* 2 */
-	0,																			/* 3 */
-	0,																			/* 4 */
-	XVID_VOL_QUARTERPEL | XVID_VOL_GMC,											/* 5 */
-	0																			/* 6 */
+	/* quality 1 */
+	XVID_ME_ADVANCEDDIAMOND16,
+
+	/* quality 2 */
+	XVID_ME_ADVANCEDDIAMOND16 | XVID_ME_HALFPELREFINE16,
+
+	/* quality 3 */
+	XVID_ME_ADVANCEDDIAMOND16 | XVID_ME_HALFPELREFINE16 |
+	XVID_ME_ADVANCEDDIAMOND8 | XVID_ME_HALFPELREFINE8,
+
+	/* quality 4 */
+	XVID_ME_ADVANCEDDIAMOND16 | XVID_ME_HALFPELREFINE16 |
+	XVID_ME_ADVANCEDDIAMOND8 | XVID_ME_HALFPELREFINE8 |
+	XVID_ME_CHROMA16 | XVID_ME_CHROMA8,
+
+	/* quality 5 */
+	XVID_ME_ADVANCEDDIAMOND16 | XVID_ME_HALFPELREFINE16 |
+	XVID_ME_ADVANCEDDIAMOND8 | XVID_ME_HALFPELREFINE8 |
+	XVID_ME_CHROMA16 | XVID_ME_CHROMA8,
+
+	/* quality 6 */
+	XVID_ME_ADVANCEDDIAMOND16 | XVID_ME_HALFPELREFINE16 | XVID_ME_EXTSEARCH16 |
+	XVID_ME_ADVANCEDDIAMOND8 | XVID_ME_HALFPELREFINE8 | XVID_ME_EXTSEARCH8 |
+	XVID_ME_CHROMA16 | XVID_ME_CHROMA8 ,
+
 };
+#define ME_ELEMENTS (sizeof(motion_presets)/sizeof(motion_presets[0]))
 
 static xvid_vop_t const vop_presets[] = {
-	XVID_VOP_DYNAMIC_BFRAMES,																/* 0 */
-	XVID_VOP_DYNAMIC_BFRAMES,																/* 1 */
-	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL,											/* 2 */
-	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL | XVID_VOP_INTER4V, 						/* 3 */
-	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL | XVID_VOP_INTER4V | XVID_VOP_TRELLISQUANT, /* 4 */
-	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL | XVID_VOP_INTER4V | XVID_VOP_HQACPRED, 	/* 5 */
-	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL | XVID_VOP_HQACPRED |						/* 6 */
-		XVID_VOP_MODEDECISION_BITS
+	/* quality 0 */
+	0,
+
+	/* quality 1 */
+	XVID_VOP_DYNAMIC_BFRAMES,
+
+	/* quality 2 */
+	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL,
+
+	/* quality 3 */
+	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL |
+	XVID_VOP_INTER4V,
+
+	/* quality 4 */
+	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL |
+	XVID_VOP_INTER4V,
+
+	/* quality 5 */
+	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL |
+	XVID_VOP_INTER4V | XVID_VOP_TRELLISQUANT,
+
+	/* quality 6 */
+	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL |
+	XVID_VOP_INTER4V | XVID_VOP_TRELLISQUANT |
+	XVID_VOP_HQACPRED,
+
 };
+#define VOP_ELEMENTS (sizeof(vop_presets)/sizeof(vop_presets[0]))
 
 /*****************************************************************************
  *                     Command line global variables
@@ -199,6 +227,12 @@ main(int argc,
 	printf("xvid_encraw - raw mpeg4 bitstream encoder ");
 	printf("written by Christoph Lampert 2002-2003\n\n");
 
+	/* Is there a dumb XviD coder ? */
+	if(ME_ELEMENTS != VOP_ELEMENTS) {
+		fprintf(stderr, "Presets' arrays should have the same number of elements -- Please fill a bug to xvid-devel@xvid.org\n");
+		return(-1);
+	}
+
 /*****************************************************************************
  *                            Command line parsing
  ****************************************************************************/
@@ -286,9 +320,10 @@ main(int argc,
 		ARG_INPUTTYPE = 1;		/* pgm */
 	}
 
-	if (ARG_QUALITY < 0 || ARG_QUALITY > 6) {
-		fprintf(stderr, "Wrong Quality\n");
-		return (-1);
+	if (ARG_QUALITY < 0 ) {
+		ARG_QUALITY = 0;
+	} else if (ARG_QUALITY >= ME_ELEMENTS) {
+		ARG_QUALITY = ME_ELEMENTS - 1;
 	}
 
 	if (ARG_FRAMERATE <= 0) {
@@ -595,7 +630,7 @@ usage()
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Other options\n");
 	fprintf(stderr, " -asm            : use assembly optmized code\n");
-	fprintf(stderr, " -quality integer: quality ([0..5])\n");
+	fprintf(stderr, " -quality integer: quality ([0..%d])\n", ME_ELEMENTS - 1);
 	fprintf(stderr, " -packed         : packed mode\n");
 	fprintf(stderr, " -lumimasking    : use lumimasking algorithm\n");
 	fprintf(stderr, " -stats          : print stats about encoded frames\n");
@@ -931,7 +966,7 @@ enc_main(unsigned char *image,
 	}
 
 	/* Set up core's general features */
-	xvid_enc_frame.vol_flags = vol_presets[ARG_QUALITY];
+	xvid_enc_frame.vol_flags = 0;
 	if (ARG_STATS)
 		xvid_enc_frame.vol_flags |= XVID_VOL_EXTRASTATS;
 
