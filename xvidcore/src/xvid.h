@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.36 2003-09-11 15:28:51 syskin Exp $
+ * $Id: xvid.h,v 1.27.2.37 2003-09-28 13:43:47 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -49,9 +49,9 @@ extern "C" {
 	*/
 
 #define XVID_MAKE_VERSION(a,b,c) ((((a)&0xff)<<16) | (((b)&0xff)<<8) | ((c)&0xff))
-#define XVID_VERSION_MAJOR(a)    (((a)>>16) & 0xff)
-#define XVID_VERSION_MINOR(a)    (((a)>> 8) & 0xff)
-#define XVID_VERSION_PATCH(a)    (((a)>> 0) & 0xff)
+#define XVID_VERSION_MAJOR(a)    ((char)(((a)>>16) & 0xff))
+#define XVID_VERSION_MINOR(a)    ((char)(((a)>> 8) & 0xff))
+#define XVID_VERSION_PATCH(a)    ((char)(((a)>> 0) & 0xff))
 
 #define XVID_MAKE_API(a,b)       ((((a)&0xff)<<16) | (((b)&0xff)<<0))
 #define XVID_API_MAJOR(a)        (((a)>>16) & 0xff)
