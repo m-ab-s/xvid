@@ -130,7 +130,7 @@ int get_colorspace(BITMAPINFOHEADER * hdr)
 	case FOURCC_YV12 :
 		DEBUG("YV12");
 		return XVID_CSP_YV12;
-	
+			
 	case FOURCC_YUYV :
 	case FOURCC_YUY2 :
 		DEBUG("YUY2");
@@ -401,7 +401,6 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 		frame.general |= XVID_INTERLACING;
 
 
-
 // added by koepi for credits greyscale
 
 	check_greyscale_mode(&codec->config, &frame, codec->framenum);
@@ -451,6 +450,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	frame.motion = pmvfast_presets[codec->config.motion_search];
 
 	frame.image = icc->lpInput;
+	// dev-api-3 frame.stride = (((icc->lpbiInput->biWidth * icc->lpbiInput->biBitCount) + 31) & ~31) >> 3;
 
 	if ((frame.colorspace = get_colorspace(inhdr)) == XVID_CSP_NULL)
 		return ICERR_BADFORMAT;
@@ -608,6 +608,11 @@ LRESULT decompress_query(CODEC * codec, BITMAPINFO *lpbiInput, BITMAPINFO *lpbiO
 	{
 		return ICERR_ERROR;
 	}
+/* --- yv12 --- */
+	if (inhdr->biCompression == FOURCC_YV12) {
+		return ICERR_OK;
+	}
+/* --- yv12 --- */
 
 	if (inhdr->biCompression != FOURCC_XVID && inhdr->biCompression != FOURCC_DIVX)
 	{
@@ -640,6 +645,14 @@ LRESULT decompress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO 
 	{
 		return sizeof(BITMAPINFOHEADER);
 	}
+
+	/* --- yv12 --- */
+
+	if (lpbiInput->bmiHeader.biCompression == FOURCC_YV12) {
+		memcpy(outhdr, inhdr, sizeof(BITMAPINFOHEADER));
+		return ICERR_OK;
+	}
+	/* --- yv12 --- */
 
 	result = decompress_query(codec, lpbiInput, lpbiOutput);
 	if (result != ICERR_OK) 
@@ -713,6 +726,18 @@ LRESULT decompress(CODEC * codec, ICDECOMPRESS * icd)
 
 	frame.image = icd->lpOutput;
 	frame.stride = icd->lpbiOutput->biWidth;
+	// dev-api-3: frame.stride = (((icd->lpbiOutput->biWidth * icd->lpbiOutput->biBitCount) + 31) & ~31) >> 3;
+
+	/* --- yv12 --- */	
+	if (icd->lpbiInput->biCompression == FOURCC_YV12) {
+		DEBUGFOURCC("output", icd->lpbiOutput->biCompression);
+		if (icd->lpbiOutput->biCompression == FOURCC_YV12) {
+			memcpy(frame.image,codec->dhandle,icd->lpbiInput->biSizeImage);
+		}    
+		return ICERR_OK;
+	}
+	/* --- yv12 --- */
+	
 
 	if (~((icd->dwFlags & ICDECOMPRESS_HURRYUP) | (icd->dwFlags & ICDECOMPRESS_UPDATE) | (icd->dwFlags & ICDECOMPRESS_PREROLL)))
 	{
