@@ -4,7 +4,7 @@
 # 
 # Edit this file to enable/disable optimizations
 #
-# $Id: Makefile.linux,v 1.6.2.1 2002-09-04 18:58:27 chl Exp $
+# $Id: Makefile.linux,v 1.6.2.2 2002-09-23 20:41:23 chl Exp $
 # 
 #############################################################################
 
@@ -44,9 +44,9 @@ CFLAGS += -DLINUX
     # PSNR during encoding
 # CFLAGS += -D_DEBUG_PSNR
     # BFRAMES encoding
-# CFLAGS += -DBFRAMES
+CFLAGS += -DBFRAMES
     # BFRAMES decoding
-# CFLAGS += -DBFRAMES_DEC
+CFLAGS += -DBFRAMES_DEC
 
 LIBDIR = /usr/local/lib
 
