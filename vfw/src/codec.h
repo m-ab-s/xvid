@@ -6,8 +6,10 @@
 #include "config.h"
 #include "xvid.h"
 
-#define DEBUG(X) OutputDebugString(X)
-#define DEBUG1(X,A) { char tmp[120]; wsprintf(tmp, "%s %i", (X), (A)); OutputDebugString(tmp); }
+#define DEBUG(X)
+// OutputDebugString(X)
+#define DEBUG1(X,A)
+// { char tmp[120]; wsprintf(tmp, "%s %i", (X), (A)); OutputDebugString(tmp); }
 #define DEBUG2(X,A,B)
 // { char tmp[120]; wsprintf(tmp, "%s %i %i", (X), (A), (B)); OutputDebugString(tmp); }
 #define DEBUG3(X,A,B,C)
