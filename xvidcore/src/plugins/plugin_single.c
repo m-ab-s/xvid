@@ -20,7 +20,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_single.c,v 1.1.2.3 2003-06-09 13:55:07 edgomez Exp $
+ * $Id: plugin_single.c,v 1.1.2.4 2003-07-24 12:00:06 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -30,7 +30,7 @@
 #include "../xvid.h"
 #include "../image/image.h"
 
-#define DEFAULT_INITIAL_QUANTIZER 5
+#define DEFAULT_INITIAL_QUANTIZER 8
 
 #define DEFAULT_BITRATE 900000	/* 900kbps */
 #define DEFAULT_DELAY_FACTOR 16
@@ -173,10 +173,14 @@ rc_single_after(rc_single_t * rc,
 	double base_quality;
 	double target_quality;
 
-
 	/* Update internal values */
 	rc->time += (double) data->fincr / data->fbase;
 	rc->total_size += data->length;
+
+	if(data->type == XVID_TYPE_BVOP) 
+		return (0); 
+
+	rc->rtn_quant = data->quant;
 
 	/* Compute the deviation from expected total size */
 	deviation = (int64_t)
