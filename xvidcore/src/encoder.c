@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.64 2004-02-16 03:40:47 syskin Exp $
+ * $Id: encoder.c,v 1.95.2.65 2004-03-29 17:37:55 Skal Exp $
  *
  ****************************************************************************/
 
@@ -121,6 +121,9 @@ enc_create(xvid_enc_create_t * create)
 		return XVID_ERR_VERSION;
 
 	if (create->width%2 || create->height%2)
+		return XVID_ERR_FAIL;
+
+	if (create->width<=0 || create->height<=0)
 		return XVID_ERR_FAIL;
 
 	/* allocate encoder struct */
