@@ -703,11 +703,14 @@ BEGIN
     IDC_MINQUAL             "The minimum produced quality in relation to the best produced quality"
     IDC_INTERLACING         "Enables interlaced frame support - only use if your source contains interlacing artifacts (i.e. fields instead of progressive frames)"
     IDC_OVERDEG             "How much of the overflow the codec can eat into during oversized sections - larger values will bridge the gap faster"
+    IDC_MAXBFRAMES          "Maximum number of sequential B-frames. When set to < 0 the original IP-frame encoder is used."
+    IDC_BQUANTRATIO         "Ratio used to calculate the B-frame quantizer.\n\nBVOP quant = ((past VOP quant + future VOP quant) * BVOP quant ratio) / 200"
     IDC_OVERIMP             "How much of the overflow the codec can eat into during undersized sections - larger values will bridge the gap faster"
     IDC_MAXBITRATE          "Constrains 2-pass encodes to the specified maximum bitrate"
     IDC_CBR_REACTIONDELAY   "Determines how slowly it will adjust the current encoding quality based upon scene intensity - this has the strongest influence on quality"
     IDC_CBR_AVERAGINGPERIOD "Determines how slowly it adapts to the current adjusted quality"
     IDC_CBR_BUFFER          "Provides said number of frames worth of buffer between the adjusted encoding quality and lowest possible quality"
+    IDC_PACKED              "When enabled the P-frames and B-frames are packed together in the one bitstreams. This permits decoding without delay.\neg. [I] [PB] [B] [empty] [PB] [B] [empty] [P]\n\nPacked bitstreams were introduced in DivX 5.01."
 END
 
 STRINGTABLE DISCARDABLE 
@@ -767,6 +770,11 @@ BEGIN
     IDC_BONUSBIAS           "The percentage of the bonus that will be applied with bias (the rest is proportionally distributed)"
     IDC_CURVETYPE           "How aggressively the curve affects bitrate distribution"
     IDC_ALTCURVEHIGH        "Distance from the average framesize where the minimum relative quality will be applied"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_DX50BVOP            "Generate DivX 5.x compatible B-frames. DivX 5.x fails to decode B-frames where the future reference frame is an I-frame."
 END
 
 #endif    // English (Australia) resources
