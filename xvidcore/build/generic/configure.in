@@ -33,14 +33,6 @@ dnl ==========================================================================
 
 FEATURES=""
 
-dnl BIGLUT aka old VLC code
-AC_ARG_ENABLE(oldvlc,
-		AC_HELP_STRING([--enable-oldvlc],
-				 [Enable old VLC code (Needs much more memory ~10MB)]),
-		[if test "$enable_oldvlc" = "yes" ; then
-		    FEATURES="$FEATURES -DBIGLUT"
-		 fi])
-
 dnl Internal Debug
 AC_ARG_ENABLE(idebug,
 		AC_HELP_STRING([--enable-idebug],

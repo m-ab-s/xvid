@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbprediction.c,v 1.13.2.9 2003-10-01 23:23:01 edgomez Exp $
+ * $Id: mbprediction.c,v 1.13.2.10 2003-10-03 16:57:55 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -347,11 +347,7 @@ calc_acdc_bits(MACROBLOCK * pMB,
 	qcoeff[0] = qcoeff[0] - predictors[0];
 
 	/* calc cost before ac prediction */
-#ifdef BIGLUT
-	Z2 = CodeCoeff_CalcBits(qcoeff, intra_table, scan_tables[0], 1);
-#else
 	Z2 = CodeCoeffIntra_CalcBits(qcoeff, scan_tables[0]);
-#endif
 
 	/* apply ac prediction & calc cost*/
 	if (direction == 1) {
@@ -368,11 +364,7 @@ calc_acdc_bits(MACROBLOCK * pMB,
 		}
 	}
 
-#ifdef BIGLUT
-	Z1 = CodeCoeff_CalcBits(qcoeff, intra_table, scan_tables[direction], 1);
-#else
 	Z1 = CodeCoeffIntra_CalcBits(qcoeff, scan_tables[direction]);
-#endif
 
 	/* undo prediction */
 	if (direction == 1) {

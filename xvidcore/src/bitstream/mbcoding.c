@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbcoding.c,v 1.44.2.16 2003-10-03 14:01:59 syskin Exp $
+ * $Id: mbcoding.c,v 1.44.2.17 2003-10-03 16:57:55 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -36,23 +36,10 @@
 
 #include "../utils/mbfunctions.h"
 
-/* #define BIGLUT */
-
-#ifdef BIGLUT
-#define LEVELOFFSET 2048
-#else
 #define LEVELOFFSET 32
-#endif
 
 static REVERSE_EVENT DCT3D[2][4096];
-
-#ifdef BIGLUT
-static VLC coeff_VLC[2][2][4096][64];
-VLC *intra_table;
-static VLC *inter_table;
-#else
 static VLC coeff_VLC[2][2][64][64];
-#endif
 
 /* not really MB related, but VLCs are only available here */
 void bs_put_spritetrajectory(Bitstream * bs, const int val)
@@ -91,41 +78,26 @@ init_vlc_tables(void)
 	uint32_t i, j, k, intra, last, run,  run_esc, level, level_esc, escape, escape_len, offset;
 	int32_t l;
 
-#ifdef BIGLUT
-	intra_table = coeff_VLC[1];
-	inter_table = coeff_VLC[0];
-#endif
-
-
 	for (intra = 0; intra < 2; intra++)
 		for (i = 0; i < 4096; i++)
 			DCT3D[intra][i].event.level = 0;
 
-	for (intra = 0; intra < 2; intra++)
-		for (last = 0; last < 2; last++)
-		{
-			for (run = 0; run < 63 + last; run++)
-				for (level = 0; level < (uint32_t)(32 << intra); level++)
-				{
-#ifdef BIGLUT
-					offset = LEVELOFFSET;
-#else
+	for (intra = 0; intra < 2; intra++) {
+		for (last = 0; last < 2; last++) {
+			for (run = 0; run < 63 + last; run++) {
+				for (level = 0; level < (uint32_t)(32 << intra); level++) {
 					offset = !intra * LEVELOFFSET;
-#endif
 					coeff_VLC[intra][last][level + offset][run].len = 128;
 				}
+			}
 		}
+	}
 
-	for (intra = 0; intra < 2; intra++)
-		for (i = 0; i < 102; i++)
-		{
-#ifdef BIGLUT
-			offset = LEVELOFFSET;
-#else
+	for (intra = 0; intra < 2; intra++) {
+		for (i = 0; i < 102; i++) {
 			offset = !intra * LEVELOFFSET;
-#endif
-			for (j = 0; j < (uint32_t)(1 << (12 - coeff_tab[intra][i].vlc.len)); j++)
-			{
+
+			for (j = 0; j < (uint32_t)(1 << (12 - coeff_tab[intra][i].vlc.len)); j++) {
 				DCT3D[intra][(coeff_tab[intra][i].vlc.code << (12 - coeff_tab[intra][i].vlc.len)) | j].len	 = coeff_tab[intra][i].vlc.len;
 				DCT3D[intra][(coeff_tab[intra][i].vlc.code << (12 - coeff_tab[intra][i].vlc.len)) | j].event = coeff_tab[intra][i].event;
 			}
@@ -134,58 +106,39 @@ init_vlc_tables(void)
 				= coeff_tab[intra][i].vlc.code << 1;
 			coeff_VLC[intra][coeff_tab[intra][i].event.last][coeff_tab[intra][i].event.level + offset][coeff_tab[intra][i].event.run].len
 				= coeff_tab[intra][i].vlc.len + 1;
-#ifndef BIGLUT
-			if (!intra)
-#endif
-			{
+
+			if (!intra) {
 				coeff_VLC[intra][coeff_tab[intra][i].event.last][offset - coeff_tab[intra][i].event.level][coeff_tab[intra][i].event.run].code
 					= (coeff_tab[intra][i].vlc.code << 1) | 1;
 				coeff_VLC[intra][coeff_tab[intra][i].event.last][offset - coeff_tab[intra][i].event.level][coeff_tab[intra][i].event.run].len
 					= coeff_tab[intra][i].vlc.len + 1;
 			}
 		}
+	}
 
-	for (intra = 0; intra < 2; intra++)
-		for (last = 0; last < 2; last++)
-			for (run = 0; run < 63 + last; run++)
-			{
-				for (level = 1; level < (uint32_t)(32 << intra); level++)
-				{
+	for (intra = 0; intra < 2; intra++) {
+		for (last = 0; last < 2; last++) {
+			for (run = 0; run < 63 + last; run++) {
+				for (level = 1; level < (uint32_t)(32 << intra); level++) {
+
 					if (level <= max_level[intra][last][run] && run <= max_run[intra][last][level])
 					    continue;
 
-#ifdef BIGLUT
-					offset = LEVELOFFSET;
-#else
 					offset = !intra * LEVELOFFSET;
-#endif
                     level_esc = level - max_level[intra][last][run];
 					run_esc = run - 1 - max_run[intra][last][level];
-					/*use this test to use shorter esc2 codes when possible
-					if (level_esc <= max_level[intra][last][run] && run <= max_run[intra][last][level_esc]
-						&& !(coeff_VLC[intra][last][level_esc + offset][run].len + 7 + 1
-							 > coeff_VLC[intra][last][level + offset][run_esc].code + 7 + 2))*/
 
-					if (level_esc <= max_level[intra][last][run] && run <= max_run[intra][last][level_esc])
-					{
+					if (level_esc <= max_level[intra][last][run] && run <= max_run[intra][last][level_esc]) {
 						escape     = ESCAPE1;
 						escape_len = 7 + 1;
 						run_esc    = run;
-					}
-					else
-					{
-						if (run_esc <= max_run[intra][last][level] && level <= max_level[intra][last][run_esc])
-						{
+					} else {
+						if (run_esc <= max_run[intra][last][level] && level <= max_level[intra][last][run_esc]) {
 							escape     = ESCAPE2;
 							escape_len = 7 + 2;
 							level_esc  = level;
-						}
-						else
-						{
-#ifndef BIGLUT
-							if (!intra)
-#endif
-							{
+						} else {
+							if (!intra) {
 								coeff_VLC[intra][last][level + offset][run].code
 									= (ESCAPE3 << 21) | (last << 20) | (run << 14) | (1 << 13) | ((level & 0xfff) << 1) | 1;
 								coeff_VLC[intra][last][level + offset][run].len = 30;
@@ -202,10 +155,8 @@ init_vlc_tables(void)
 						|  coeff_VLC[intra][last][level_esc + offset][run_esc].code;
 					coeff_VLC[intra][last][level + offset][run].len
 						= coeff_VLC[intra][last][level_esc + offset][run_esc].len + escape_len;
-#ifndef BIGLUT
-					if (!intra)
-#endif
-					{
+
+					if (!intra) {
 						coeff_VLC[intra][last][offset - level][run].code
 							= (escape << coeff_VLC[intra][last][level_esc + offset][run_esc].len)
 							|  coeff_VLC[intra][last][level_esc + offset][run_esc].code | 1;
@@ -214,43 +165,29 @@ init_vlc_tables(void)
 					}
 				}
 
-#ifdef BIGLUT
-				for (level = 32 << intra; level < 2048; level++)
-				{
-					coeff_VLC[intra][last][level + offset][run].code
-						= (ESCAPE3 << 21) | (last << 20) | (run << 14) | (1 << 13) | ((level & 0xfff) << 1) | 1;
-					coeff_VLC[intra][last][level + offset][run].len = 30;
-
-					coeff_VLC[intra][last][offset - level][run].code
-						= (ESCAPE3 << 21) | (last << 20) | (run << 14) | (1 << 13) | ((-level & 0xfff) << 1) | 1;
-					coeff_VLC[intra][last][offset - level][run].len = 30;
-				}
-#else
-				if (!intra)
-				{
+				if (!intra) {
 					coeff_VLC[intra][last][0][run].code
 						= (ESCAPE3 << 21) | (last << 20) | (run << 14) | (1 << 13) | ((-32 & 0xfff) << 1) | 1;
 					coeff_VLC[intra][last][0][run].len = 30;
 				}
-#endif
 			}
-/* init sprite_trajectory tables */
-/* even if GMC is not specified (it might be used later...) */
+		}
+	}
+
+	/* init sprite_trajectory tables
+	 * even if GMC is not specified (it might be used later...) */
 
 	sprite_trajectory_code[0+16384].code = 0;
 	sprite_trajectory_code[0+16384].len = 0;
-	for (k=0;k<14;k++)
-	{
+	for (k=0;k<14;k++) {
 		int limit = (1<<k);
 
-		for (l=-(2*limit-1); l <= -limit; l++)
-		{
+		for (l=-(2*limit-1); l <= -limit; l++) {
 			sprite_trajectory_code[l+16384].code = (2*limit-1)+l;
 			sprite_trajectory_code[l+16384].len = k+1;
 		}
 
-		for (l=limit; l<= 2*limit-1; l++)
-		{
+		for (l=limit; l<= 2*limit-1; l++) {
 			sprite_trajectory_code[l+16384].code = l;
 			sprite_trajectory_code[l+16384].len = k+1;
 		}
@@ -311,92 +248,6 @@ CodeVector(Bitstream * bs,
 	}
 
 }
-
-#ifdef BIGLUT
-
-static __inline void
-CodeCoeff(Bitstream * bs,
-		  const int16_t qcoeff[64],
-		  VLC * table,
-		  const uint16_t * zigzag,
-		  uint16_t intra)
-{
-
-	uint32_t j, last;
-	short v;
-	VLC *vlc;
-
-	j = intra;
-	last = intra;
-
-	while (j < 64 && (v = qcoeff[zigzag[j]]) == 0)
-		j++;
-
-	do {
-		vlc = table + 64 * 2048 + (v << 6) + j - last;
-		last = ++j;
-
-		/* count zeroes */
-		while (j < 64 && (v = qcoeff[zigzag[j]]) == 0)
-			j++;
-
-		/* write code */
-		if (j != 64) {
-			BitstreamPutBits(bs, vlc->code, vlc->len);
-		} else {
-			vlc += 64 * 4096;
-			BitstreamPutBits(bs, vlc->code, vlc->len);
-			break;
-		}
-	} while (1);
-
-}
-
-
-
-/* returns the number of bits required to encode qcoeff */
-int
-CodeCoeff_CalcBits(const int16_t qcoeff[64],
-		  VLC * table,
-		  const uint16_t * zigzag,
-		  uint16_t intra)
-{
-	int bits = 0;
-	uint32_t j, last;
-	short v;
-	VLC *vlc;
-
-	j = intra;
-	last = intra;
-
-	while (j < 64 && (v = qcoeff[zigzag[j]]) == 0)
-		j++;
-
-	if (j >= 64) return 0;	/* empty block */
-
-	do {
-		vlc = table + 64 * 2048 + (v << 6) + j - last;
-		last = ++j;
-
-		/* count zeroes */
-		while (j < 64 && (v = qcoeff[zigzag[j]]) == 0)
-			j++;
-
-		/* write code */
-		if (j != 64) {
-			bits += vlc->len;
-		} else {
-			vlc += 64 * 4096;
-			bits += vlc->len;
-			break;
-		}
-	} while (1);
-
-	return bits;
-}
-
-
-#else
 
 static __inline void
 CodeCoeffInter(Bitstream * bs,
@@ -602,10 +453,6 @@ CodeCoeffInter_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag)
 	return bits;
 }
 
-
-#endif
-
-
 static int iDQtab[5] = {
 	1, 0, -1 /* no change */, 2, 3
 };
@@ -668,11 +515,7 @@ CodeBlockIntra(const FRAMEINFO * const frame,
 
 			bits = BitstreamPos(bs);
 
-#ifdef BIGLUT
-			CodeCoeff(bs, &qcoeff[i * 64], intra_table, scan_table, 1);
-#else
 			CodeCoeffIntra(bs, &qcoeff[i * 64], scan_table);
-#endif
 
 			bits = BitstreamPos(bs) - bits;
 			pStat->iTextBits += bits;
@@ -717,16 +560,18 @@ CodeBlockInter(const FRAMEINFO * const frame,
 			DPRINTF(XVID_DEBUG_MB,"codep: field_dct: %i\n", pMB->field_dct);
 		}
 
-		/* if inter block, write field ME flag ** not implemented yet */
+		/* if inter block, write field ME flag */
 		if ((pMB->mode == MODE_INTER || pMB->mode == MODE_INTER_Q) && (pMB->mcsel == 0)) {
-			BitstreamPutBit(bs, 0 /*pMB->field_pred*/);
+			BitstreamPutBit(bs, 0 /*pMB->field_pred*/); /* not implemented yet */
 			DPRINTF(XVID_DEBUG_MB,"codep: field_pred: %i\n", pMB->field_pred);
 
 			/* write field prediction references */
-		/*	if (pMB->field_pred) {
+#if 0 /* Remove the #if once field_pred is supported */
+			if (pMB->field_pred) {
 				BitstreamPutBit(bs, pMB->field_for_top);
 				BitstreamPutBit(bs, pMB->field_for_bot);
-			} */
+			}
+#endif
 		}
 	}
 	/* code motion vector(s) if motion is local  */
@@ -740,17 +585,12 @@ CodeBlockInter(const FRAMEINFO * const frame,
 
 	/* code block coeffs */
 	for (i = 0; i < 6; i++)
-		if (pMB->cbp & (1 << (5 - i)))
-		{
+		if (pMB->cbp & (1 << (5 - i))) {
 			const uint16_t *scan_table =
 				frame->vop_flags & XVID_VOP_ALTERNATESCAN ?
 				scan_tables[2] : scan_tables[0];
 
-#ifdef BIGLUT
-			CodeCoeff(bs, &qcoeff[i * 64], inter_table, scan_table, 0);
-#else
 			CodeCoeffInter(bs, &qcoeff[i * 64], scan_table);
-#endif
 		}
 
 	bits = BitstreamPos(bs) - bits;
@@ -893,10 +733,12 @@ MBCodingBVOP(const FRAMEINFO * const frame,
 			BitstreamPutBit(bs, 0 /*mb->field_pred*/); /* field ME not implemented */
 			
 			/* write field prediction references */
-		/*	if (mb->field_pred) {
+#if 0 /* Remove the #if once field_pred is supported */
+			if (mb->field_pred) {
 				BitstreamPutBit(bs, mb->field_for_top);
 				BitstreamPutBit(bs, mb->field_for_bot);
-			}*/
+			}
+#endif
 		}
 	}
 
@@ -919,11 +761,7 @@ MBCodingBVOP(const FRAMEINFO * const frame,
 
 	for (i = 0; i < 6; i++) {
 		if (mb->cbp & (1 << (5 - i))) {
-#ifdef BIGLUT
-			CodeCoeff(bs, &qcoeff[i * 64], inter_table, scan_tables[0], 0);
-#else
-			CodeCoeffInter(bs, &qcoeff[i * 64], scan_tables[0]);
-#endif
+			CodeCoeffInter(bs, &qcoeff[i * 64], scan_table);
 		}
 	}
 }

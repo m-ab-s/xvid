@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbcoding.h,v 1.11.2.6 2003-10-03 13:47:00 syskin Exp $
+ * $Id: mbcoding.h,v 1.11.2.7 2003-10-03 16:57:55 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -74,13 +74,7 @@ MBSkip(Bitstream * bs)
 	BitstreamPutBit(bs, 1);	/* not coded */
 }
 
-
-#ifdef BIGLUT
-extern VLC *intra_table;
-int CodeCoeff_CalcBits(const int16_t qcoeff[64], VLC * table, const uint16_t * zigzag, uint16_t intra);
-#else
 int CodeCoeffIntra_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag);
 int CodeCoeffInter_CalcBits(const int16_t qcoeff[64], const uint16_t * zigzag);
-#endif
 
 #endif							/* _MB_CODING_H_ */

@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.43 2003-10-03 13:47:24 syskin Exp $
+ * $Id: encoder.c,v 1.95.2.44 2003-10-03 16:57:55 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1872,7 +1872,6 @@ FrameCodeB(Encoder * pEnc,
 	for (y = 0; y < pEnc->mbParam.mb_height; y++) {
 		for (x = 0; x < pEnc->mbParam.mb_width; x++) {
 			MACROBLOCK * const mb = &frame->mbs[x + y * pEnc->mbParam.mb_width];
-			int direction = frame->vop_flags & XVID_VOP_ALTERNATESCAN ? 2 : 0;
 
 			/* decoder ignores mb when refence block is INTER(0,0), CBP=0 */
 			if (mb->mode == MODE_NOT_CODED) {
