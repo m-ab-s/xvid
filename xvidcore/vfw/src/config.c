@@ -500,6 +500,25 @@ static int config_get_uint(HWND hDlg, UINT item, int config)
 	return (success) ? tmp : config;
 }
 
+/* get uint from combobox
+   GetDlgItemInt doesnt work properly for cb list items */
+#define UINT_BUF_SZ	20
+static int config_get_cbuint(HWND hDlg, UINT item, int def)
+{
+	int sel = SendMessage(GetDlgItem(hDlg, item), CB_GETCURSEL, 0, 0);
+	char buf[UINT_BUF_SZ];
+
+	if (sel<0) {
+		return config_get_uint(hDlg, item, def);
+	}
+		
+	if (SendMessage(GetDlgItem(hDlg, item), CB_GETLBTEXT, sel, (LPARAM)buf) == CB_ERR) {
+		return def;
+	}
+	
+	return atoi(buf);
+}
+
 
 /* we use "100 base" floats */
 
@@ -731,6 +750,8 @@ static void adv_init(HWND hDlg, int idd, CONFIG * config)
 
 		SendDlgItemMessage(hDlg, IDC_BITRATE_TSIZE, CB_ADDSTRING, 0, (LPARAM)"665600");
 		SendDlgItemMessage(hDlg, IDC_BITRATE_TSIZE, CB_ADDSTRING, 0, (LPARAM)"716800");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_TSIZE, CB_ADDSTRING, 0, (LPARAM)"1331200");
+		SendDlgItemMessage(hDlg, IDC_BITRATE_TSIZE, CB_ADDSTRING, 0, (LPARAM)"1433600");
 
 		for (i=0; i<sizeof(video_fps_list)/sizeof(named_float_t); i++)
 			SendDlgItemMessage(hDlg, IDC_BITRATE_FPS, CB_ADDSTRING, 0, (LPARAM)video_fps_list[i].name);
@@ -863,7 +884,7 @@ static void adv_mode(HWND hDlg, int idd, CONFIG * config)
 	case IDD_BITRATE :
 		{
 			int ctype = SendDlgItemMessage(hDlg, IDC_BITRATE_CFORMAT, CB_GETCURSEL, 0, 0);
-			int target_size = config_get_uint(hDlg, IDC_BITRATE_TSIZE, 0);
+			int target_size = config_get_cbuint(hDlg, IDC_BITRATE_TSIZE, 0);
 			int subtitle_size = config_get_uint(hDlg, IDC_BITRATE_SSIZE, 0);
 			int fps = SendDlgItemMessage(hDlg, IDC_BITRATE_FPS, CB_GETCURSEL, 0, 0);
 
@@ -874,7 +895,7 @@ static void adv_mode(HWND hDlg, int idd, CONFIG * config)
 
 			int audio_type = SendDlgItemMessage(hDlg, IDC_BITRATE_AFORMAT, CB_GETCURSEL, 0, 0);
 			int audio_mode = IsDlgChecked(hDlg, IDC_BITRATE_AMODE_SIZE);
-			int audio_rate = config_get_uint(hDlg, IDC_BITRATE_ARATE, 0);
+			int audio_rate = config_get_cbuint(hDlg, IDC_BITRATE_ARATE, 0);
 			int audio_size = config_get_uint(hDlg, IDC_BITRATE_ASIZE, 0);
 
 			int frames;
@@ -1475,7 +1496,9 @@ static BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 		}else if ((HIWORD(wParam) == CBN_EDITCHANGE || HIWORD(wParam)==CBN_SELCHANGE) &&
 			(LOWORD(wParam)==IDC_BITRATE_TSIZE ||
 			 LOWORD(wParam)==IDC_BITRATE_ARATE )) {
+
 			adv_mode(hDlg, psi->idd, psi->config);
+
 		}else if (HIWORD(wParam) == LBN_SELCHANGE &&
 			(LOWORD(wParam) == IDC_PROFILE_PROFILE ||
 			 LOWORD(wParam) == IDC_LEVEL_PROFILE ||
@@ -1522,20 +1545,20 @@ static BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 		switch (((NMHDR *)lParam)->code)
 		{
 		case PSN_SETACTIVE :
-			OutputDebugString("PSN_SET");
+			DPRINTF("PSN_SET");
 			adv_upload(hDlg, psi->idd, psi->config);
 			adv_mode(hDlg, psi->idd, psi->config);
 			SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
 			break;
 
 		case PSN_KILLACTIVE :
-			OutputDebugString("PSN_KILL");
+			DPRINTF("PSN_KILL");
 			adv_download(hDlg, psi->idd, psi->config);
 			SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
 			break;
 
 		case PSN_APPLY :
-			OutputDebugString("PSN_APPLY");
+			DPRINTF("PSN_APPLY");
 			psi->config->save = TRUE;
 			SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
 			break;
@@ -1844,9 +1867,6 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				 break;
 			}
 
-			if (n->code == NM_RCLICK) {
-				OutputDebugString("Right click");
-			}
 		break;
 		}
 
