@@ -23,6 +23,7 @@
  *
  *	History:
  *
+ *	15.04.2002	updated cbr support
  *	07.04.2002	min keyframe interval checkbox
  *				2-pass max bitrate and overflow customization
  *	04.04.2002	interlacing support
@@ -68,10 +69,12 @@ CONFIG reg;
 
 REG_INT const reg_ints[] = {
 	{"mode",					&reg.mode,						DLG_MODE_CBR},
-	{"bitrate",					&reg.bitrate,					900000},
 	{"quality",					&reg.quality,					85},
 	{"quant",					&reg.quant,						5},
-	{"rc_buffersize",			&reg.rc_buffersize,				16},
+	{"rc_bitrate",				&reg.rc_bitrate,				900000},
+	{"rc_reaction_delay_factor",&reg.rc_reaction_delay_factor,	16},
+	{"rc_averaging_period",		&reg.rc_averaging_period,		100},
+	{"rc_buffer",				&reg.rc_buffer,					100},
 
 	{"motion_search",			&reg.motion_search,				5},
 	{"quant_type",				&reg.quant_type,				0},
@@ -288,7 +291,7 @@ void main_download(HWND hDlg, CONFIG * config)
 	{
 	default :
 	case DLG_MODE_CBR :
-		config->bitrate = config_get_int(hDlg, IDC_VALUE, config->bitrate) * CONFIG_KBPS;
+		config->rc_bitrate = config_get_int(hDlg, IDC_VALUE, config->rc_bitrate) * CONFIG_KBPS;
 		break;
 
 	case DLG_MODE_VBR_QUAL :
@@ -305,7 +308,6 @@ void main_download(HWND hDlg, CONFIG * config)
 	}
 
 	config->mode = SendDlgItemMessage(hDlg, IDC_MODE, CB_GETCURSEL, 0, 0);
-	config->rc_buffersize = config_get_int(hDlg, IDC_CBRBUFFER, config->rc_buffersize);
 }
 
 
@@ -324,7 +326,7 @@ void main_value(HWND hDlg, CONFIG* config)
 
 	case DLG_MODE_CBR :
 		text = "Bitrate (Kbps):";
-		value = config->bitrate / CONFIG_KBPS;
+		value = config->rc_bitrate / CONFIG_KBPS;
 		break;
 
 	case DLG_MODE_VBR_QUAL :
@@ -348,8 +350,6 @@ void main_value(HWND hDlg, CONFIG* config)
 
 	EnableWindow(GetDlgItem(hDlg, IDC_VALUE_STATIC), enabled);
 	EnableWindow(GetDlgItem(hDlg, IDC_VALUE), enabled);
-	EnableWindow(GetDlgItem(hDlg, IDC_CBRBUFFER_STATIC), (config->mode == DLG_MODE_CBR));
-	EnableWindow(GetDlgItem(hDlg, IDC_CBRBUFFER), (config->mode == DLG_MODE_CBR));
 }
 
 
@@ -370,7 +370,7 @@ void main_slider(HWND hDlg, CONFIG * config)
 	case DLG_MODE_CBR :
 		text = "Bitrate (Kbps):";
 		range = MAKELONG(0,10000);
-		pos = config->bitrate / CONFIG_KBPS;
+		pos = config->rc_bitrate / CONFIG_KBPS;
 		break;
 
 	case DLG_MODE_VBR_QUAL :
@@ -469,6 +469,7 @@ void adv_mode(HWND hDlg, int mode)
 	};
 
 	const int qual_disable[] = {
+		IDC_CBR_REACTIONDELAY, IDC_CBR_AVERAGINGPERIOD, IDC_CBR_BUFFER,
 		IDC_KFBOOST, IDC_DISCARD1PASS, IDC_DUMMY2PASS,
 		IDC_CURVECOMPH, IDC_CURVECOMPL, IDC_PAYBACK, IDC_PAYBACKBIAS, IDC_PAYBACKPROP,
 		IDC_STATS1, IDC_STATS1_BROWSE, IDC_STATS2, IDC_STATS2_BROWSE,
@@ -476,6 +477,7 @@ void adv_mode(HWND hDlg, int mode)
 	};
 
 	const int quant_disable[] = {
+		IDC_CBR_REACTIONDELAY, IDC_CBR_AVERAGINGPERIOD, IDC_CBR_BUFFER,
 		IDC_MINIQUANT, IDC_MAXIQUANT, IDC_MINPQUANT, IDC_MAXPQUANT,
 		IDC_KFBOOST, IDC_DISCARD1PASS, IDC_DUMMY2PASS,
 		IDC_CURVECOMPH, IDC_CURVECOMPL, IDC_PAYBACK, IDC_PAYBACKBIAS, IDC_PAYBACKPROP,
@@ -484,6 +486,7 @@ void adv_mode(HWND hDlg, int mode)
 	};
 
 	const int twopass1_disable[] = {
+		IDC_CBR_REACTIONDELAY, IDC_CBR_AVERAGINGPERIOD, IDC_CBR_BUFFER,
 		IDC_LUMMASK, IDC_MINIQUANT, IDC_MAXIQUANT, IDC_MINPQUANT, IDC_MAXPQUANT,
 		IDC_KFBOOST, IDC_DUMMY2PASS,
 		IDC_CURVECOMPH, IDC_CURVECOMPL, IDC_PAYBACK, IDC_PAYBACKBIAS, IDC_PAYBACKPROP,
@@ -493,12 +496,14 @@ void adv_mode(HWND hDlg, int mode)
 	};
 
 	const int twopass2_ext_disable[] = {
+		IDC_CBR_REACTIONDELAY, IDC_CBR_AVERAGINGPERIOD, IDC_CBR_BUFFER,
 		IDC_CREDITS_RATE_RADIO, IDC_CREDITS_QUANT_RADIO, IDC_CREDITS_QUANT_STATIC,
 		IDC_CREDITS_SIZE_RADIO, IDC_CREDITS_END_STATIC, IDC_CREDITS_RATE,
 		IDC_CREDITS_QUANTI, IDC_CREDITS_QUANTP, IDC_CREDITS_START_SIZE, IDC_CREDITS_END_SIZE
 	};
 
 	const int twopass2_int_disable[] = {
+		IDC_CBR_REACTIONDELAY, IDC_CBR_AVERAGINGPERIOD, IDC_CBR_BUFFER,
 		IDC_STATS2, IDC_STATS2_BROWSE
 	};
 
@@ -654,6 +659,10 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 
 		CheckRadioButton(hDlg, IDC_CPU_AUTO, IDC_CPU_FORCE, 
 			config->cpu & XVID_CPU_FORCE ? IDC_CPU_FORCE : IDC_CPU_AUTO );
+
+		SetDlgItemInt(hDlg, IDC_CBR_REACTIONDELAY, config->rc_reaction_delay_factor, FALSE);
+		SetDlgItemInt(hDlg, IDC_CBR_AVERAGINGPERIOD, config->rc_averaging_period, FALSE);
+		SetDlgItemInt(hDlg, IDC_CBR_BUFFER, config->rc_buffer, FALSE);
 		break;
 	}
 }
@@ -788,6 +797,10 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 		config->cpu |= ISDLGSET(IDC_CPU_3DNOW) ? XVID_CPU_3DNOW: 0;
 		config->cpu |= ISDLGSET(IDC_CPU_3DNOWEXT) ? XVID_CPU_3DNOWEXT: 0;
 		config->cpu |= ISDLGSET(IDC_CPU_FORCE) ? XVID_CPU_FORCE : 0;
+
+		config->rc_reaction_delay_factor = config_get_int(hDlg, IDC_CBR_REACTIONDELAY, config->rc_reaction_delay_factor);
+		config->rc_averaging_period = config_get_int(hDlg, IDC_CBR_AVERAGINGPERIOD, config->rc_averaging_period);
+		config->rc_buffer = config_get_int(hDlg, IDC_CBR_BUFFER, config->rc_buffer);
 		break;
 	}
 }
@@ -869,7 +882,6 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		SendDlgItemMessage(hDlg, IDC_MODE, CB_ADDSTRING, 0, (LPARAM)"Null - test speed");
 
 		SendDlgItemMessage(hDlg, IDC_MODE, CB_SETCURSEL, config->mode, 0);
-		SetDlgItemInt(hDlg, IDC_CBRBUFFER, config->rc_buffersize, FALSE);
 
 		InitCommonControls();
 
@@ -920,7 +932,6 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			config_reg_default(config);
 
 			SendDlgItemMessage(hDlg, IDC_MODE, CB_SETCURSEL, config->mode, 0);
-			SetDlgItemInt(hDlg, IDC_CBRBUFFER, config->rc_buffersize, FALSE);
 
 			main_slider(hDlg, config);
 			main_value(hDlg, config);

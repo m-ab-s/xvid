@@ -69,10 +69,12 @@ HWND hTooltip;
 typedef struct
 {
 	int mode;
-	int bitrate;
 	int quality;
 	int	quant;
-	int rc_buffersize;
+	int rc_bitrate;
+	int rc_reaction_delay_factor;
+	int rc_averaging_period;
+	int rc_buffer;
 
 	int motion_search;
 	int quant_type;

@@ -16,8 +16,6 @@
 #define IDC_VALUE                       1002
 #define IDC_SLIDER_STATIC               1003
 #define IDC_VALUE_STATIC                1004
-#define IDC_CBRBUFFER                   1005
-#define IDC_CBRBUFFER_STATIC            1006
 #define IDC_ADVANCED                    1007
 #define IDC_STATIC_HELP                 1008
 #define IDC_MOTION                      1009
@@ -220,6 +218,9 @@
 #define IDC_HINTEDME                    1207
 #define IDC_OVERIMP                     1208
 #define IDC_MAXBITRATE                  1209
+#define IDC_CBR_REACTIONDELAY           1210
+#define IDC_CBR_AVERAGINGPERIOD         1211
+#define IDC_CBR_BUFFER                  1212
 
 // Next default values for new objects
 // 
@@ -227,7 +228,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1203
+#define _APS_NEXT_CONTROL_VALUE         1204
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

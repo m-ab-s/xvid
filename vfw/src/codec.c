@@ -23,6 +23,7 @@
  *
  *	History:
  *
+ *	15.04.2002	updated cbr support
  *	04.04.2002	separated 2-pass code to 2pass.c
  *				interlacing support
  *				hinted ME support
@@ -236,24 +237,26 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	switch (codec->config.mode) 
 	{
 	case DLG_MODE_CBR :
-		param.bitrate = codec->config.bitrate;
-		param.rc_buffersize = codec->config.rc_buffersize;
+		param.rc_bitrate = codec->config.rc_bitrate;
+		param.rc_reaction_delay_factor = codec->config.rc_reaction_delay_factor;
+		param.rc_averaging_period = codec->config.rc_averaging_period;
+		param.rc_buffer = codec->config.rc_buffer;
 		break;
 
 	case DLG_MODE_VBR_QUAL :
 		codec->config.fquant = 0;
-		param.bitrate = 0;
+		param.rc_bitrate = 0;
 		break;
 
 	case DLG_MODE_VBR_QUANT :
 		codec->config.fquant = (float) codec->config.quant;
-		param.bitrate = 0;
+		param.rc_bitrate = 0;
 		break;
 
 	case DLG_MODE_2PASS_1 :
 	case DLG_MODE_2PASS_2_INT :
 	case DLG_MODE_2PASS_2_EXT :
-		param.bitrate = 0;
+		param.rc_bitrate = 0;
 		codec->twopass.max_framesize = (int)((double)codec->config.twopass_max_bitrate / 8.0 / ((double)codec->fbase / (double)codec->fincr));
 		break;
 
@@ -279,8 +282,6 @@ LRESULT compress_begin(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 	param.height = lpbiInput->bmiHeader.biHeight;
 	param.fincr = codec->fincr;
 	param.fbase = codec->fbase;
-	
-	param.rc_buffersize = codec->config.rc_buffersize;
 	
 	param.min_quantizer = codec->config.min_pquant;
 	param.max_quantizer = codec->config.max_pquant;

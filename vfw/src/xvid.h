@@ -144,8 +144,10 @@ typedef struct
 {
 	int width, height;
 	int fincr, fbase;		// frame increment, fbase. each frame = "fincr/fbase" seconds
-	int bitrate;			// the bitrate of the target encoded stream, in bits/second
-	int rc_buffersize;		// the rate control buffersize / max. allowed deviation
+	int rc_bitrate;					// the bitrate of the target encoded stream, in bits/second
+	int rc_reaction_delay_factor;	// how fast the rate control reacts - lower values are faster
+	int rc_averaging_period;		// as above
+	int rc_buffer;					// as above
 	int max_quantizer;		// the upper limit of the quantizer
 	int min_quantizer;		// the lower limit of the quantizer
 	int max_key_interval;	// the maximum interval between key frames
