@@ -87,6 +87,8 @@ BOOL WINAPI DllMain(
 			}
 
 			codec->ehandle = codec->dhandle = NULL;
+			codec->fbase = 25;
+			codec->fincr = 1;
 			config_reg_get(&codec->config);
 
 			/* bad things happen if this is uncommented

@@ -236,13 +236,6 @@ LRESULT compress_frames_info(CODEC * codec, ICCOMPRESSFRAMES * icf)
 	// DEBUG2("frate fscale", codec->frate, codec->fscale);
 	codec->fincr = icf->dwScale;
 	codec->fbase = icf->dwRate;
-
-	if (codec->fbase == 0 || codec->fincr == 0)
-	{
-		codec->fbase = 25;
-		codec->fincr = 1;
-	}
-
 	return ICERR_OK;
 }
 
