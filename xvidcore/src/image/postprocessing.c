@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: postprocessing.c,v 1.1.4.4 2003-12-21 19:42:07 Isibaar Exp $
+ * $Id: postprocessing.c,v 1.1.4.5 2004-03-04 16:13:33 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -169,7 +169,7 @@ void init_deblock(XVID_POSTPROC *tbls)
 				a31 = ((s[1]<<1) - s[2] * 5 + s[3] * 5 - (s[4]<<1));	\
 				a32 = ((s[5]<<1) - s[6] * 5 + s[7] * 5 - (s[8]<<1));	\
 																		\
-				diff = (5 * ((SIGN(a30) * MIN(tbls->xvid_abs_tbl[a30 + 255], MIN(tbls->xvid_abs_tbl[a31 + 255], tbls->xvid_abs_tbl[a32 + 255]))) - a30) + 32) >> 6;	\
+				diff = (5 * ((SIGN(a30) * MIN(FAST_ABS(a30), MIN(FAST_ABS(a31), FAST_ABS(a32)))) - a30) + 32) >> 6;	\
 				limit = (s[4] - s[5]) / 2;	\
 				\
 				if (limit > 0)				\

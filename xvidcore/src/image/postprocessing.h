@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: postprocessing.h,v 1.1.4.4 2003-12-21 19:42:11 Isibaar Exp $
+ * $Id: postprocessing.h,v 1.1.4.5 2004-03-04 16:13:33 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -39,8 +39,8 @@
 #define MAX_RES (MAX_NOISE - MAX_SHIFT)
 
 typedef struct {
-	int8_t xvid_thresh_tbl[510];
-	int8_t xvid_abs_tbl[510];
+	int8_t xvid_thresh_tbl[511];
+	int8_t xvid_abs_tbl[511];
 	int8_t xvid_noise1[MAX_NOISE * sizeof(int8_t)];
 	int8_t xvid_noise2[MAX_NOISE * sizeof(int8_t)];
 	int8_t *xvid_prev_shift[MAX_RES][6];
