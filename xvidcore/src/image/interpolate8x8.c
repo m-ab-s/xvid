@@ -53,12 +53,12 @@ INTERPOLATE_LOWPASS_HV_PTR interpolate16x16_lowpass_hv;
 INTERPOLATE8X8_6TAP_LOWPASS_PTR interpolate8x8_6tap_lowpass_h;
 INTERPOLATE8X8_6TAP_LOWPASS_PTR interpolate8x8_6tap_lowpass_v;
 
-void interpolate8x8_avg2_c(uint8_t *dst, const uint8_t *src1, const uint8_t *src2, const uint32_t stride, const uint32_t rounding)
+void interpolate8x8_avg2_c(uint8_t *dst, const uint8_t *src1, const uint8_t *src2, const uint32_t stride, const uint32_t rounding, const uint32_t height)
 {
-    int32_t i;
+    uint32_t i;
 	const int32_t round = 1 - rounding;
 
-    for(i = 0; i < 9; i++)
+    for(i = 0; i < height; i++)
     {
         dst[0] = (src1[0] + src2[0] + round) >> 1;
         dst[1] = (src1[1] + src2[1] + round) >> 1;

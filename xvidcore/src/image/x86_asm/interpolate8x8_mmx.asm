@@ -326,7 +326,8 @@ interpolate8x8_halfpel_hv_mmx.start
 ;							   const uint8_t * const src1,
 ;							   const uint8_t * const src2,
 ;							   const uint32_t stride,
-;							   const uint32_t rounding);
+;							   const uint32_t rounding,
+;							   const uint32_t height);
 ;
 ;===========================================================================
 
@@ -431,9 +432,14 @@ interpolate8x8_avg2_mmx
 	push ebx
 
 	mov	eax, [esp + 4 + 20]		; rounding
-
 	test eax, eax
 		
+	jnz near .rounding1
+
+	mov eax, [esp + 4 + 24]		; height -> eax
+	sub eax, 8
+	test eax, eax
+
 	mov ecx, [esp + 4 + 4]		; dst -> edi
 	mov eax, [esp + 4 + 8]		; src1 -> esi
 	mov	ebx, [esp + 4 + 12]		; src2 -> eax
@@ -441,7 +447,12 @@ interpolate8x8_avg2_mmx
 
 	movq mm7, [mmx_one]
 
-	jnz near .rounding1
+	jz near .start0
+
+	AVG2_MMX_RND0
+	lea ecx, [ecx+2*edx]
+
+.start0
 
 	AVG2_MMX_RND0
 	lea ecx, [ecx+2*edx]
@@ -455,6 +466,24 @@ interpolate8x8_avg2_mmx
 	ret
 
 .rounding1
+	mov eax, [esp + 4 + 24]		; height -> eax
+	sub eax, 8
+	test eax, eax
+
+	mov ecx, [esp + 4 + 4]		; dst -> edi
+	mov eax, [esp + 4 + 8]		; src1 -> esi
+	mov	ebx, [esp + 4 + 12]		; src2 -> eax
+	mov	edx, [esp + 4 + 16]		; stride -> edx
+
+	movq mm7, [mmx_one]
+
+	jz near .start1
+
+	AVG2_MMX_RND1
+	lea ecx, [ecx+2*edx]
+
+.start1
+
 	AVG2_MMX_RND1
 	lea ecx, [ecx+2*edx]
 	AVG2_MMX_RND1

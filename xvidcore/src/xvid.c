@@ -37,7 +37,7 @@
  *  - 22.12.2001  API change: added xvid_init() - Isibaar
  *  - 16.12.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: xvid.c,v 1.33.2.13 2002-11-08 10:10:48 suxen_drol Exp $
+ *  $Id: xvid.c,v 1.33.2.14 2002-11-20 19:52:32 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -334,7 +334,7 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 		interpolate8x8_6tap_lowpass_h = interpolate8x8_6tap_lowpass_h_mmx;
 		interpolate8x8_6tap_lowpass_v = interpolate8x8_6tap_lowpass_v_mmx;
 
-//		interpolate8x8_avg2 = interpolate8x8_avg2_mmx;
+		interpolate8x8_avg2 = interpolate8x8_avg2_mmx;
 		interpolate8x8_avg4 = interpolate8x8_avg4_mmx;
 
 		/* image input xxx_to_yv12 related functions */

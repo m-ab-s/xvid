@@ -13,7 +13,8 @@ typedef void (INTERPOLATE8X8_AVG2) (uint8_t *dst,
 									const uint8_t *src1,
 									const uint8_t *src2,
 									const uint32_t stride,
-									const uint32_t rounding);
+									const uint32_t rounding,
+									const uint32_t height);
 typedef INTERPOLATE8X8_AVG2 *INTERPOLATE8X8_AVG2_PTR;
 
 typedef void (INTERPOLATE8X8_AVG4) (uint8_t *dst,
@@ -242,7 +243,7 @@ static __inline void interpolate8x8_quarterpel(uint8_t * const cur,
 
 	case 1:
 		interpolate8x8_lowpass_h(halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(dst, src, halfpel_h, stride, rounding);
+		interpolate8x8_avg2(dst, src, halfpel_h, stride, rounding, 9);
   		break;
   
 	case 2:
@@ -251,31 +252,31 @@ static __inline void interpolate8x8_quarterpel(uint8_t * const cur,
   
 	case 3:
 		interpolate8x8_lowpass_h(halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(dst, src + 1, halfpel_h, stride, rounding);
+		interpolate8x8_avg2(dst, src + 1, halfpel_h, stride, rounding, 9);
   		break;
   
 	case 4:
 		interpolate8x8_lowpass_v(halfpel_v, src, stride, rounding);
-		interpolate8x8_avg2(dst, src, halfpel_v, stride, rounding);
+		interpolate8x8_avg2(dst, src, halfpel_v, stride, rounding, 9);
  		break;
    
 	case 5:
 		interpolate8x8_lowpass_h(halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(halfpel_v, src, halfpel_h, stride, rounding);
+		interpolate8x8_avg2(halfpel_v, src, halfpel_h, stride, rounding, 9);
 		interpolate8x8_lowpass_v(halfpel_hv, halfpel_v, stride, rounding);
-		interpolate8x8_avg2(dst, halfpel_v, halfpel_hv, stride, rounding);
+		interpolate8x8_avg2(dst, halfpel_v, halfpel_hv, stride, rounding, 9);
  		break;
    
 	case 6:
 		interpolate8x8_lowpass_hv(halfpel_hv, halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(dst, halfpel_h, halfpel_hv, stride, rounding);
+		interpolate8x8_avg2(dst, halfpel_h, halfpel_hv, stride, rounding, 9);
  		break;
    
 	case 7:
 		interpolate8x8_lowpass_h(halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(halfpel_v, src + 1, halfpel_h, stride, rounding);
+		interpolate8x8_avg2(halfpel_v, src + 1, halfpel_h, stride, rounding, 9);
 		interpolate8x8_lowpass_v(halfpel_hv, halfpel_v, stride, rounding);
-		interpolate8x8_avg2(dst, halfpel_v, halfpel_hv, stride, rounding);
+		interpolate8x8_avg2(dst, halfpel_v, halfpel_hv, stride, rounding, 9);
  		break;
    
 	case 8:
@@ -284,7 +285,7 @@ static __inline void interpolate8x8_quarterpel(uint8_t * const cur,
 
 	case 9:
 		interpolate8x8_lowpass_h(halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(halfpel_v, src, halfpel_h, stride, rounding);
+		interpolate8x8_avg2(halfpel_v, src, halfpel_h, stride, rounding, 9);
 		interpolate8x8_lowpass_v(dst, halfpel_v, stride, rounding);
   		break;
   
@@ -294,32 +295,32 @@ static __inline void interpolate8x8_quarterpel(uint8_t * const cur,
   
 	case 11:
 		interpolate8x8_lowpass_h(halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(halfpel_v, src + 1, halfpel_h, stride, rounding);
+		interpolate8x8_avg2(halfpel_v, src + 1, halfpel_h, stride, rounding, 9);
 		interpolate8x8_lowpass_v(dst, halfpel_v, stride, rounding);
    		break;
  
 	case 12:
 		interpolate8x8_lowpass_v(halfpel_v, src, stride, rounding);
-		interpolate8x8_avg2(dst, src+stride, halfpel_v, stride, rounding);
+		interpolate8x8_avg2(dst, src+stride, halfpel_v, stride, rounding, 9);
    		break;
  
 	case 13:
 		interpolate8x8_lowpass_h(halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(halfpel_v, src, halfpel_h, stride, rounding);
+		interpolate8x8_avg2(halfpel_v, src, halfpel_h, stride, rounding, 9);
 		interpolate8x8_lowpass_v(halfpel_hv, halfpel_v, stride, rounding);
-		interpolate8x8_avg2(dst, halfpel_v+stride, halfpel_hv, stride, rounding);
+		interpolate8x8_avg2(dst, halfpel_v+stride, halfpel_hv, stride, rounding, 9);
  		break;
    
 	case 14:
 		interpolate8x8_lowpass_hv(halfpel_hv, halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(dst, halfpel_h+stride, halfpel_hv, stride, rounding);
+		interpolate8x8_avg2(dst, halfpel_h+stride, halfpel_hv, stride, rounding, 9);
  		break;
    
 	case 15:
 		interpolate8x8_lowpass_h(halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(halfpel_v, src + 1, halfpel_h, stride, rounding);
+		interpolate8x8_avg2(halfpel_v, src + 1, halfpel_h, stride, rounding, 9);
 		interpolate8x8_lowpass_v(halfpel_hv, halfpel_v, stride, rounding);
-		interpolate8x8_avg2(dst, halfpel_hv, halfpel_v + stride, stride, rounding);
+		interpolate8x8_avg2(dst, halfpel_hv, halfpel_v + stride, stride, rounding, 9);
 		break;
 	}
 }
@@ -371,10 +372,10 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
 
 	case 1:
 		interpolate16x16_lowpass_h(halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(dst, src, halfpel_h, stride, rounding);
-		interpolate8x8_avg2(dst+8, src+8, halfpel_h+8, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride, src+8*stride, halfpel_h+8*stride, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride+8, src+8*stride+8, halfpel_h+8*stride+8, stride, rounding);
+		interpolate8x8_avg2(dst, src, halfpel_h, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8, src+8, halfpel_h+8, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride, src+8*stride, halfpel_h+8*stride, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride+8, src+8*stride+8, halfpel_h+8*stride+8, stride, rounding, 9);
 		break;
 
 	case 2:
@@ -383,54 +384,54 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
   
 	case 3:
 		interpolate16x16_lowpass_h(halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(dst, src + 1, halfpel_h, stride, rounding);
-		interpolate8x8_avg2(dst+8, src + 8 + 1, halfpel_h+8, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride, src + 8*stride + 1, halfpel_h+8*stride, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride+8, src+8*stride+8 + 1, halfpel_h+8*stride+8, stride, rounding);
+		interpolate8x8_avg2(dst, src + 1, halfpel_h, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8, src + 8 + 1, halfpel_h+8, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride, src + 8*stride + 1, halfpel_h+8*stride, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride+8, src+8*stride+8 + 1, halfpel_h+8*stride+8, stride, rounding, 9);
 		break;
 
 	case 4:
 		interpolate16x16_lowpass_v(halfpel_v, src, stride, rounding);
-		interpolate8x8_avg2(dst, src, halfpel_v, stride, rounding);
-		interpolate8x8_avg2(dst+8, src+8, halfpel_v+8, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride, src+8*stride, halfpel_v+8*stride, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride+8, src+8*stride+8, halfpel_v+8*stride+8, stride, rounding);
+		interpolate8x8_avg2(dst, src, halfpel_v, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8, src+8, halfpel_v+8, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride, src+8*stride, halfpel_v+8*stride, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride+8, src+8*stride+8, halfpel_v+8*stride+8, stride, rounding, 9);
 		break;
 	
 	case 5:
 		interpolate16x16_lowpass_h(halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(halfpel_v, src, halfpel_h, stride, rounding);
-		interpolate8x8_avg2(halfpel_v+8, src + 8, halfpel_h+8, stride, rounding);
-		interpolate8x8_avg2(halfpel_v+8*stride, src + 8*stride, halfpel_h+8*stride, stride, rounding);
-		interpolate8x8_avg2(halfpel_v+8*stride+8, src+8*stride+8, halfpel_h+8*stride+8, stride, rounding);
+		interpolate8x8_avg2(halfpel_v, src, halfpel_h, stride, rounding, 9);
+		interpolate8x8_avg2(halfpel_v+8, src + 8, halfpel_h+8, stride, rounding, 9);
+		interpolate8x8_avg2(halfpel_v+8*stride, src + 8*stride, halfpel_h+8*stride, stride, rounding, 9);
+		interpolate8x8_avg2(halfpel_v+8*stride+8, src+8*stride+8, halfpel_h+8*stride+8, stride, rounding, 9);
 
 		interpolate16x16_lowpass_v(halfpel_hv, halfpel_v, stride, rounding);
-		interpolate8x8_avg2(dst, halfpel_hv, halfpel_v, stride, rounding);
-		interpolate8x8_avg2(dst+8, halfpel_hv+8, halfpel_v+8, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride, halfpel_hv+8*stride, halfpel_v+8*stride, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride+8, halfpel_hv+8*stride+8, halfpel_v+8*stride+8, stride, rounding);
+		interpolate8x8_avg2(dst, halfpel_hv, halfpel_v, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8, halfpel_hv+8, halfpel_v+8, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride, halfpel_hv+8*stride, halfpel_v+8*stride, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride+8, halfpel_hv+8*stride+8, halfpel_v+8*stride+8, stride, rounding, 9);
 		break;
    
 	case 6:
 		interpolate16x16_lowpass_hv(halfpel_hv, halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(dst, halfpel_h, halfpel_hv, stride, rounding);
-		interpolate8x8_avg2(dst+8, halfpel_h+8, halfpel_hv+8, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride, halfpel_h+8*stride, halfpel_hv+8*stride, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride+8, halfpel_h+8*stride+8, halfpel_hv+8*stride+8, stride, rounding);
+		interpolate8x8_avg2(dst, halfpel_h, halfpel_hv, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8, halfpel_h+8, halfpel_hv+8, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride, halfpel_h+8*stride, halfpel_hv+8*stride, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride+8, halfpel_h+8*stride+8, halfpel_hv+8*stride+8, stride, rounding, 9);
 		break;
    
 	case 7:
 		interpolate16x16_lowpass_h(halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(halfpel_v, src+1, halfpel_h, stride, rounding);
-		interpolate8x8_avg2(halfpel_v+8, src+1 + 8, halfpel_h+8, stride, rounding);
-		interpolate8x8_avg2(halfpel_v+8*stride, src+1 + 8*stride, halfpel_h+8*stride, stride, rounding);
-		interpolate8x8_avg2(halfpel_v+8*stride+8, src+1+8*stride+8, halfpel_h+8*stride+8, stride, rounding);
+		interpolate8x8_avg2(halfpel_v, src+1, halfpel_h, stride, rounding, 9);
+		interpolate8x8_avg2(halfpel_v+8, src+1 + 8, halfpel_h+8, stride, rounding, 9);
+		interpolate8x8_avg2(halfpel_v+8*stride, src+1 + 8*stride, halfpel_h+8*stride, stride, rounding, 9);
+		interpolate8x8_avg2(halfpel_v+8*stride+8, src+1+8*stride+8, halfpel_h+8*stride+8, stride, rounding, 9);
 
 		interpolate16x16_lowpass_v(halfpel_hv, halfpel_v, stride, rounding);
-		interpolate8x8_avg2(dst, halfpel_hv, halfpel_v, stride, rounding);
-		interpolate8x8_avg2(dst+8, halfpel_hv+8, halfpel_v+8, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride, halfpel_hv+8*stride, halfpel_v+8*stride, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride+8, halfpel_hv+8*stride+8, halfpel_v+8*stride+8, stride, rounding);
+		interpolate8x8_avg2(dst, halfpel_hv, halfpel_v, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8, halfpel_hv+8, halfpel_v+8, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride, halfpel_hv+8*stride, halfpel_v+8*stride, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride+8, halfpel_hv+8*stride+8, halfpel_v+8*stride+8, stride, rounding, 9);
 		break;
    
 	case 8:
@@ -439,10 +440,10 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
 
 	case 9:
 		interpolate16x16_lowpass_h(halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(halfpel_v, src, halfpel_h, stride, rounding);
-		interpolate8x8_avg2(halfpel_v+8, src + 8, halfpel_h+8, stride, rounding);
-		interpolate8x8_avg2(halfpel_v+8*stride, src + 8*stride, halfpel_h+8*stride, stride, rounding);
-		interpolate8x8_avg2(halfpel_v+8*stride+8, src+8*stride+8, halfpel_h+8*stride+8, stride, rounding);
+		interpolate8x8_avg2(halfpel_v, src, halfpel_h, stride, rounding, 9);
+		interpolate8x8_avg2(halfpel_v+8, src + 8, halfpel_h+8, stride, rounding, 9);
+		interpolate8x8_avg2(halfpel_v+8*stride, src + 8*stride, halfpel_h+8*stride, stride, rounding, 9);
+		interpolate8x8_avg2(halfpel_v+8*stride+8, src+8*stride+8, halfpel_h+8*stride+8, stride, rounding, 9);
 		interpolate16x16_lowpass_v(dst, halfpel_v, stride, rounding);
 		break;
   
@@ -452,55 +453,55 @@ static __inline void interpolate16x16_quarterpel(uint8_t * const cur,
   
 	case 11:
 		interpolate16x16_lowpass_h(halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(halfpel_v, src+1, halfpel_h, stride, rounding);
-		interpolate8x8_avg2(halfpel_v+8, src+1 + 8, halfpel_h+8, stride, rounding);
-		interpolate8x8_avg2(halfpel_v+8*stride, src+1 + 8*stride, halfpel_h+8*stride, stride, rounding);
-		interpolate8x8_avg2(halfpel_v+8*stride+8, src+1+8*stride+8, halfpel_h+8*stride+8, stride, rounding);
+		interpolate8x8_avg2(halfpel_v, src+1, halfpel_h, stride, rounding, 9);
+		interpolate8x8_avg2(halfpel_v+8, src+1 + 8, halfpel_h+8, stride, rounding, 9);
+		interpolate8x8_avg2(halfpel_v+8*stride, src+1 + 8*stride, halfpel_h+8*stride, stride, rounding, 9);
+		interpolate8x8_avg2(halfpel_v+8*stride+8, src+1+8*stride+8, halfpel_h+8*stride+8, stride, rounding, 9);
 		interpolate16x16_lowpass_v(dst, halfpel_v, stride, rounding);
 		break;
  
 	case 12:
 		interpolate16x16_lowpass_v(halfpel_v, src, stride, rounding);
-		interpolate8x8_avg2(dst, src+stride, halfpel_v, stride, rounding);
-		interpolate8x8_avg2(dst+8, src+stride+8, halfpel_v+8, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride, src+stride+8*stride, halfpel_v+8*stride, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride+8, src+stride+8*stride+8, halfpel_v+8*stride+8, stride, rounding);
+		interpolate8x8_avg2(dst, src+stride, halfpel_v, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8, src+stride+8, halfpel_v+8, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride, src+stride+8*stride, halfpel_v+8*stride, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride+8, src+stride+8*stride+8, halfpel_v+8*stride+8, stride, rounding, 9);
 		break;
  
 	case 13:
 		interpolate16x16_lowpass_h(halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(halfpel_v, src, halfpel_h, stride, rounding);
-		interpolate8x8_avg2(halfpel_v+8, src + 8, halfpel_h+8, stride, rounding);
-		interpolate8x8_avg2(halfpel_v+8*stride, src + 8*stride, halfpel_h+8*stride, stride, rounding);
-		interpolate8x8_avg2(halfpel_v+8*stride+8, src+8*stride+8, halfpel_h+8*stride+8, stride, rounding);
+		interpolate8x8_avg2(halfpel_v, src, halfpel_h, stride, rounding, 9);
+		interpolate8x8_avg2(halfpel_v+8, src + 8, halfpel_h+8, stride, rounding, 9);
+		interpolate8x8_avg2(halfpel_v+8*stride, src + 8*stride, halfpel_h+8*stride, stride, rounding, 9);
+		interpolate8x8_avg2(halfpel_v+8*stride+8, src+8*stride+8, halfpel_h+8*stride+8, stride, rounding, 9);
 
 		interpolate16x16_lowpass_v(halfpel_hv, halfpel_v, stride, rounding);
-		interpolate8x8_avg2(dst, halfpel_hv, halfpel_v+stride, stride, rounding);
-		interpolate8x8_avg2(dst+8, halfpel_hv+8, halfpel_v+stride+8, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride, halfpel_hv+8*stride, halfpel_v+stride+8*stride, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride+8, halfpel_hv+8*stride+8, halfpel_v+stride+8*stride+8, stride, rounding);
+		interpolate8x8_avg2(dst, halfpel_hv, halfpel_v+stride, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8, halfpel_hv+8, halfpel_v+stride+8, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride, halfpel_hv+8*stride, halfpel_v+stride+8*stride, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride+8, halfpel_hv+8*stride+8, halfpel_v+stride+8*stride+8, stride, rounding, 9);
 		break;
    
 	case 14:
 		interpolate16x16_lowpass_hv(halfpel_hv, halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(dst, halfpel_h+stride, halfpel_hv, stride, rounding);
-		interpolate8x8_avg2(dst+8, halfpel_h+stride+8, halfpel_hv+8, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride, halfpel_h+stride+8*stride, halfpel_hv+8*stride, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride+8, halfpel_h+stride+8*stride+8, halfpel_hv+8*stride+8, stride, rounding);
+		interpolate8x8_avg2(dst, halfpel_h+stride, halfpel_hv, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8, halfpel_h+stride+8, halfpel_hv+8, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride, halfpel_h+stride+8*stride, halfpel_hv+8*stride, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride+8, halfpel_h+stride+8*stride+8, halfpel_hv+8*stride+8, stride, rounding, 9);
 		break;
    
 	case 15:
 		interpolate16x16_lowpass_h(halfpel_h, src, stride, rounding);
-		interpolate8x8_avg2(halfpel_v, src+1, halfpel_h, stride, rounding);
-		interpolate8x8_avg2(halfpel_v+8, src+1 + 8, halfpel_h+8, stride, rounding);
-		interpolate8x8_avg2(halfpel_v+8*stride, src+1 + 8*stride, halfpel_h+8*stride, stride, rounding);
-		interpolate8x8_avg2(halfpel_v+8*stride+8, src+1+8*stride+8, halfpel_h+8*stride+8, stride, rounding);
+		interpolate8x8_avg2(halfpel_v, src+1, halfpel_h, stride, rounding, 9);
+		interpolate8x8_avg2(halfpel_v+8, src+1 + 8, halfpel_h+8, stride, rounding, 9);
+		interpolate8x8_avg2(halfpel_v+8*stride, src+1 + 8*stride, halfpel_h+8*stride, stride, rounding, 9);
+		interpolate8x8_avg2(halfpel_v+8*stride+8, src+1+8*stride+8, halfpel_h+8*stride+8, stride, rounding, 9);
 
 		interpolate16x16_lowpass_v(halfpel_hv, halfpel_v, stride, rounding);
-		interpolate8x8_avg2(dst, halfpel_hv, halfpel_v+stride, stride, rounding);
-		interpolate8x8_avg2(dst+8, halfpel_hv+8, halfpel_v+stride+8, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride, halfpel_hv+8*stride, halfpel_v+stride+8*stride, stride, rounding);
-		interpolate8x8_avg2(dst+8*stride+8, halfpel_hv+8*stride+8, halfpel_v+stride+8*stride+8, stride, rounding);
+		interpolate8x8_avg2(dst, halfpel_hv, halfpel_v+stride, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8, halfpel_hv+8, halfpel_v+stride+8, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride, halfpel_hv+8*stride, halfpel_v+stride+8*stride, stride, rounding, 9);
+		interpolate8x8_avg2(dst+8*stride+8, halfpel_hv+8*stride+8, halfpel_v+stride+8*stride+8, stride, rounding, 9);
 		break;
 	}
 }
