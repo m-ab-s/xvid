@@ -21,7 +21,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.36 2003-10-27 00:48:29 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.37 2003-11-30 17:11:01 chl Exp $
  *
  ****************************************************************************/
 
@@ -922,6 +922,7 @@ enc_init(int use_assembler)
 	/* Width and Height of input frames */
 	xvid_enc_create.width = XDIM;
 	xvid_enc_create.height = YDIM;
+	xvid_enc_create.profile = XVID_PROFILE_AS_L4;
 
 	/* init plugins  */
     xvid_enc_create.zones = ZONES;
