@@ -33,7 +33,7 @@
  *
  *  - 13.06.2002 Added legal header - Cosmetic
  *
- *  $Id: decoder.h,v 1.13 2003-02-15 15:22:17 edgomez Exp $
+ *  $Id: decoder.h,v 1.13.2.1 2003-02-22 08:49:44 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -138,6 +138,7 @@ typedef struct
 	// for B-frame & low_delay==0
 	// XXX: should move frame based stuff into a DECODER_FRAMEINFO struct */
 	MACROBLOCK *last_mbs;			// last MB
+    int last_coding_type;           // last coding type value
 	int last_reduced_resolution;	// last reduced_resolution value
 	int32_t frames;				// total frame number
 	int32_t packed_mode;		// bframes packed bitstream? (1 = yes)
@@ -157,7 +158,7 @@ typedef struct
 	IMAGE gmc;		/* gmc tmp buffer, remove for blockbased compensation */
 	GMC_DATA gmc_data;
 	
-	XVID_DEC_PICTURE* out_frm;                // This is used for slice rendering
+	xvid_image_t* out_frm;                // This is used for slice rendering
 }
 DECODER;
 
@@ -167,10 +168,10 @@ DECODER;
 
 void init_decoder(uint32_t cpu_flags);
 
-int decoder_create(XVID_DEC_PARAM * param);
+int decoder_create(xvid_dec_create_t * param);
 int decoder_destroy(DECODER * dec);
 int decoder_decode(DECODER * dec,
-				   XVID_DEC_FRAME * frame, XVID_DEC_STATS * stats);
+				   xvid_dec_frame_t * frame, xvid_dec_stats_t * stats);
 
 
 #endif

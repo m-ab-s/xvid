@@ -83,14 +83,14 @@ MBTransQuantIntra(const MBParam * pParam,
 
 	uint32_t stride = pParam->edged_width;
 	uint32_t stride2 = stride / 2;
-	uint32_t next_block = stride * ((frame->global_flags & XVID_REDUCED)?16:8);
+	uint32_t next_block = stride * ((frame->vop_flags & XVID_REDUCED)?16:8);
 	uint32_t i;
 	uint32_t iQuant = frame->quant;
 	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
 	IMAGE *pCurrent = &frame->image;
 
 	start_timer();
-	if ((frame->global_flags & XVID_REDUCED))
+	if ((frame->vop_flags & XVID_REDUCED))
 	{
 		pY_Cur = pCurrent->y + (y_pos << 5) * stride + (x_pos << 5);
 		pU_Cur = pCurrent->u + (y_pos << 4) * stride2 + (x_pos << 4);
@@ -119,7 +119,7 @@ MBTransQuantIntra(const MBParam * pParam,
 	/* XXX: rrv+interlacing is buggy */
 	start_timer();
 	pMB->field_dct = 0;
-	if ((frame->global_flags & XVID_INTERLACING) &&
+	if ((frame->vol_flags & XVID_INTERLACING) &&
 		(x_pos>0) && (x_pos<pParam->mb_width-1) &&
 		(y_pos>0) && (y_pos<pParam->mb_height-1)) {
 		pMB->field_dct = MBDecideFieldDCT(data);
@@ -133,7 +133,7 @@ MBTransQuantIntra(const MBParam * pParam,
 		fdct(&data[i * 64]);
 		stop_dct_timer();
 
-		if (pParam->m_quant_type == H263_QUANT) {
+		if (!(pParam->vol_flags & XVID_MPEGQUANT)) {
 			start_timer();
 			quant_intra(&qcoeff[i * 64], &data[i * 64], iQuant, iDcScaler);
 			stop_quant_timer();
@@ -146,7 +146,7 @@ MBTransQuantIntra(const MBParam * pParam,
 		/* speedup: dont decode when encoding only ivops */
 		if (pParam->iMaxKeyInterval != 1 || pParam->max_bframes > 0)
 		{
-			if (pParam->m_quant_type == H263_QUANT) {
+			if (!(pParam->vol_flags & XVID_MPEGQUANT)) {
 				start_timer();
 				dequant_intra(&data[i * 64], &qcoeff[i * 64], iQuant, iDcScaler);
 				stop_iquant_timer();
@@ -172,7 +172,7 @@ MBTransQuantIntra(const MBParam * pParam,
 		}
 
 		start_timer();
-		if ((frame->global_flags & XVID_REDUCED))
+		if ((frame->vop_flags & XVID_REDUCED))
 		{
 			copy_upsampled_8x8_16to8(pY_Cur, &data[0 * 64], stride);
 			copy_upsampled_8x8_16to8(pY_Cur + 16, &data[1 * 64], stride);
@@ -207,7 +207,7 @@ MBTransQuantInter(const MBParam * pParam,
 
 	uint32_t stride = pParam->edged_width;
 	uint32_t stride2 = stride / 2;
-	uint32_t next_block = stride * ((frame->global_flags & XVID_REDUCED)?16:8);
+	uint32_t next_block = stride * ((frame->vop_flags & XVID_REDUCED)?16:8);
 	uint32_t i;
 	uint32_t iQuant = frame->quant;
 	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
@@ -215,7 +215,7 @@ MBTransQuantInter(const MBParam * pParam,
 	uint32_t sum;
 	IMAGE *pCurrent = &frame->image;
 
-	if ((frame->global_flags & XVID_REDUCED))
+	if ((frame->vop_flags & XVID_REDUCED))
 	{
 		pY_Cur = pCurrent->y + (y_pos << 5) * stride + (x_pos << 5);
 		pU_Cur = pCurrent->u + (y_pos << 4) * stride2 + (x_pos << 4);
@@ -228,7 +228,7 @@ MBTransQuantInter(const MBParam * pParam,
 
 	start_timer();
 	pMB->field_dct = 0;
-	if ((frame->global_flags & XVID_INTERLACING) &&
+	if ((frame->vol_flags & XVID_INTERLACING) &&
 		(x_pos>0) && (x_pos<pParam->mb_width-1) &&
 		(y_pos>0) && (y_pos<pParam->mb_height-1)) {
 		pMB->field_dct = MBDecideFieldDCT(data);
@@ -246,7 +246,7 @@ MBTransQuantInter(const MBParam * pParam,
 		fdct(&data[i * 64]);
 		stop_dct_timer();
 
-		if (pParam->m_quant_type == 0) {
+		if (!(pParam->vol_flags & XVID_MPEGQUANT)) {
 			start_timer();
 			sum = quant_inter(&qcoeff[i * 64], &data[i * 64], iQuant);
 			stop_quant_timer();
@@ -259,7 +259,7 @@ MBTransQuantInter(const MBParam * pParam,
 		if ((sum >= TOOSMALL_LIMIT + increase_limit) || (qcoeff[i*64] != 0) ||
 			(qcoeff[i*64+1] != 0) || (qcoeff[i*64+8] != 0)) {
 
-			if (pParam->m_quant_type == H263_QUANT) {
+			if (!(pParam->vol_flags & XVID_MPEGQUANT)) {
 				start_timer();
 				dequant_inter(&data[i * 64], &qcoeff[i * 64], iQuant);
 				stop_iquant_timer();
@@ -283,7 +283,7 @@ MBTransQuantInter(const MBParam * pParam,
 	}
 
 	start_timer();
-	if ((frame->global_flags & XVID_REDUCED))
+	if ((frame->vop_flags & XVID_REDUCED))
 	{
 		if (cbp & 32)
 			add_upsampled_8x8_16to8(pY_Cur, &data[0 * 64], stride);
@@ -387,7 +387,7 @@ MBfDCT(const MBParam * pParam,
 
 	start_timer();
 	pMB->field_dct = 0;
-	if ((frame->global_flags & XVID_INTERLACING)) {
+	if ((frame->vol_flags & XVID_INTERLACING)) {
 		pMB->field_dct = MBDecideFieldDCT(data);
 	}
 	stop_interlacing_timer();
@@ -411,7 +411,7 @@ MBQuantDeQuantIntra(const MBParam * pParam,
 
 	start_timer();
 	pMB->field_dct = 0;
-	if ((frame->global_flags & XVID_INTERLACING)) {
+	if ((frame->vol_flags & XVID_INTERLACING)) {
 		pMB->field_dct = MBDecideFieldDCT(data);
 	}
 	stop_interlacing_timer();
@@ -419,7 +419,7 @@ MBQuantDeQuantIntra(const MBParam * pParam,
 	for (i = 0; i < 6; i++) {
 		uint32_t iDcScaler = get_dc_scaler(iQuant, i < 4);
 
-		if (pParam->m_quant_type == H263_QUANT) {
+		if (!(pParam->vol_flags & XVID_MPEGQUANT)) {
 			start_timer();
 			quant_intra(&qcoeff[i * 64], &data[i * 64], iQuant, iDcScaler);
 			stop_quant_timer();
@@ -451,7 +451,7 @@ MBQuantIntra(const MBParam * pParam,
 
 	start_timer();
 	pMB->field_dct = 0;
-	if ((frame->global_flags & XVID_INTERLACING)) {
+	if ((frame->vol_flags & XVID_INTERLACING)) {
 		pMB->field_dct = MBDecideFieldDCT(data);
 	}
 	stop_interlacing_timer();
@@ -459,7 +459,7 @@ MBQuantIntra(const MBParam * pParam,
 	for (i = 0; i < 6; i++) {
 		uint32_t iDcScaler = get_dc_scaler(iQuant, i < 4);
 
-		if (pParam->m_quant_type == H263_QUANT) {
+		if (!(pParam->vol_flags & XVID_MPEGQUANT)) {
 			start_timer();
 			quant_intra(&qcoeff[i * 64], &data[i * 64], iQuant, iDcScaler);
 			stop_quant_timer();
@@ -482,7 +482,7 @@ MBDeQuantIntra(const MBParam * pParam,
 	for (i = 0; i < 6; i++) {
 		uint32_t iDcScaler = get_dc_scaler(iQuant, i < 4);
 
-		if (pParam->m_quant_type == H263_QUANT) {
+		if (!(pParam->vol_flags & XVID_MPEGQUANT)) {
 			start_timer();
 			dequant_intra(&data[i * 64], &qcoeff[i * 64], iQuant, iDcScaler);
 			stop_iquant_timer();
@@ -507,7 +507,7 @@ MBQuantInter(const MBParam * pParam,
 
 	for (i = 0; i < 6; i++) {
 	
-		if (pParam->m_quant_type == 0) {
+		if (!(pParam->vol_flags & XVID_MPEGQUANT)) {
 			start_timer();
 			sum = quant_inter(&qcoeff[i * 64], &data[i * 64], iQuant);
 			stop_quant_timer();
@@ -536,7 +536,7 @@ MBDeQuantInter(	const MBParam * pParam,
 	for (i = 0; i < 6; i++) {
 		if (cbp & (1 << (5 - i)))
 		{	
-			if (pParam->m_quant_type == H263_QUANT) {
+			if (!(pParam->vol_flags & XVID_MPEGQUANT)) {
 				start_timer();
 				dequant_inter(&data[i * 64], &qcoeff[i * 64], iQuant);
 				stop_iquant_timer();

@@ -2,7 +2,6 @@
 #define _COLORSPACE_H
 
 #include "../portab.h"
-#include "../divx4.h"
 
 /* initialize tables */
 

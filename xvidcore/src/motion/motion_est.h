@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion_est.h,v 1.3 2003-02-21 14:40:11 syskin Exp $
+ *  $Id: motion_est.h,v 1.3.2.1 2003-02-22 08:49:45 suxen_drol Exp $
  *
  ***************************************************************************/
 
@@ -246,11 +246,11 @@ GlobalMotionEst(const MACROBLOCK * const pMBs,
 #define iDiamondSize 2
 
 static __inline uint32_t
-MakeGoodMotionFlags(const uint32_t MotionFlags, const uint32_t GlobalFlags)
+MakeGoodMotionFlags(const uint32_t MotionFlags, const uint32_t VopFlags, const uint32_t VolFlags)
 {
 	uint32_t Flags = MotionFlags;
 
-	if (!(GlobalFlags & XVID_MODEDECISION_BITS))
+	if (!(VopFlags & XVID_MODEDECISION_BITS))
 		Flags &= ~(QUARTERPELREFINE16_BITS+QUARTERPELREFINE8_BITS+HALFPELREFINE16_BITS+HALFPELREFINE8_BITS+EXTSEARCH_BITS);
 
 	if (Flags & EXTSEARCH_BITS)
@@ -270,13 +270,13 @@ MakeGoodMotionFlags(const uint32_t MotionFlags, const uint32_t GlobalFlags)
 	if (Flags & QUARTERPELREFINE8_BITS)
 		Flags &= ~PMV_QUARTERPELREFINE8;
 
-	if (!(GlobalFlags & XVID_QUARTERPEL))
+	if (!(VolFlags & XVID_QUARTERPEL))
 		Flags &= ~(PMV_QUARTERPELREFINE16+PMV_QUARTERPELREFINE8+QUARTERPELREFINE16_BITS+QUARTERPELREFINE8_BITS);
 
-	if (!(GlobalFlags & XVID_HALFPEL))
+	if (!(VopFlags & XVID_HALFPEL))
 		Flags &= ~(PMV_EXTSEARCH16+PMV_HALFPELREFINE16+PMV_HALFPELREFINE8+HALFPELREFINE16_BITS+HALFPELREFINE8_BITS);
 
-	if (GlobalFlags & (XVID_GREYSCALE + XVID_REDUCED))
+	if ((VopFlags & XVID_GREYSCALE) || (VopFlags & XVID_REDUCED))
 		Flags &= ~(PMV_CHROMA16 + PMV_CHROMA8);
 
 	return Flags;

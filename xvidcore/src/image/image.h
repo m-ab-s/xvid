@@ -72,8 +72,8 @@ int image_input(IMAGE * image,
 				uint32_t width,
 				int height,
 				uint32_t edged_width,
-				uint8_t * src,
-				int src_stride,
+				uint8_t * src[4],
+				int src_stride[4],
 				int csp,
 				int interlaced);
 
@@ -81,8 +81,8 @@ int image_output(IMAGE * image,
 				 uint32_t width,
 				 int height,
 				 uint32_t edged_width,
-				 uint8_t * dst,
-				 uint32_t dst_stride,
+				 uint8_t * dst[4],
+				 uint32_t dst_stride[4],
 				 int csp,
 				 int interlaced);
 
@@ -101,7 +101,7 @@ float image_mad(const IMAGE * img1,
 				uint32_t height);
 
 void
-output_slice(IMAGE * cur, int edged_width, int width, XVID_DEC_PICTURE* out_frm, int mbx, int mby,int mbl);
+output_slice(IMAGE * cur, int edged_width, int width, xvid_image_t* out_frm, int mbx, int mby,int mbl);
 
 
 void

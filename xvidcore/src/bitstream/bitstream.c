@@ -640,7 +640,7 @@ BitstreamReadHeaders(Bitstream * bs,
 					{
 						if (dec->fixed_dimensions)
 						{
-							DPRINTF(DPRINTF_ERROR, "XVID_DEC_PARAM width/height does not match bitstream");
+							DPRINTF(DPRINTF_ERROR, "decoder width/height does not match bitstream");
 							return -1;
 						}
 						resize = 1;
@@ -1123,22 +1123,23 @@ bs_put_matrix(Bitstream * bs,
 */
 void
 BitstreamWriteVolHeader(Bitstream * const bs,
-						const MBParam * pParam,
-						const FRAMEINFO * const frame)
+						const MBParam * pParam)
 {
 	static const unsigned int vo_id = 0;
 	static const unsigned int vol_id = 0;
 	int vol_ver_id=1;
 	int profile = 0x03;	/* simple profile/level 3 */
 
-	if ( pParam->m_quarterpel ||  (frame->global_flags & XVID_GMC) || 
-		 (pParam->global & XVID_GLOBAL_REDUCED))
+	if ( (pParam->vol_flags & XVID_QUARTERPEL) ||  
+         (pParam->vol_flags & XVID_GMC) || 
+		 (pParam->vol_flags & XVID_REDUCED_ENABLE))
 		vol_ver_id = 2;
 
-	if ((pParam->global & XVID_GLOBAL_REDUCED))
+	if ((pParam->vol_flags & XVID_REDUCED_ENABLE))
 		profile = 0x93;	/* advanced realtime simple profile/level 3 */
 
-	if (pParam->m_quarterpel ||  (frame->global_flags & XVID_GMC))
+	if ((pParam->vol_flags & XVID_QUARTERPEL) || 
+        (pParam->vol_flags & XVID_GMC))
 		profile = 0xf3;	/* advanced simple profile/level 2 */
 
 	// visual_object_sequence_start_code
@@ -1212,11 +1213,11 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	BitstreamPutBits(bs, pParam->height, 13);	// height
 	WRITE_MARKER();
 
-	BitstreamPutBit(bs, frame->global_flags & XVID_INTERLACING);	// interlace
+	BitstreamPutBit(bs, pParam->vol_flags & XVID_INTERLACING);	// interlace
 	BitstreamPutBit(bs, 1);		// obmc_disable (overlapped block motion compensation)
 
 	if (vol_ver_id != 1) 
-	{	if (frame->global_flags & XVID_GMC)
+	{	if ((pParam->vol_flags & XVID_GMC))
 		{	BitstreamPutBits(bs, 2, 2);		// sprite_enable=='GMC'
 			BitstreamPutBits(bs, 2, 6);		// no_of_sprite_warping_points
 			BitstreamPutBits(bs, 3, 2);		// sprite_warping_accuracy 0==1/2, 1=1/4, 2=1/8, 3=1/16
@@ -1234,9 +1235,9 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	BitstreamPutBit(bs, 0);		// not_8_bit
 
 	// quant_type   0=h.263  1=mpeg4(quantizer tables)
-	BitstreamPutBit(bs, pParam->m_quant_type);
+	BitstreamPutBit(bs, pParam->vol_flags & XVID_MPEGQUANT);
 
-	if (pParam->m_quant_type) {
+	if ((pParam->vol_flags & XVID_MPEGQUANT)) {
 		BitstreamPutBit(bs, get_intra_matrix_status());	// load_intra_quant_mat
 		if (get_intra_matrix_status()) {
 			bs_put_matrix(bs, get_intra_matrix());
@@ -1250,7 +1251,7 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	}
 
 	if (vol_ver_id != 1) {
-		if (pParam->m_quarterpel)
+		if ((pParam->vol_flags & XVID_QUARTERPEL))
 			BitstreamPutBit(bs, 1);	 	//  quarterpel 
 		else
 			BitstreamPutBit(bs, 0);		// no quarterpel
@@ -1264,15 +1265,15 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	{
 		BitstreamPutBit(bs, 0);		// newpred_enable
 		
-		BitstreamPutBit(bs, (pParam->global & XVID_GLOBAL_REDUCED)?1:0);	
+		BitstreamPutBit(bs, (pParam->vol_flags & XVID_REDUCED_ENABLE)?1:0);	
 									/* reduced_resolution_vop_enabled */
 	}
 	
 	BitstreamPutBit(bs, 0);		// scalability
 
 	/* fake divx5 id, to ensure compatibility with divx5 decoder */
-#define DIVX5_ID "DivX501b481p"
-	if (pParam->max_bframes > 0 && (pParam->global & XVID_GLOBAL_PACKED)) {
+#define DIVX5_ID "DivX000b000p"
+	if (pParam->max_bframes > 0 && (pParam->global_flags & XVID_PACKED)) {
 		BitstreamWriteUserData(bs, DIVX5_ID, strlen(DIVX5_ID));
 	}
 
@@ -1329,14 +1330,14 @@ BitstreamWriteVopHeader(
 	if ( (frame->coding_type == P_VOP) || (frame->coding_type == S_VOP) )
 		BitstreamPutBits(bs, frame->rounding_type, 1);
 
-	if ((pParam->global & XVID_GLOBAL_REDUCED))
-		BitstreamPutBit(bs, (frame->global_flags & XVID_REDUCED)?1:0);
+	if ((frame->vol_flags & XVID_REDUCED_ENABLE))
+		BitstreamPutBit(bs, (frame->vop_flags & XVID_REDUCED)?1:0);
 
 	BitstreamPutBits(bs, 0, 3);	// intra_dc_vlc_threshold
 
-	if (frame->global_flags & XVID_INTERLACING) {
-		BitstreamPutBit(bs, (frame->global_flags & XVID_TOPFIELDFIRST));
-		BitstreamPutBit(bs, (frame->global_flags & XVID_ALTERNATESCAN));
+	if ((frame->vol_flags & XVID_INTERLACING)) {
+		BitstreamPutBit(bs, (frame->vop_flags & XVID_TOPFIELDFIRST));
+		BitstreamPutBit(bs, (frame->vop_flags & XVID_ALTERNATESCAN));
 	}
 	
 	if (frame->coding_type == S_VOP) {
@@ -1350,7 +1351,7 @@ BitstreamWriteVopHeader(
 				bs_put_spritetrajectory(bs, frame->warp.duv[k].y ); // dv[k] 
 				WRITE_MARKER();
 
-			if (pParam->m_quarterpel)
+			if ((frame->vol_flags & XVID_QUARTERPEL))
 			{
 				DPRINTF(DPRINTF_HEADER,"sprite_warping_point[%i] xy=(%i,%i) *QPEL*", k, frame->warp.duv[k].x/2, frame->warp.duv[k].y/2);
 			}

@@ -23,6 +23,39 @@
 #define MODE_DIRECT_NONE_MV	4
 #define MODE_DIRECT_NO4V	5
 
+
+// vop coding types 
+// intra, prediction, backward, sprite, not_coded
+#define I_VOP	0
+#define P_VOP	1
+#define B_VOP	2
+#define S_VOP	3
+#define N_VOP	4
+
+/* convert mpeg-4 coding type i/p/b/s_VOP to XVID_TYPE_xxx */
+static __inline int
+coding2type(int coding_type)
+{
+	return coding_type + 1;
+}
+
+/* convert XVID_TYPE_xxx to bitstream coding type i/p/b/s_VOP */
+static __inline int
+type2coding(int xvid_type)
+{
+	return xvid_type - 1;
+}
+
+
+typedef struct
+{
+	int x;
+	int y;
+}
+VECTOR;
+
+
+
 typedef struct 
 {
 	VECTOR duv[3];

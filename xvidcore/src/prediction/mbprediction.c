@@ -452,7 +452,7 @@ MBPrediction(FRAMEINFO * frame,
 			predict_acdc(frame->mbs, x, y, mb_width, j, &qcoeff[j * 64],
 						 iQuant, iDcScaler, predictors[j], 0);
 
-			if ((frame->global_flags & XVID_HQACPRED))
+			if ((frame->vop_flags & XVID_HQACPRED))
 				S += calc_acdc_bits(pMB, j, &qcoeff[j * 64], iDcScaler, predictors[j]);
 			else
 				S += calc_acdc_coeff(pMB, j, &qcoeff[j * 64], iDcScaler, predictors[j]);

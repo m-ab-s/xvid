@@ -34,7 +34,6 @@
 #include <string.h>				// memcpy
 
 #include "../global.h"
-#include "../divx4.h"			// DEC_PICTURE
 #include "colorspace.h"
 
 // function pointers

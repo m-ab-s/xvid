@@ -23,7 +23,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: portab.h,v 1.46 2003-02-18 15:48:15 chl Exp $
+ * $Id: portab.h,v 1.46.2.1 2003-02-22 08:49:44 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -47,7 +47,9 @@
 
 /* debug level for this library */
 #ifdef _DEBUG
-#define DPRINTF_LEVEL       0x000000ff
+#ifndef DPRINTF_LEVEL
+#define DPRINTF_LEVEL       0x8000000f
+#endif
 #else
 #define DPRINTF_LEVEL       0
 #endif

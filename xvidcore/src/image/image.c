@@ -60,7 +60,6 @@
 #include "colorspace.h"
 #include "interpolate8x8.h"
 #include "reduced.h"
-#include "../divx4.h"
 #include "../utils/mem_align.h"
 
 #include "font.h"		// XXX: remove later
@@ -564,8 +563,8 @@ image_input(IMAGE * image,
 			uint32_t width,
 			int height,
 			uint32_t edged_width,
-			uint8_t * src,
-			int src_stride,
+			uint8_t * src[4],
+			int src_stride[4],
 			int csp,
 			int interlacing)
 {
@@ -574,37 +573,10 @@ image_input(IMAGE * image,
 	const int height2 = height/2;
 	//const int height_signed = (csp & XVID_CSP_VFLIP) ? -height : height;
 
-	
-	//	int src_stride = width;
-
-	// --- xvid 2.1 compatiblity patch ---
-	// --- remove when xvid_dec_frame->stride equals real stride
-	/*
-	if ((csp & ~XVID_CSP_VFLIP) == XVID_CSP_RGB555 ||
-		(csp & ~XVID_CSP_VFLIP) == XVID_CSP_RGB565 ||
-		(csp & ~XVID_CSP_VFLIP) == XVID_CSP_YUY2 ||
-		(csp & ~XVID_CSP_VFLIP) == XVID_CSP_YVYU ||
-		(csp & ~XVID_CSP_VFLIP) == XVID_CSP_UYVY)
-	{
-		src_stride *= 2;
-	} 
-	else if ((csp & ~XVID_CSP_VFLIP) == XVID_CSP_RGB24)
-	{
-		src_stride *= 3;
-	}
-	else if ((csp & ~XVID_CSP_VFLIP) == XVID_CSP_RGB32 ||
-		(csp & ~XVID_CSP_VFLIP) == XVID_CSP_ABGR ||
-		(csp & ~XVID_CSP_VFLIP) == XVID_CSP_RGBA)
-	{
-		src_stride *= 4;
-	}
-	*/
-	// ^--- xvid 2.1 compatiblity fix ---^
-
 	switch (csp & ~XVID_CSP_VFLIP) {
 	case XVID_CSP_RGB555:
 		safe_packed_conv(
-			src, src_stride, image->y, image->u, image->v, 
+			src[0], src_stride[0], image->y, image->u, image->v, 
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?rgb555i_to_yv12  :rgb555_to_yv12,
 			interlacing?rgb555i_to_yv12_c:rgb555_to_yv12_c, 2);
@@ -612,24 +584,24 @@ image_input(IMAGE * image,
 
 	case XVID_CSP_RGB565:
 		safe_packed_conv(
-			src, src_stride, image->y, image->u, image->v, 
+			src[0], src_stride[0], image->y, image->u, image->v, 
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?rgb565i_to_yv12  :rgb565_to_yv12,
 			interlacing?rgb565i_to_yv12_c:rgb565_to_yv12_c, 2);
 		break;
 
 
-	case XVID_CSP_RGB24:
+	case XVID_CSP_BGR:
 		safe_packed_conv(
-			src, src_stride, image->y, image->u, image->v, 
+			src[0], src_stride[0], image->y, image->u, image->v, 
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?bgri_to_yv12  :bgr_to_yv12,
 			interlacing?bgri_to_yv12_c:bgr_to_yv12_c, 3);
 		break;
 
-	case XVID_CSP_RGB32:
+	case XVID_CSP_BGRA:
 		safe_packed_conv(
-			src, src_stride, image->y, image->u, image->v, 
+			src[0], src_stride[0], image->y, image->u, image->v, 
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?bgrai_to_yv12  :bgra_to_yv12,
 			interlacing?bgrai_to_yv12_c:bgra_to_yv12_c, 4);
@@ -637,7 +609,7 @@ image_input(IMAGE * image,
 
 	case XVID_CSP_ABGR :
 		safe_packed_conv(
-			src, src_stride, image->y, image->u, image->v, 
+			src[0], src_stride[0], image->y, image->u, image->v, 
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?abgri_to_yv12  :abgr_to_yv12,
 			interlacing?abgri_to_yv12_c:abgr_to_yv12_c, 4);
@@ -645,7 +617,7 @@ image_input(IMAGE * image,
 
 	case XVID_CSP_RGBA :
 		safe_packed_conv(
-			src, src_stride, image->y, image->u, image->v, 
+			src[0], src_stride[0], image->y, image->u, image->v, 
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?rgbai_to_yv12  :rgba_to_yv12,
 			interlacing?rgbai_to_yv12_c:rgba_to_yv12_c, 4);
@@ -653,7 +625,7 @@ image_input(IMAGE * image,
 
 	case XVID_CSP_YUY2:
 		safe_packed_conv(
-			src, src_stride, image->y, image->u, image->v, 
+			src[0], src_stride[0], image->y, image->u, image->v, 
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?yuyvi_to_yv12  :yuyv_to_yv12,
 			interlacing?yuyvi_to_yv12_c:yuyv_to_yv12_c, 2);
@@ -661,7 +633,7 @@ image_input(IMAGE * image,
 
 	case XVID_CSP_YVYU:		/* u/v swapped */
 		safe_packed_conv(
-			src, src_stride, image->y, image->v, image->y, 
+			src[0], src_stride[0], image->y, image->v, image->y, 
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?yuyvi_to_yv12  :yuyv_to_yv12,
 			interlacing?yuyvi_to_yv12_c:yuyv_to_yv12_c, 2);
@@ -669,7 +641,7 @@ image_input(IMAGE * image,
 
 	case XVID_CSP_UYVY:
 		safe_packed_conv(
-			src, src_stride, image->y, image->u, image->v, 
+			src[0], src_stride[0], image->y, image->u, image->v, 
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?uyvyi_to_yv12  :uyvy_to_yv12,
 			interlacing?uyvyi_to_yv12_c:uyvy_to_yv12_c, 2);
@@ -677,23 +649,21 @@ image_input(IMAGE * image,
 
 	case XVID_CSP_I420:
 		yv12_to_yv12(image->y, image->u, image->v, edged_width, edged_width2,
-			src, src + src_stride*height, src + src_stride*height + (src_stride/2)*height2,
-			src_stride, src_stride/2, width, height, (csp & XVID_CSP_VFLIP));
+			src[0], src[0] + src_stride[0]*height, src[0] + src_stride[0]*height + (src_stride[0]/2)*height2,
+			src_stride[0], src_stride[0]/2, width, height, (csp & XVID_CSP_VFLIP));
 		break
 			;
 	case XVID_CSP_YV12:		/* u/v swapped */
 		yv12_to_yv12(image->y, image->v, image->u, edged_width, edged_width2,
-			src, src + src_stride*height, src + src_stride*height + (src_stride/2)*height2,
-			src_stride, src_stride/2, width, height, (csp & XVID_CSP_VFLIP));
+			src[0], src[0] + src_stride[0]*height, src[0] + src_stride[0]*height + (src_stride[0]/2)*height2,
+			src_stride[0], src_stride[0]/2, width, height, (csp & XVID_CSP_VFLIP));
 		break;
 
 	case XVID_CSP_USER:
-		{
-			DEC_PICTURE * pic = (DEC_PICTURE*)src;
-			yv12_to_yv12(image->y, image->u, image->v, edged_width, edged_width2,
-				pic->y, pic->u, pic->v, pic->stride_y, pic->stride_y,
-				width, height, (csp & XVID_CSP_VFLIP));
-		}
+        /*XXX: support for different u & v strides */
+		yv12_to_yv12(image->y, image->u, image->v, edged_width, edged_width2,
+			src[0], src[1], src[2], src_stride[0], src_stride[1],
+			width, height, (csp & XVID_CSP_VFLIP));
 		break;
 
 	case XVID_CSP_NULL:
@@ -759,8 +729,8 @@ image_output(IMAGE * image,
 			 uint32_t width,
 			 int height,
 			 uint32_t edged_width,
-			 uint8_t * dst,
-			 uint32_t dst_stride,
+			 uint8_t * dst[4],
+			 uint32_t dst_stride[4],
 			 int csp,
 			 int interlacing)
 {
@@ -773,36 +743,10 @@ image_output(IMAGE * image,
 	image_dump_yuvpgm(image, edged_width, width, height, "\\decode.pgm");
 */
 
-
-	// --- xvid 2.1 compatiblity patch ---
-	// --- remove when xvid_dec_frame->stride equals real stride
-	/*
-	if ((csp & ~XVID_CSP_VFLIP) == XVID_CSP_RGB555 ||
-		(csp & ~XVID_CSP_VFLIP) == XVID_CSP_RGB565 ||
-		(csp & ~XVID_CSP_VFLIP) == XVID_CSP_YUY2 ||
-		(csp & ~XVID_CSP_VFLIP) == XVID_CSP_YVYU ||
-		(csp & ~XVID_CSP_VFLIP) == XVID_CSP_UYVY)
-	{
-		dst_stride *= 2;
-	} 
-	else if ((csp & ~XVID_CSP_VFLIP) == XVID_CSP_RGB24)
-	{
-		dst_stride *= 3;
-	}
-	else if ((csp & ~XVID_CSP_VFLIP) == XVID_CSP_RGB32 ||
-		(csp & ~XVID_CSP_VFLIP) == XVID_CSP_ABGR ||
-		(csp & ~XVID_CSP_VFLIP) == XVID_CSP_RGBA)
-	{
-		dst_stride *= 4;
-	}
-	*/
-	// ^--- xvid 2.1 compatiblity fix ---^
-
-	
 	switch (csp & ~XVID_CSP_VFLIP) {
 	case XVID_CSP_RGB555:
 		safe_packed_conv(
-			dst, dst_stride, image->y, image->u, image->v,
+			dst[0], dst_stride[0], image->y, image->u, image->v,
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?yv12_to_rgb555i  :yv12_to_rgb555,
 			interlacing?yv12_to_rgb555i_c:yv12_to_rgb555_c, 2);
@@ -810,23 +754,23 @@ image_output(IMAGE * image,
 
 	case XVID_CSP_RGB565:
 		safe_packed_conv(
-			dst, dst_stride, image->y, image->u, image->v,
+			dst[0], dst_stride[0], image->y, image->u, image->v,
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?yv12_to_rgb565i  :yv12_to_rgb565,
 			interlacing?yv12_to_rgb565i_c:yv12_to_rgb565_c, 2);
 		return 0;
 
-	case XVID_CSP_RGB24:
+    case XVID_CSP_BGR:
 		safe_packed_conv(
-			dst, dst_stride, image->y, image->u, image->v,
+			dst[0], dst_stride[0], image->y, image->u, image->v,
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?yv12_to_bgri  :yv12_to_bgr,
 			interlacing?yv12_to_bgri_c:yv12_to_bgr_c, 3);
 		return 0;
 
-	case XVID_CSP_RGB32:
+	case XVID_CSP_BGRA:
 		safe_packed_conv(
-			dst, dst_stride, image->y, image->u, image->v,
+			dst[0], dst_stride[0], image->y, image->u, image->v,
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?yv12_to_bgrai  :yv12_to_bgra,
 			interlacing?yv12_to_bgrai_c:yv12_to_bgra_c, 4);
@@ -834,7 +778,7 @@ image_output(IMAGE * image,
 
 	case XVID_CSP_ABGR:
 		safe_packed_conv(
-			dst, dst_stride, image->y, image->u, image->v,
+			dst[0], dst_stride[0], image->y, image->u, image->v,
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?yv12_to_abgri  :yv12_to_abgr,
 			interlacing?yv12_to_abgri_c:yv12_to_abgr_c, 4);
@@ -842,7 +786,7 @@ image_output(IMAGE * image,
 
 	case XVID_CSP_RGBA:
 		safe_packed_conv(
-			dst, dst_stride, image->y, image->u, image->v,
+			dst[0], dst_stride[0], image->y, image->u, image->v,
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?yv12_to_rgbai  :yv12_to_rgba,
 			interlacing?yv12_to_rgbai_c:yv12_to_rgba_c, 4);
@@ -850,7 +794,7 @@ image_output(IMAGE * image,
 
 	case XVID_CSP_YUY2:
 		safe_packed_conv(
-			dst, dst_stride, image->y, image->u, image->v,
+			dst[0], dst_stride[0], image->y, image->u, image->v,
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?yv12_to_yuyvi  :yv12_to_yuyv,
 			interlacing?yv12_to_yuyvi_c:yv12_to_yuyv_c, 2);
@@ -858,7 +802,7 @@ image_output(IMAGE * image,
 
 	case XVID_CSP_YVYU:		// u,v swapped
 		safe_packed_conv(
-			dst, dst_stride, image->y, image->v, image->u,
+			dst[0], dst_stride[0], image->y, image->v, image->u,
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?yv12_to_yuyvi  :yv12_to_yuyv,
 			interlacing?yv12_to_yuyvi_c:yv12_to_yuyv_c, 2);
@@ -866,39 +810,44 @@ image_output(IMAGE * image,
 
 	case XVID_CSP_UYVY:
 		safe_packed_conv(
-			dst, dst_stride, image->y, image->u, image->v,
+			dst[0], dst_stride[0], image->y, image->u, image->v,
 			edged_width, edged_width2, width, height, (csp & XVID_CSP_VFLIP),
 			interlacing?yv12_to_uyvyi  :yv12_to_uyvy,
 			interlacing?yv12_to_uyvyi_c:yv12_to_uyvy_c, 2);
 		return 0;
 
 	case XVID_CSP_I420:
-		yv12_to_yv12(dst, dst + dst_stride*height, dst + dst_stride*height + (dst_stride/2)*height2,
-			dst_stride, dst_stride/2,
+		yv12_to_yv12(dst[0], dst[0] + dst_stride[0]*height, dst[0] + dst_stride[0]*height + (dst_stride[0]/2)*height2,
+			dst_stride[0], dst_stride[0]/2,
 			image->y, image->u, image->v, edged_width, edged_width2,
 			width, height, (csp & XVID_CSP_VFLIP));
 		return 0;
 
 	case XVID_CSP_YV12:		// u,v swapped
-		yv12_to_yv12(dst, dst + dst_stride*height, dst + dst_stride*height + (dst_stride/2)*height2,
-			dst_stride, dst_stride/2,
+		yv12_to_yv12(dst[0], dst[0] + dst_stride[0]*height, dst[0] + dst_stride[0]*height + (dst_stride[0]/2)*height2,
+			dst_stride[0], dst_stride[0]/2,
 			image->y, image->v, image->u, edged_width, edged_width2,
 			width, height, (csp & XVID_CSP_VFLIP));
 		return 0;
 
-	case XVID_CSP_USER:
-		{
-			DEC_PICTURE * pic = (DEC_PICTURE*)dst;
-			pic->y = image->y;
-			pic->u = image->u;
-			pic->v = image->v;
-			pic->stride_y = edged_width;
-			pic->stride_uv = edged_width / 2;
-		}
+	case XVID_CSP_USER :		// u,v swapped
+		yv12_to_yv12(dst[0], dst[1], dst[2],
+			dst_stride[0], dst_stride[1],	/* v: dst_stride[2] */
+			image->y, image->v, image->u, edged_width, edged_width2,
+			width, height, (csp & XVID_CSP_VFLIP));
+		return 0;
+
+	case XVID_CSP_INTERNAL :
+		dst[0] = image->y;
+		dst[1] = image->u;
+		dst[2] = image->v;
+		dst_stride[0] = edged_width;
+		dst_stride[1] = edged_width/2;
+		dst_stride[2] = edged_width/2;
 		return 0;
 
 	case XVID_CSP_NULL:
-	case XVID_CSP_EXTERN:
+	case XVID_CSP_SLICE:
 		return 0;
 
 	}
@@ -1094,7 +1043,7 @@ image_mad(const IMAGE * img1,
 }
 
 void
-output_slice(IMAGE * cur, int std, int width, XVID_DEC_PICTURE* out_frm, int mbx, int mby,int mbl) {
+output_slice(IMAGE * cur, int std, int width, xvid_image_t* out_frm, int mbx, int mby,int mbl) {
   uint8_t *dY,*dU,*dV,*sY,*sU,*sV;
   int std2 = std >> 1;
   int w = mbl << 4, w2,i;
@@ -1103,26 +1052,26 @@ output_slice(IMAGE * cur, int std, int width, XVID_DEC_PICTURE* out_frm, int mbx
     w = width;
   w2 = w >> 1;
 
-  dY = (uint8_t*)out_frm->y + (mby << 4) * out_frm->stride_y + (mbx << 4);
-  dU = (uint8_t*)out_frm->u + (mby << 3) * out_frm->stride_u + (mbx << 3);
-  dV = (uint8_t*)out_frm->v + (mby << 3) * out_frm->stride_v + (mbx << 3);
+  dY = (uint8_t*)out_frm->plane[0] + (mby << 4) * out_frm->stride[0] + (mbx << 4);
+  dU = (uint8_t*)out_frm->plane[1] + (mby << 3) * out_frm->stride[1] + (mbx << 3);
+  dV = (uint8_t*)out_frm->plane[2] + (mby << 3) * out_frm->stride[2] + (mbx << 3);
   sY = cur->y + (mby << 4) * std + (mbx << 4);
   sU = cur->u + (mby << 3) * std2 + (mbx << 3);
   sV = cur->v + (mby << 3) * std2 + (mbx << 3);
 
   for(i = 0 ; i < 16 ; i++) {
     memcpy(dY,sY,w);
-    dY += out_frm->stride_y;
+    dY += out_frm->stride[0];
     sY += std;
   }
   for(i = 0 ; i < 8 ; i++) {
     memcpy(dU,sU,w2);
-    dU += out_frm->stride_u;
+    dU += out_frm->stride[1];
     sU += std2;
   }
   for(i = 0 ; i < 8 ; i++) {
     memcpy(dV,sV,w2);
-    dV += out_frm->stride_v;
+    dV += out_frm->stride[2];
     sV += std2;
   }
 }
@@ -1169,8 +1118,7 @@ image_deblock_rrv(IMAGE * img, int edged_width,
 	int i,j;
 
 	/* luma: j,i in block units */
-	if ((flags & XVID_DEC_DEBLOCKY))
-	{
+
 		for (j = 1; j < mb_height*2; j++)		/* horizontal deblocking */
 		for (i = 0; i < mb_width*2; i++)
 		{
@@ -1193,12 +1141,11 @@ image_deblock_rrv(IMAGE * img, int edged_width,
 						   edged_width, nblocks);
 			}
 		}
-	}
+
 
 
 	/* chroma */
-	if ((flags & XVID_DEC_DEBLOCKUV))
-	{
+
 		for (j = 1; j < mb_height; j++)		/* horizontal deblocking */
 		for (i = 0; i < mb_width; i++)
 		{
@@ -1226,7 +1173,7 @@ image_deblock_rrv(IMAGE * img, int edged_width,
 						   edged_width2, nblocks);
 			}
 		}
-	}
+
 
 }
 

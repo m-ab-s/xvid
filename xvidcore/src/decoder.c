@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49 2003-02-19 21:59:30 edgomez Exp $
+ * $Id: decoder.c,v 1.49.2.1 2003-02-22 08:49:44 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -158,14 +158,17 @@ decoder_resize(DECODER * dec)
 
 	memset(dec->last_mbs, 0, sizeof(MACROBLOCK) * dec->mb_width * dec->mb_height);
 
-	return XVID_ERR_OK;
+	return 0;
 }
 
 
 int
-decoder_create(XVID_DEC_PARAM * param)
+decoder_create(xvid_dec_create_t * create)
 {
 	DECODER *dec;
+
+	if (XVID_MAJOR(create->version) != 1)	/* v1.x.x */
+		return XVID_ERR_VERSION;
 
 	dec = xvid_malloc(sizeof(DECODER), CACHE_LINE);
 	if (dec == NULL) {
@@ -173,10 +176,10 @@ decoder_create(XVID_DEC_PARAM * param)
 	}
 	memset(dec, 0, sizeof(DECODER));
 
-	param->handle = dec;
+	create->handle = dec;
 
-	dec->width = param->width;
-	dec->height = param->height;
+	dec->width = create->width;
+	dec->height = create->height;
 
 	image_null(&dec->cur);
 	image_null(&dec->refn[0]);
@@ -204,7 +207,7 @@ decoder_create(XVID_DEC_PARAM * param)
 	if (dec->fixed_dimensions)
 		return decoder_resize(dec);
 	else
-		return XVID_ERR_OK;		
+		return 0;		
 }
 
 
@@ -225,7 +228,7 @@ decoder_destroy(DECODER * dec)
 	xvid_free(dec);
 
 	write_timer();
-	return XVID_ERR_OK;
+	return 0;
 }
 
 
@@ -1716,28 +1719,26 @@ mb_swap(MACROBLOCK ** mb1,
 
 /* perform post processing if necessary, and output the image */
 void decoder_output(DECODER * dec, IMAGE * img, MACROBLOCK * mbs, 
-					const XVID_DEC_FRAME * frame, int pp_disable)
+					xvid_dec_frame_t * frame, xvid_dec_stats_t * stats, int coding_type)
 {
 
-	if ((frame->general & (XVID_DEC_DEBLOCKY|XVID_DEC_DEBLOCKUV)) && !pp_disable)	/* post process */
-	{
-		/* note: image is stored to tmp */
-		image_copy(&dec->tmp, img, dec->edged_width, dec->height);
-		image_deblock_rrv(&dec->tmp, dec->edged_width, 
-						mbs, dec->mb_width, dec->mb_height, dec->mb_width,
-						8, frame->general);
-		img = &dec->tmp;
-	}
 
 	image_output(img, dec->width, dec->height,
-				 dec->edged_width, frame->image, frame->stride,
-				 frame->colorspace, dec->interlacing);
+				 dec->edged_width, (uint8_t**)frame->output.plane, frame->output.stride,
+				 frame->output.csp, dec->interlacing);
+
+	if (stats)
+	{
+		stats->type = coding2type(coding_type);
+		stats->data.vop.time_base = (int)dec->time_base;
+		stats->data.vop.time_increment = 0;	//XXX: todo
+	}
 }
 
 
 int
 decoder_decode(DECODER * dec,
-			   XVID_DEC_FRAME * frame, XVID_DEC_STATS * stats)
+			   xvid_dec_frame_t * frame, xvid_dec_stats_t * stats)
 {
 
 	Bitstream bs;
@@ -1748,18 +1749,18 @@ decoder_decode(DECODER * dec,
 	uint32_t fcode_backward;
 	uint32_t intra_dc_threshold;
 	WARPPOINTS gmc_warp;
-	int vop_type;
-	int success = 0;
-	int output = 0;
-	int seen_something = 0;
+	int coding_type;
+	int success, output, seen_something;
+
+	if (XVID_MAJOR(frame->version) != 1 || (stats && XVID_MAJOR(stats->version) != 1))	/* v1.x.x */
+		return XVID_ERR_VERSION;
 
 	start_global_timer();
 
-	dec->low_delay_default = (frame->general & XVID_DEC_LOWDELAY);
-	dec->out_frm = (frame->colorspace == XVID_CSP_EXTERN) ? frame->image : NULL;
-
-	if ((frame->general & XVID_DEC_DISCONTINUITY))
+	dec->low_delay_default = (frame->general & XVID_LOWDELAY);
+	if ((frame->general & XVID_DISCONTINUITY))
 		dec->frames = 0;
+	dec->out_frm = (frame->output.csp == XVID_CSP_SLICE) ? &frame->output : NULL;
 
 	if (frame->length < 0)	/* decoder flush */
 	{
@@ -1767,22 +1768,14 @@ decoder_decode(DECODER * dec,
 		    we have a reference frame, then outout the reference frame */
 		if (!(dec->low_delay_default && dec->packed_mode) && !dec->low_delay && dec->frames>0)
 		{
-			decoder_output(dec, &dec->refn[0], dec->mbs, frame, dec->last_reduced_resolution);
-			output = 1;
-		}
-
-		frame->length = 0;
-		if (stats)
-		{
-			stats->notify = output ? XVID_DEC_VOP : XVID_DEC_NOTHING;
-			stats->data.vop.time_base = (int)dec->time_base;
-			stats->data.vop.time_increment = 0;	/* XXX: todo */
-		}
+			decoder_output(dec, &dec->refn[0], dec->last_mbs, frame, stats, dec->last_coding_type);
+        }else{
+            if (stats) stats->type = XVID_TYPE_NOTHING;
+        }
 
 		emms();
-
 		stop_global_timer();
-		return XVID_ERR_OK;
+		return 0;
 	}
 
 	BitstreamInit(&bs, frame->bitstream, frame->length);
@@ -1790,49 +1783,51 @@ decoder_decode(DECODER * dec,
 	/* XXX: 0x7f is only valid whilst decoding vfw xvid/divx5 avi's */
 	if(dec->low_delay_default && frame->length == 1 && BitstreamShowBits(&bs, 8) == 0x7f)
 	{
-		if (stats)
-			stats->notify = XVID_DEC_VOP;
-		frame->length = 1;
 		image_output(&dec->refn[0], dec->width, dec->height, dec->edged_width,
-					 frame->image, frame->stride, frame->colorspace, dec->interlacing);
+					 (uint8_t**)frame->output.plane, frame->output.stride, frame->output.csp, dec->interlacing);
+		if (stats) stats->type = XVID_TYPE_NOTHING;
 		emms();
-		return XVID_ERR_OK;
+		return 1;   /* one byte consumed */
 	}
+
+	success = 0;
+	output = 0;
+	seen_something = 0;
 
 repeat:
 
-	vop_type =	BitstreamReadHeaders(&bs, dec, &rounding, &reduced_resolution, 
+	coding_type =	BitstreamReadHeaders(&bs, dec, &rounding, &reduced_resolution, 
 			&quant, &fcode_forward, &fcode_backward, &intra_dc_threshold, &gmc_warp);
 
-	DPRINTF(DPRINTF_HEADER, "vop_type=%i,  packed=%i,  time=%lli,  time_pp=%i,  time_bp=%i", 
-							vop_type,	dec->packed_mode, dec->time, dec->time_pp, dec->time_bp);
+	DPRINTF(DPRINTF_HEADER, "coding_type=%i,  packed=%i,  time=%lli,  time_pp=%i,  time_bp=%i", 
+							coding_type,	dec->packed_mode, dec->time, dec->time_pp, dec->time_bp);
 
-	if (vop_type == -1)
+	if (coding_type == -1) /* nothing */
 	{
 		if (success) goto done;
+        if (stats) stats->type = XVID_TYPE_NOTHING;
 		emms();
-		return XVID_ERR_FAIL;
+        return BitstreamPos(&bs)/8;
 	}
 
-	if (vop_type == -2 || vop_type == -3)
+	if (coding_type == -2 || coding_type == -3)   /* vol and/or resize */
 	{
-		if (vop_type == -3)
+		if (coding_type == -3)
 			decoder_resize(dec);
 			
 		if (stats)
 		{
-			stats->notify = XVID_DEC_VOL;
+			stats->type = XVID_TYPE_VOL;
 			stats->data.vol.general = 0;
-			if (dec->interlacing)
-				stats->data.vol.general |= XVID_INTERLACING;
+			/*XXX: if (dec->interlacing)
+				stats->data.vol.general |= ++INTERLACING; */
 			stats->data.vol.width = dec->width;
 			stats->data.vol.height = dec->height;
-			stats->data.vol.aspect_ratio = dec->aspect_ratio;
+			stats->data.vol.par = dec->aspect_ratio;
 			stats->data.vol.par_width = dec->par_width;
 			stats->data.vol.par_height = dec->par_height;
-			frame->length = BitstreamPos(&bs) / 8;
 			emms();
-			return XVID_ERR_OK;
+			return BitstreamPos(&bs)/8;	/* number of bytes consumed */
 		}
 		goto repeat;
 	} 
@@ -1841,18 +1836,18 @@ repeat:
 
 
 	/* packed_mode: special-N_VOP treament */
-	if (dec->packed_mode && vop_type == N_VOP)
+	if (dec->packed_mode && coding_type == N_VOP)
 	{
 		if (dec->low_delay_default && dec->frames > 0)
 		{
-			decoder_output(dec, &dec->refn[0], dec->last_mbs, frame, dec->last_reduced_resolution);
+			decoder_output(dec, &dec->refn[0], dec->last_mbs, frame, stats, dec->last_coding_type);
 			output = 1;
 		}
 		/* ignore otherwise */
 	}
-	else if (vop_type != B_VOP)
+	else if (coding_type != B_VOP)
 	{
-		switch(vop_type)
+		switch(coding_type)
 		{
 		case I_VOP :
 			decoder_iframe(dec, &bs, reduced_resolution, quant, intra_dc_threshold);
@@ -1866,6 +1861,8 @@ repeat:
 						fcode_forward, intra_dc_threshold, &gmc_warp);
 			break;
 		case N_VOP :
+			// XXX: not_coded vops are not used for forward prediction
+			//		we should not swap(last_mbs,mbs)
 			image_copy(&dec->cur, &dec->refn[0], dec->edged_width, dec->height);
 			break;
 		}
@@ -1874,7 +1871,7 @@ repeat:
 		{
 			image_deblock_rrv(&dec->cur, dec->edged_width, dec->mbs,
 				(dec->width + 31) / 32, (dec->height + 31) / 32, dec->mb_width,
-				16, XVID_DEC_DEBLOCKY|XVID_DEC_DEBLOCKUV);
+				16, 0);
 		}
 
 		/* note: for packed_mode, output is performed when the special-N_VOP is decoded */
@@ -1882,13 +1879,13 @@ repeat:
 		{
 			if (dec->low_delay)
 			{
-				decoder_output(dec, &dec->cur, dec->mbs, frame, reduced_resolution);
+				decoder_output(dec, &dec->cur, dec->mbs, frame, stats, coding_type);
 				output = 1;
 			}
 			else if (dec->frames > 0)	/* is the reference frame valid? */
 			{
 				/* output the reference frame */
-				decoder_output(dec, &dec->refn[0], dec->last_mbs, frame, dec->last_reduced_resolution);
+				decoder_output(dec, &dec->refn[0], dec->last_mbs, frame, stats, dec->last_coding_type);
 				output = 1;
 			}
 		}
@@ -1897,6 +1894,7 @@ repeat:
 		image_swap(&dec->cur, &dec->refn[0]);
 		mb_swap(&dec->mbs, &dec->last_mbs);
 		dec->last_reduced_resolution = reduced_resolution;
+        dec->last_coding_type = coding_type;
 
 		dec->frames++;
 		seen_something = 1;
@@ -1923,7 +1921,7 @@ repeat:
 			decoder_bframe(dec, &bs, quant, fcode_forward, fcode_backward);
 		}
 
-		decoder_output(dec, &dec->cur, dec->mbs, frame, reduced_resolution);
+		decoder_output(dec, &dec->cur, dec->mbs, frame, stats, coding_type);
 		output = 1;
 		dec->frames++;
 	}
@@ -1946,8 +1944,7 @@ done :
 		if (dec->packed_mode && seen_something)
 		{
 			/* output the recently decoded frame */
-			decoder_output(dec, &dec->refn[0], dec->last_mbs, frame, dec->last_reduced_resolution);
-			output = 1;
+			decoder_output(dec, &dec->refn[0], dec->last_mbs, frame, stats, dec->last_coding_type);
 		}
 		else
 		{
@@ -1957,22 +1954,14 @@ done :
 			image_printf(&dec->cur, dec->edged_width, dec->height, 16, 64,
 				"bframe decoder lag");
 
-			decoder_output(dec, &dec->cur, NULL, frame, 1 /*disable pp*/);	
+			decoder_output(dec, &dec->cur, NULL, frame, stats, P_VOP);	
+			if (stats) stats->type = XVID_TYPE_NOTHING;
+
 		}
 	}
 
-	frame->length = BitstreamPos(&bs) / 8;
-
-	if (stats)
-	{
-		stats->notify = output ? XVID_DEC_VOP : XVID_DEC_NOTHING;
-		stats->data.vop.time_base = (int)dec->time_base;
-		stats->data.vop.time_increment = 0;	/* XXX: todo */
-	}
-	
 	emms();
-
 	stop_global_timer();
 
-	return XVID_ERR_OK;
+	return BitstreamPos(&bs) / 8;	/* number of bytes consumed */
 }

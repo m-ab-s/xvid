@@ -17,7 +17,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45 2003-02-21 00:00:57 edgomez Exp $
+ * $Id: xvid.c,v 1.45.2.1 2003-02-22 08:49:44 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -153,34 +153,14 @@ detect_cpu_flags()
 
 
 static 
-int xvid_init_init(XVID_INIT_PARAM * init_param)
+int xvid_gbl_init(xvid_gbl_init_t * init)
 {
-	int cpu_flags;
+	unsigned int cpu_flags;
 
-	/* Inform the client the API version */
-	init_param->api_version = API_VERSION;
+	if (XVID_MAJOR(init->version) != 1) /* v1.x.x */
+		return XVID_ERR_VERSION;
 
-	/* Inform the client the core build - unused because we're still alpha */
-	init_param->core_build = 1000;
-
-	/* Do we have to force CPU features  ? */
-	if ((init_param->cpu_flags & XVID_CPU_FORCE)) {
-
-		cpu_flags = init_param->cpu_flags;
-
-	} else {
-
-		cpu_flags = detect_cpu_flags();
-	}
-
-	if ((init_param->cpu_flags & XVID_CPU_CHKONLY))
-	{
-		init_param->cpu_flags = cpu_flags;
-		return XVID_ERR_OK;
-	}
-
-	init_param->cpu_flags = cpu_flags;
-
+	cpu_flags = (init->cpu_flags & XVID_CPU_FORCE) ? init->cpu_flags : detect_cpu_flags();
 
 	/* Initialize the function pointers */
 	idct_int32_init();
@@ -552,34 +532,57 @@ int xvid_init_init(XVID_INIT_PARAM * init_param)
 	}
 #endif
 
-	return XVID_ERR_OK;
+	return 0;
 }
 
 
+static int
+xvid_gbl_info(xvid_gbl_info_t * info)
+{
+	if (XVID_MAJOR(info->version) != 1) /* v1.x.x */
+		return XVID_ERR_VERSION;
+
+	info->actual_version = XVID_VERSION;
+	info->build = "dev-api-4";
+	info->cpu_flags = detect_cpu_flags();
+
+#if defined(_SMP) && defined(WIN32)
+	info->num_threads = pthread_num_processors_np();;
+#else
+	info->num_threads = 0;
+#endif
+
+	return 0;
+}
+
 
 static int
-xvid_init_convert(XVID_INIT_CONVERTINFO* convert)
+xvid_gbl_convert(xvid_gbl_convert_t* convert)
 {
-/*
-	const int flip1 =
-		(convert->input.colorspace & XVID_CSP_VFLIP) ^
-		(convert->output.colorspace & XVID_CSP_VFLIP);
-*/
-	const int width = convert->width;
-	const int height = convert->height;
-	const int width2 = convert->width/2;
-	const int height2 = convert->height/2;
+	int width;
+	int height;
+	int width2;
+	int height2;
 	IMAGE img;
 
-	switch (convert->input.colorspace & ~XVID_CSP_VFLIP)
+	if (XVID_MAJOR(convert->version) != 1)   /* v1.x.x */
+	      return XVID_ERR_VERSION;
+
+	// const int flip1 = (convert->input.colorspace & XVID_CSP_VFLIP) ^ (convert->output.colorspace & XVID_CSP_VFLIP);
+	width = convert->width;
+	height = convert->height;
+	width2 = convert->width/2;
+	height2 = convert->height/2;
+
+	switch (convert->input.csp & ~XVID_CSP_VFLIP)
 	{
 		case XVID_CSP_YV12 :
-			img.y = convert->input.y;
-			img.v = (uint8_t*)convert->input.y + width*height; 
-			img.u = (uint8_t*)convert->input.y + width*height + width2*height2;
+			img.y = convert->input.plane[0];
+			img.v = (uint8_t*)convert->input.plane[0] + convert->input.stride[0]*height; 
+			img.u = (uint8_t*)convert->input.plane[0] + convert->input.stride[0]*height + (convert->input.stride[0]/2)*height2;
 			image_output(&img, width, height, width,
-						convert->output.y, convert->output.y_stride,
-						convert->output.colorspace, convert->interlacing);
+						(uint8_t**)convert->output.plane, convert->output.stride,
+						convert->output.csp, convert->interlacing);
 			break;
 
 		default :
@@ -588,7 +591,7 @@ xvid_init_convert(XVID_INIT_CONVERTINFO* convert)
 
 
 	emms();
-	return XVID_ERR_OK;
+	return 0;
 }
 
 
@@ -954,25 +957,39 @@ int xvid_init_test(int flags)
 
 	emms();
 
-	return XVID_ERR_OK;
+	return 0;
 }
 
 
+/*****************************************************************************
+ * XviD Global Entry point
+ *
+ * Well this function initialize all internal function pointers according
+ * to the CPU features forced by the library client or autodetected (depending
+ * on the XVID_CPU_FORCE flag). It also initializes vlc coding tables and all
+ * image colorspace transformation tables.
+ * 
+ ****************************************************************************/
+
+
 int
-xvid_init(void *handle,
+xvid_global(void *handle,
 		  int opt,
 		  void *param1,
 		  void *param2)
 {
 	switch(opt)
 	{
-		case XVID_INIT_INIT :
-			return xvid_init_init((XVID_INIT_PARAM*)param1);
+		case XVID_GBL_INIT :
+			return xvid_gbl_init((xvid_gbl_init_t*)param1);
 
-		case XVID_INIT_CONVERT :
-			return xvid_init_convert((XVID_INIT_CONVERTINFO*)param1);
+        case XVID_GBL_INFO :
+            return xvid_gbl_info((xvid_gbl_info_t*)param1);
 
-		case XVID_INIT_TEST :
+		case XVID_GBL_CONVERT :
+			return xvid_gbl_convert((xvid_gbl_convert_t*)param1);
+
+		case XVID_GBL_TEST :
 		{
 			ptr_t flags = (ptr_t)param1;
 			return xvid_init_test((int)flags);
@@ -999,14 +1016,14 @@ xvid_decore(void *handle,
 			void *param2)
 {
 	switch (opt) {
-	case XVID_DEC_DECODE:
-		return decoder_decode((DECODER *) handle, (XVID_DEC_FRAME *) param1, (XVID_DEC_STATS*) param2);
-
 	case XVID_DEC_CREATE:
-		return decoder_create((XVID_DEC_PARAM *) param1);
+		return decoder_create((xvid_dec_create_t *) param1);
 
 	case XVID_DEC_DESTROY:
 		return decoder_destroy((DECODER *) handle);
+
+	case XVID_DEC_DECODE:
+		return decoder_decode((DECODER *) handle, (xvid_dec_frame_t *) param1, (xvid_dec_stats_t*) param2);
 
 	default:
 		return XVID_ERR_FAIL;
@@ -1033,20 +1050,15 @@ xvid_encore(void *handle,
 	switch (opt) {
 	case XVID_ENC_ENCODE:
 
-		if (((Encoder *) handle)->mbParam.max_bframes >= 0)
-			return encoder_encode_bframes((Encoder *) handle,
-										  (XVID_ENC_FRAME *) param1,
-										  (XVID_ENC_STATS *) param2);
-		else 
-			return encoder_encode((Encoder *) handle,
-								  (XVID_ENC_FRAME *) param1,
-								  (XVID_ENC_STATS *) param2);
+		return enc_encode((Encoder *) handle,
+							  (xvid_enc_frame_t *) param1,
+							  (xvid_enc_stats_t *) param2);
 
 	case XVID_ENC_CREATE:
-		return encoder_create((XVID_ENC_PARAM *) param1);
+		return enc_create((xvid_enc_create_t *) param1, (xvid_enc_rc_t*)param2);
 
 	case XVID_ENC_DESTROY:
-		return encoder_destroy((Encoder *) handle);
+		return enc_destroy((Encoder *) handle);
 
 	default:
 		return XVID_ERR_FAIL;
