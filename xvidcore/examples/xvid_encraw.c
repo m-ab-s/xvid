@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.1.2.1 2003-01-12 17:21:43 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.1.2.2 2003-01-13 00:36:27 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -101,6 +101,9 @@ static char *ARG_OUTPUTFILE = NULL;
 static int   ARG_HINTMODE = HINT_MODE_NONE;
 static int   XDIM = 0;
 static int   YDIM = 0;
+static int   ARG_BQRATIO = 150;
+static int   ARG_BQOFFSET = 100;
+static int   ARG_MAXBFRAMES = 0;
 #define IMAGE_SIZE(x,y) ((x)*(y)*3/2)
 
 #define MAX(A,B) ( ((A)>(B)) ? (A) : (B) )
@@ -199,6 +202,18 @@ int main(int argc, char *argv[])
 		else if (strcmp("-b", argv[i]) == 0 && i < argc - 1 ) {
 			i++;
 			ARG_BITRATE = atoi(argv[i]);
+		}
+		else if (strcmp("-bn", argv[i]) == 0 && i < argc - 1 ) {
+			i++;
+			ARG_MAXBFRAMES = atoi(argv[i]);
+		}
+		else if (strcmp("-bqr", argv[i]) == 0 && i < argc - 1 ) {
+			i++;
+			ARG_BQRATIO = atoi(argv[i]);
+		}
+		else if (strcmp("-bqo", argv[i]) == 0 && i < argc - 1 ) {
+			i++;
+			ARG_BQOFFSET = atoi(argv[i]);
 		}
 		else if (strcmp("-q", argv[i]) == 0 && i < argc - 1 ) {
 			i++;
@@ -432,8 +447,20 @@ int main(int argc, char *argv[])
 		totalenctime += enctime;
 		totalsize += m4v_size;
 
-		printf("Frame %5d: intra %1d, enctime=%6.1f ms, size=%6dbytes\n",
-			   (int)filenr, (int)frame_type, (float)enctime, (int)m4v_size);
+		{
+			char *type;
+
+			switch(frame_type) {
+			case 0: type = "P"; break;
+			case 1: type = "I"; break;
+			case 2: type = "B"; break;
+			default: type = "N"; break;
+			}
+
+			printf("Frame %5d: type %s, enctime=%6.1f ms, size=%6d bytes\n",
+				   (int)filenr, type, (float)enctime, (int)m4v_size);
+
+		}
 
 /*****************************************************************************
  *                       Save hints to file
@@ -491,7 +518,7 @@ int main(int argc, char *argv[])
 	totalsize    /= filenr;
 	totalenctime /= filenr;
 
-	printf("Avg: enctime %5.2f ms, %5.2f fps, filesize %7d bytes\n",
+	printf("Avg: enctime %5.2f ms, %5.2f fps, size %7d bytes\n",
 		   totalenctime, 1000/totalenctime, (int)totalsize);
 
 /*****************************************************************************
@@ -559,6 +586,10 @@ static void usage()
 	fprintf(stderr, " -w integer     : frame width ([1.2048])\n");
 	fprintf(stderr, " -h integer     : frame height ([1.2048])\n");
 	fprintf(stderr, " -b integer     : target bitrate (>0 | default=900kbit)\n");
+	fprintf(stderr, " -b integer     : target bitrate (>0 | default=900kbit)\n");
+	fprintf(stderr, " -bn integer    : max bframes (default=0)\n");
+	fprintf(stderr, " -bqr integer   : bframe quantizer ratio (default=150)\n");
+	fprintf(stderr, " -bqo integer   : bframe quantizer offset (default=100)\n");
 	fprintf(stderr, " -f float       : target framerate (>0)\n");
 	fprintf(stderr, " -i string      : input filename (default=stdin)\n");
 	fprintf(stderr, " -t integer     : input data type (yuv=0, pgm=1)\n");
@@ -699,9 +730,10 @@ static int enc_init(int use_assembler)
 	xparam.min_quantizer = ARG_MINQUANT;
 	xparam.max_quantizer = ARG_MAXQUANT;
 	xparam.max_key_interval = (int)ARG_FRAMERATE*10;
-	xparam.bquant_ratio = 150;
-	xparam.bquant_offset = 100;	
-	xparam.max_bframes = 0;
+	xparam.bquant_ratio = ARG_BQRATIO;
+	xparam.bquant_offset = ARG_BQOFFSET;	
+	xparam.max_bframes = ARG_MAXBFRAMES;
+	xparam.frame_drop_ratio = 0;
 	xparam.global = 0;
 
 	/* I use a small value here, since will not encode whole movies, but short clips */
