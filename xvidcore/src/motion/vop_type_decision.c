@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: vop_type_decision.c,v 1.1.2.6 2003-12-04 12:08:03 syskin Exp $
+ * $Id: vop_type_decision.c,v 1.1.2.7 2003-12-05 12:27:48 syskin Exp $
  *
  ****************************************************************************/
 
@@ -139,6 +139,7 @@ MEanalyzeMB (	const uint8_t * const pRef,
 		MB->mode = MODE_INTER;
 		/* if we skipped some search steps, we have to assume that SAD would be lower with them */
 		MB->sad16 = Data->iMinSAD[i+1] - (simplicity<<7);
+		if (MB->sad16 < 0) MB->sad16 = 0;
 	}
 }
 
