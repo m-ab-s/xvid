@@ -1,4 +1,25 @@
-/* 
+/**************************************************************************
+ *
+ *	XVID DIRECTSHOW FRONTEND -- decoder fitler
+ *	Copyright (c) 2002 Peter Ross <pross@xvid.org>
+ *
+ *	This program is free software; you can redistribute it and/or modify
+ *	it under the terms of the GNU General Public License as published by
+ *	the Free Software Foundation; either version 2 of the License, or
+ *	(at your option) any later version.
+ *
+ *	This program is distributed in the hope that it will be useful,
+ *	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *	GNU General Public License for more details.
+ *
+ *	You should have received a copy of the GNU General Public License
+ *	along with this program; if not, write to the Free Software
+ *	Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ *************************************************************************/
+
+ /* 
 	this requires the directx sdk
 	place these paths at the top of the Tools|Options|Directories list
 
@@ -9,6 +30,8 @@
 	libraries (optional):
 	C:\DXVCSDK\samples\Multimedia\DirectShow\BaseClasses\Release
 */
+
+
 
 #include <windows.h>
 
@@ -27,13 +50,14 @@
 #include "CAbout.h"
 
 
-
 const AMOVIESETUP_MEDIATYPE sudInputPinTypes[] =
 {
     { &MEDIATYPE_Video, &CLSID_XVID },
 	{ &MEDIATYPE_Video, &CLSID_XVID_UC },
 	{ &MEDIATYPE_Video, &CLSID_DIVX },
-	{ &MEDIATYPE_Video, &CLSID_DIVX_UC }
+	{ &MEDIATYPE_Video, &CLSID_DIVX_UC },
+	{ &MEDIATYPE_Video, &CLSID_DX50 },
+	{ &MEDIATYPE_Video, &CLSID_DX50_UC },
 };
 
 const AMOVIESETUP_MEDIATYPE sudOutputPinTypes[] =
@@ -169,15 +193,13 @@ static int dummy_xvid_decore(void * handle, int opt, void * param1, void * param
 CXvidDecoder::CXvidDecoder(LPUNKNOWN punk, HRESULT *phr) :
     CVideoTransformFilter(NAME("CXvidDecoder"), punk, CLSID_XVID)
 {
-	DEBUG("Constructor");
-
-    ASSERT(phr);
+	DPRINTF("Constructor");
 
 	m_xvid_decore = dummy_xvid_decore;
 	
 	m_hdll = LoadLibrary(XVID_DLL_NAME);
 	if (m_hdll == NULL) {
-		DEBUG("dll load failed");
+		DPRINTF("dll load failed");
 		MessageBox(0, XVID_DLL_NAME " not found","Error", 0);
 		return;
 	}
@@ -222,7 +244,7 @@ CXvidDecoder::CXvidDecoder(LPUNKNOWN punk, HRESULT *phr) :
 
 CXvidDecoder::~CXvidDecoder()
 {
-	DEBUG("Destructor");
+	DPRINTF("Destructor");
 
 	if (m_param.handle != NULL)
 	{
@@ -243,11 +265,12 @@ CXvidDecoder::~CXvidDecoder()
 
 HRESULT CXvidDecoder::CheckInputType(const CMediaType * mtIn)
 {
-	DEBUG("CheckInputType");
+	DPRINTF("CheckInputType");
 	BITMAPINFOHEADER * hdr;
-		
+	
 	if (*mtIn->Type() != MEDIATYPE_Video)
 	{
+		DPRINTF("Error: Unknown Type");
 		return VFW_E_TYPE_NOT_ACCEPTED;
 	}
 
@@ -263,12 +286,13 @@ HRESULT CXvidDecoder::CheckInputType(const CMediaType * mtIn)
 	}
 	else
 	{
+		DPRINTF("Error: Unknown FormatType");
 		return VFW_E_TYPE_NOT_ACCEPTED;
 	}
 
 	if (hdr->biHeight < 0)
 	{
-		DEBUG("colorspace: inverted input format not supported");
+		DPRINTF("colorspace: inverted input format not supported");
 	}
 
 	m_param.width = hdr->biWidth;
@@ -278,9 +302,16 @@ HRESULT CXvidDecoder::CheckInputType(const CMediaType * mtIn)
 	{
 	case FOURCC_XVID :
 //	case FOURCC_DIVX :
+//	case FOURCC_DX50 :
 		break;
 
 	default :
+		DPRINTF("Unknown fourcc: 0x%08x (%c%c%c%c)",
+			hdr->biCompression,
+			(hdr->biCompression)&0xff,
+			(hdr->biCompression>>8)&0xff,
+			(hdr->biCompression>>16)&0xff,
+			(hdr->biCompression>>24)&0xff);
 		return VFW_E_TYPE_NOT_ACCEPTED;
 	}
 
@@ -288,21 +319,21 @@ HRESULT CXvidDecoder::CheckInputType(const CMediaType * mtIn)
 }
 
 
-/* get list of supported output colorspaces */
+#define USE_IYUV
+#define USE_YV12
+#define USE_YUY2
+#define USE_YVYU
+#define USE_UYVY
+#define USE_RGB32
+#define USE_RGB24
+#define USE_RG555
+#define USE_RG565
 
-#define ENABLE_IYUV
-#define ENABLE_YV12
-#define ENABLE_YUY2
-#define ENABLE_UYVY
-#define ENABLE_YVYU
-#define ENABLE_RGB32
-#define ENABLE_RGB24
-#define ENABLE_RGB565
-#define ENABLE_RGB555
+/* get list of supported output colorspaces */
 
 HRESULT CXvidDecoder::GetMediaType(int iPosition, CMediaType *mtOut)
 {
-	DEBUG("GetMediaType");
+	DPRINTF("GetMediaType");
 
 	if (m_pInput->IsConnected() == FALSE)
 	{
@@ -328,78 +359,69 @@ HRESULT CXvidDecoder::GetMediaType(int iPosition, CMediaType *mtOut)
 
 	switch(iPosition)
 	{
-	case 0 :
-#ifdef ENABLE_IYUV
+	case 0	:
+#ifdef USE_IYUV
 		vih->bmiHeader.biCompression = MEDIASUBTYPE_IYUV.Data1;
 		vih->bmiHeader.biBitCount = 12;
 		mtOut->SetSubtype(&MEDIASUBTYPE_IYUV);
 		break;
 #endif
-
-	case 1:
-#ifdef ENABLE_YV12
+	case 1	:
+#ifdef USE_YV12
 		vih->bmiHeader.biCompression = MEDIASUBTYPE_YV12.Data1;
 		vih->bmiHeader.biBitCount = 12;
 		mtOut->SetSubtype(&MEDIASUBTYPE_YV12);
 		break;
 #endif
-	
 	case 2:
-#ifdef ENABLE_YUY2
+#ifdef USE_YUY2
 		vih->bmiHeader.biCompression = MEDIASUBTYPE_YUY2.Data1;
 		vih->bmiHeader.biBitCount = 16;
 		mtOut->SetSubtype(&MEDIASUBTYPE_YUY2);
 		break;
 #endif
-
-	case 3:
-#ifdef ENABLE_YVYU
+	case 3 :
+#ifdef USE_YVYU
 		vih->bmiHeader.biCompression = MEDIASUBTYPE_YVYU.Data1;
 		vih->bmiHeader.biBitCount = 16;
 		mtOut->SetSubtype(&MEDIASUBTYPE_YVYU);
 		break;
 #endif
-
-	case 4:
-#ifdef ENABLE_UYVY
+	case 4 :
+#ifdef USE_UYVY
 		vih->bmiHeader.biCompression = MEDIASUBTYPE_UYVY.Data1;
 		vih->bmiHeader.biBitCount = 16;
 		mtOut->SetSubtype(&MEDIASUBTYPE_UYVY);
 		break;
 #endif
-
-	case 5:
-#ifdef ENABLE_RGB32
+	case 5 :
+#ifdef USE_RGB32
 		vih->bmiHeader.biCompression = BI_RGB;
 		vih->bmiHeader.biBitCount = 32;
 		mtOut->SetSubtype(&MEDIASUBTYPE_RGB32);
 		break;
 #endif
-
-	case 6:
-#ifdef ENABLE_RGB24
+	case 6 :
+#ifdef USE_RGB24
 		vih->bmiHeader.biCompression = BI_RGB;
 		vih->bmiHeader.biBitCount = 24;	
 		mtOut->SetSubtype(&MEDIASUBTYPE_RGB24);
 		break;
 #endif
-
-	case 7:
-#ifdef ENABLE_RGB565
-		vih->bmiHeader.biCompression = BI_RGB;
-		vih->bmiHeader.biBitCount = 16;	
-		mtOut->SetSubtype(&MEDIASUBTYPE_RGB565);
-		break;
-#endif
-
-	case 8:
-#ifdef ENABLE_RGB555
+	case 7 :
+#ifdef USE_RG555
 		vih->bmiHeader.biCompression = BI_RGB;
 		vih->bmiHeader.biBitCount = 16;	
 		mtOut->SetSubtype(&MEDIASUBTYPE_RGB555);
 		break;
 #endif
-
+	case 8 :
+#ifdef USE_RG565
+		vih->bmiHeader.biCompression = BI_RGB;
+		vih->bmiHeader.biBitCount = 16;	
+		mtOut->SetSubtype(&MEDIASUBTYPE_RGB565);
+		break;
+#endif	
 	default :
 		return VFW_S_NO_MORE_ITEMS;
 	}
@@ -424,16 +446,12 @@ HRESULT CXvidDecoder::ChangeColorspace(GUID subtype, GUID formattype, void * for
 	if (formattype == FORMAT_VideoInfo)
 	{
 		VIDEOINFOHEADER * vih = (VIDEOINFOHEADER * )format;
-		//m_frame.stride = vih->bmiHeader.biWidth;
-		// dev-api-3: 
 		m_frame.stride = (((vih->bmiHeader.biWidth * vih->bmiHeader.biBitCount) + 31) & ~31) >> 3;
 		rgb_flip = (vih->bmiHeader.biHeight < 0 ? 0 : XVID_CSP_VFLIP);
 	}
 	else if (formattype == FORMAT_VideoInfo2)
 	{
 		VIDEOINFOHEADER2 * vih2 = (VIDEOINFOHEADER2 * )format;
-		//m_frame.stride = vih2->bmiHeader.biWidth;
-		// dev-api-3: 
 		m_frame.stride = (((vih2->bmiHeader.biWidth * vih2->bmiHeader.biBitCount) + 31) & ~31) >> 3;
 		rgb_flip = (vih2->bmiHeader.biHeight < 0 ? 0 : XVID_CSP_VFLIP);
 	}
@@ -444,47 +462,49 @@ HRESULT CXvidDecoder::ChangeColorspace(GUID subtype, GUID formattype, void * for
 
 	if (subtype == MEDIASUBTYPE_IYUV)
 	{
-		DEBUG("IYUV");
+		DPRINTF("IYUV");
 		m_frame.colorspace = XVID_CSP_I420;
+		m_frame.stride = (m_frame.stride * 2) / 3;	/* planar format fix */
 	}
 	else if (subtype == MEDIASUBTYPE_YV12)
 	{
-		DEBUG("YV12");
+		DPRINTF("YV12");
 		m_frame.colorspace = XVID_CSP_YV12;
+		m_frame.stride = (m_frame.stride * 2) / 3;	/* planar format fix */
 	}
 	else if (subtype == MEDIASUBTYPE_YUY2)
 	{
-		DEBUG("YUY2");
+		DPRINTF("YUY2");
 		m_frame.colorspace = XVID_CSP_YUY2;
 	}
 	else if (subtype == MEDIASUBTYPE_YVYU)
 	{
-		DEBUG("YVYU");
+		DPRINTF("YVYU");
 		m_frame.colorspace = XVID_CSP_YVYU;
 	}
 	else if (subtype == MEDIASUBTYPE_UYVY)
 	{
-		DEBUG("UYVY");
+		DPRINTF("UYVY");
 		m_frame.colorspace = XVID_CSP_UYVY;
 	}
 	else if (subtype == MEDIASUBTYPE_RGB32)
 	{
-		DEBUG("RGB32");
+		DPRINTF("RGB32");
 		m_frame.colorspace = rgb_flip | XVID_CSP_RGB32;
 	}
 	else if (subtype == MEDIASUBTYPE_RGB24)
 	{
-		DEBUG("RGB24");
+		DPRINTF("RGB24");
 		m_frame.colorspace = rgb_flip | XVID_CSP_RGB24;
 	}
 	else if (subtype == MEDIASUBTYPE_RGB555)
 	{
-		DEBUG("RGB555");
+		DPRINTF("RGB555");
 		m_frame.colorspace = rgb_flip | XVID_CSP_RGB555;
 	}
 	else if (subtype == MEDIASUBTYPE_RGB565)
 	{
-		DEBUG("RGB565");
+		DPRINTF("RGB565");
 		m_frame.colorspace = rgb_flip | XVID_CSP_RGB565;
 	}
 	else if (subtype == GUID_NULL)
@@ -497,7 +517,6 @@ HRESULT CXvidDecoder::ChangeColorspace(GUID subtype, GUID formattype, void * for
 	}
 
 	return S_OK;
-
 }
 
 
@@ -505,7 +524,7 @@ HRESULT CXvidDecoder::ChangeColorspace(GUID subtype, GUID formattype, void * for
 
 HRESULT CXvidDecoder::SetMediaType(PIN_DIRECTION direction, const CMediaType *pmt)
 {
-	DEBUG("SetMediaType");
+	DPRINTF("SetMediaType");
 	
 	if (direction == PINDIR_OUTPUT)
 	{
@@ -520,7 +539,7 @@ HRESULT CXvidDecoder::SetMediaType(PIN_DIRECTION direction, const CMediaType *pm
 
 HRESULT CXvidDecoder::CheckTransform(const CMediaType *mtIn, const CMediaType *mtOut)
 {
-	DEBUG("CheckTransform");
+	DPRINTF("CheckTransform");
 	return S_OK;
 }
 
@@ -529,7 +548,7 @@ HRESULT CXvidDecoder::CheckTransform(const CMediaType *mtIn, const CMediaType *m
 
 HRESULT CXvidDecoder::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERTIES *ppropInputRequest)
 {
-	DEBUG("DecideBufferSize");
+	DPRINTF("DecideBufferSize");
 	HRESULT result;
 	ALLOCATOR_PROPERTIES ppropActual;
 
@@ -559,12 +578,15 @@ HRESULT CXvidDecoder::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERTI
 }
 
 
-
 /* decode frame */
 
 HRESULT CXvidDecoder::Transform(IMediaSample *pIn, IMediaSample *pOut)
 {
-	DEBUG("Transform");
+	DPRINTF("Transform");
+	XVID_DEC_STATS stats;
+
+	BYTE * bitstream;
+	int length;
 
 	if (m_param.handle == NULL)
 	{
@@ -589,7 +611,8 @@ HRESULT CXvidDecoder::Transform(IMediaSample *pIn, IMediaSample *pOut)
 		}
 	}
 	
-	if (pIn->GetPointer((BYTE**)&m_frame.bitstream) != S_OK)
+	length = pIn->GetActualDataLength();
+	if (pIn->GetPointer((BYTE**)&bitstream) != S_OK)
 	{
 		return S_FALSE;
 	}
@@ -599,11 +622,19 @@ HRESULT CXvidDecoder::Transform(IMediaSample *pIn, IMediaSample *pOut)
 		return S_FALSE; 
 	}
 
-	m_frame.length = pIn->GetSize();
+
+	m_frame.general = XVID_DEC_LOWDELAY;
+	
+	if (pIn->IsDiscontinuity() == S_OK)
+		m_frame.general = XVID_DEC_DISCONTINUITY;
+
+repeat :
+	m_frame.bitstream = bitstream;
+	m_frame.length = length;
 
 	if (pIn->IsPreroll() != S_OK)
 	{
-		if (m_xvid_decore(m_param.handle, XVID_DEC_DECODE, &m_frame, 0) != XVID_ERR_OK)
+		if (m_xvid_decore(m_param.handle, XVID_DEC_DECODE, &m_frame, &stats) != XVID_ERR_OK)
 		{
 			return S_FALSE;
 		}
@@ -613,16 +644,30 @@ HRESULT CXvidDecoder::Transform(IMediaSample *pIn, IMediaSample *pOut)
 		int tmp = m_frame.colorspace;
 		m_frame.colorspace = XVID_CSP_NULL;
 		
-		if (m_xvid_decore(m_param.handle, XVID_DEC_DECODE, &m_frame, 0) != XVID_ERR_OK)
+		if (m_xvid_decore(m_param.handle, XVID_DEC_DECODE, &m_frame, &stats) != XVID_ERR_OK)
 		{
 			return S_FALSE;
 		}
 
 		m_frame.colorspace = tmp;
-
 	}
 
-	return S_OK;
+	if (stats.notify == XVID_DEC_VOL)
+	{
+		if (stats.data.vol.width != m_param.width ||
+			stats.data.vol.height != m_param.height)
+		{
+			DPRINTF("TODO: auto-resize");
+			return S_FALSE;
+		}
+		
+		bitstream += m_frame.length;
+		length -= m_frame.length;
+		goto repeat;
+	}
+
+	/* only render when we decode a vop */
+	return (stats.notify == XVID_DEC_VOP) ? S_OK : S_FALSE;
 }
 
 
@@ -630,7 +675,7 @@ HRESULT CXvidDecoder::Transform(IMediaSample *pIn, IMediaSample *pOut)
 
 STDMETHODIMP CXvidDecoder::GetPages(CAUUID * pPages)
 {
-	DEBUG("GetPages");
+	DPRINTF("GetPages");
 
 	pPages->cElems = 1;
 	pPages->pElems = (GUID *)CoTaskMemAlloc(pPages->cElems * sizeof(GUID));
@@ -648,7 +693,7 @@ STDMETHODIMP CXvidDecoder::GetPages(CAUUID * pPages)
 
 STDMETHODIMP CXvidDecoder::FreePages(CAUUID * pPages)
 {
-	DEBUG("FreePages");
+	DPRINTF("FreePages");
 	CoTaskMemFree(pPages->pElems);
 	return S_OK;
 }
