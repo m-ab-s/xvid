@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.9 2003-03-16 12:04:13 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.95.2.10 2003-03-20 08:04:18 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -619,14 +619,6 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
 {
     unsigned int i, j;
     xvid_plg_data_t data;
-
-    if (pEnc->num_plugins == 0) {
-        for (j=0; j<pEnc->mbParam.mb_height; j++)
-        for (i=0; i<pEnc->mbParam.mb_width; i++) {
-            frame->mbs[j*pEnc->mbParam.mb_width + i].dquant = 0;
-        }
-        return;
-    }
 
     /* set data struct */
 
