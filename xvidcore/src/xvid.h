@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.52 2003-12-12 14:16:40 edgomez Exp $
+ * $Id: xvid.h,v 1.27.2.53 2003-12-17 15:16:16 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -57,7 +57,7 @@ extern "C" {
 #define XVID_API_MAJOR(a)        (((a)>>16) & 0xff)
 #define XVID_API_MINOR(a)        (((a)>> 0) & 0xff)
 
-#define XVID_VERSION             XVID_MAKE_VERSION(1,0,-127)
+#define XVID_VERSION             XVID_MAKE_VERSION(1,0,-126)
 #define XVID_API                 XVID_MAKE_API(4, 0)
 
 #define XVID_UNSTABLE
@@ -218,7 +218,7 @@ typedef struct {
 #define XVID_GBL_INFO    1 /* return some info about xvidcore, and the host computer */
 #define XVID_GBL_CONVERT 2 /* colorspace conversion utility */
 
-int xvid_global(void *handle, int opt, void *param1, void *param2);
+extern int xvid_global(void *handle, int opt, void *param1, void *param2);
 
 
 /*****************************************************************************
@@ -229,7 +229,7 @@ int xvid_global(void *handle, int opt, void *param1, void *param2);
 #define XVID_DEC_DESTROY 1 /* destroy decore instance: return 0 on success */
 #define XVID_DEC_DECODE  2 /* decode a frame: returns number of bytes consumed >= 0 */
 
-int xvid_decore(void *handle, int opt, void *param1, void *param2);
+extern int xvid_decore(void *handle, int opt, void *param1, void *param2);
 
 /* XVID_DEC_CREATE param 1
 	image width & height may be specified here when the dimensions are
@@ -286,8 +286,6 @@ typedef struct
 	} data;
 } xvid_dec_stats_t;
 
-
-
 #define XVID_ZONE_QUANT  (1<<0)
 #define XVID_ZONE_WEIGHT (1<<1)
 
@@ -300,6 +298,37 @@ typedef struct
 } xvid_enc_zone_t;
 
 
+/*----------------------------------------------------------------------------
+ * xvid_enc_stats_t structure
+ *
+ * Used in:
+ *  - xvid_plg_data_t structure
+ *  - optional parameter in xvid_encore() function
+ *
+ * .coding_type = XVID_TYPE_NOTHING if the stats are not given
+ *--------------------------------------------------------------------------*/
+
+typedef struct {
+	int version;
+
+	/* encoding parameters */
+	int type;      /* [out] coding type */
+	int quant;     /* [out] frame quantizer */
+	int vol_flags; /* [out] vol flags (see above) */
+	int vop_flags; /* [out] vop flags (see above) */
+
+	/* bitrate */
+	int length;    /* [out] frame length */
+
+	int hlength;   /* [out] header length (bytes) */
+	int kblks;     /* [out] number of blocks compressed as Intra */
+	int mblks;     /* [out] number of blocks compressed as Inter */
+	int ublks;     /* [out] number of blocks marked as not_coded */
+
+	int sse_y;     /* [out] Y plane's sse */
+	int sse_u;     /* [out] U plane's sse */
+	int sse_v;     /* [out] V plane's sse */
+} xvid_enc_stats_t;
 
 /*****************************************************************************
   xvid plugin system -- internals
@@ -356,7 +385,6 @@ typedef struct
 	int num_frames; /* [out] total frame encoded */
 } xvid_plg_destroy_t;
 
-
 typedef struct
 {
 	int version;
@@ -388,6 +416,8 @@ typedef struct
 	int vol_flags;          /* [in,out] */
 	int motion_flags;       /* [in,out] */
 
+/* Deprecated, use the stats field instead.
+ * Will disapear before 1.0 */
 	int length;             /* [out] after: length of encoded frame */
 	int kblks;              /* [out] number of blocks compressed as Intra */
 	int mblks;              /* [out] number of blocks compressed as Inter */
@@ -395,10 +425,13 @@ typedef struct
 	int sse_y;              /* [out] Y plane's sse */
 	int sse_u;              /* [out] U plane's sse */
 	int sse_v;              /* [out] V plane's sse */
+/* End of duplicated data, kept only for binary compatibility */
+
 	int bquant_ratio;       /* [in] */
 	int bquant_offset;      /* [in] */
-} xvid_plg_data_t;
 
+	xvid_enc_stats_t stats; /* [out] frame statistics */
+} xvid_plg_data_t;
 
 /*****************************************************************************
   xvid plugin system -- external
@@ -429,14 +462,14 @@ typedef struct
 } xvid_enc_plugin_t;
 
 
-xvid_plugin_func xvid_plugin_single;   /* single-pass rate control */
-xvid_plugin_func xvid_plugin_2pass1;   /* two-pass rate control: first pass */
-xvid_plugin_func xvid_plugin_2pass2;   /* two-pass rate control: second pass */
+extern xvid_plugin_func xvid_plugin_single;   /* single-pass rate control */
+extern xvid_plugin_func xvid_plugin_2pass1;   /* two-pass rate control: first pass */
+extern xvid_plugin_func xvid_plugin_2pass2;   /* two-pass rate control: second pass */
 
-xvid_plugin_func xvid_plugin_lumimasking;  /* lumimasking */
+extern xvid_plugin_func xvid_plugin_lumimasking;  /* lumimasking */
 
-xvid_plugin_func xvid_plugin_psnr;	/* write psnr values to stdout */
-xvid_plugin_func xvid_plugin_dump;	/* dump before and after yuvpgms */
+extern xvid_plugin_func xvid_plugin_psnr;	/* write psnr values to stdout */
+extern xvid_plugin_func xvid_plugin_dump;	/* dump before and after yuvpgms */
 
 
 /* single pass rate control
@@ -484,22 +517,58 @@ typedef struct {
 	int container_frame_overhead; /* [in] How many bytes the controller has to compensate per frame due to container format overhead */
 }xvid_plugin_2pass2_t;
 
-
 /*****************************************************************************
- * xvid_encore()
+ *                             ENCODER API
  ****************************************************************************/
 
-/* Encoder options */
+/*----------------------------------------------------------------------------
+ * Encoder operations
+ *--------------------------------------------------------------------------*/
+
 #define XVID_ENC_CREATE  0 /* create encoder instance; returns 0 on success */
 #define XVID_ENC_DESTROY 1 /* destroy encoder instance; returns 0 on success */
 #define XVID_ENC_ENCODE  2 /* encode a frame: returns number of ouput bytes
                             * 0 means this frame should not be written (ie. encoder lag) */
 
-int xvid_encore(void *handle, int opt, void *param1, void *param2);
+
+/*----------------------------------------------------------------------------
+ * Encoder entry point
+ *--------------------------------------------------------------------------*/
+
+extern int xvid_encore(void *handle, int opt, void *param1, void *param2);
+
+/* Quick API reference
+ *
+ * XVID_ENC_CREATE operation
+ *  - handle: ignored
+ *  - opt: XVID_ENC_CREATE
+ *  - param1: address of a xvid_enc_create_t structure
+ *  - param2: ignored
+ *
+ * XVID_ENC_ENCODE operation
+ *  - handle: an instance returned by a CREATE op
+ *  - opt: XVID_ENC_ENCODE
+ *  - param1: address of a xvid_enc_frame_t structure
+ *  - param2: address of a xvid_enc_stats_t structure (optional)
+ *            its return value is asynchronous to what is written to the buffer
+ *            depending on the delay introduced by bvop use. It's display
+ *            ordered.
+ *
+ * XVID_ENC_DESTROY operation
+ *  - handle: an instance returned by a CREATE op
+ *  - opt: XVID_ENC_DESTROY
+ *  - param1: ignored
+ *  - param2: ignored
+ */
 
 
+/*----------------------------------------------------------------------------
+ * "Global" flags
+ *
+ * These flags are used for xvid_enc_create_t->global field during instance
+ * creation (operation XVID_ENC_CREATE)
+ *--------------------------------------------------------------------------*/
 
-/* Global Flags */
 #define XVID_GLOBAL_PACKED            (1<<0) /* packed bitstream */
 #define XVID_GLOBAL_CLOSED_GOP        (1<<1) /* closed_gop:	was DX50BVOP dx50 bvop compatibility */
 #define XVID_GLOBAL_EXTRASTATS_ENABLE (1<<2)
@@ -509,8 +578,13 @@ int xvid_encore(void *handle, int opt, void *param1, void *param2);
 #endif
 
 
-/* XVID_ENC_ENCODE param1 */
-/* vol-based flags */
+/*----------------------------------------------------------------------------
+ * "VOL" flags
+ *
+ * These flags are used for xvid_enc_frame_t->vol_flags field during frame
+ * encoding (operation XVID_ENC_ENCODE)
+ *--------------------------------------------------------------------------*/
+
 #define XVID_VOL_MPEGQUANT      (1<<0) /* enable MPEG type quantization */
 #define XVID_VOL_EXTRASTATS     (1<<1) /* enable plane sse stats */
 #define XVID_VOL_QUARTERPEL     (1<<2) /* enable quarterpel: frames will encoded as quarterpel */
@@ -519,32 +593,47 @@ int xvid_encore(void *handle, int opt, void *param1, void *param2);
 #define XVID_VOL_INTERLACING    (1<<5) /* enable interlaced encoding */
 
 
+/*----------------------------------------------------------------------------
+ * "VOP" flags
+ *
+ * These flags are used for xvid_enc_frame_t->vop_flags field during frame
+ * encoding (operation XVID_ENC_ENCODE)
+ *--------------------------------------------------------------------------*/
 
-/* vop based flags */
-#define XVID_VOP_DEBUG           (1<< 0)
-#define XVID_VOP_HALFPEL         (1<< 1) /* use halfpel interpolation */
-#define XVID_VOP_INTER4V         (1<< 2)
-#define XVID_VOP_TRELLISQUANT    (1<< 3) /* use trellis based R-D "optimal" quantization */
-#define XVID_VOP_CHROMAOPT       (1<< 4) /* enable chroma optimization pre-filter */
-#define XVID_VOP_CARTOON         (1<< 5) /* use 'cartoon mode' */
-#define XVID_VOP_GREYSCALE       (1<< 6) /* enable greyscale only mode (even for  color input material chroma is ignored) */
-#define XVID_VOP_HQACPRED        (1<< 7) /* high quality ac prediction */
-#define XVID_VOP_MODEDECISION_RD (1<< 8) /* enable DCT-ME and use it for mode decision */
-/* only valid for vol_flags|=XVID_VOL_INTERLACING */
-#define XVID_VOP_TOPFIELDFIRST   (1<< 9) /* set top-field-first flag  */
-#define XVID_VOP_ALTERNATESCAN   (1<<10) /* set alternate vertical scan flag */
+/* Always valid */
+#define XVID_VOP_DEBUG                (1<< 0) /* print debug messages in frames */
+#define XVID_VOP_HALFPEL              (1<< 1) /* use halfpel interpolation */
+#define XVID_VOP_INTER4V              (1<< 2) /* use 4 motion vectors per MB */
+#define XVID_VOP_TRELLISQUANT         (1<< 3) /* use trellis based R-D "optimal" quantization */
+#define XVID_VOP_CHROMAOPT            (1<< 4) /* enable chroma optimization pre-filter */
+#define XVID_VOP_CARTOON              (1<< 5) /* use 'cartoon mode' */
+#define XVID_VOP_GREYSCALE            (1<< 6) /* enable greyscale only mode (even for  color input material chroma is ignored) */
+#define XVID_VOP_HQACPRED             (1<< 7) /* high quality ac prediction */
+#define XVID_VOP_MODEDECISION_RD      (1<< 8) /* enable DCT-ME and use it for mode decision */
+#define XVID_VOP_FAST_MODEDECISION_RD (1<<12) /* use simplified R-D mode decision */
+
+/* Only valid for vol_flags|=XVID_VOL_INTERLACING */
+#define XVID_VOP_TOPFIELDFIRST        (1<< 9) /* set top-field-first flag  */
+#define XVID_VOP_ALTERNATESCAN        (1<<10) /* set alternate vertical scan flag */
+
 /* only valid for vol_flags|=XVID_VOL_REDUCED_ENABLED */
-#define XVID_VOP_REDUCED         (1<<11) /* reduced resolution vop */
-
-#define XVID_VOP_FAST_MODEDECISION_RD (1<< 12) /* use simplified R-D mode decision */
+#define XVID_VOP_REDUCED              (1<<11) /* reduced resolution vop */
 
 
+/*----------------------------------------------------------------------------
+ * "Motion" flags
+ *
+ * These flags are used for xvid_enc_frame_t->motion field during frame
+ * encoding (operation XVID_ENC_ENCODE)
+ *--------------------------------------------------------------------------*/
 
-/* Motion based flags */
+/* Motion Estimation Search Patterns */
 #define XVID_ME_ADVANCEDDIAMOND16     (1<< 0) /* use advdiamonds instead of diamonds as search pattern */
 #define XVID_ME_ADVANCEDDIAMOND8      (1<< 1) /* use advdiamond for XVID_ME_EXTSEARCH8 */
 #define XVID_ME_USESQUARES16          (1<< 2) /* use squares instead of diamonds as search pattern */
 #define XVID_ME_USESQUARES8           (1<< 3) /* use square for XVID_ME_EXTSEARCH8 */
+
+/* SAD operator based flags */
 #define XVID_ME_HALFPELREFINE16       (1<< 4)
 #define XVID_ME_HALFPELREFINE8        (1<< 6)
 #define XVID_ME_QUARTERPELREFINE16    (1<< 7)
@@ -554,8 +643,10 @@ int xvid_encore(void *handle, int opt, void *param1, void *param2);
 #define XVID_ME_EXTSEARCH8            (1<<11) /* use diamond/square for extended 8x8 search */
 #define XVID_ME_CHROMA_PVOP           (1<<12) /* also use chroma for P_VOP/S_VOP ME */
 #define XVID_ME_CHROMA_BVOP           (1<<13) /* also use chroma for B_VOP ME */
+#define XVID_ME_FASTREFINE16		  (1<<25) /* use low-complexity refinement functions */
 
-/* Motion search using DCT. use XVID_VOP_MODEDECISION_BITS to enable */
+/* Rate Distortion based flags
+ * Valid when XVID_VOP_MODEDECISION_BITS is enabled */
 #define XVID_ME_HALFPELREFINE16_RD    (1<<14) /* perform RD-based halfpel refinement */
 #define XVID_ME_HALFPELREFINE8_RD     (1<<15) /* perform RD-based halfpel refinement for 8x8 mode */
 #define XVID_ME_QUARTERPELREFINE16_RD (1<<16) /* perform RD-based qpel refinement */
@@ -563,15 +654,23 @@ int xvid_encore(void *handle, int opt, void *param1, void *param2);
 #define XVID_ME_EXTSEARCH_RD          (1<<18) /* perform RD-based search using square pattern enable XVID_ME_EXTSEARCH8 to do this in 8x8 search as well */
 #define XVID_ME_CHECKPREDICTION_RD    (1<<19) /* always check vector equal to prediction */
 
+/* Other */
+#define XVID_ME_DETECT_STATIC_MOTION  (1<<24) /* speed-up ME by detecting stationary scenes */
+
+/* Unused */
 #define XVID_ME_UNRESTRICTED16        (1<<20) /* unrestricted ME, not implemented */
 #define XVID_ME_OVERLAPPING16         (1<<21) /* overlapping ME, not implemented */
 #define XVID_ME_UNRESTRICTED8         (1<<22) /* unrestricted ME, not implemented */
 #define XVID_ME_OVERLAPPING8          (1<<23) /* overlapping ME, not implemented */
 
-#define XVID_ME_DETECT_STATIC_MOTION  (1<<24) /* speed-up ME by detecting stationary scenes */
-#define XVID_ME_FASTREFINE16		  (1<<25) /* use low-complexity refinement functions */
 
-/* XVID_ENC_CREATE param1 */
+/*----------------------------------------------------------------------------
+ * xvid_enc_create_t structure definition
+ *
+ * This structure is passed as param1 during an instance creation (operation
+ * XVID_ENC_CREATE)
+ *--------------------------------------------------------------------------*/
+
 typedef struct {
 	int version;
 
@@ -608,16 +707,30 @@ typedef struct {
 	/* ---------------------------------------------- */
 
 	void *handle;                /* [out] encoder instance handle */
-}
-xvid_enc_create_t;
+} xvid_enc_create_t;
 
 
+/*----------------------------------------------------------------------------
+ * xvid_enc_frame_t structure definition
+ *
+ * This structure is passed as param1 during a frame encoding (operation
+ * XVID_ENC_ENCODE)
+ *--------------------------------------------------------------------------*/
+
+/* out value for the frame structure->type field
+ * unlike stats output in param2, this field is not asynchronous and tells
+ * the client app, if the frame written into the stream buffer is an ivop
+ * usually used for indexing purpose in the container */
 #define XVID_KEYFRAME (1<<1)
 
+/* The structure */
 typedef struct {
 	int version;
 
-	/* --- VOL related stuff; unless XVID_FORCEVOL is set, the encoder will not react to any changes here until the next VOL (keyframe). */
+	/* VOL related stuff
+	 * unless XVID_FORCEVOL is set, the encoder will not react to any changes
+	 * here until the next VOL (keyframe). */
+
 	int vol_flags;                     /* [in] vol flags */
 	unsigned char *quant_intra_matrix; /* [in:opt] custom intra qmatrix */
 	unsigned char *quant_inter_matrix; /* [in:opt] custom inter qmatrix */
@@ -625,7 +738,8 @@ typedef struct {
 	int par;                           /* [in:opt] pixel aspect ratio (refer to XVID_PAR_xxx above) */
 	int par_width;                     /* [in:opt] aspect ratio width */
 	int par_height;                    /* [in:opt] aspect ratio height */
-	/* ---------------------------------------------- */
+
+	/* Other fields that can change on a frame base */
 
 	int fincr;                         /* [in:opt] framerate increment, for variable framerate only */
 	int vop_flags;                     /* [in] (general)vop-based flags */
@@ -643,37 +757,8 @@ typedef struct {
 	int out_flags;                     /* [out] bitstream output flags */
 } xvid_enc_frame_t;
 
-
-/* XVID_ENC_ENCODE param2 (optional)
-	xvid_enc_stats_t describes individual frame details
-
-	coding_type==XVID_TYPE_NOTHING if the stats are not given
-*/
-typedef struct {
-	int version;
-
-	/* encoding parameters */
-	int type;      /* [out] coding type */
-	int quant;     /* [out] frame quantizer */
-	int vol_flags; /* [out] vol flags (see above) */
-	int vop_flags; /* [out] vop flags (see above) */
-
-	/* bitrate */
-	int length;    /* [out] frame length */
-
-	int hlength;   /* [out] header length (bytes) */
-	int kblks;     /* [out] number of blocks compressed as Intra */
-	int mblks;     /* [out] number of blocks compressed as Inter */
-	int ublks;     /* [out] number of blocks marked as not_coded */
-
-	int sse_y;     /* [out] Y plane's sse */
-	int sse_u;     /* [out] U plane's sse */
-	int sse_v;     /* [out] V plane's sse */
-} xvid_enc_stats_t;
-
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif

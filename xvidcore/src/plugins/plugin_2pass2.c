@@ -25,10 +25,11 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.30 2003-12-08 12:38:04 syskin Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.31 2003-12-17 15:16:16 edgomez Exp $
  *
  *****************************************************************************/
 
+#define BQUANT_PRESCALE
 #undef COMPENSATE_FORMULA
 
 #include <stdio.h>
@@ -39,19 +40,29 @@
 #include "../image/image.h"
 
 /*****************************************************************************
- * Some constants
+ * Some default settings
  ****************************************************************************/
 
 #define DEFAULT_KEYFRAME_BOOST 0
 #define DEFAULT_OVERFLOW_CONTROL_STRENGTH 10
 #define DEFAULT_CURVE_COMPRESSION_HIGH 0
 #define DEFAULT_CURVE_COMPRESSION_LOW 0
-#define DEFAULT_MAX_OVERFLOW_IMPROVEMENT 60
-#define DEFAULT_MAX_OVERFLOW_DEGRADATION 60
+#define DEFAULT_MAX_OVERFLOW_IMPROVEMENT 10
+#define DEFAULT_MAX_OVERFLOW_DEGRADATION 10
 
 /* Keyframe settings */
 #define DEFAULT_KFREDUCTION 20
 #define DEFAULT_KFTHRESHOLD 1
+
+/*****************************************************************************
+ * Some default constants (can be tuned)
+ ****************************************************************************/
+
+/* Specify the invariant part of the headers bits (header+MV)
+ * as  hlength/cst */
+#define INVARIANT_HEADER_PART_IVOP 1 /* factor 1.0f   */
+#define INVARIANT_HEADER_PART_PVOP 2 /* factor 0.5f   */
+#define INVARIANT_HEADER_PART_BVOP 8 /* factor 0.125f */
 
 /*****************************************************************************
  * Structures
@@ -61,9 +72,9 @@
 typedef struct {
 	int type;               /* first pass type */
 	int quant;              /* first pass quant */
-	int quant2;             /* Second pass quant */
-	int blks[3];			/* k,m,y blks */
+	int blks[3];            /* k,m,y blks */
 	int length;             /* first pass length */
+	int invariant;          /* what we assume as being invariant between the two passes, it's a sub part of header + MV bits */
 	int scaled_length;      /* scaled length */
 	int desired_length;     /* desired length; calculated during encoding */
 	int error;
@@ -95,6 +106,7 @@ typedef struct
 
 	/* Total length of each frame types (1st pass) */
 	uint64_t tot_length[3];
+	uint64_t tot_invariant[3];
 
 	/* Average length of each frame types (used first for 1st pass data and
 	 * then for scaled averages */
@@ -124,7 +136,8 @@ typedef struct
 	double avg_weight;
 
 	/* Total length used by XVID_ZONE_QUANT zones */
-	int64_t tot_quant;
+	uint64_t tot_quant;
+	uint64_t tot_quant_invariant;
 
 	/*----------------------------------
 	 * Advanced settings helper ratios
@@ -367,7 +380,8 @@ rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t **handle)
 	 *  - count how many times each frame type has been used.
 	 *     rc->count[]
 	 *  - total bytes used per frame type
-	 *     rc->total[]
+	 *     rc->tot_length[]
+	 *  - total bytes considered invariant between the 2 passes
 	 *  - store keyframe location
 	 *     rc->keyframe_locations[]
 	 */
@@ -376,7 +390,11 @@ rc_2pass2_create(xvid_plg_create_t * create, rc_2pass2_t **handle)
 	/* When bitrate is not given it means it has been scaled by an external
 	 * application */
 	if (rc->param.bitrate) {
-		/* Apply zone settings */
+		/* Apply zone settings
+		 * - set rc->tot_quant which represents the total num of bytes spent in
+		 *   fixed quant zones
+		 * - set rc->tot_quant_invariant which represents the total num of bytes spent
+		 *   in fixed quant zones for headers */
 		zone_process(rc, create);
 		/* Perform internal curve scaling */
 		first_pass_scale_curve_internal(rc);
@@ -598,8 +616,8 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	 * Desired frame length <-> quantizer mapping
 	 *-----------------------------------------------------------------------*/
 
-	/* For bframes we must retrieve the original quant used (sent to xvidcore)
-	 * as core applies the bquant formula before writing the stat log entry */
+#ifdef BQUANT_PRESCALE
+	/* For bframes we prescale the quantizer to avoid too high quant scaling */
 	if(s->type == XVID_TYPE_BVOP) {
 
 		twopass_stat_t *b_ref = s;
@@ -610,11 +628,12 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 
 		/* Compute the original quant */
 		s->quant  = 2*(100*s->quant - data->bquant_offset);
-		s->quant += data->bquant_ratio - 1; /* to avoid rouding issues */
+		s->quant += data->bquant_ratio - 1; /* to avoid rounding issues */
 		s->quant  = s->quant/data->bquant_ratio - b_ref->quant;
 	}
+#endif
 
-	/* Don't laugh at this very 'simple' quant<->filesize relationship, it
+	/* Don't laugh at this very 'simple' quant<->size relationship, it
 	 * proves to be acurate enough for our algorithm */
 	scaled_quant = (double)s->quant*(double)s->length/(double)dbytes;
 
@@ -702,10 +721,6 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	/* Don't forget to force 1st pass frame type ;-) */
 	data->type = s->type;
 
-	/* Store the quantizer into the statistics -- Used to compensate the double
-	 * formula symptom */
-	s->quant2 = data->quant;
-
 	return 0;
 }
 
@@ -767,7 +782,7 @@ rc_2pass2_after(rc_2pass2_t * rc, xvid_plg_data_t * data)
 		rc->KFoverflow -= rc->KFoverflow_partial;
 	}
 
-	rc->overflow += s->error = s->desired_length - data->length;
+	rc->overflow += (s->error = s->desired_length - data->length);
 	rc->real_total += data->length;
 
 	DPRINTF(XVID_DEBUG_RC, "[xvid rc] -- frame:%d type:%c quant:%d stats:%d scaled:%d desired:%d actual:%d error:%d overflow:%.2f\n",
@@ -832,7 +847,7 @@ statsfile_count_frames(rc_2pass2_t * rc, char * filename)
 		/* Read the stat line from buffer */
 		fields = sscanf(ptr, "%c", &type);
 
-		/* Valid stats files have at least 6 fields */
+		/* Valid stats files have at least 7 fields */
 		if (fields == 1) {
 			switch(type) {
 			case 'i':
@@ -854,7 +869,7 @@ statsfile_count_frames(rc_2pass2_t * rc, char * filename)
 		} else {
 				DPRINTF(XVID_DEBUG_RC,
 						"[xvid rc] -- WARNING: L%d misses some stat fields (%d).\n",
-						lines, 6-fields);
+						lines, 7-fields);
 		}
 
 		/* Free the line buffer */
@@ -903,11 +918,11 @@ statsfile_load(rc_2pass2_t *rc, char * filename)
 
 		/* Convert the fields */
 		fields = sscanf(ptr,
-						"%c %d %d %d %d %d %d\n",
+						"%c %d %d %d %d %d %d %d\n",
 						&type,
 						&s->quant,
 						&s->blks[0], &s->blks[1], &s->blks[2],
-						&s->length,
+						&s->length, &s->invariant /* not really yet */,
 						&s->scaled_length);
 
 		/* Free line buffer, we don't need it anymore */
@@ -915,24 +930,27 @@ statsfile_load(rc_2pass2_t *rc, char * filename)
 
 		/* Fail silently, this has probably been warned in
 		 * statsfile_count_frames */
-		if(fields != 6 && fields != 7)
+		if(fields != 7 && fields != 8)
 			continue;
 
-		/* Convert frame type */
+		/* Convert frame type and compute the invariant length part */
 		switch(type) {
 		case 'i':
 		case 'I':
 			s->type = XVID_TYPE_IVOP;
+			s->invariant /= INVARIANT_HEADER_PART_IVOP;
 			break;
 		case 'p':
 		case 'P':
 		case 's':
 		case 'S':
 			s->type = XVID_TYPE_PVOP;
+			s->invariant /= INVARIANT_HEADER_PART_PVOP;
 			break;
 		case 'b':
 		case 'B':
 			s->type = XVID_TYPE_BVOP;
+			s->invariant /= INVARIANT_HEADER_PART_BVOP;
 			break;
 		default:
 			/* Same as before, fail silently */
@@ -963,6 +981,7 @@ first_pass_stats_prepare_data(rc_2pass2_t * rc)
 	for (i=0; i<3; i++) {
 		rc->count[i]=0;
 		rc->tot_length[i] = 0;
+		rc->tot_invariant[i] = 0;
 		rc->min_length[i] = INT_MAX;
 	}
 
@@ -975,6 +994,7 @@ first_pass_stats_prepare_data(rc_2pass2_t * rc)
 
 		rc->count[s->type-1]++;
 		rc->tot_length[s->type-1] += s->length;
+		rc->tot_invariant[s->type-1] += s->invariant;
 
 		if (s->length < rc->min_length[s->type-1]) {
 			rc->min_length[s->type-1] = s->length;
@@ -1011,7 +1031,7 @@ zone_process(rc_2pass2_t *rc, const xvid_plg_create_t * create)
 
 	rc->avg_weight = 0.0;
 	rc->tot_quant = 0;
-
+	rc->tot_quant_invariant = 0;
 
 	if (create->num_zones == 0) {
 		for (j = 0; j < rc->num_frames; j++) {
@@ -1044,11 +1064,12 @@ zone_process(rc_2pass2_t *rc, const xvid_plg_create_t * create)
 			next -= create->zones[i].frame;
 			rc->avg_weight += (double)(next * create->zones[i].increment) / (double)create->zones[i].base;
 			n += next;
-		}else{  /* XVID_ZONE_QUANT */
+		} else{  /* XVID_ZONE_QUANT */
 			for (j = create->zones[i].frame; j < next && j < rc->num_frames; j++ ) {
 				rc->stats[j].zone_mode = XVID_ZONE_QUANT;
 				rc->stats[j].weight = (double)create->zones[i].increment / (double)create->zones[i].base;
 				rc->tot_quant += rc->stats[j].length;
+				rc->tot_quant_invariant += rc->stats[j].invariant;
 			}
 		}
 	}
@@ -1064,17 +1085,23 @@ first_pass_scale_curve_internal(rc_2pass2_t *rc)
 {
 	int64_t target;
 	int64_t pass1_length;
+	int64_t total_invariant;
 	double scaler;
 	int i, num_MBs;
 
-	/* We remove the bytes used by the fixed quantizer zones
-	 * ToDo: this approach is flawed, the same amount of bytes is removed from
-	 *       target and first pass data, this has no sense, zone_process should
-	 *       give us two results one for unscaled data (1pass) and the other
-	 *       one for scaled data and we should then write:
-	 *       target = rc->target - rc->tot_quant_scaled;
-	 *       pass1_length = rc->i+p+b - rc->tot_quant_firstpass */
-	target = rc->target - rc->tot_quant;
+	/* We only scale texture data ! */
+	total_invariant	 = rc->tot_invariant[XVID_TYPE_IVOP-1];
+	total_invariant += rc->tot_invariant[XVID_TYPE_PVOP-1];
+	total_invariant += rc->tot_invariant[XVID_TYPE_BVOP-1];
+	/* don't forget to substract header bytes used in quant zones, otherwise we
+	 * counting them twice */
+	total_invariant -= rc->tot_quant_invariant;
+
+	/* We remove the bytes used by the fixed quantizer zones during first pass
+	 * with the same quants, so we know very precisely how much that
+	 * represents */
+	target	= rc->target;
+	target -= rc->tot_quant;
 
 	/* Do the same for the first pass data */
 	pass1_length  = rc->tot_length[XVID_TYPE_IVOP-1];
@@ -1083,9 +1110,11 @@ first_pass_scale_curve_internal(rc_2pass2_t *rc)
 	pass1_length -= rc->tot_quant;
 
 	/* Let's compute a linear scaler in order to perform curve scaling */
-	scaler = (double)target / (double)pass1_length;
+	scaler = (double)(target - total_invariant) / (double)(pass1_length - total_invariant);
 
-	if (target <= 0 || pass1_length <= 0 || target >= pass1_length) {
+	if ((target - total_invariant) <= 0 ||
+		(pass1_length - total_invariant) <= 0 ||
+		target >= pass1_length) {
 		DPRINTF(XVID_DEBUG_RC, "[xvid rc] -- WARNING: Undersize detected before correction\n");
 		scaler = 1.0;
 	}
@@ -1130,8 +1159,8 @@ first_pass_scale_curve_internal(rc_2pass2_t *rc)
 			continue;
 		}
 
-		/* Compute the scaled length */
-		len = (int)((double)s->length * scaler * s->weight / rc->avg_weight);
+		/* Compute the scaled length -- only non invariant data length is scaled */
+		len = s->invariant + (int)((double)(s->length-s->invariant) * scaler * s->weight / rc->avg_weight);
 
 		/* Compare with the computed minimum */
 		if (len < rc->min_length[s->type-1]) {
@@ -1154,7 +1183,7 @@ first_pass_scale_curve_internal(rc_2pass2_t *rc)
 	 * total counters. Now, it's possible to scale the 'regular' frames. */
 
 	/* Scaling factor for 'regular' frames */
-	scaler = (double)target / (double)pass1_length;
+	scaler = (double)(target - total_invariant) / (double)(pass1_length - total_invariant);
 
 	/* Detect undersizing */
 	if (target <= 0 || pass1_length <= 0 || target >= pass1_length) {
@@ -1168,7 +1197,7 @@ first_pass_scale_curve_internal(rc_2pass2_t *rc)
 
 		/* Ignore frame with forced frame sizes */
 		if (s->scaled_length == 0)
-			s->scaled_length = (int)((double)s->length * scaler * s->weight / rc->avg_weight);
+			s->scaled_length = s->invariant + (int)((double)(s->length-s->invariant) * scaler * s->weight / rc->avg_weight);
 	}
 
 	/* Job done */

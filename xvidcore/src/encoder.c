@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.58 2003-12-12 14:16:40 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.59 2003-12-17 15:16:16 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -740,20 +740,22 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
 		data.mblks = frame->sStat.mblks;
 		data.ublks = frame->sStat.ublks;
 
-		if (stats) {
-			stats->type = coding2type(frame->coding_type);
-			stats->quant = frame->quant;
-			stats->vol_flags = frame->vol_flags;
-			stats->vop_flags = frame->vop_flags;
-			stats->length = frame->length;
-			stats->hlength = frame->length - (frame->sStat.iTextBits / 8);
-			stats->kblks = frame->sStat.kblks;
-			stats->mblks = frame->sStat.mblks;
-			stats->ublks = frame->sStat.ublks;
-			stats->sse_y = data.sse_y;
-			stats->sse_u = data.sse_u;
-			stats->sse_v = data.sse_v;
-		}
+		/* New code */
+		data.stats.type      = coding2type(frame->coding_type);
+		data.stats.quant     = frame->quant;
+		data.stats.vol_flags = frame->vol_flags;
+		data.stats.vop_flags = frame->vop_flags;
+		data.stats.length    = frame->length;
+		data.stats.hlength   = frame->length - (frame->sStat.iTextBits / 8);
+		data.stats.kblks     = frame->sStat.kblks;
+		data.stats.mblks     = frame->sStat.mblks;
+		data.stats.ublks     = frame->sStat.ublks;
+		data.stats.sse_y     = data.sse_y;
+		data.stats.sse_u     = data.sse_u;
+		data.stats.sse_v     = data.sse_v;
+
+		if (stats)
+			*stats = data.stats;
 	}
 
 	/* call plugins */
@@ -1266,7 +1268,7 @@ repeat:
 		pEnc->iFrameNum = 1;
 
 		/* ---- update vol flags at IVOP ----------- */
-		pEnc->current->vol_flags = pEnc->mbParam.vol_flags = frame->vol_flags;
+		pEnc->mbParam.vol_flags = frame->vol_flags;
 
 		/* Aspect ratio */
 		switch(frame->par) {

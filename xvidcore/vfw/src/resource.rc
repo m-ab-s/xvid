@@ -512,8 +512,8 @@ BEGIN
                     WS_TABSTOP,16,66,100,8
     CONTROL         "Quarterpel",IDC_QPEL,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,16,79,100,8
-    CONTROL         "Global motion compenation",IDC_GMC,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,16,94,100,8
+    CONTROL         "Global motion compensation",IDC_GMC,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,94,103,8
     CONTROL         "Reduced resolution",IDC_REDUCED,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,16,108,100,8
     COMBOBOX        IDC_PROFILE_PROFILE,84,8,116,76,CBS_DROPDOWNLIST | 
@@ -537,6 +537,9 @@ BEGIN
     LTEXT           "Quantization type:",IDC_QUANTTYPE_S,16,34,100,8
     CONTROL         "Adaptive quantization",IDC_LUMMASK,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,16,50,84,10
+    COMBOBOX        IDC_ASPECT_RATIO,121,75,72,55,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Display aspect ratio:",IDC_STATIC,124,65,67,8
 END
 
 IDD_ZONE DIALOG DISCARDABLE  0, 0, 212, 194
@@ -800,7 +803,7 @@ BEGIN
     IDD_PROFILE, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 181
+        RIGHTMARGIN, 204
         TOPMARGIN, 7
         BOTTOMMARGIN, 211
     END
@@ -967,6 +970,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDC_OVERFLOW_CONTROL_STRENGTH 
                             "0=Default from core (let xvid decide). Else overflow payback percent per frame."
+    IDC_ASPECT_RATIO        "Display aspect ratio is used to scale the video on playback/anamorphic encoding).\n\nDefault 1:1 for no scaling necessary."
 END
 
 #endif    // Neutral resources

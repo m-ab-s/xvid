@@ -285,7 +285,7 @@ int vfw_debug(void *handle,
 			 * builds and that activates lot of other debug printfs. We only
 			 * want these all the time */
 			char buf[1024];
-			sprintf(buf, "[%5i]   type=%c   Q:%2i   length:%6i",
+			sprintf(buf, "[%6i]   type=%c   Q:%2i   length:%6i",
 					data->frame_num, 
 					type2char(data->type),
 					data->quant, 
@@ -556,6 +556,28 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 
 	if ((profiles[codec->config.profile].flags & PROFILE_INTERLACE) && codec->config.interlacing)
 		frame.vol_flags |= XVID_VOL_INTERLACING;
+
+	if (codec->config.display_aspect_ratio !=0) {
+		int ar_x;
+		int ar_y;
+
+		if (codec->config.display_aspect_ratio == 1) {
+			ar_x = 4;
+			ar_y = 3;
+		}
+		if (codec->config.display_aspect_ratio == 2) {
+			ar_x = 16;
+			ar_y = 9;
+		}
+
+		/* custom pixel aspect ratio -> calculated from DAR */
+		frame.par = XVID_PAR_EXT;
+		frame.par_width = (100 * inhdr->biHeight) / ar_y;
+		frame.par_height= (100 * inhdr->biWidth) / ar_x;
+	} else {
+		/* assuming defaults for now... */
+		frame.par = XVID_PAR_11_VGA;
+	}
 
     /* vop stuff */
 

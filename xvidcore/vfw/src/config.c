@@ -165,6 +165,7 @@ static const REG_INT reg_ints[] = {
 	{"bquant_offset",			&reg.bquant_offset,				100},   /* 100-base float */
 	{"packed",					&reg.packed,					0},
 	{"closed_gov",				&reg.closed_gov,				1},
+	{"aspect_ratio",			&reg.display_aspect_ratio,		0},
 
     /* zones */
     {"num_zones",               &reg.num_zones,                 1},
@@ -625,6 +626,14 @@ void adv_init(HWND hDlg, int idd, CONFIG * config)
 		SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"H.263");
 		SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"MPEG");
 		SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_ADDSTRING, 0, (LPARAM)"MPEG-Custom");
+
+		SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_ADDSTRING, 0, (LPARAM)"1:1 (Default)");
+		SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_ADDSTRING, 0, (LPARAM)"4:3 (Anamorph)");
+		SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_ADDSTRING, 0, (LPARAM)"16:9 (Anamorph)");
+		/* reserved for future use if acceptance is there for DAR */
+#if 0
+		SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_ADDSTRING, 0, (LPARAM)"Custom");
+#endif		
         break;
         
     case IDD_LEVEL :
@@ -769,6 +778,7 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
 		set_dlgitem_float(hDlg, IDC_BQUANTOFFSET, config->bquant_offset);
         CheckDlg(hDlg, IDC_PACKED, config->packed);
 		CheckDlg(hDlg, IDC_CLOSEDGOV, config->closed_gov);
+        SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_SETCURSEL, (config->display_aspect_ratio), 0);
 		break;
 
     case IDD_LEVEL :
@@ -879,6 +889,7 @@ void adv_download(HWND hDlg, int idd, CONFIG * config)
 		config->bquant_offset = get_dlgitem_float(hDlg, IDC_BQUANTOFFSET, config->bquant_offset);
 		config->packed = IsDlgChecked(hDlg, IDC_PACKED);
 		config->closed_gov = IsDlgChecked(hDlg, IDC_CLOSEDGOV);
+        config->display_aspect_ratio = SendDlgItemMessage(hDlg, IDC_ASPECT_RATIO, CB_GETCURSEL, 0, 0);
 		break;
 
     case IDD_LEVEL :

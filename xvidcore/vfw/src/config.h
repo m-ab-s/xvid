@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: config.h,v 1.1.2.12 2003-12-05 14:44:35 edgomez Exp $
+ * $Id: config.h,v 1.1.2.13 2003-12-17 15:16:16 edgomez Exp $
  *
  ****************************************************************************/
 #ifndef _CONFIG_H_
@@ -122,6 +122,7 @@ typedef struct
 	int bquant_offset;
 	int packed;
 	int closed_gov;
+	int display_aspect_ratio;				/* aspect ratio */
 
     /* zones */
     int num_zones;

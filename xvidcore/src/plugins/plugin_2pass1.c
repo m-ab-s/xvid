@@ -22,7 +22,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass1.c,v 1.1.2.9 2003-11-19 15:42:38 syskin Exp $
+ * $Id: plugin_2pass1.c,v 1.1.2.10 2003-12-17 15:16:16 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -89,17 +89,16 @@ static int rc_2pass1_destroy(rc_2pass1_t * rc, xvid_plg_destroy_t * destroy)
 
 static int rc_2pass1_before(rc_2pass1_t * rc, xvid_plg_data_t * data)
 {
-     if (data->quant <= 0) {
-        if (data->zone && data->zone->mode == XVID_ZONE_QUANT) {
-            rc->fq_error += (double)data->zone->increment / (double)data->zone->base;
-            data->quant = (int)rc->fq_error;
-            rc->fq_error -= data->quant;
-
-        }else {
-            data->quant = 2;
-        }
-    }
-    return 0;
+	 if (data->quant <= 0) {
+		if (data->zone && data->zone->mode == XVID_ZONE_QUANT) {
+			rc->fq_error += (double)data->zone->increment / (double)data->zone->base;
+			data->quant = (int)rc->fq_error;
+			rc->fq_error -= data->quant;
+		} else {
+			data->quant = 2;
+		}
+	}
+	 return(0);
 }
 
 
