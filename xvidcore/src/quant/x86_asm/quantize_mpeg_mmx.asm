@@ -21,76 +21,67 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: quantize_mpeg_mmx.asm,v 1.1.2.2 2003-10-09 18:50:22 edgomez Exp $
+; * $Id: quantize_mpeg_mmx.asm,v 1.1.2.3 2003-10-28 22:23:03 edgomez Exp $
 ; *
 ; *************************************************************************/
 
-; data/text alignment
-%define ALIGN 8
-
 %define SATURATE
 
-bits 32
+BITS 32
 
-%macro cglobal 1 
+%macro cglobal 1
 	%ifdef PREFIX
-		global _%1 
+		global _%1
 		%define %1 _%1
 	%else
 		global %1
 	%endif
 %endmacro
 
-%macro cextern 1 
+%macro cextern 1
 	%ifdef PREFIX
-		extern _%1 
+		extern _%1
 		%define %1 _%1
 	%else
 		extern %1
 	%endif
 %endmacro
 
-;***************************************************************************
-; Local data
-;***************************************************************************
+;=============================================================================
+; Local data (Read Only)
+;=============================================================================
 
-%ifdef FORMAT_COFF
-SECTION .data data
-%else
-SECTION .data data align=8
-%endif
+SECTION .rodata
 
 mmx_one:
 	times 4	dw	 1
 
-;===========================================================================
-;
-; divide by 2Q table 
-;
-;===========================================================================
+;-----------------------------------------------------------------------------
+; divide by 2Q table
+;-----------------------------------------------------------------------------
 
-align 16
+ALIGN 16
 mmx_div:
-%assign quant 1
-%rep 31
+	times 4 dw 65535 ; the div by 2 formula will overflow for the case
+	                 ; quant=1 but we don't care much because quant=1
+	                 ; is handled by a different piece of code that
+	                 ; doesn't use this table.
+%assign quant 2
+%rep 30
 	times 4 dw  (1<<17) / (quant*2) + 1
 	%assign quant quant+1
 %endrep
 
-;===========================================================================
-;
-; intra matrix 
-;
-;===========================================================================
+;-----------------------------------------------------------------------------
+; intra matrix
+;-----------------------------------------------------------------------------
 
 cextern intra_matrix
 cextern intra_matrix_fix
 
-;===========================================================================
-;
+;-----------------------------------------------------------------------------
 ; inter matrix
-;
-;===========================================================================
+;-----------------------------------------------------------------------------
 
 cextern inter_matrix
 cextern inter_matrix_fix
@@ -100,11 +91,9 @@ cextern inter_matrix_fix
 %define VM18Q 4
 
 
-;===========================================================================
-;
-; quantd table 
-;
-;===========================================================================
+;-----------------------------------------------------------------------------
+; quantd table
+;-----------------------------------------------------------------------------
 
 quantd:
 %assign quant 1
@@ -113,11 +102,9 @@ quantd:
 	%assign quant quant+1
 %endrep
 
-;===========================================================================
-;
+;-----------------------------------------------------------------------------
 ; multiple by 2Q table
-;
-;===========================================================================
+;-----------------------------------------------------------------------------
 
 mmx_mul_quant:
 %assign quant 1
@@ -126,13 +113,11 @@ mmx_mul_quant:
 	%assign quant quant+1
 %endrep
 
-;===========================================================================
-;
-; saturation limits 
-;
-;===========================================================================
+;-----------------------------------------------------------------------------
+; saturation limits
+;-----------------------------------------------------------------------------
 
-align 16
+ALIGN 16
 
 mmx_32767_minus_2047:
 	times 4 dw (32767-2047)
@@ -145,436 +130,375 @@ mmx_minus_2048:
 zero:
 	times 4 dw 0
 
-;***************************************************************************
-; Local data
-;***************************************************************************
+;=============================================================================
+; Code
+;=============================================================================
 
-section .text
+SECTION .text
 
-;===========================================================================
+cglobal quant_mpeg_intra_mmx
+cglobal quant_mpeg_inter_mmx
+cglobal dequant_mpeg_intra_mmx
+cglobal dequant_mpeg_inter_mmx
+
+;-----------------------------------------------------------------------------
 ;
-; uint32_t quant_mpeg_intra_mmx(int16_t * coeff, 
+; uint32_t quant_mpeg_intra_mmx(int16_t * coeff,
 ;                               const int16_t const * data,
 ;                               const uint32_t quant,
 ;                               const uint32_t dcscalar);
 ;
-;===========================================================================
+;-----------------------------------------------------------------------------
 
-align ALIGN
-cglobal quant_mpeg_intra_mmx
+ALIGN 16
 quant_mpeg_intra_mmx:
 
-	push	ecx
-	push	esi
-	push	edi
+  push ecx
+  push esi
+  push edi
 
-	mov		edi, [esp + 12 + 4]		; coeff
-	mov		esi, [esp + 12 + 8]		; data
-	mov		eax, [esp + 12 + 12]	; quant
+  mov edi, [esp + 12 + 4]       ; coeff
+  mov esi, [esp + 12 + 8]       ; data
+  mov eax, [esp + 12 + 12]      ; quant
 
-	movq    mm5, [quantd + eax * 8 - 8] ; quantd -> mm5
+  movq mm5, [quantd + eax * 8 - 8] ; quantd -> mm5
 
-	xor		ecx, ecx
-	cmp		al, 1
-	jz		near .q1loop
+  xor ecx, ecx
+  cmp al, 1
+  jz near .q1loop
 
-	cmp		al, 2
-	jz		near .q2loop
+  cmp al, 2
+  jz near .q2loop
 
-	movq	mm7, [mmx_div + eax * 8 - 8] ; multipliers[quant] -> mm7
-		 
-align ALIGN
+  movq mm7, [mmx_div + eax * 8 - 8] ; multipliers[quant] -> mm7
+
+ALIGN 16
 .loop
-	movq	mm0, [esi + 8*ecx]		; mm0 = [1st]
-	movq	mm3, [esi + 8*ecx + 8]	; 
-		
-	pxor	mm1, mm1		; mm1 = 0
-	pxor	mm4, mm4
-		
-	pcmpgtw	mm1, mm0		; mm1 = (0 > mm0)
-	pcmpgtw	mm4, mm3
-		
-	pxor	mm0, mm1		; mm0 = |mm0|
-	pxor	mm3, mm4		;
-	psubw	mm0, mm1		; displace
-	psubw	mm3, mm4		;
+  movq mm0, [esi + 8*ecx]       ; mm0 = [1st]
+  movq mm3, [esi + 8*ecx + 8]   ;
+  pxor mm1, mm1                 ; mm1 = 0
+  pxor mm4, mm4
+  pcmpgtw mm1, mm0              ; mm1 = (0 > mm0)
+  pcmpgtw mm4, mm3
+  pxor mm0, mm1                 ; mm0 = |mm0|
+  pxor mm3, mm4                 ;
+  psubw mm0, mm1                ; displace
+  psubw mm3, mm4                ;
+  psllw mm0, 4                  ; level << 4
+  psllw mm3, 4
+  movq mm2, [intra_matrix + 8*ecx]
+  psrlw mm2, 1                  ; intra_matrix[i]>>1
+  paddw mm0, mm2
+  movq mm2, [intra_matrix_fix + ecx*8]
+  pmulhw mm0, mm2                       ; (level<<4 + intra_matrix[i]>>1) / intra_matrix[i]
+  movq mm2, [intra_matrix + 8*ecx + 8]
+  psrlw mm2, 1
+  paddw mm3, mm2
+  movq mm2, [intra_matrix_fix + ecx*8 + 8]
+  pmulhw mm3, mm2
+  paddw mm0, mm5                ; + quantd
+  paddw mm3, mm5
+  pmulhw mm0, mm7               ; mm0 = (mm0 / 2Q) >> 16
+  pmulhw mm3, mm7               ;
+  psrlw mm0, 1                  ; additional shift by 1 => 16 + 1 = 17
+  psrlw mm3, 1
+  pxor mm0, mm1                 ; mm0 *= sign(mm0)
+  pxor mm3, mm4                 ;
+  psubw mm0, mm1                ; undisplace
+  psubw mm3, mm4                ;
 
-	psllw   mm0, 4			; level << 4
-	psllw   mm3, 4			;
-		
-	movq    mm2, [intra_matrix + 8*ecx]
-	psrlw   mm2, 1			; intra_matrix[i]>>1
-	paddw   mm0, mm2		
-		
-	movq    mm2, [intra_matrix_fix + ecx*8]
-	pmulhw  mm0, mm2		; (level<<4 + intra_matrix[i]>>1) / intra_matrix[i]
+  movq [edi + 8*ecx], mm0
+  movq [edi + 8*ecx + 8], mm3
 
-	movq    mm2, [intra_matrix + 8*ecx + 8]
-	psrlw   mm2, 1
-	paddw   mm3, mm2
+  add ecx,2
+  cmp ecx,16
+  jnz near .loop
 
-	movq    mm2, [intra_matrix_fix + ecx*8 + 8]
-	pmulhw  mm3, mm2
+.done
+  ; caclulate  data[0] // (int32_t)dcscalar)
+  mov ecx, [esp + 12 + 16]  ; dcscalar
+  mov edx, ecx
+  movsx eax, word [esi]     ; data[0]
+  shr edx, 1                ; edx = dcscalar /2
+  cmp eax, 0
+  jg .gtzero
 
-	paddw   mm0, mm5		; + quantd
-	paddw   mm3, mm5
-	pmulhw	mm0, mm7		; mm0 = (mm0 / 2Q) >> 16
-	pmulhw	mm3, mm7		;
-	psrlw   mm0, 1			; additional shift by 1 => 16 + 1 = 17
-	psrlw   mm3, 1
-		
-	pxor	mm0, mm1		; mm0 *= sign(mm0)
-	pxor	mm3, mm4		;
-	psubw	mm0, mm1		; undisplace
-	psubw	mm3, mm4		;
-
-	movq	[edi + 8*ecx], mm0
-	movq	[edi + 8*ecx + 8], mm3
-		
-	add		ecx,2
-	cmp		ecx,16
-	jnz 	near .loop 
-
-.done	
-		; caclulate  data[0] // (int32_t)dcscalar)
-
-	mov 	ecx, [esp + 12 + 16]	; dcscalar
-	mov 	edx, ecx
-	movsx 	eax, word [esi]	; data[0]
-	shr 	edx, 1			; edx = dcscalar /2
-	cmp		eax, 0
-	jg		.gtzero
-
-	sub		eax, edx
-	jmp		short .mul
+  sub eax, edx
+  jmp short .mul
 .gtzero
-	add		eax, edx
+  add eax, edx
 .mul
-	cdq 				; expand eax -> edx:eax
-	idiv	ecx			; eax = edx:eax / dcscalar
-		
-	mov	[edi], ax		; coeff[0] = ax
+  cdq                       ; expand eax -> edx:eax
+  idiv ecx                  ; eax = edx:eax / dcscalar
 
-	pop	edi
-	pop	esi
-	pop	ecx
+  mov [edi], ax             ; coeff[0] = ax
 
-	xor eax, eax				; return(0);
-	ret				
+  pop edi
+  pop esi
+  pop ecx
 
-align ALIGN
+  xor eax, eax              ; return(0);
+  ret
+
+ALIGN 16
 .q1loop
-	movq	mm0, [esi + 8*ecx]		; mm0 = [1st]
-	movq	mm3, [esi + 8*ecx + 8]	; 
+  movq mm0, [esi + 8*ecx]       ; mm0 = [1st]
+  movq mm3, [esi + 8*ecx + 8]   ;
+  pxor mm1, mm1                 ; mm1 = 0
+  pxor mm4, mm4                 ;
+  pcmpgtw mm1, mm0              ; mm1 = (0 > mm0)
+  pcmpgtw mm4, mm3              ;
+  pxor mm0, mm1                 ; mm0 = |mm0|
+  pxor mm3, mm4                 ;
+  psubw mm0, mm1                ; displace
+  psubw mm3, mm4                ;
+  psllw mm0, 4
+  psllw mm3, 4
+  movq mm2, [intra_matrix + 8*ecx]
+  psrlw mm2, 1
+  paddw mm0, mm2
+  movq mm2, [intra_matrix_fix + ecx*8]
+  pmulhw mm0, mm2                       ; (level<<4 + intra_matrix[i]>>1) / intra_matrix[i]
+  movq mm2, [intra_matrix + 8*ecx + 8]
+  psrlw mm2, 1
+  paddw mm3, mm2
+  movq mm2, [intra_matrix_fix + ecx*8 + 8]
+  pmulhw mm3, mm2
+  paddw mm0, mm5
+  paddw mm3, mm5
+  psrlw mm0, 1              ; mm0 >>= 1   (/2)
+  psrlw mm3, 1              ;
+  pxor mm0, mm1             ; mm0 *= sign(mm0)
+  pxor mm3, mm4             ;
+  psubw mm0, mm1            ; undisplace
+  psubw mm3, mm4            ;
+  movq [edi + 8*ecx], mm0
+  movq [edi + 8*ecx + 8], mm3
 
-	pxor	mm1, mm1		; mm1 = 0
-	pxor	mm4, mm4		;
-
-	pcmpgtw	mm1, mm0		; mm1 = (0 > mm0)
-	pcmpgtw	mm4, mm3		;
-		 
-	pxor	mm0, mm1		; mm0 = |mm0|
-	pxor	mm3, mm4		; 
-	psubw	mm0, mm1		; displace
-	psubw	mm3, mm4		; 
-
-	psllw   mm0, 4
-	psllw   mm3, 4
-		
-	movq    mm2, [intra_matrix + 8*ecx]
-	psrlw   mm2, 1
-	paddw   mm0, mm2
-		
-	movq    mm2, [intra_matrix_fix + ecx*8]
-	pmulhw  mm0, mm2		; (level<<4 + intra_matrix[i]>>1) / intra_matrix[i]
-
-	movq    mm2, [intra_matrix + 8*ecx + 8]
-	psrlw   mm2, 1
-	paddw   mm3, mm2
-
-	movq    mm2, [intra_matrix_fix + ecx*8 + 8]
-	pmulhw  mm3, mm2
-
-	paddw   mm0, mm5
-	paddw   mm3, mm5
-
-	psrlw	mm0, 1			; mm0 >>= 1   (/2)
-	psrlw	mm3, 1			;
-		
-	pxor	mm0, mm1		; mm0 *= sign(mm0)
-	pxor	mm3, mm4        ;
-	psubw	mm0, mm1		; undisplace
-	psubw	mm3, mm4		;
-		
-	movq	[edi + 8*ecx], mm0
-	movq	[edi + 8*ecx + 8], mm3
-
-	add		ecx, 2
-	cmp		ecx, 16
-	jnz		near .q1loop
-	jmp		near .done
+  add ecx, 2
+  cmp ecx, 16
+  jnz near .q1loop
+  jmp near .done
 
 
-align ALIGN
+ALIGN 16
 .q2loop
-	movq	mm0, [esi + 8*ecx]		; mm0 = [1st]
-	movq	mm3, [esi + 8*ecx + 8]	; 
+  movq mm0, [esi + 8*ecx]       ; mm0 = [1st]
+  movq mm3, [esi + 8*ecx + 8]   ;
+  pxor mm1, mm1                 ; mm1 = 0
+  pxor mm4, mm4                 ;
+  pcmpgtw mm1, mm0              ; mm1 = (0 > mm0)
+  pcmpgtw mm4, mm3              ;
+  pxor mm0, mm1                 ; mm0 = |mm0|
+  pxor mm3, mm4                 ;
+  psubw mm0, mm1                ; displace
+  psubw mm3, mm4                ;
+  psllw mm0, 4
+  psllw mm3, 4
+  movq mm2, [intra_matrix + 8*ecx]
+  psrlw mm2, 1
+  paddw mm0, mm2
+  movq mm2, [intra_matrix_fix + ecx*8]
+  pmulhw mm0, mm2                       ; (level<<4 + intra_matrix[i]>>1) / intra_matrix[i]
+  movq mm2, [intra_matrix + 8*ecx + 8]
+  psrlw mm2, 1
+  paddw mm3, mm2
+  movq mm2, [intra_matrix_fix + ecx*8 + 8]
+  pmulhw mm3, mm2
+  paddw mm0, mm5
+  paddw mm3, mm5
+  psrlw mm0, 2                  ; mm0 >>= 1   (/4)
+  psrlw mm3, 2                  ;
+  pxor mm0, mm1                 ; mm0 *= sign(mm0)
+  pxor mm3, mm4                 ;
+  psubw mm0, mm1                ; undisplace
+  psubw mm3, mm4            ;
+  movq [edi + 8*ecx], mm0
+  movq [edi + 8*ecx + 8], mm3
 
-	pxor	mm1, mm1		; mm1 = 0
-	pxor	mm4, mm4		;
-
-	pcmpgtw	mm1, mm0		; mm1 = (0 > mm0)
-	pcmpgtw	mm4, mm3		;
-		 
-	pxor	mm0, mm1		; mm0 = |mm0|
-	pxor	mm3, mm4		; 
-	psubw	mm0, mm1		; displace
-	psubw	mm3, mm4		; 
-
-	psllw   mm0, 4
-	psllw   mm3, 4
-		
-	movq    mm2, [intra_matrix + 8*ecx]
-	psrlw   mm2, 1
-	paddw   mm0, mm2
-		
-	movq    mm2, [intra_matrix_fix + ecx*8]
-	pmulhw  mm0, mm2		; (level<<4 + intra_matrix[i]>>1) / intra_matrix[i]
-
-	movq    mm2, [intra_matrix + 8*ecx + 8]
-	psrlw   mm2, 1
-	paddw   mm3, mm2
-
-	movq    mm2, [intra_matrix_fix + ecx*8 + 8]
-	pmulhw  mm3, mm2
-
-	paddw   mm0, mm5
-	paddw   mm3, mm5
-
-	psrlw	mm0, 2			; mm0 >>= 1   (/4)
-	psrlw	mm3, 2			;
-		
-	pxor	mm0, mm1		; mm0 *= sign(mm0)
-	pxor	mm3, mm4        ;
-	psubw	mm0, mm1		; undisplace
-	psubw	mm3, mm4		;
-		
-	movq	[edi + 8*ecx], mm0
-	movq	[edi + 8*ecx + 8], mm3
-
-	add		ecx,2
-	cmp		ecx,16
-	jnz		near .q2loop
-	jmp		near .done
+  add ecx,2
+  cmp ecx,16
+  jnz near .q2loop
+  jmp near .done
 
 
-;===========================================================================
+;-----------------------------------------------------------------------------
 ;
 ; uint32_t quant_mpeg_inter_mmx(int16_t * coeff,
 ;                               const int16_t const * data,
 ;                               const uint32_t quant);
 ;
-;===========================================================================
+;-----------------------------------------------------------------------------
 
-align ALIGN
-cglobal quant_mpeg_inter_mmx
+ALIGN 16
 quant_mpeg_inter_mmx:
 
-	push	ecx
-	push	esi
-	push	edi
+  push ecx
+  push esi
+  push edi
 
-	mov		edi, [esp + 12 + 4]		; coeff
-	mov		esi, [esp + 12 + 8]		; data
-	mov		eax, [esp + 12 + 12]	; quant
+  mov edi, [esp + 12 + 4]       ; coeff
+  mov esi, [esp + 12 + 8]       ; data
+  mov eax, [esp + 12 + 12]  ; quant
 
-	xor		ecx, ecx
+  xor ecx, ecx
 
-	pxor	mm5, mm5					; sum
+  pxor mm5, mm5                 ; sum
 
-	cmp		al, 1
-	jz		near .q1loop
+  cmp al, 1
+  jz near .q1loop
 
-	cmp		al, 2
-	jz		near .q2loop
+  cmp al, 2
+  jz near .q2loop
 
-	movq	mm7, [mmx_div + eax * 8 - 8]	; divider
+  movq mm7, [mmx_div + eax * 8 - 8] ; divider
 
-align ALIGN
+ALIGN 16
 .loop
-	movq	mm0, [esi + 8*ecx]		; mm0 = [1st]
-	movq	mm3, [esi + 8*ecx + 8]	; 
-	pxor	mm1, mm1		; mm1 = 0
-	pxor	mm4, mm4		;
-	pcmpgtw	mm1, mm0		; mm1 = (0 > mm0)
-	pcmpgtw	mm4, mm3		; 
-	pxor	mm0, mm1		; mm0 = |mm0|
-	pxor	mm3, mm4		; 
-	psubw	mm0, mm1		; displace
-	psubw	mm3, mm4		;
+  movq mm0, [esi + 8*ecx]       ; mm0 = [1st]
+  movq mm3, [esi + 8*ecx + 8]   ;
+  pxor mm1, mm1                 ; mm1 = 0
+  pxor mm4, mm4                 ;
+  pcmpgtw mm1, mm0              ; mm1 = (0 > mm0)
+  pcmpgtw mm4, mm3              ;
+  pxor mm0, mm1                 ; mm0 = |mm0|
+  pxor mm3, mm4                 ;
+  psubw mm0, mm1                ; displace
+  psubw mm3, mm4                ;
+  psllw mm0, 4
+  psllw mm3, 4
+  movq mm2, [inter_matrix + 8*ecx]
+  psrlw mm2, 1
+  paddw mm0, mm2
+  movq mm2, [inter_matrix_fix + ecx*8]
+  pmulhw mm0, mm2               ; (level<<4 + inter_matrix[i]>>1) / inter_matrix[i]
+  movq mm2, [inter_matrix + 8*ecx + 8]
+  psrlw mm2, 1
+  paddw mm3, mm2
+  movq mm2, [inter_matrix_fix + ecx*8 + 8]
+  pmulhw mm3, mm2
+  pmulhw mm0, mm7               ; mm0 = (mm0 / 2Q) >> 16
+  pmulhw mm3, mm7               ;
+  psrlw mm0, 1                  ; additional shift by 1 => 16 + 1 = 17
+  psrlw mm3, 1
+  paddw mm5, mm0                ; sum += mm0
+  pxor mm0, mm1                 ; mm0 *= sign(mm0)
+  paddw mm5, mm3                ;
+  pxor mm3, mm4                 ;
+  psubw mm0, mm1                ; undisplace
+  psubw mm3, mm4
+  movq [edi + 8*ecx], mm0
+  movq [edi + 8*ecx + 8], mm3
 
-	psllw   mm0, 4
-	psllw   mm3, 4
-		
-	movq    mm2, [inter_matrix + 8*ecx]
-	psrlw   mm2, 1
-	paddw   mm0, mm2
-		
-	movq    mm2, [inter_matrix_fix + ecx*8]
-	pmulhw  mm0, mm2		; (level<<4 + inter_matrix[i]>>1) / inter_matrix[i]
-
-	movq    mm2, [inter_matrix + 8*ecx + 8]
-	psrlw   mm2, 1
-	paddw   mm3, mm2
-
-	movq    mm2, [inter_matrix_fix + ecx*8 + 8]
-	pmulhw  mm3, mm2
-
-	pmulhw	mm0, mm7		; mm0 = (mm0 / 2Q) >> 16
-	pmulhw	mm3, mm7		; 
-	psrlw   mm0, 1			; additional shift by 1 => 16 + 1 = 17
-	psrlw   mm3, 1
-		
-	paddw	mm5, mm0		; sum += mm0
-	pxor	mm0, mm1		; mm0 *= sign(mm0)
-	paddw	mm5, mm3		;
-	pxor	mm3, mm4		;
-	psubw	mm0, mm1		; undisplace
-	psubw	mm3, mm4
-	movq	[edi + 8*ecx], mm0
-	movq	[edi + 8*ecx + 8], mm3
-
-	add		ecx, 2	
-	cmp		ecx, 16
-	jnz		near .loop
+  add ecx, 2
+  cmp ecx, 16
+  jnz near .loop
 
 .done
-	pmaddwd	mm5, [mmx_one]
-	movq    mm0, mm5
-	psrlq   mm5, 32
-	paddd   mm0, mm5
-	movd	eax, mm0		; return sum
+  pmaddwd mm5, [mmx_one]
+  movq mm0, mm5
+  psrlq mm5, 32
+  paddd mm0, mm5
+  movd eax, mm0                 ; return sum
 
-	pop		edi
-	pop		esi
-	pop		ecx
+  pop edi
+  pop esi
+  pop ecx
 
-	ret
+  ret
 
-align ALIGN
+ALIGN 16
 .q1loop
-	movq	mm0, [esi + 8*ecx]		; mm0 = [1st]
-	movq	mm3, [esi + 8*ecx+ 8]
-				; 
-	pxor	mm1, mm1		; mm1 = 0
-	pxor	mm4, mm4		;
+  movq mm0, [esi + 8*ecx]       ; mm0 = [1st]
+  movq mm3, [esi + 8*ecx+ 8]
+  pxor mm1, mm1                 ; mm1 = 0
+  pxor mm4, mm4                 ;
+  pcmpgtw mm1, mm0              ; mm1 = (0 > mm0)
+  pcmpgtw mm4, mm3              ;
+  pxor mm0, mm1                 ; mm0 = |mm0|
+  pxor mm3, mm4                 ;
+  psubw mm0, mm1                ; displace
+  psubw mm3, mm4                ;
+  psllw mm0, 4
+  psllw mm3, 4
+  movq mm2, [inter_matrix + 8*ecx]
+  psrlw mm2, 1
+  paddw mm0, mm2
+  movq mm2, [inter_matrix_fix + ecx*8]
+  pmulhw mm0, mm2               ; (level<<4 + inter_matrix[i]>>1) / inter_matrix[i]
+  movq mm2, [inter_matrix + 8*ecx + 8]
+  psrlw mm2, 1
+  paddw mm3, mm2
+  movq mm2, [inter_matrix_fix + ecx*8 + 8]
+  pmulhw mm3, mm2
+  psrlw mm0, 1                  ; mm0 >>= 1   (/2)
+  psrlw mm3, 1                  ;
+  paddw mm5, mm0                ; sum += mm0
+  pxor mm0, mm1                 ; mm0 *= sign(mm0)
+  paddw mm5, mm3                ;
+  pxor mm3, mm4                 ;
+  psubw mm0, mm1                ; undisplace
+  psubw mm3, mm4
+  movq [edi + 8*ecx], mm0
+  movq [edi + 8*ecx + 8], mm3
 
-	pcmpgtw	mm1, mm0		; mm1 = (0 > mm0)
-	pcmpgtw	mm4, mm3		;
+  add ecx, 2
+  cmp ecx, 16
+  jnz near .q1loop
 
-	pxor	mm0, mm1		; mm0 = |mm0|
-	pxor	mm3, mm4		; 
-	psubw	mm0, mm1		; displace
-	psubw	mm3, mm4		;
-		
-	psllw   mm0, 4
-	psllw   mm3, 4
-		
-	movq    mm2, [inter_matrix + 8*ecx]
-	psrlw   mm2, 1
-	paddw   mm0, mm2
-
-	movq    mm2, [inter_matrix_fix + ecx*8]
-	pmulhw  mm0, mm2		; (level<<4 + inter_matrix[i]>>1) / inter_matrix[i]
-
-	movq    mm2, [inter_matrix + 8*ecx + 8]
-	psrlw   mm2, 1
-	paddw   mm3, mm2
-
-	movq    mm2, [inter_matrix_fix + ecx*8 + 8]
-	pmulhw  mm3, mm2
- 
-	psrlw	mm0, 1			; mm0 >>= 1   (/2)
-	psrlw	mm3, 1			;
-
-	paddw	mm5, mm0		; sum += mm0
-	pxor	mm0, mm1		; mm0 *= sign(mm0)
-	paddw	mm5, mm3		;
-	pxor	mm3, mm4		;
-	psubw	mm0, mm1		; undisplace
-	psubw	mm3, mm4
-
-	movq	[edi + 8*ecx], mm0
-	movq	[edi + 8*ecx + 8], mm3
-		
-	add		ecx, 2
-	cmp		ecx, 16
-	jnz		near .q1loop
-
-	jmp		.done
+  jmp .done
 
 
-align ALIGN
+ALIGN 16
 .q2loop
-	movq	mm0, [esi + 8*ecx]		; mm0 = [1st]
-	movq	mm3, [esi + 8*ecx+ 8]
-				; 
-	pxor	mm1, mm1		; mm1 = 0
-	pxor	mm4, mm4		;
+  movq mm0, [esi + 8*ecx]       ; mm0 = [1st]
+  movq mm3, [esi + 8*ecx+ 8]
+  pxor mm1, mm1                 ; mm1 = 0
+  pxor mm4, mm4                 ;
+  pcmpgtw mm1, mm0              ; mm1 = (0 > mm0)
+  pcmpgtw mm4, mm3              ;
+  pxor mm0, mm1                 ; mm0 = |mm0|
+  pxor mm3, mm4                 ;
+  psubw mm0, mm1                ; displace
+  psubw mm3, mm4                ;
+  psllw mm0, 4
+  psllw mm3, 4
+  movq mm2, [inter_matrix + 8*ecx]
+  psrlw mm2, 1
+  paddw mm0, mm2
+  movq mm2, [inter_matrix_fix + ecx*8]
+  pmulhw mm0, mm2               ; (level<<4 + inter_matrix[i]>>1) / inter_matrix[i]
+  movq mm2, [inter_matrix + 8*ecx + 8]
+  psrlw mm2, 1
+  paddw mm3, mm2
+  movq mm2, [inter_matrix_fix + ecx*8 + 8]
+  pmulhw mm3, mm2
+  psrlw mm0, 2                  ; mm0 >>= 1   (/2)
+  psrlw mm3, 2                  ;
+  paddw mm5, mm0                ; sum += mm0
+  pxor mm0, mm1                 ; mm0 *= sign(mm0)
+  paddw mm5, mm3                ;
+  pxor mm3, mm4                 ;
+  psubw mm0, mm1                ; undisplace
+  psubw mm3, mm4
+  movq [edi + 8*ecx], mm0
+  movq [edi + 8*ecx + 8], mm3
 
-	pcmpgtw	mm1, mm0		; mm1 = (0 > mm0)
-	pcmpgtw	mm4, mm3		;
+  add ecx, 2
+  cmp ecx, 16
+  jnz near .q2loop
 
-	pxor	mm0, mm1		; mm0 = |mm0|
-	pxor	mm3, mm4		; 
-	psubw	mm0, mm1		; displace
-	psubw	mm3, mm4		;
-		
-	psllw   mm0, 4
-	psllw   mm3, 4
-		
-	movq    mm2, [inter_matrix + 8*ecx]
-	psrlw   mm2, 1
-	paddw   mm0, mm2
-		
-	movq    mm2, [inter_matrix_fix + ecx*8]
-	pmulhw  mm0, mm2		; (level<<4 + inter_matrix[i]>>1) / inter_matrix[i]
-
-	movq    mm2, [inter_matrix + 8*ecx + 8]
-	psrlw   mm2, 1
-	paddw   mm3, mm2
-
-	movq    mm2, [inter_matrix_fix + ecx*8 + 8]
-	pmulhw  mm3, mm2
- 
-	psrlw	mm0, 2			; mm0 >>= 1   (/2)
-	psrlw	mm3, 2			;
-
-	paddw	mm5, mm0		; sum += mm0
-	pxor	mm0, mm1		; mm0 *= sign(mm0)
-	paddw	mm5, mm3		;
-	pxor	mm3, mm4		;
-	psubw	mm0, mm1		; undisplace
-	psubw	mm3, mm4
-
-	movq	[edi + 8*ecx], mm0
-	movq	[edi + 8*ecx + 8], mm3
-		
-	add		ecx, 2
-	cmp		ecx, 16
-	jnz		near .q2loop
-
-	jmp	.done
+  jmp .done
 
 
-;===========================================================================
+;-----------------------------------------------------------------------------
 ;
 ; uint32_t dequant_mpeg_intra_mmx(int16_t *data,
 ;                                 const int16_t const *coeff,
 ;                                 const uint32_t quant,
 ;                                 const uint32_t dcscalar);
 ;
-;===========================================================================
+;-----------------------------------------------------------------------------
 
   ;   Note: in order to saturate 'easily', we pre-shift the quantifier
   ; by 4. Then, the high-word of (coeff[]*matrix[i]*quant) are used to
@@ -583,225 +507,222 @@ align ALIGN
   ; Moreover, we perform the mult (matrix[i]*quant) first, instead of, e.g.,
   ; (coeff[i]*matrix[i]). This is less prone to overflow if coeff[] are not
   ; checked. Input ranges are: coeff in [-127,127], inter_matrix in [1..255],a
-  ; and quant in [1..31]. 
+  ; and quant in [1..31].
   ;
   ; The original loop is:
   ;
 %if 0
-	movq	mm0, [ecx+8*eax + 8*16]   ; mm0 = coeff[i]
-	pxor	mm1, mm1
-	pcmpgtw	mm1, mm0
-	pxor	mm0, mm1     ; change sign if negative
-	psubw	mm0, mm1    ; -> mm0 = abs(coeff[i]), mm1 = sign of coeff[i]
+  movq mm0, [ecx+8*eax + 8*16]   ; mm0 = coeff[i]
+  pxor mm1, mm1
+  pcmpgtw mm1, mm0
+  pxor mm0, mm1     ; change sign if negative
+  psubw mm0, mm1    ; -> mm0 = abs(coeff[i]), mm1 = sign of coeff[i]
 
-	movq	mm2, mm7     ; mm2 = quant
-	pmullw	mm2, [intra_matrix + 8*eax + 8*16 ]  ; matrix[i]*quant.
+  movq mm2, mm7     ; mm2 = quant
+  pmullw mm2, [intra_matrix + 8*eax + 8*16 ]  ; matrix[i]*quant.
 
-	movq	mm6, mm2 
-	pmulhw	mm2, mm0   ; high of coeff*(matrix*quant)  (should be 0 if no overflow)
-	pmullw	mm0, mm6   ; low  of coeff*(matrix*quant)
+  movq mm6, mm2
+  pmulhw mm2, mm0   ; high of coeff*(matrix*quant)  (should be 0 if no overflow)
+  pmullw mm0, mm6   ; low  of coeff*(matrix*quant)
 
-	pxor	mm5, mm5
-	pcmpgtw	mm2, mm5  ; otherflow?
-	psrlw	mm2, 5      ; =0 if no clamp, 2047 otherwise
-	psrlw	mm0, 5
-	paddw	mm0, mm1    ; start restoring sign
-	por		mm0, mm2      ; saturate to 2047 if needed
-	pxor	mm0, mm1     ; finish negating back
+  pxor mm5, mm5
+  pcmpgtw mm2, mm5  ; otherflow?
+  psrlw mm2, 5      ; =0 if no clamp, 2047 otherwise
+  psrlw mm0, 5
+  paddw mm0, mm1    ; start restoring sign
+  por mm0, mm2      ; saturate to 2047 if needed
+  pxor mm0, mm1     ; finish negating back
 
-	movq	[edx + 8*eax + 8*16], mm0   ; data[i]
-	add		eax, 1
+  movq [edx + 8*eax + 8*16], mm0   ; data[i]
+  add eax, 1
 %endif
 
   ;********************************************************************
 
-align 16
-cglobal dequant_mpeg_intra_mmx
+ALIGN 16
 dequant_mpeg_intra_mmx:
 
-	mov		edx, [esp+4]  ; data
-	mov		ecx, [esp+8]  ; coeff
-	mov		eax, [esp+12] ; quant
+  mov edx, [esp+4]  ; data
+  mov ecx, [esp+8]  ; coeff
+  mov eax, [esp+12] ; quant
 
-	movq	mm7, [mmx_mul_quant  + eax*8 - 8]
-	mov		eax, -16   ; to keep aligned, we regularly process coeff[0]
-	psllw	mm7, 2   ; << 2. See comment.
-	pxor	mm6, mm6   ; this is a NOP
+  movq mm7, [mmx_mul_quant  + eax*8 - 8]
+  mov eax, -16      ; to keep ALIGNed, we regularly process coeff[0]
+  psllw mm7, 2      ; << 2. See comment.
+  pxor mm6, mm6     ; this is a NOP
 
-align 16
+ALIGN 16
 .loop
-	movq	mm0, [ecx+8*eax + 8*16]   ; mm0 = c  = coeff[i]
-	movq	mm3, [ecx+8*eax + 8*16 +8]; mm3 = c' = coeff[i+1]
-	pxor	mm1, mm1
-	pxor	mm4, mm4
-	pcmpgtw	mm1, mm0  ; mm1 = sgn(c)
-	movq	mm2, mm7     ; mm2 = quant
-  
-	pcmpgtw	mm4, mm3  ; mm4 = sgn(c')
-	pmullw	mm2,  [intra_matrix + 8*eax + 8*16 ]  ; matrix[i]*quant
+  movq mm0, [ecx+8*eax + 8*16]   ; mm0 = c  = coeff[i]
+  movq mm3, [ecx+8*eax + 8*16 +8]; mm3 = c' = coeff[i+1]
+  pxor mm1, mm1
+  pxor mm4, mm4
+  pcmpgtw mm1, mm0  ; mm1 = sgn(c)
+  movq mm2, mm7     ; mm2 = quant
 
-	pxor	mm0, mm1     ; negate if negative
-	pxor	mm3, mm4     ; negate if negative
-  
-	psubw	mm0, mm1
-	psubw	mm3, mm4
-  
-    ; we're short on register, here. Poor pairing...
+  pcmpgtw mm4, mm3  ; mm4 = sgn(c')
+  pmullw mm2,  [intra_matrix + 8*eax + 8*16 ]  ; matrix[i]*quant
 
-	movq	mm5, mm2 
-	pmullw	mm2, mm0   ; low  of coeff*(matrix*quant)
+  pxor mm0, mm1     ; negate if negative
+  pxor mm3, mm4     ; negate if negative
 
-	pmulhw	mm0, mm5   ; high of coeff*(matrix*quant)
-	movq	mm5, mm7     ; mm2 = quant
+  psubw mm0, mm1
+  psubw mm3, mm4
 
-	pmullw	mm5,  [intra_matrix + 8*eax + 8*16 +8]  ; matrix[i+1]*quant
+ ; we're short on register, here. Poor pairing...
 
-	movq	mm6, mm5
-	add		eax,2   ; z-flag will be tested later
+  movq mm5, mm2
+  pmullw mm2, mm0   ; low  of coeff*(matrix*quant)
 
-	pmullw	mm6, mm3   ; low  of coeff*(matrix*quant)
-	pmulhw	mm3, mm5   ; high of coeff*(matrix*quant)
+  pmulhw mm0, mm5   ; high of coeff*(matrix*quant)
+  movq mm5, mm7     ; mm2 = quant
 
-	pcmpgtw	mm0, [zero]
-	paddusw	mm2, mm0
-	psrlw	mm2, 5
+  pmullw mm5,  [intra_matrix + 8*eax + 8*16 +8]  ; matrix[i+1]*quant
 
-	pcmpgtw	mm3, [zero]
-	paddusw	mm6, mm3
-	psrlw	mm6, 5
+  movq mm6, mm5
+  add eax,2   ; z-flag will be tested later
 
-	pxor	mm2, mm1  ; start negating back
-	pxor	mm6, mm4  ; start negating back
+  pmullw mm6, mm3   ; low  of coeff*(matrix*quant)
+  pmulhw mm3, mm5   ; high of coeff*(matrix*quant)
 
-	psubusw	mm1, mm0
-	psubusw	mm4, mm3
+  pcmpgtw mm0, [zero]
+  paddusw mm2, mm0
+  psrlw mm2, 5
 
-	psubw	mm2, mm1 ; finish negating back  
-	psubw	mm6, mm4 ; finish negating back  
+  pcmpgtw mm3, [zero]
+  paddusw mm6, mm3
+  psrlw mm6, 5
 
-	movq	[edx + 8*eax + 8*16   -2*8   ], mm2   ; data[i]
-	movq	[edx + 8*eax + 8*16   -2*8 +8], mm6   ; data[i+1]
+  pxor mm2, mm1  ; start negating back
+  pxor mm6, mm4  ; start negating back
 
-	jnz		near .loop
+  psubusw mm1, mm0
+  psubusw mm4, mm3
+
+  psubw mm2, mm1 ; finish negating back
+  psubw mm6, mm4 ; finish negating back
+
+  movq [edx + 8*eax + 8*16   -2*8   ], mm2   ; data[i]
+  movq [edx + 8*eax + 8*16   -2*8 +8], mm6   ; data[i+1]
+
+ jnz        near .loop
 
     ; deal with DC
+  movd mm0, [ecx]
+  pmullw mm0, [esp+16]  ; dcscalar
+  movq mm2, [mmx_32767_minus_2047]
+  paddsw mm0, mm2
+  psubsw mm0, mm2
+  movq mm2, [mmx_32768_minus_2048]
+  psubsw mm0, mm2
+  paddsw mm0, mm2
+  movd eax, mm0
+  mov [edx], ax
 
-	movd	mm0, [ecx]
-	pmullw	mm0, [esp+16]  ; dcscalar
-	movq	mm2, [mmx_32767_minus_2047]
-	paddsw	mm0, mm2
-	psubsw	mm0, mm2
-	movq	mm2, [mmx_32768_minus_2048]
-	psubsw	mm0, mm2
-	paddsw	mm0, mm2
-	movd	eax, mm0
-	mov		[edx], ax
+  xor eax, eax
+  ret
 
-	xor		eax, eax
-	ret
-
-;===========================================================================
+;-----------------------------------------------------------------------------
 ;
 ; uint32_t dequant_mpeg_inter_mmx(int16_t * data,
 ;                                 const int16_t * const coeff,
 ;                                 const uint32_t quant);
 ;
-;===========================================================================
+;-----------------------------------------------------------------------------
 
     ; Note:  We use (2*c + sgn(c) - sgn(-c)) as multiplier
     ; so we handle the 3 cases: c<0, c==0, and c>0 in one shot.
     ; sgn(x) is the result of 'pcmpgtw 0,x':  0 if x>=0, -1 if x<0.
     ; It's mixed with the extraction of the absolute value.
 
-align 16
-cglobal dequant_mpeg_inter_mmx
+ALIGN 16
 dequant_mpeg_inter_mmx:
 
-	mov		edx, [esp+ 4]        ; data
-	mov		ecx, [esp+ 8]        ; coeff
-	mov		eax, [esp+12]        ; quant
-	movq	mm7, [mmx_mul_quant  + eax*8 - 8]
-	mov		eax, -16
-	paddw	mm7, mm7    ; << 1
-	pxor	mm6, mm6 ; mismatch sum
+  mov edx, [esp+ 4]        ; data
+  mov ecx, [esp+ 8]        ; coeff
+  mov eax, [esp+12]        ; quant
+  movq mm7, [mmx_mul_quant  + eax*8 - 8]
+  mov eax, -16
+  paddw mm7, mm7    ; << 1
+  pxor mm6, mm6     ; mismatch sum
 
-align 16
+ALIGN 16
 .loop
-	movq	mm0, [ecx+8*eax + 8*16   ]   ; mm0 = coeff[i]
-	movq	mm2, [ecx+8*eax + 8*16 +8]   ; mm2 = coeff[i+1]
-	add		eax, 2
+  movq mm0, [ecx+8*eax + 8*16   ]   ; mm0 = coeff[i]
+  movq mm2, [ecx+8*eax + 8*16 +8]   ; mm2 = coeff[i+1]
+  add eax, 2
 
-	pxor	mm1, mm1
-	pxor	mm3, mm3
-	pcmpgtw	mm1, mm0  ; mm1 = sgn(c)    (preserved)
-	pcmpgtw	mm3, mm2  ; mm3 = sgn(c')   (preserved)
-	paddsw	mm0, mm1   ; c += sgn(c)
-	paddsw	mm2, mm3   ; c += sgn(c')
-	paddw	mm0, mm0    ; c *= 2
-	paddw	mm2, mm2    ; c'*= 2
+  pxor mm1, mm1
+  pxor mm3, mm3
+  pcmpgtw mm1, mm0  ; mm1 = sgn(c)    (preserved)
+  pcmpgtw mm3, mm2  ; mm3 = sgn(c')   (preserved)
+  paddsw mm0, mm1   ; c += sgn(c)
+  paddsw mm2, mm3   ; c += sgn(c')
+  paddw mm0, mm0    ; c *= 2
+  paddw mm2, mm2    ; c'*= 2
 
-	pxor	mm4, mm4
-	pxor	mm5, mm5
-	psubw	mm4, mm0    ; -c
-	psubw	mm5, mm2    ; -c'
-	psraw	mm4, 16     ; mm4 = sgn(-c)
-	psraw	mm5, 16     ; mm5 = sgn(-c')
-	psubsw	mm0, mm4   ; c  -= sgn(-c)
-	psubsw	mm2, mm5   ; c' -= sgn(-c')
-	pxor	mm0, mm1     ; finish changing sign if needed
-	pxor	mm2, mm3     ; finish changing sign if needed
+  pxor mm4, mm4
+  pxor mm5, mm5
+  psubw mm4, mm0    ; -c
+  psubw mm5, mm2    ; -c'
+  psraw mm4, 16     ; mm4 = sgn(-c)
+  psraw mm5, 16     ; mm5 = sgn(-c')
+  psubsw mm0, mm4   ; c  -= sgn(-c)
+  psubsw mm2, mm5   ; c' -= sgn(-c')
+  pxor mm0, mm1     ; finish changing sign if needed
+  pxor mm2, mm3     ; finish changing sign if needed
 
     ; we're short on register, here. Poor pairing...
 
-	movq	mm4, mm7     ; (matrix*quant)
-	pmullw	mm4,  [inter_matrix + 8*eax + 8*16 -2*8]
-	movq	mm5, mm4
-	pmulhw	mm5, mm0   ; high of c*(matrix*quant)
-	pmullw	mm0, mm4   ; low  of c*(matrix*quant)
+  movq mm4, mm7     ; (matrix*quant)
+  pmullw mm4,  [inter_matrix + 8*eax + 8*16 -2*8]
+  movq mm5, mm4
+  pmulhw mm5, mm0   ; high of c*(matrix*quant)
+  pmullw mm0, mm4   ; low  of c*(matrix*quant)
 
-	movq	mm4, mm7     ; (matrix*quant)
-	pmullw	mm4,  [inter_matrix + 8*eax + 8*16 -2*8 + 8]
+  movq mm4, mm7     ; (matrix*quant)
+  pmullw mm4,  [inter_matrix + 8*eax + 8*16 -2*8 + 8]
 
-	pcmpgtw	mm5, [zero]
-	paddusw	mm0, mm5
-	psrlw	mm0, 5
-	pxor	mm0, mm1     ; start restoring sign
-	psubusw	mm1, mm5
+  pcmpgtw mm5, [zero]
+  paddusw mm0, mm5
+  psrlw mm0, 5
+  pxor mm0, mm1     ; start restoring sign
+  psubusw mm1, mm5
 
-	movq	mm5, mm4
-	pmulhw	mm5, mm2   ; high of c*(matrix*quant)
-	pmullw	mm2, mm4   ; low  of c*(matrix*quant)
-	psubw	mm0, mm1    ; finish restoring sign
+  movq mm5, mm4
+  pmulhw mm5, mm2   ; high of c*(matrix*quant)
+  pmullw mm2, mm4   ; low  of c*(matrix*quant)
+  psubw mm0, mm1    ; finish restoring sign
 
-	pcmpgtw	mm5, [zero]
-	paddusw	mm2, mm5
-	psrlw	mm2, 5
-	pxor	mm2, mm3    ; start restoring sign
-	psubusw	mm3, mm5
-	psubw	mm2, mm3   ; finish restoring sign
+  pcmpgtw mm5, [zero]
+  paddusw mm2, mm5
+  psrlw mm2, 5
+  pxor mm2, mm3     ; start restoring sign
+  psubusw mm3, mm5
+  psubw mm2, mm3    ; finish restoring sign
 
-	pxor	mm6, mm0     ; mismatch control
-	movq	[edx + 8*eax + 8*16 -2*8   ], mm0   ; data[i]
-	pxor	mm6, mm2     ; mismatch control
-	movq	[edx + 8*eax + 8*16 -2*8 +8], mm2   ; data[i+1]
+  pxor mm6, mm0     ; mismatch control
+  movq [edx + 8*eax + 8*16 -2*8   ], mm0   ; data[i]
+  pxor mm6, mm2     ; mismatch control
+  movq [edx + 8*eax + 8*16 -2*8 +8], mm2   ; data[i+1]
 
-	jnz		near .loop
+  jnz near .loop
 
   ; mismatch control
 
-	movq	mm0, mm6
-	psrlq	mm0, 48
-	movq	mm1, mm6
-	movq	mm2, mm6
-	psrlq	mm1, 32
-	pxor	mm6, mm0
-	psrlq	mm2, 16
-	pxor	mm6, mm1
-	pxor	mm6, mm2
-	movd	eax, mm6
-	and		eax, 1
-	xor		eax, 1
-	xor		word [edx + 2*63], ax
+  movq mm0, mm6
+  psrlq mm0, 48
+  movq mm1, mm6
+  movq mm2, mm6
+  psrlq mm1, 32
+  pxor mm6, mm0
+  psrlq mm2, 16
+  pxor mm6, mm1
+  pxor mm6, mm2
+  movd eax, mm6
+  and eax, 1
+  xor eax, 1
+  xor word [edx + 2*63], ax
 
-	xor		eax, eax
-	ret
+  xor eax, eax
+  ret

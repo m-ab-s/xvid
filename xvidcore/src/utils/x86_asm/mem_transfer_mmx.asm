@@ -1,58 +1,46 @@
-;/**************************************************************************
+;/****************************************************************************
 ; *
-; *	XVID MPEG-4 VIDEO CODEC
-; *	mmx 8bit<->16bit transfers
+; *  XVID MPEG-4 VIDEO CODEC
+; *  - 8<->16 bit transfer functions -
 ; *
-; *	This program is an implementation of a part of one or more MPEG-4
-; *	Video tools as specified in ISO/IEC 14496-2 standard.  Those intending
-; *	to use this software module in hardware or software products are
-; *	advised that its use may infringe existing patents or copyrights, and
-; *	any such use would be at such party's own risk.  The original
-; *	developer of this software module and his/her company, and subsequent
-; *	editors and their companies, will have no liability for use of this
-; *	software or modifications or derivatives thereof.
+; *  Copyright (C) 2001 Peter Ross <pross@xvid.org>
+; *                2001 Michael Militzer <isibaar@xvid.org>
+; *                2002 Pascal Massimino <skal@planet-d.net>
 ; *
-; *	This program is free software; you can redistribute it and/or modify
-; *	it under the terms of the GNU General Public License as published by
-; *	the Free Software Foundation; either version 2 of the License, or
-; *	(at your option) any later version.
+; *  This program is free software ; you can redistribute it and/or modify
+; *  it under the terms of the GNU General Public License as published by
+; *  the Free Software Foundation ; either version 2 of the License, or
+; *  (at your option) any later version.
 ; *
-; *	This program is distributed in the hope that it will be useful,
-; *	but WITHOUT ANY WARRANTY; without even the implied warranty of
-; *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-; *	GNU General Public License for more details.
+; *  This program is distributed in the hope that it will be useful,
+; *  but WITHOUT ANY WARRANTY ; without even the implied warranty of
+; *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; *  GNU General Public License for more details.
 ; *
-; *	You should have received a copy of the GNU General Public License
-; *	along with this program; if not, write to the Free Software
-; *	Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+; *  You should have received a copy of the GNU General Public License
+; *  along with this program ; if not, write to the Free Software
+; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; *************************************************************************/
+; * $Id: mem_transfer_mmx.asm,v 1.9.2.1 2003-10-28 22:23:03 edgomez Exp $
+; *
+; ***************************************************************************/
 
-;/**************************************************************************
-; *
-; *	History:
-; *
-; * 04.06.2002  speed enhancement (unroll+overlap). -Skal-
-; *             + added transfer_8to16sub2_mmx/xmm
-; * 07.01.2002	merge functions from compensate_mmx; rename functions
-; *	07.11.2001	initial version; (c)2001 peter ross <pross@cs.rmit.edu.au>
-; *
-; *************************************************************************/
+BITS 32
 
-
-bits 32
-
-%macro cglobal 1 
+%macro cglobal 1
 	%ifdef PREFIX
-		global _%1 
+		global _%1
 		%define %1 _%1
 	%else
 		global %1
 	%endif
 %endmacro
 
+;=============================================================================
+; Code
+;=============================================================================
 
-section .text
+SECTION .text
 
 cglobal transfer_8to16copy_mmx
 cglobal transfer_16to8copy_mmx
@@ -63,13 +51,13 @@ cglobal transfer_8to16sub2_xmm
 cglobal transfer_16to8add_mmx
 cglobal transfer8x8_copy_mmx
 
-;===========================================================================
+;-----------------------------------------------------------------------------
 ;
 ; void transfer_8to16copy_mmx(int16_t * const dst,
 ;							const uint8_t * const src,
 ;							uint32_t stride);
 ;
-;===========================================================================
+;-----------------------------------------------------------------------------
 
 %macro COPY_8_TO_16 1
   movq mm0, [eax]
@@ -82,18 +70,18 @@ cglobal transfer8x8_copy_mmx
   movq [ecx+%1*32+16], mm1
   punpckhbw mm2, mm7
   punpckhbw mm3, mm7
-  lea eax,[eax+2*edx]
+  lea eax, [eax+2*edx]
   movq [ecx+%1*32+8], mm2
   movq [ecx+%1*32+24], mm3
 %endmacro
 
-align 16
+ALIGN 16
 transfer_8to16copy_mmx:
 
   mov ecx, [esp+ 4] ; Dst
   mov eax, [esp+ 8] ; Src
   mov edx, [esp+12] ; Stride
-  pxor mm7,mm7
+  pxor mm7, mm7
 
   COPY_8_TO_16 0
   COPY_8_TO_16 1
@@ -101,13 +89,13 @@ transfer_8to16copy_mmx:
   COPY_8_TO_16 3
   ret
 
-;===========================================================================
+;-----------------------------------------------------------------------------
 ;
 ; void transfer_16to8copy_mmx(uint8_t * const dst,
 ;							const int16_t * const src,
 ;							uint32_t stride);
 ;
-;===========================================================================
+;-----------------------------------------------------------------------------
 
 %macro COPY_16_TO_8 1
   movq mm0, [eax+%1*32]
@@ -120,7 +108,7 @@ transfer_8to16copy_mmx:
   movq [ecx+edx], mm2
 %endmacro
 
-align 16
+ALIGN 16
 transfer_16to8copy_mmx:
 
   mov ecx, [esp+ 4] ; Dst
@@ -136,25 +124,14 @@ transfer_16to8copy_mmx:
   COPY_16_TO_8 3
   ret
 
-;===========================================================================
+;-----------------------------------------------------------------------------
 ;
 ; void transfer_8to16sub_mmx(int16_t * const dct,
 ;				uint8_t * const cur,
 ;				const uint8_t * const ref,
 ;				const uint32_t stride);
 ;
-;===========================================================================
-;/**************************************************************************
-; *
-; *	History:
-; *
-; * 27.12.2001	renamed from 'compensate' to 'transfer_8to16sub'
-; * 02.12.2001  loop unrolled, code runs 10% faster now (Isibaar)
-; * 30.11.2001  16 pixels are processed per iteration (Isibaar)
-; * 30.11.2001	.text missing
-; *	06.11.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
-; *
-; *************************************************************************/
+;-----------------------------------------------------------------------------
 
 ; when second argument == 1, reference (ebx) block is to current (eax)
 %macro COPY_8_TO_16_SUB 2
@@ -183,7 +160,7 @@ transfer_16to8copy_mmx:
   punpcklbw mm5, mm7
   punpckhbw mm6, mm7
   psubsw mm2, mm5
-  lea eax,[eax+2*edx]
+  lea eax, [eax+2*edx]
   psubsw mm3, mm6
   lea ebx,[ebx+2*edx]
 
@@ -193,7 +170,7 @@ transfer_16to8copy_mmx:
   movq [ecx+%1*32+24], mm3
 %endmacro
 
-align 16
+ALIGN 16
 transfer_8to16sub_mmx:
   mov ecx, [esp  + 4] ; Dst
   mov eax, [esp  + 8] ; Cur
@@ -211,7 +188,7 @@ transfer_8to16sub_mmx:
   ret
 
 
-align 16
+ALIGN 16
 transfer_8to16subro_mmx:
   mov ecx, [esp  + 4] ; Dst
   mov eax, [esp  + 8] ; Cur
@@ -229,7 +206,7 @@ transfer_8to16subro_mmx:
   ret
 
 
-;===========================================================================
+;-----------------------------------------------------------------------------
 ;
 ; void transfer_8to16sub2_mmx(int16_t * const dct,
 ;				uint8_t * const cur,
@@ -237,13 +214,13 @@ transfer_8to16subro_mmx:
 ;				const uint8_t * ref2,
 ;				const uint32_t stride)
 ;
-;===========================================================================
+;-----------------------------------------------------------------------------
 
 %macro COPY_8_TO_16_SUB2_MMX 1
   movq mm0, [eax]      ; cur
   movq mm2, [eax+edx]
 
-    ; mm4 <- (ref1+ref2+1) / 2
+  ; mm4 <- (ref1+ref2+1) / 2
   movq mm4, [ebx]      ; ref1
   movq mm1, [esi]      ; ref2
   movq mm6, mm4
@@ -254,8 +231,8 @@ transfer_8to16subro_mmx:
   punpckhbw mm3, mm7
   paddusw mm4, mm1
   paddusw mm6, mm3
-  psrlw mm4,1
-  psrlw mm6,1
+  psrlw mm4, 1
+  psrlw mm6, 1
   packuswb mm4, mm6
 
     ; mm5 <- (ref1+ref2+1) / 2
@@ -266,12 +243,12 @@ transfer_8to16subro_mmx:
   punpcklbw mm5, mm7
   punpcklbw mm1, mm7
   punpckhbw mm6, mm7
-  punpckhbw mm3, mm7  
+  punpckhbw mm3, mm7
   paddusw mm5, mm1
   paddusw mm6, mm3
-  lea esi,[esi+2*edx]
-  psrlw mm5,1
-  psrlw mm6,1
+  lea esi, [esi+2*edx]
+  psrlw mm5, 1
+  psrlw mm6, 1
   packuswb mm5, mm6
 
 
@@ -279,8 +256,8 @@ transfer_8to16subro_mmx:
   movq mm3, mm2
   punpcklbw mm0, mm7
   punpcklbw mm2, mm7
-	punpckhbw mm1, mm7
-	punpckhbw mm3, mm7
+  punpckhbw mm1, mm7
+  punpckhbw mm3, mm7
 
   movq mm6, mm4
   punpcklbw mm4, mm7
@@ -291,17 +268,17 @@ transfer_8to16subro_mmx:
   punpcklbw mm5, mm7
   punpckhbw mm6, mm7
   psubsw mm2, mm5
-  lea eax,[eax+2*edx]
+  lea eax, [eax+2*edx]
   psubsw mm3, mm6
-  lea ebx,[ebx+2*edx]
+  lea ebx, [ebx+2*edx]
 
   movq [ecx+%1*32+ 0], mm0 ; dst
-	movq [ecx+%1*32+ 8], mm1
-	movq [ecx+%1*32+16], mm2
-	movq [ecx+%1*32+24], mm3
+  movq [ecx+%1*32+ 8], mm1
+  movq [ecx+%1*32+16], mm2
+  movq [ecx+%1*32+24], mm3
 %endmacro
 
-align 16
+ALIGN 16
 transfer_8to16sub2_mmx:
   mov ecx, [esp  + 4] ; Dst
   mov eax, [esp  + 8] ; Cur
@@ -321,7 +298,7 @@ transfer_8to16sub2_mmx:
   pop ebx
   ret
 
-;===========================================================================
+;-----------------------------------------------------------------------------
 ;
 ; void transfer_8to16sub2_xmm(int16_t * const dct,
 ;				uint8_t * const cur,
@@ -329,7 +306,7 @@ transfer_8to16sub2_mmx:
 ;				const uint8_t * ref2,
 ;				const uint32_t stride)
 ;
-;===========================================================================
+;-----------------------------------------------------------------------------
 
 %macro COPY_8_TO_16_SUB2_SSE 1
   movq mm0, [eax]      ; cur
@@ -339,11 +316,11 @@ transfer_8to16sub2_mmx:
 
   punpcklbw mm0, mm7
   punpcklbw mm2, mm7
-  movq mm4, [ebx]      ; ref1
+  movq mm4, [ebx]     ; ref1
   pavgb mm4, [esi]     ; ref2
-	punpckhbw mm1, mm7
-	punpckhbw mm3, mm7
-  movq mm5, [ebx+edx]  ; ref
+  punpckhbw mm1, mm7
+  punpckhbw mm3, mm7
+  movq mm5, [ebx+edx] ; ref
   pavgb mm5, [esi+edx] ; ref2
 
   movq mm6, mm4
@@ -351,22 +328,22 @@ transfer_8to16sub2_mmx:
   punpckhbw mm6, mm7
   psubsw mm0, mm4
   psubsw mm1, mm6
-  lea esi,[esi+2*edx]
+  lea esi, [esi+2*edx]
   movq mm6, mm5
   punpcklbw mm5, mm7
   punpckhbw mm6, mm7
   psubsw mm2, mm5
-  lea eax,[eax+2*edx]
+  lea eax, [eax+2*edx]
   psubsw mm3, mm6
-  lea ebx,[ebx+2*edx]
+  lea ebx, [ebx+2*edx]
 
   movq [ecx+%1*32+ 0], mm0 ; dst
-	movq [ecx+%1*32+ 8], mm1
-	movq [ecx+%1*32+16], mm2
-	movq [ecx+%1*32+24], mm3
+  movq [ecx+%1*32+ 8], mm1
+  movq [ecx+%1*32+16], mm2
+  movq [ecx+%1*32+24], mm3
 %endmacro
 
-align 16
+ALIGN 16
 transfer_8to16sub2_xmm:
   mov ecx, [esp  + 4] ; Dst
   mov eax, [esp  + 8] ; Cur
@@ -386,13 +363,13 @@ transfer_8to16sub2_xmm:
   pop ebx
   ret
 
-;===========================================================================
+;-----------------------------------------------------------------------------
 ;
 ; void transfer_16to8add_mmx(uint8_t * const dst,
 ;						const int16_t * const src,
 ;						uint32_t stride);
 ;
-;===========================================================================
+;-----------------------------------------------------------------------------
 
 %macro COPY_16_TO_8_ADD 1
   movq mm0, [ecx]
@@ -414,7 +391,7 @@ transfer_8to16sub2_xmm:
 %endmacro
 
 
-align 16
+ALIGN 16
 transfer_16to8add_mmx:
   mov ecx, [esp+ 4] ; Dst
   mov eax, [esp+ 8] ; Src
@@ -430,24 +407,24 @@ transfer_16to8add_mmx:
   COPY_16_TO_8_ADD 3
   ret
 
-;===========================================================================
+;-----------------------------------------------------------------------------
 ;
 ; void transfer8x8_copy_mmx(uint8_t * const dst,
 ;					const uint8_t * const src,
 ;					const uint32_t stride);
 ;
 ;
-;===========================================================================
+;-----------------------------------------------------------------------------
 
 %macro COPY_8_TO_8 0
   movq mm0, [eax]
   movq mm1, [eax+edx]
   movq [ecx], mm0
-  lea eax,[eax+2*edx]
+  lea eax, [eax+2*edx]
   movq [ecx+edx], mm1
 %endmacro
 
-align 16
+ALIGN 16
 transfer8x8_copy_mmx:
   mov ecx, [esp+ 4] ; Dst
   mov eax, [esp+ 8] ; Src

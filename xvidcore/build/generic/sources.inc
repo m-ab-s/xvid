@@ -42,41 +42,36 @@ SRC_GENERIC = \
 	utils/timer.c
 
 SRC_IA32 = \
-	utils/x86_asm/cpuid.asm \
-	\
+	bitstream/x86_asm/cbp_3dne.asm \
 	bitstream/x86_asm/cbp_mmx.asm \
+	bitstream/x86_asm/cbp_sse2.asm \
 	dct/x86_asm/fdct_mmx_ffmpeg.asm \
 	dct/x86_asm/fdct_mmx_skal.asm \
+	dct/x86_asm/idct_3dne.asm \
 	dct/x86_asm/idct_mmx.asm \
 	dct/x86_asm/simple_idct_mmx.asm \
-	image/x86_asm/interpolate8x8_mmx.asm \
-	image/x86_asm/reduced_mmx.asm \
 	image/x86_asm/colorspace_rgb_mmx.asm \
-	image/x86_asm/colorspace_yuyv_mmx.asm \
 	image/x86_asm/colorspace_yuv_mmx.asm \
-	image/x86_asm/qpel_mmx.asm \
-	motion/x86_asm/sad_mmx.asm \
-	quant/x86_asm/quantize_mpeg_mmx.asm \
-	quant/x86_asm/quantize_h263_mmx.asm \
-	utils/x86_asm/mem_transfer_mmx.asm	\
-	utils/x86_asm/interlacing_mmx.asm \
-	\
-	image/x86_asm/interpolate8x8_xmm.asm	\
-	motion/x86_asm/sad_xmm.asm \
-	\
-	bitstream/x86_asm/cbp_sse2.asm \
-	motion/x86_asm/sad_sse2.asm \
-	\
+	image/x86_asm/colorspace_yuyv_mmx.asm \
 	image/x86_asm/interpolate8x8_3dn.asm \
-	motion/x86_asm/sad_3dn.asm \
-	\
-	bitstream/x86_asm/cbp_3dne.asm \
-	dct/x86_asm/idct_3dne.asm \
 	image/x86_asm/interpolate8x8_3dne.asm \
+	image/x86_asm/interpolate8x8_mmx.asm \
+	image/x86_asm/interpolate8x8_xmm.asm \
+	image/x86_asm/reduced_mmx.asm \
+	image/x86_asm/qpel_mmx.asm \
+	motion/x86_asm/sad_xmm.asm \
+	motion/x86_asm/sad_sse2.asm \
+	motion/x86_asm/sad_mmx.asm \
 	motion/x86_asm/sad_3dne.asm \
-	quant/x86_asm/quantize_mpeg_xmm.asm \
+	motion/x86_asm/sad_3dn.asm \
+	quant/x86_asm/quantize_h263_mmx.asm \
 	quant/x86_asm/quantize_h263_3dne.asm \
-	utils/x86_asm/mem_transfer_3dne.asm
+	quant/x86_asm/quantize_mpeg_xmm.asm \
+	quant/x86_asm/quantize_mpeg_mmx.asm \
+	utils/x86_asm/mem_transfer_mmx.asm \
+	utils/x86_asm/mem_transfer_3dne.asm \
+	utils/x86_asm/interlacing_mmx.asm \
+	utils/x86_asm/cpuid.asm
 
 SRC_IA64 = \
 	dct/ia64_asm/fdct_ia64.s \

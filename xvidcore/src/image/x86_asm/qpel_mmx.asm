@@ -20,36 +20,7 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; *  Under section 8 of the GNU General Public License, the copyright
-; *  holders of XVID explicitly forbid distribution in the following
-; *  countries:
-; *
-; * - Japan
-; * - United States of America
-; *
-; *  Linking XviD statically or dynamically with other modules is making a
-; *  combined work based on XviD.  Thus, the terms and conditions of the
-; *  GNU General Public License cover the whole combination.
-; *
-; *  As a special exception, the copyright holders of XviD give you
-; *  permission to link XviD with independent modules that communicate with
-; *  XviD solely through the VFW1.1 and DShow interfaces, regardless of the
-; *  license terms of these independent modules, and to copy and distribute
-; *  the resulting combined work under terms of your choice, provided that
-; *  every copy of the combined work is accompanied by a complete copy of
-; *  the source code of XviD (the version of XviD used to produce the
-; *  combined work), being distributed under the terms of the GNU General
-; *  Public License plus this exception.  An independent module is a module
-; *  which is not derived from or based on XviD.
-; *
-; *  Note that people who make modified versions of XviD are not obligated
-; *  to grant this special exception for their modified versions; it is
-; *  their choice whether to do so.  The GNU General Public License gives
-; *  permission to release a modified version without this exception; this
-; *  exception also makes it possible to release a modified version which
-; *  carries forward this exception.
-; *
-; * $Id: qpel_mmx.asm,v 1.1.4.1 2003-08-22 15:52:35 Isibaar Exp $
+; * $Id: qpel_mmx.asm,v 1.1.4.2 2003-10-28 22:23:03 edgomez Exp $
 ; *
 ; *************************************************************************/
 
@@ -57,7 +28,7 @@
 ; *
 ; *	History:
 ; *
-; * 22.10.2002  initial coding. unoptimized 'proof of concept', 
+; * 22.10.2002  initial coding. unoptimized 'proof of concept',
 ; *             just to heft the qpel filtering. - Skal -
 ; *
 ; *************************************************************************/
@@ -69,17 +40,17 @@
 
 bits 32
 
-%macro cglobal 1 
+%macro cglobal 1
 	%ifdef PREFIX
-		global _%1 
+		global _%1
 		%define %1 _%1
 	%else
 		global %1
 	%endif
 %endmacro
-%macro cextern 1 
+%macro cextern 1
 	%ifdef PREFIX
-		extern _%1 
+		extern _%1
 		%define %1 _%1
 	%else
 		extern %1
@@ -90,7 +61,7 @@ bits 32
 ;//////////////////////////////////////////////////////////////////////
 ;// Declarations
 ;//   all signatures are:
-;// void XXX(uint8_t *dst, const uint8_t *src, 
+;// void XXX(uint8_t *dst, const uint8_t *src,
 ;//          int32_t length, int32_t stride, int32_t rounding)
 ;//////////////////////////////////////////////////////////////////////
 
@@ -144,9 +115,9 @@ cextern xvid_FIR_0_0_0_1
 
 %endif
 
-;////////////////////////////////////////////////////////////////////// 
+;//////////////////////////////////////////////////////////////////////
 
-section .data
+SECTION .rodata
 
 align 16
 Rounder1_MMX:
@@ -215,7 +186,7 @@ FIR_C19: times 4 dw 19
 FIR_C20: times 4 dw 20
 FIR_C23: times 4 dw 23
 
-section .text
+SECTION .text
 
 ;//////////////////////////////////////////////////////////////////////
 ;// Here we go with the Q-Pel mess.
@@ -968,7 +939,7 @@ xvid_H_Pass_Avrg_Up_8_Add_mmx:
   movq mm3, mm7
 
   V_LOAD 0
-  V_ACC1 mm3, FIR_Cm1   
+  V_ACC1 mm3, FIR_Cm1
 
   V_LOAD 0
   V_ACC2l mm2, mm3, FIR_Cm1,  FIR_C3
