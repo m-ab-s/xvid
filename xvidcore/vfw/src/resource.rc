@@ -40,9 +40,11 @@ FONT 8, "MS Sans Serif"
 BEGIN
     CONTROL         "Discard first pass",IDC_DISCARD1PASS,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,8,26,69,10
-    LTEXT           "Stats filename:",-1,8,6,52,12,SS_CENTERIMAGE
-    EDITTEXT        IDC_STATS,72,6,112,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_STATS_BROWSE,188,6,16,11
+    LTEXT           "Stats filename:",IDC_STATIC,8,6,52,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_STATS,72,6,106,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_STATS_BROWSE,182,7,22,12
+    CTEXT           "1st pass should be discarded.\n\nThe result might not be MPEG-4 compiliant",
+                    IDC_STATIC,7,63,197,28
 END
 
 IDD_MOTION DIALOG DISCARDABLE  0, 0, 212, 212
@@ -76,7 +78,7 @@ END
 IDD_MAIN DIALOGEX 0, 0, 225, 255
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "XviD Configuration"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
     COMBOBOX        IDC_MODE,88,34,92,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
@@ -730,7 +732,7 @@ END
 IDD_AR DIALOGEX 0, 0, 211, 215
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Aspect Ratio"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
     CONTROL         "Picture Aspect Ratio",IDC_AR,"Button",
                     BS_AUTORADIOBUTTON,13,81,81,10,WS_EX_TRANSPARENT
@@ -775,7 +777,7 @@ BEGIN
     IDD_RC_2PASS1, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 193
+        RIGHTMARGIN, 204
         TOPMARGIN, 7
     END
 
