@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.27.2.7 2003-05-12 12:28:31 suxen_drol Exp $
+ *  $Id: encoder.h,v 1.27.2.8 2003-05-18 12:33:26 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -46,7 +46,6 @@
 #include "xvid.h"
 #include "portab.h"
 #include "global.h"
-#include "utils/ratecontrol.h"
 
 /*****************************************************************************
  * Constants
@@ -223,8 +222,6 @@ typedef struct
     QUEUEINFO closed_qframe;	/* qFrame, only valid when >= 0 */
 
 	int m_framenum; /* debug frame num counter; unlike iFrameNum, does not reset at ivop */
-
-	RateControl rate_control;
 
 	float fMvPrevSigma;
 }
