@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.22 2003-05-14 11:53:16 suxen_drol Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.23 2003-05-15 17:21:08 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -131,7 +131,7 @@ static int ARG_BITRATE = 0;
 static int ARG_SINGLE = 0;
 static char *ARG_PASS1 = 0;
 static char *ARG_PASS2 = 0;
-static int ARG_QUALITY = 3;
+static int ARG_QUALITY = ME_ELEMENTS - 1;
 static float ARG_FRAMERATE = 25.00f;
 static int ARG_MAXFRAMENR = ABS_MAXFRAMENR;
 static char *ARG_INPUTFILE = NULL;
@@ -643,8 +643,8 @@ usage()
     fprintf(stderr,	" -single                        : single pass mode\n");
 	fprintf(stderr, " -pass1     filename            : twopass mode (first pass)\n");
 	fprintf(stderr,	" -pass2     filename            : twopass mode (2nd pass)\n");
-    fprintf(stderr,	" -zq frame float               : bitrate zone; quant\n");
-    fprintf(stderr,	" -zw frame float               : bitrate zone; weight\n");
+	fprintf(stderr,	" -zq starting_frame float       : bitrate zone; quant\n");
+	fprintf(stderr,	" -zw starting_frame float       : bitrate zone; weight\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Other options\n");
 	fprintf(stderr, " -asm            : use assembly optmized code\n");
@@ -654,6 +654,9 @@ usage()
 	fprintf(stderr, " -stats          : print stats about encoded frames\n");
 	fprintf(stderr, " -debug          : print all MB dquants\n");
 	fprintf(stderr, " -help           : prints this help message\n");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "NB: You can define %d zones repeating the -z[qw] option as many times as needed.\n", MAX_ZONES);
+	fprintf(stderr, "\n");
 }
 
 /*****************************************************************************
