@@ -1326,17 +1326,11 @@ BitstreamWriteVopHeader(
 			int k;
 			for (k=0;k<2;k++)
 			{
-			if (pParam->m_quarterpel)
-				bs_put_spritetrajectory(bs, frame->warp.duv[k].x/2 ); // du[k] 
-			else
 				bs_put_spritetrajectory(bs, frame->warp.duv[k].x ); // du[k] 
-			WRITE_MARKER();
+				WRITE_MARKER();
 			
-			if (pParam->m_quarterpel)
-				bs_put_spritetrajectory(bs, frame->warp.duv[k].y/2 ); // dv[k] 
-			else
 				bs_put_spritetrajectory(bs, frame->warp.duv[k].y ); // dv[k] 
-			WRITE_MARKER();
+				WRITE_MARKER();
 
 			if (pParam->m_quarterpel)
 			{
@@ -1348,9 +1342,6 @@ BitstreamWriteVopHeader(
 			}
 			}
 		}
-/* GMC is halfpel in bitstream, even though GMC_MV was pseudo-qpel (2*halfpel) */
-
-		// no support for brightness_change!
 	}
 	
 
