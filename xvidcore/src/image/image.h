@@ -5,7 +5,7 @@
 #include "colorspace.h"
 #include "../xvid.h"
 
-#define EDGE_SIZE  32
+#define EDGE_SIZE  64
 
 
 typedef struct

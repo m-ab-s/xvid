@@ -265,16 +265,16 @@ image_interpolate(const IMAGE * refn,
 				  uint32_t quarterpel,
 				  uint32_t rounding)
 {
-	const uint32_t offset = EDGE_SIZE * (edged_width + 1);
+	const uint32_t offset = EDGE_SIZE2 * (edged_width + 1); // we only interpolate half of the edge area
 	const uint32_t stride_add = 7 * edged_width;
-
+/*
 #ifdef BFRAMES
 	const uint32_t edged_width2 = edged_width / 2;
 	const uint32_t edged_height2 = edged_height / 2;
 	const uint32_t offset2 = EDGE_SIZE2 * (edged_width2 + 1);
 	const uint32_t stride_add2 = 7 * edged_width2;
 #endif
-
+*/
 	uint8_t *n_ptr, *h_ptr, *v_ptr, *hv_ptr;
 	uint32_t x, y;
 
@@ -291,8 +291,8 @@ image_interpolate(const IMAGE * refn,
 
 	if(quarterpel) {
 		
-		for (y = 0; y < edged_height; y += 8) {
-			for (x = 0; x < edged_width; x += 8) {
+		for (y = 0; y < (edged_height - EDGE_SIZE); y += 8) {
+			for (x = 0; x < (edged_width - EDGE_SIZE); x += 8) {
 				interpolate8x8_6tap_lowpass_h(h_ptr, n_ptr, edged_width, rounding);
 				interpolate8x8_6tap_lowpass_v(v_ptr, n_ptr, edged_width, rounding);
 
@@ -301,6 +301,10 @@ image_interpolate(const IMAGE * refn,
 				v_ptr += 8;
 			}
 			
+			n_ptr += EDGE_SIZE;
+			h_ptr += EDGE_SIZE;
+			v_ptr += EDGE_SIZE;
+
 			h_ptr += stride_add;
 			v_ptr += stride_add;
 			n_ptr += stride_add;
@@ -309,20 +313,24 @@ image_interpolate(const IMAGE * refn,
 		h_ptr = refh->y;
 		h_ptr -= offset;
 
-		for (y = 0; y < edged_height; y = y + 8) {
-			for (x = 0; x < edged_width; x = x + 8) {
+		for (y = 0; y < (edged_height - EDGE_SIZE); y = y + 8) {
+			for (x = 0; x < (edged_width - EDGE_SIZE); x = x + 8) {
 				interpolate8x8_6tap_lowpass_v(hv_ptr, h_ptr, edged_width, rounding);
 				hv_ptr += 8;
 				h_ptr += 8;
 			}
+
+			hv_ptr += EDGE_SIZE2;
+			h_ptr += EDGE_SIZE2;
+
 			hv_ptr += stride_add;
 			h_ptr += stride_add;
 		}
 	}
 	else {
 
-		for (y = 0; y < edged_height; y += 8) {
-			for (x = 0; x < edged_width; x += 8) {
+		for (y = 0; y < (edged_height - EDGE_SIZE); y += 8) {
+			for (x = 0; x < (edged_width - EDGE_SIZE); x += 8) {
 				interpolate8x8_halfpel_h(h_ptr, n_ptr, edged_width, rounding);
 				interpolate8x8_halfpel_v(v_ptr, n_ptr, edged_width, rounding);
 				interpolate8x8_halfpel_hv(hv_ptr, n_ptr, edged_width, rounding);
@@ -333,6 +341,11 @@ image_interpolate(const IMAGE * refn,
 				hv_ptr += 8;
 			}
 			
+			h_ptr += EDGE_SIZE;
+			v_ptr += EDGE_SIZE;
+			hv_ptr += EDGE_SIZE;
+			n_ptr += EDGE_SIZE;
+
 			h_ptr += stride_add;
 			v_ptr += stride_add;
 			hv_ptr += stride_add;
