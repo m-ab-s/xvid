@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_fixed.c,v 1.1.2.1 2003-03-23 04:03:01 suxen_drol Exp $
+ * $Id: plugin_fixed.c,v 1.1.2.2 2003-03-25 22:31:45 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -64,6 +64,7 @@ distribute_quants(int **quants, int lquant, int n_lquant, int n_hquant)
 	int low, high;
 	int q, r;
 	int a,b,min, max;
+	int m, M;
 	int *dist;
 
 	/* Low quant */
@@ -171,6 +172,16 @@ distribute_quants(int **quants, int lquant, int n_lquant, int n_hquant)
 	/* How much packets of (q)M quantizers + 1m quantizer */
 	b = min - r;
 
+	/* First we set M */
+	M = (max==nhigh)?high:low;
+
+	/*
+	 * Then as we can't guarantee that max != min, we are forced to set
+	 * the other one according to the first value. We can't use the first
+	 * formula with s/max/min/
+	 */
+	m = (M==high)?low:high;
+
 	/*
 	 * Ok now we know everything we have to know to distribute those funny
 	 * quantizers. What about just doing it ?
@@ -184,10 +195,10 @@ distribute_quants(int **quants, int lquant, int n_lquant, int n_hquant)
 		int j;
 
 		/* Repeat q+1 times the M quantizer */
-		for(j=0; j<(q+1); j++) *(dist++) = (max==nhigh)?high:low;
+		for(j=0; j<(q+1); j++) *(dist++) = M;
 
 		/* Put a m quantizer */
-		*(dist++) = (min==nhigh)?high:low;
+		*(dist++) = m;
 
 	}
 
@@ -197,10 +208,10 @@ distribute_quants(int **quants, int lquant, int n_lquant, int n_hquant)
 		int j;
 
 		/* Repeat q times the M quantizer */
-		for(j=0; j<q; j++) *(dist++) = (max==nhigh)?high:low;
+		for(j=0; j<q; j++) *(dist++) = M;
 
 		/* Put a m quantizer */
-		*(dist++) = (min==nhigh)?high:low;
+		*(dist++) = m;
 
 	}
 
@@ -245,9 +256,9 @@ static int rc_fixed_create(xvid_plg_create_t * create, rc_fixed_t ** handle)
 
 	/* Distribute the quantizers */
 	rc->nquant = distribute_quants(&rc->quant,
-					  quant_low,
-					  nquant_low,
-					  nquant_high);
+								   quant_low,
+								   nquant_low,
+								   nquant_high);
 
 	if(rc->quant == NULL) {
 		free(rc);
