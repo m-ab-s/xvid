@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.49.2.27 2003-12-20 11:54:27 Isibaar Exp $
+ * $Id: decoder.c,v 1.49.2.28 2003-12-21 19:41:53 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -205,7 +205,7 @@ decoder_create(xvid_dec_create_t * create)
 	dec->last_mbs = NULL;
 
 	init_timer();
-	init_postproc();
+	init_postproc(&dec->postproc);
 	init_mpeg_matrix(dec->mpeg_quant_matrices);
 
 	/* For B-frame support (used to save reference frame's time */
@@ -1316,7 +1316,8 @@ decoder_bframe(DECODER * dec,
 
 /* perform post processing if necessary, and output the image */
 void decoder_output(DECODER * dec, IMAGE * img, MACROBLOCK * mbs,
-					xvid_dec_frame_t * frame, xvid_dec_stats_t * stats, int coding_type)
+					xvid_dec_frame_t * frame, xvid_dec_stats_t * stats,
+					int coding_type, int quant)
 {
 	if (dec->cartoon_mode)
 		frame->general &= ~XVID_FILMEFFECT;
@@ -1325,9 +1326,9 @@ void decoder_output(DECODER * dec, IMAGE * img, MACROBLOCK * mbs,
 	{
 		/* note: image is stored to tmp */
 		image_copy(&dec->tmp, img, dec->edged_width, dec->height);
-		image_postproc(&dec->tmp, dec->edged_width, 
+		image_postproc(&dec->postproc, &dec->tmp, dec->edged_width, 
 					   mbs, dec->mb_width, dec->mb_height, dec->mb_width,
-					   frame->general, dec->frames);
+					   frame->general, dec->frames, (coding_type == B_VOP));
 		img = &dec->tmp;
 	}
 
@@ -1374,7 +1375,7 @@ decoder_decode(DECODER * dec,
 		/* if not decoding "low_delay/packed", and this isn't low_delay and
 			we have a reference frame, then outout the reference frame */
 		if (!(dec->low_delay_default && dec->packed_mode) && !dec->low_delay && dec->frames>0) {
-			decoder_output(dec, &dec->refn[0], dec->last_mbs, frame, stats, dec->last_coding_type);
+			decoder_output(dec, &dec->refn[0], dec->last_mbs, frame, stats, dec->last_coding_type, quant);
 			dec->frames = 0;
 			ret = 0;
 		} else {
@@ -1444,7 +1445,7 @@ repeat:
 	/* packed_mode: special-N_VOP treament */
 	if (dec->packed_mode && coding_type == N_VOP) {
 		if (dec->low_delay_default && dec->frames > 0) {
-			decoder_output(dec, &dec->refn[0], dec->last_mbs, frame, stats, dec->last_coding_type);
+			decoder_output(dec, &dec->refn[0], dec->last_mbs, frame, stats, dec->last_coding_type, quant);
 			output = 1;
 		}
 		/* ignore otherwise */
@@ -1478,11 +1479,11 @@ repeat:
 		/* note: for packed_mode, output is performed when the special-N_VOP is decoded */
 		if (!(dec->low_delay_default && dec->packed_mode)) {
 			if (dec->low_delay) {
-				decoder_output(dec, &dec->cur, dec->mbs, frame, stats, coding_type);
+				decoder_output(dec, &dec->cur, dec->mbs, frame, stats, coding_type, quant);
 				output = 1;
 			} else if (dec->frames > 0)	{ /* is the reference frame valid? */
 				/* output the reference frame */
-				decoder_output(dec, &dec->refn[0], dec->last_mbs, frame, stats, dec->last_coding_type);
+				decoder_output(dec, &dec->refn[0], dec->last_mbs, frame, stats, dec->last_coding_type, quant);
 				output = 1;
 			}
 		}
@@ -1516,7 +1517,7 @@ repeat:
 			stats->type = XVID_TYPE_NOTHING;
 		} else {
 			decoder_bframe(dec, &bs, quant, fcode_forward, fcode_backward);
-			decoder_output(dec, &dec->cur, dec->mbs, frame, stats, coding_type);
+			decoder_output(dec, &dec->cur, dec->mbs, frame, stats, coding_type, quant);
 		}
 
 		output = 1;
@@ -1538,7 +1539,7 @@ done :
 	if (dec->low_delay_default && output == 0) {
 		if (dec->packed_mode && seen_something) {
 			/* output the recently decoded frame */
-			decoder_output(dec, &dec->refn[0], dec->last_mbs, frame, stats, dec->last_coding_type);
+			decoder_output(dec, &dec->refn[0], dec->last_mbs, frame, stats, dec->last_coding_type, quant);
 		} else {
 			image_clear(&dec->cur, dec->width, dec->height, dec->edged_width, 0, 128, 128);
 			image_printf(&dec->cur, dec->edged_width, dec->height, 16, 16,
@@ -1546,7 +1547,7 @@ done :
 			image_printf(&dec->cur, dec->edged_width, dec->height, 16, 64,
 				"bframe decoder lag");
 
-			decoder_output(dec, &dec->cur, NULL, frame, stats, P_VOP);
+			decoder_output(dec, &dec->cur, NULL, frame, stats, P_VOP, quant);
 			if (stats) stats->type = XVID_TYPE_NOTHING;
 		}
 	}

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.h,v 1.13.2.8 2003-12-20 11:54:22 Isibaar Exp $
+ * $Id: decoder.h,v 1.13.2.9 2003-12-21 19:41:58 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -30,6 +30,7 @@
 #include "portab.h"
 #include "global.h"
 #include "image/image.h"
+#include "image/postprocessing.h"
 
 /*****************************************************************************
  * Structures
@@ -119,6 +120,9 @@ typedef struct
 								/* 1   -- first I or P */
 	IMAGE tmp;		/* bframe interpolation, and post processing tmp buffer */
 	IMAGE qtmp;		/* quarter pel tmp buffer */
+
+	/* postprocessing */
+	XVID_POSTPROC postproc;
 
 	/* macroblock */
 

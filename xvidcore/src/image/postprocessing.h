@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: postprocessing.h,v 1.1.4.3 2003-12-17 17:07:38 Isibaar Exp $
+ * $Id: postprocessing.h,v 1.1.4.4 2003-12-21 19:42:11 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -27,21 +27,38 @@
 #define _POSTPROCESSING_H_
 
 #include <stdlib.h>
-
 #include "../portab.h"
 
+/* Filtering thresholds */
+
+#define THR1 2
+#define THR2 6
+
+#define MAX_NOISE 4096
+#define MAX_SHIFT 1024
+#define MAX_RES (MAX_NOISE - MAX_SHIFT)
+
+typedef struct {
+	int8_t xvid_thresh_tbl[510];
+	int8_t xvid_abs_tbl[510];
+	int8_t xvid_noise1[MAX_NOISE * sizeof(int8_t)];
+	int8_t xvid_noise2[MAX_NOISE * sizeof(int8_t)];
+	int8_t *xvid_prev_shift[MAX_RES][6];
+	int prev_quant;
+} XVID_POSTPROC;
+
 void
-image_postproc(IMAGE * img, int edged_width,
+image_postproc(XVID_POSTPROC *tbls, IMAGE * img, int edged_width,
 				const MACROBLOCK * mbs, int mb_width, int mb_height, int mb_stride,
-				int flags, int frame_num);
+				int flags, int frame_num, int bvop);
 
-void deblock8x8_h(uint8_t *img, int stride, int quant);
-void deblock8x8_v(uint8_t *img, int stride, int quant);
+void deblock8x8_h(XVID_POSTPROC *tbls, uint8_t *img, int stride, int quant);
+void deblock8x8_v(XVID_POSTPROC *tbls, uint8_t *img, int stride, int quant);
 
-void init_postproc(void);
-void init_noise(void);
-void init_deblock(void);
+void init_postproc(XVID_POSTPROC *tbls);
+void init_noise(XVID_POSTPROC *tbls);
+void init_deblock(XVID_POSTPROC *tbls);
 
-void add_noise(uint8_t *dst, uint8_t *src, int stride, int width, int height, int shiftptr);
+void add_noise(XVID_POSTPROC * tbls, uint8_t *dst, uint8_t *src, int stride, int width, int height, int shiftptr, int quant);
 
 #endif

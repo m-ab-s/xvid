@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: postprocessing.c,v 1.1.4.3 2003-12-17 17:07:38 Isibaar Exp $
+ * $Id: postprocessing.c,v 1.1.4.4 2003-12-21 19:42:07 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -33,11 +33,6 @@
 #include "../utils/emms.h"
 #include "postprocessing.h"
 
-/* Filtering thresholds */
-
-#define THR1 2
-#define THR2 6
-
 /* Some useful (and fast) macros
    Note that the MIN/MAX macros assume signed shift - if your compiler
    doesn't do signed shifts, use the default MIN/MAX macros from global.h */
@@ -47,16 +42,16 @@
 #define FAST_ABS(x) ((((int)(x)) >> 31) ^ ((int)(x))) - (((int)(x)) >> 31)
 #define ABS(X)    (((X)>0)?(X):-(X)) 
 
-void init_postproc(void)
+void init_postproc(XVID_POSTPROC *tbls)
 {
-	init_deblock();
-	init_noise();
+	init_deblock(tbls);
+	init_noise(tbls);
 }
 
 void
-image_postproc(IMAGE * img, int edged_width,
+image_postproc(XVID_POSTPROC *tbls, IMAGE * img, int edged_width,
 				const MACROBLOCK * mbs, int mb_width, int mb_height, int mb_stride,
-				int flags, int frame_num)
+				int flags, int frame_num, int bvop)
 {
 	const int edged_width2 = edged_width /2;
 	int i,j;
@@ -69,14 +64,14 @@ image_postproc(IMAGE * img, int edged_width,
 		for (i = 0; i < mb_width*2; i++)
 		{
 			quant = mbs[(j+0)/2*mb_stride + (i/2)].quant;
-			deblock8x8_h(img->y + j*8*edged_width + i*8, edged_width, quant);
+			deblock8x8_h(tbls, img->y + j*8*edged_width + i*8, edged_width, quant);
 		}
 
 		for (j = 0; j < mb_height*2; j++)		/* vertical deblocking */
 		for (i = 1; i < mb_width*2; i++)
 		{
 			quant = mbs[(j+0)/2*mb_stride + (i/2)].quant;
-			deblock8x8_v(img->y + j*8*edged_width + i*8, edged_width, quant);
+			deblock8x8_v(tbls, img->y + j*8*edged_width + i*8, edged_width, quant);
 		}
 	}
 
@@ -88,39 +83,40 @@ image_postproc(IMAGE * img, int edged_width,
 		for (i = 0; i < mb_width; i++)
 		{
 			quant = mbs[(j+0)*mb_stride + i].quant;
-			deblock8x8_h(img->u + j*8*edged_width2 + i*8, edged_width2, quant);
-			deblock8x8_h(img->v + j*8*edged_width2 + i*8, edged_width2, quant);
+			deblock8x8_h(tbls, img->u + j*8*edged_width2 + i*8, edged_width2, quant);
+			deblock8x8_h(tbls, img->v + j*8*edged_width2 + i*8, edged_width2, quant);
 		}
 
 		for (j = 0; j < mb_height; j++)		/* vertical deblocking */	
 		for (i = 1; i < mb_width; i++)
 		{
 			quant = mbs[(j+0)*mb_stride + i].quant;
-			deblock8x8_v(img->u + j*8*edged_width2 + i*8, edged_width2, quant);
-			deblock8x8_v(img->v + j*8*edged_width2 + i*8, edged_width2, quant);
+			deblock8x8_v(tbls, img->u + j*8*edged_width2 + i*8, edged_width2, quant);
+			deblock8x8_v(tbls, img->v + j*8*edged_width2 + i*8, edged_width2, quant);
 		}
 	}
 
+	if (!bvop)
+		tbls->prev_quant = mbs->quant;
+
 	if ((flags & XVID_FILMEFFECT))
 	{
-		add_noise(img->y, img->y, edged_width, mb_width*16, mb_height*16, frame_num % 3);
+		add_noise(tbls, img->y, img->y, edged_width, mb_width*16,
+				  mb_height*16, frame_num % 3, tbls->prev_quant);
 	}
 }
 
 /******************************************************************************/
 
-static int8_t xvid_thresh_tbl[510];
-static int8_t xvid_abs_tbl[510];
-
-void init_deblock(void)
+void init_deblock(XVID_POSTPROC *tbls)
 {
 	int i;
 
 	for(i = -255; i < 256; i++) {
-		xvid_thresh_tbl[i + 255] = 0;
+		tbls->xvid_thresh_tbl[i + 255] = 0;
 		if(ABS(i) < THR1)
-			xvid_thresh_tbl[i + 255] = 1;
-		xvid_abs_tbl[i + 255] = ABS(i);
+			tbls->xvid_thresh_tbl[i + 255] = 1;
+		tbls->xvid_abs_tbl[i + 255] = ABS(i);
 	}
 }
 
@@ -155,25 +151,25 @@ void init_deblock(void)
 		\
 		eq_cnt = 0; \
 		\
-		eq_cnt += xvid_thresh_tbl[s[0] - s[1] + 255]; \
-		eq_cnt += xvid_thresh_tbl[s[1] - s[2] + 255]; \
-		eq_cnt += xvid_thresh_tbl[s[2] - s[3] + 255]; \
-		eq_cnt += xvid_thresh_tbl[s[3] - s[4] + 255]; \
-		eq_cnt += xvid_thresh_tbl[s[4] - s[5] + 255]; \
-		eq_cnt += xvid_thresh_tbl[s[5] - s[6] + 255]; \
-		eq_cnt += xvid_thresh_tbl[s[6] - s[7] + 255]; \
-		eq_cnt += xvid_thresh_tbl[s[7] - s[8] + 255]; \
+		eq_cnt += tbls->xvid_thresh_tbl[s[0] - s[1] + 255]; \
+		eq_cnt += tbls->xvid_thresh_tbl[s[1] - s[2] + 255]; \
+		eq_cnt += tbls->xvid_thresh_tbl[s[2] - s[3] + 255]; \
+		eq_cnt += tbls->xvid_thresh_tbl[s[3] - s[4] + 255]; \
+		eq_cnt += tbls->xvid_thresh_tbl[s[4] - s[5] + 255]; \
+		eq_cnt += tbls->xvid_thresh_tbl[s[5] - s[6] + 255]; \
+		eq_cnt += tbls->xvid_thresh_tbl[s[6] - s[7] + 255]; \
+		eq_cnt += tbls->xvid_thresh_tbl[s[7] - s[8] + 255]; \
 		\
 		if(eq_cnt < THR2) { /* Default mode */  \
 			int a30, a31, a32;					\
 			int diff, limit;					\
 												\
-			if(xvid_abs_tbl[(s[4] - s[5]) + 255] < quant) {			\
+			if(tbls->xvid_abs_tbl[(s[4] - s[5]) + 255] < quant) {			\
 				a30 = ((s[3]<<1) - s[4] * 5 + s[5] * 5 - (s[6]<<1));	\
 				a31 = ((s[1]<<1) - s[2] * 5 + s[3] * 5 - (s[4]<<1));	\
 				a32 = ((s[5]<<1) - s[6] * 5 + s[7] * 5 - (s[8]<<1));	\
 																		\
-				diff = (5 * ((SIGN(a30) * MIN(xvid_abs_tbl[a30 + 255], MIN(xvid_abs_tbl[a31 + 255], xvid_abs_tbl[a32 + 255]))) - a30) + 32) >> 6;	\
+				diff = (5 * ((SIGN(a30) * MIN(tbls->xvid_abs_tbl[a30 + 255], MIN(tbls->xvid_abs_tbl[a31 + 255], tbls->xvid_abs_tbl[a32 + 255]))) - a30) + 32) >> 6;	\
 				limit = (s[4] - s[5]) / 2;	\
 				\
 				if (limit > 0)				\
@@ -196,8 +192,8 @@ void init_deblock(void)
 			if(((max-min)) < 2*quant) {	\
 										\
 				/* Choose edge pixels */	\
-				p0 = (xvid_abs_tbl[(s[1] - s[0]) + 255] < quant) ? s[0] : s[1];	\
-				p9 = (xvid_abs_tbl[(s[8] - s[9]) + 255] < quant) ? s[9] : s[8];	\
+				p0 = (tbls->xvid_abs_tbl[(s[1] - s[0]) + 255] < quant) ? s[0] : s[1];	\
+				p9 = (tbls->xvid_abs_tbl[(s[8] - s[9]) + 255] < quant) ? s[9] : s[8];	\
 																\
 				*v[1] = (uint8_t) ((6*p0 + (s[1]<<2) + (s[2]<<1) + (s[3]<<1) + s[4] + s[5] + 8) >> 4);	\
 				*v[2] = (uint8_t) (((p0<<2) + (s[1]<<1) + (s[2]<<2) + (s[3]<<1) + (s[4]<<1) + s[5] + s[6] + 8) >> 4);	\
@@ -210,7 +206,7 @@ void init_deblock(void)
 			}	\
 		}	
 
-void deblock8x8_h(uint8_t *img, int stride, int quant)
+void deblock8x8_h(XVID_POSTPROC *tbls, uint8_t *img, int stride, int quant)
 {
 	int eq_cnt;
 	uint8_t *v[10];
@@ -242,7 +238,7 @@ void deblock8x8_h(uint8_t *img, int stride, int quant)
 }
 
 
-void deblock8x8_v(uint8_t *img, int stride, int quant)
+void deblock8x8_v(XVID_POSTPROC *tbls, uint8_t *img, int stride, int quant)
 {
 	int eq_cnt;
 	uint8_t *v[10];
@@ -280,18 +276,11 @@ void deblock8x8_v(uint8_t *img, int stride, int quant)
  *																			  *
  ******************************************************************************/
 
-#define MAX_NOISE 4096
-#define MAX_SHIFT 1024
-#define MAX_RES (MAX_NOISE - MAX_SHIFT)
-
 #define RAND_N(range) ((int) ((double)range * rand() / (RAND_MAX + 1.0)))
+#define STRENGTH1 12
+#define STRENGTH2 8
 
-#define STRENGTH 13
-
-static int8_t xvid_noise[MAX_NOISE * sizeof(int8_t)];
-static int8_t *xvid_prev_shift[MAX_RES][3];
-
-void init_noise(void)
+void init_noise(XVID_POSTPROC *tbls)
 {
 	int i, j;
 	int patt[4] = { -1,0,1,0 };
@@ -302,7 +291,7 @@ void init_noise(void)
 
 	for(i = 0, j = 0; i < MAX_NOISE; i++, j++)
 	{
-		double x1, x2, w, y1;
+		double x1, x2, w, y1, y2;
 		
 		do {
 			x1 = 2.0 * rand() / (float) RAND_MAX - 1.0;
@@ -312,10 +301,15 @@ void init_noise(void)
 		
 		w = sqrt((-2.0 * log(w)) / w);
 		y1 = x1 * w;
-		y1 *= STRENGTH / sqrt(3.0);
+		y2 = x1 * w;
+
+		y1 *= STRENGTH1 / sqrt(3.0);
+		y2 *= STRENGTH2 / sqrt(3.0);
 
 	    y1 /= 2;
-	    y1 += patt[j%4] * STRENGTH * 0.35;
+		y2 /= 2;
+	    y1 += patt[j%4] * STRENGTH1 * 0.35;
+		y2 += patt[j%4] * STRENGTH2 * 0.35;
 
 		if (y1 < -128) {
 			y1=-128;
@@ -324,8 +318,17 @@ void init_noise(void)
 			y1= 127;
 		}
 
+		if (y2 < -128) {
+			y2=-128;
+		}
+		else if (y2 > 127) {
+			y2= 127;
+		}
+
 		y1 /= 3.0;
-		xvid_noise[i] = (int) y1;
+		y2 /= 3.0;
+		tbls->xvid_noise1[i] = (int) y1;
+		tbls->xvid_noise2[i] = (int) y2;
 	
 		if (RAND_N(6) == 0) {
 			j--;
@@ -334,14 +337,17 @@ void init_noise(void)
 	
 	for (i = 0; i < MAX_RES; i++)
 		for (j = 0; j < 3; j++) {
-			xvid_prev_shift[i][j] = xvid_noise + (rand() & (MAX_SHIFT - 1));
+			tbls->xvid_prev_shift[i][j] = tbls->xvid_noise1 + (rand() & (MAX_SHIFT - 1));
+			tbls->xvid_prev_shift[i][3 + j] = tbls->xvid_noise2 + (rand() & (MAX_SHIFT - 1));
 		}
 }
 
-void add_noise(uint8_t *dst, uint8_t *src, int stride, int width, int height, int shiftptr)
+void add_noise(XVID_POSTPROC *tbls, uint8_t *dst, uint8_t *src, int stride, int width, int height, int shiftptr, int quant)
 {
 	int x, y;
 	int shift = 0;
+	int add = (quant < 5) ? 3 : 0;
+	int8_t *noise = (quant < 5) ? tbls->xvid_noise2 : tbls->xvid_noise1;
 
 	for(y = 0; y < height; y++)
 	{
@@ -352,13 +358,13 @@ void add_noise(uint8_t *dst, uint8_t *src, int stride, int width, int height, in
 		shift &= ~7;
 		for(x = 0; x < width; x++)
 		{
-			const int n = xvid_prev_shift[y][0][x] + xvid_prev_shift[y][1][x] + 
-				          xvid_prev_shift[y][2][x];
+			const int n = tbls->xvid_prev_shift[y][0 + add][x] + tbls->xvid_prev_shift[y][1 + add][x] + 
+				          tbls->xvid_prev_shift[y][2 + add][x];
 
 			dst[x] = src2[x] + ((n * src2[x]) >> 7);
 		}
 
-		xvid_prev_shift[y][shiftptr] = xvid_noise + shift;
+		tbls->xvid_prev_shift[y][shiftptr + add] = noise + shift;
 
 		dst += stride;
 		src += stride;
