@@ -176,7 +176,7 @@ BEGIN
                     SS_CENTERIMAGE
     LTEXT           "I-frames closer than... (frames):",IDC_STATIC,16,56,124,
                     11
-    GROUPBOX        "Overlflow treatment",IDC_STATIC,7,86,197,75
+    GROUPBOX        "Overflow treatment",IDC_STATIC,7,86,197,75
     GROUPBOX        "Curve compression",IDC_STATIC,7,156,197,51
 END
 
