@@ -2,8 +2,727 @@
 # Ed.Gomez: This ChangeLog is generated from a personal tree maintained
 # under the arch revision control tool. That's why dates may be skewed. I
 # also removed all my email adresses from the output because they are not
-# relevent
+# relevant.
 #
+
+
+2003-11-13 23:09:34 GMT	                                	patch-95
+
+    Summary:
+      8x8 16bit Block SSE optimization.
+    Revision:
+      xvidcore--devapi4--1.0--patch-95
+
+    MMXed the calculation of SSE for 8x8 16bit blocks. This helps quite
+    a lot VHQ=4 mode.
+    
+    My tests show with trellis:chroma_me:
+     - ~20% speed improvement for vhq=4.
+     - at least 5% when using vhq=1.
+    
+    Of course this speedup vanishes if more CPU intensive features are used.
+    CruNcher who used gmc/qpel, noticed "only" a ~5% speed improvement.
+    
+    NB: i'm of course talking about overall speed improvement. Such a small
+        patch for such a big improvement :-)
+
+    modified files:
+     src/motion/estimation_rd_based.c src/motion/sad.c
+     src/motion/sad.h src/motion/x86_asm/sad_mmx.asm src/xvid.c
+
+
+2003-11-13 22:34:33 GMT	                                	patch-94
+
+    Summary:
+      Various small bug fixes.
+    Revision:
+      xvidcore--devapi4--1.0--patch-94
+
+    * encoder.c: GMC code fix in encoder.c. Now gmcval is initialized correctly
+      when using GME.
+    * xvid_decraw.c: Fix elementary stream output.
+    * plugin_2pass2.c: Small parsing bug in stats reading in 2pass2.
+    * decoder.c: Read resync markers in bframes.
+
+    modified files:
+     examples/xvid_decraw.c src/decoder.c src/encoder.c
+     src/plugins/plugin_2pass2.c
+
+
+2003-11-11 16:24:05 GMT	                                	patch-93
+
+    Summary:
+      VFW update for overflow control
+    Revision:
+      xvidcore--devapi4--1.0--patch-93
+
+    From Koepi.
+    * Added widget and code for overflow control strength.
+    * Removed widgets for payback options and kfthresholds.
+    * Activated frame stats in DebugOutputView all the time.
+    
+    From me:
+    * Activated static motion detection in cartoon mode.
+
+    modified files:
+     vfw/src/codec.c vfw/src/config.c vfw/src/resource.h
+     vfw/src/resource.rc
+
+
+2003-11-09 20:47:47 GMT	                                	patch-92
+
+    Summary:
+      New two pass code.
+    Revision:
+      xvidcore--devapi4--1.0--patch-92
+
+    New two pass code. I may say it's just a fixed version, though it looks
+    more like a "take all the ideas and write it again" version. It performs
+    better with all natural sequences i have and a bit worse with anime.
+    
+    Including it now, allow me improving the code during the beta releases.
+
+    modified files:
+     src/encoder.c src/plugins/plugin_2pass1.c
+     src/plugins/plugin_2pass2.c src/xvid.h vfw/src/codec.c
+     vfw/src/config.c vfw/src/config.h
+
+
+2003-11-09 17:07:16 GMT	                                	patch-91
+
+    Summary:
+      Fixes for bframe compensation (used in psnr tests).
+    Revision:
+      xvidcore--devapi4--1.0--patch-91
+
+    * transfer_8to16_sub2_(c|mmx|xmm|3dne) write back the compensated
+      result to current frame pointer.
+    * transfer_8to16_sub2_mmx uses proper rounding (a+b+1)/2. The +1
+      operation was missing.
+    * Blocks skipped in bframes must be compensated for psnr computing.
+
+    modified files:
+     src/encoder.c src/motion/estimation_bvop.c
+     src/utils/mem_transfer.c
+     src/utils/x86_asm/mem_transfer_3dne.asm
+     src/utils/x86_asm/mem_transfer_mmx.asm
+
+
+2003-11-05 16:05:44 GMT	                                	patch-90
+
+    Summary:
+      Speed improvement not wasting setedges and interpolate calls.
+    Revision:
+      xvidcore--devapi4--1.0--patch-90
+
+    Patch from syskin.
+    
+    * This patch avoids calling setedges and interpolate for uneeded cases:
+       - setedges is only called once per frame.
+       - interpolate is called only when the previous rounding
+         was different from the one needed.
+    * Interpolation has been optimized a bit for qpel case, we do the
+      hv pass down to top to use the cache more efficiently (hope so).
+
+    modified files:
+     src/encoder.c src/encoder.h src/image/image.c
+
+
+2003-11-03 19:51:12 GMT	                                	patch-89
+
+    Summary:
+      SSE2 dev16 fix + xvid_bench DCT block alignments.
+    Revision:
+      xvidcore--devapi4--1.0--patch-89
+
+    * Small error fixed by Skal in his dev16 code (missing pshufd).
+    * Blocks used by DCT tests are now aligned with DECLARE_ALIGNED_MATRIX
+      this avoids the well know segfaults when using SSE2 instructions that
+      suppose data alignment.
+
+    modified files:
+     examples/xvid_bench.c src/motion/x86_asm/sad_sse2.asm
+
+
+2003-11-03 15:42:23 GMT	                                	patch-88
+
+    Summary:
+      Align .rodata section for non coff objects
+    Revision:
+      xvidcore--devapi4--1.0--patch-88
+
+    Align .rodata section for non coff objects
+    
+
+    modified files:
+     src/bitstream/x86_asm/cbp_mmx.asm
+     src/bitstream/x86_asm/cbp_sse2.asm
+     src/dct/x86_asm/fdct_mmx_ffmpeg.asm
+     src/dct/x86_asm/fdct_mmx_skal.asm
+     src/dct/x86_asm/fdct_sse2_skal.asm
+     src/dct/x86_asm/idct_3dne.asm src/dct/x86_asm/idct_mmx.asm
+     src/dct/x86_asm/idct_sse2_dmitry.asm
+     src/dct/x86_asm/simple_idct_mmx.asm
+     src/image/x86_asm/colorspace_rgb_mmx.asm
+     src/image/x86_asm/colorspace_yuyv_mmx.asm
+     src/image/x86_asm/interpolate8x8_3dn.asm
+     src/image/x86_asm/interpolate8x8_3dne.asm
+     src/image/x86_asm/interpolate8x8_mmx.asm
+     src/image/x86_asm/interpolate8x8_xmm.asm
+     src/image/x86_asm/qpel_mmx.asm
+     src/image/x86_asm/reduced_mmx.asm
+     src/motion/x86_asm/sad_3dn.asm src/motion/x86_asm/sad_3dne.asm
+     src/motion/x86_asm/sad_mmx.asm src/motion/x86_asm/sad_sse2.asm
+     src/motion/x86_asm/sad_xmm.asm
+     src/quant/x86_asm/quantize_h263_3dne.asm
+     src/quant/x86_asm/quantize_h263_mmx.asm
+     src/quant/x86_asm/quantize_mpeg_mmx.asm
+     src/quant/x86_asm/quantize_mpeg_xmm.asm
+     src/utils/x86_asm/cpuid.asm
+     src/utils/x86_asm/interlacing_mmx.asm
+     src/utils/x86_asm/mem_transfer_3dne.asm
+
+
+2003-11-02 23:01:43 GMT	                                	patch-87
+
+    Summary:
+      SSE2 update
+    Revision:
+      xvidcore--devapi4--1.0--patch-87
+
+    * Added Dmitry SSE2 iDCT code back.
+    * Plugged Dmitry iDCT as default for SSE2
+    * Fixed a bug in xvid_bench that was making it would test some CPU
+      instruction set w/o host CPU support. xvidcore init was simply
+      discarding irrelevant cpu flags.
+
+    new files:
+     src/dct/x86_asm/.arch-ids/idct_sse2_dmitry.asm.id
+     src/dct/x86_asm/idct_sse2_dmitry.asm
+
+    modified files:
+     build/generic/sources.inc build/win32/libxvidcore.dsp
+     examples/xvid_bench.c src/dct/fdct.h src/dct/idct.h src/xvid.c
+
+
+2003-10-31 14:53:26 GMT	                                	patch-86
+
+    Summary:
+      Better handling of old windres versions + GNU make dependency.
+    Revision:
+      xvidcore--devapi4--1.0--patch-86
+
+    Old versions of GNU windres (<2.14) don't have the same short options.
+    But long options remain the same so it's better to use long option names
+    to have ful compatibility with older versions.
+    
+    The Makefile appears to be dependent on GNU make because shell expansion
+    for retrieving the path of the Makefile is wrong when using `` even with
+    a single expansion assignment :=. It keeps being expanded when used.
+
+    modified files:
+     doc/INSTALL vfw/bin/Makefile
+
+
+2003-10-29 11:31:28 GMT	                                	patch-85
+
+    Summary:
+      Added sse2 f/iDCT code from skal
+    Revision:
+      xvidcore--devapi4--1.0--patch-85
+
+    * Added sse2 f/iDCT code from skal
+    * Added hooking in xvid.c
+
+    new files:
+     src/dct/x86_asm/.arch-ids/fdct_sse2_skal.asm.id
+     src/dct/x86_asm/fdct_sse2_skal.asm
+
+    modified files:
+     build/generic/sources.inc build/win32/libxvidcore.dsp
+     src/xvid.c
+
+
+2003-10-29 00:19:10 GMT	                                	patch-84
+
+    Summary:
+      Fix the static motion detection
+    Revision:
+      xvidcore--devapi4--1.0--patch-84
+
+    Fix the static motion detection
+    
+
+    modified files:
+     src/motion/estimation_pvop.c
+
+
+2003-10-28 23:39:46 GMT	                                	patch-83
+
+    Summary:
+      Added cartoon option handling.
+    Revision:
+      xvidcore--devapi4--1.0--patch-83
+
+    Added cartoon widgets + handling code.
+    
+    NB: static motion detection is disabled because of crashes on P4
+        cpus.
+
+    modified files:
+     vfw/src/codec.c vfw/src/config.c vfw/src/config.h
+     vfw/src/resource.h vfw/src/resource.rc
+
+
+2003-10-28 17:44:09 GMT	                                	patch-82
+
+    Summary:
+      ASM cleanups;
+    Revision:
+      xvidcore--devapi4--1.0--patch-82
+
+    * Applied same style to all asm files
+    * Replaced current sad sse2 operators with skal's ones
+    * Removed old and unused colorspace asm files
+
+    removed files:
+     src/image/x86_asm/.arch-ids/rgb_to_yv12_mmx.asm.id
+     src/image/x86_asm/.arch-ids/yuv_to_yv12_mmx.asm.id
+     src/image/x86_asm/.arch-ids/yuyv_to_yv12_mmx.asm.id
+     src/image/x86_asm/.arch-ids/yv12_to_rgb24_mmx.asm.id
+     src/image/x86_asm/.arch-ids/yv12_to_rgb32_mmx.asm.id
+     src/image/x86_asm/.arch-ids/yv12_to_yuyv_mmx.asm.id
+     src/image/x86_asm/rgb_to_yv12_mmx.asm
+     src/image/x86_asm/yuv_to_yv12_mmx.asm
+     src/image/x86_asm/yuyv_to_yv12_mmx.asm
+     src/image/x86_asm/yv12_to_rgb24_mmx.asm
+     src/image/x86_asm/yv12_to_rgb32_mmx.asm
+     src/image/x86_asm/yv12_to_yuyv_mmx.asm
+
+    modified files:
+     build/generic/sources.inc src/bitstream/x86_asm/cbp_3dne.asm
+     src/bitstream/x86_asm/cbp_mmx.asm
+     src/bitstream/x86_asm/cbp_sse2.asm
+     src/dct/x86_asm/fdct_mmx_ffmpeg.asm
+     src/dct/x86_asm/fdct_mmx_skal.asm
+     src/dct/x86_asm/idct_3dne.asm src/dct/x86_asm/idct_mmx.asm
+     src/dct/x86_asm/simple_idct_mmx.asm
+     src/image/x86_asm/colorspace_mmx.inc
+     src/image/x86_asm/colorspace_rgb_mmx.asm
+     src/image/x86_asm/colorspace_yuv_mmx.asm
+     src/image/x86_asm/colorspace_yuyv_mmx.asm
+     src/image/x86_asm/interpolate8x8_3dn.asm
+     src/image/x86_asm/interpolate8x8_3dne.asm
+     src/image/x86_asm/interpolate8x8_mmx.asm
+     src/image/x86_asm/interpolate8x8_xmm.asm
+     src/image/x86_asm/qpel_mmx.asm
+     src/image/x86_asm/reduced_mmx.asm
+     src/motion/x86_asm/sad_3dn.asm src/motion/x86_asm/sad_3dne.asm
+     src/motion/x86_asm/sad_mmx.asm src/motion/x86_asm/sad_sse2.asm
+     src/motion/x86_asm/sad_xmm.asm
+     src/quant/x86_asm/quantize_h263_3dne.asm
+     src/quant/x86_asm/quantize_h263_mmx.asm
+     src/quant/x86_asm/quantize_mpeg_mmx.asm
+     src/quant/x86_asm/quantize_mpeg_xmm.asm
+     src/utils/x86_asm/cpuid.asm
+     src/utils/x86_asm/interlacing_mmx.asm
+     src/utils/x86_asm/mem_transfer_3dne.asm
+     src/utils/x86_asm/mem_transfer_mmx.asm
+
+
+2003-10-27 01:13:47 GMT	                                	patch-81
+
+    Summary:
+      d_mv_bits speedup from sysKin
+    Revision:
+      xvidcore--devapi4--1.0--patch-81
+
+    d_mv_bits speedup from sysKin
+    
+
+    modified files:
+     src/motion/motion_inlines.h
+
+
+2003-10-27 00:55:51 GMT	                                	patch-80
+
+    Summary:
+      fDCT changes, new asm CodingStyle applied to dct dir
+    Revision:
+      xvidcore--devapi4--1.0--patch-80
+
+    * Ported the ffmpeg fDCT functions (mmx and xmm).
+    * Modified the skal's versions a bit to allow rolling loops.
+    * Activated Skal's fDCTs (unrolled versions) for mmx _and_ xmm
+      (old code was ignoring xmm versions)
+    * Removed the SSE2 versions (they'll be back later)
+    * .data -> .rodata
+    * Applied announced asm CodingStyle to the dct dir
+      (I'll have to add a section with the said CodingStyle)
+
+    modified files:
+     build/generic/sources.inc build/win32/libxvidcore.dsp
+     src/dct/fdct.h src/dct/idct.h
+     src/dct/x86_asm/fdct_mmx_ffmpeg.asm
+     src/dct/x86_asm/fdct_mmx_skal.asm
+     src/dct/x86_asm/idct_3dne.asm src/dct/x86_asm/idct_mmx.asm
+     src/dct/x86_asm/simple_idct_mmx.asm src/xvid.c
+
+    renamed files:
+     src/dct/x86_asm/.arch-ids/fdct_mmx.asm.id
+       ==> src/dct/x86_asm/.arch-ids/fdct_mmx_ffmpeg.asm.id
+     src/dct/x86_asm/.arch-ids/fdct_xmm.asm.id
+       ==> src/dct/x86_asm/.arch-ids/fdct_mmx_skal.asm.id
+     src/dct/x86_asm/fdct_mmx.asm
+       ==> src/dct/x86_asm/fdct_mmx_ffmpeg.asm
+     src/dct/x86_asm/fdct_xmm.asm
+       ==> src/dct/x86_asm/fdct_mmx_skal.asm
+
+
+2003-10-25 13:48:42 GMT	                                	patch-79
+
+    Summary:
+      BQuant->PQuant fix.
+    Revision:
+      xvidcore--devapi4--1.0--patch-79
+
+    When using closed_gop, a BFrame before an IFrame is turned into a PFrame.
+    Thus is original quant has to be computed back, a rounding was causing these
+    frames to be orig_quant-1. As a consequence we had very big frames before
+    the IFrame, loosing many bits for nearly no visual benefit.
+
+    modified files:
+     src/encoder.c
+
+
+2003-10-25 10:26:48 GMT	                                	patch-78
+
+    Summary:
+      Added closed gop option to xvid_encraw
+    Revision:
+      xvidcore--devapi4--1.0--patch-78
+
+    Added closed gop option to xvid_encraw
+    
+
+    modified files:
+     examples/xvid_encraw.c
+
+
+2003-10-24 17:39:53 GMT	                                	patch-77
+
+    Summary:
+      RD fixes.
+    Revision:
+      xvidcore--devapi4--1.0--patch-77
+
+    Inter RD optimization relied on buggy functions to predict bitsize.
+
+    modified files:
+     src/motion/estimation_pvop.c src/motion/motion_inlines.h
+
+
+2003-10-22 15:48:01 GMT	                                	patch-76
+
+    Summary:
+      Small INSTALL update due to previous build patches.
+    Revision:
+      xvidcore--devapi4--1.0--patch-76
+
+    Small INSTALL update due to previous build patches.
+
+    modified files:
+     doc/INSTALL
+
+
+2003-10-21 21:27:46 GMT	                                	patch-75
+
+    Summary:
+      Removed unused next_block vars.
+    Revision:
+      xvidcore--devapi4--1.0--patch-75
+
+    Removed unused next_block vars.
+
+    modified files:
+     src/decoder.c
+
+
+2003-10-21 21:24:15 GMT	                                	patch-74
+
+    Summary:
+      VFW build changes.
+    Revision:
+      xvidcore--devapi4--1.0--patch-74
+
+    The build system has been modified to look like the core lib one
+    minus the configure system.
+
+    modified files:
+     vfw/bin/Makefile vfw/bin/sources.inc vfw/src/config.c
+     vfw/vfw.dsp
+
+    renamed files:
+     vfw/bin/.arch-ids/Makefile.cygwin.id
+       ==> vfw/bin/.arch-ids/Makefile.id
+     vfw/bin/.arch-ids/Makefile.inc.id
+       ==> vfw/bin/.arch-ids/sources.inc.id
+     vfw/bin/Makefile.cygwin
+       ==> vfw/bin/Makefile
+     vfw/bin/Makefile.inc
+       ==> vfw/bin/sources.inc
+     vfw/src/.arch-ids/config.rc.id
+       ==> vfw/src/.arch-ids/resource.rc.id
+     vfw/src/config.rc
+       ==> vfw/src/resource.rc
+
+
+2003-10-21 17:00:09 GMT	                                	patch-73
+
+    Summary:
+      Decoder cleanups and speedup
+    Revision:
+      xvidcore--devapi4--1.0--patch-73
+
+    cleanups, speedups from sysKin
+
+    modified files:
+     src/decoder.c
+
+
+2003-10-21 16:22:15 GMT	                                	patch-72
+
+    Summary:
+      Build fixes for newer nasm versions.
+    Revision:
+      xvidcore--devapi4--1.0--patch-72
+
+    nasm does not take care of adding trailing slashes to include paths.
+    A patch to upstream authors has been refused because "the backslash()
+    feature has been abandoned to get back to old nasm behavior"
+    
+    Their choice is kinda stupid as nasm is now open to user mistakes... :\
+    So we fix that on ou side.
+
+    modified files:
+     build/generic/configure.in build/win32/libxvidcore.dsp
+
+
+2003-10-17 15:13:12 GMT	                                	patch-71
+
+    Summary:
+      Updated docs.
+    Revision:
+      xvidcore--devapi4--1.0--patch-71
+
+    The doc of devapi4 is mostly out dated, i t is much better not to
+    keep it in the repository at the moment. We'll add new docs later.
+    
+    Added a INSTALL doc that explains the build/install process for
+    supported platforms. It's a first try, things may be added later.
+
+    new files:
+     doc/.arch-ids/INSTALL.id doc/INSTALL
+
+    removed files:
+     doc/.arch-ids/API.dox.id doc/.arch-ids/Makefile.id
+     doc/.arch-ids/foot.inc.in.id doc/.arch-ids/header.tex.in.id
+     doc/.arch-ids/xvid-decoding.txt.id
+     doc/.arch-ids/xvid-encoder.txt.id doc/API.dox doc/Makefile
+     doc/foot.inc.in doc/header.tex.in doc/xvid-decoding.txt
+     doc/xvid-encoder.txt
+
+    modified files:
+     CodingStyle README doc/README
+
+    renamed files:
+     .arch-ids/README.txt.id
+       ==> .arch-ids/README.id
+     .arch-ids/changelog.txt.id
+       ==> .arch-ids/ChangeLog.id
+     README.txt
+       ==> README
+     changelog.txt
+       ==> ChangeLog
+
+
+2003-10-15 13:53:11 GMT	                                	patch-70
+
+    Summary:
+      Better cross compilation handling.
+    Revision:
+      xvidcore--devapi4--1.0--patch-70
+
+    With this patch it is now possible to cross compile xvid
+    quite easily for win32 platform on a build linux host.
+    
+    Recipe for debian system:
+     $ apt-get install mingw32
+     (or create your own cross compiler/binutils suite and install mingw32
+      header files -- sorry i don't have a recipe for this, this is let as
+      an exercice for the reader)
+     $ cd ${xvidcore}
+     $ cd build/generic
+     $ ./bootstrap.sh
+     $ ./configure --host=i586-mingw32msvc
+      (all occurences of i586-mingw32msvc may be replaced with the right
+       prefix you've choosen for your cross compiler and cross binutils)
+     $ make
+     $ cd ../../vfw/bin
+     $ make -f Makefile.cygwin \
+      CC=i586-mingw32msvc-gcc WINDRES=i586-mingw32msvc-windres
+    
+    Enjoy your win32 xvid.dll build by free software, on a free OS, for a devil
+    OS target.
+
+    modified files:
+     build/generic/configure.in vfw/bin/Makefile.cygwin
+
+
+2003-10-14 15:17:28 GMT	                                	patch-69
+
+    Summary:
+      Fixed Qpel+Interpolation decoding. Cleaned up mb->mode usage.
+    Revision:
+      xvidcore--devapi4--1.0--patch-69
+
+    * Fixed interpolate mode + qpel decoding.
+    * MB->mb_type completely replaced by MB->mode
+
+    modified files:
+     src/decoder.c
+
+
+2003-10-12 21:57:24 GMT	                                	patch-68
+
+    Summary:
+      ac/dc prediction for intra RD search.
+    Revision:
+      xvidcore--devapi4--1.0--patch-68
+
+    From syskin, added real ac/dc prediction for INTRA's bitcount.
+
+    modified files:
+     src/motion/estimation_rd_based.c
+
+
+2003-10-09 18:15:50 GMT	                                	patch-67
+
+    Summary:
+      Pigrated asm code to new quant API.
+    Revision:
+      xvidcore--devapi4--1.0--patch-67
+
+    Many changes that are mostly cosmetic in the asm files.
+     * indent
+     * added xor eax, eax in quant_(h263|mpeg)_intra_.* functions
+       (just to make sure the returned value isn't random)
+     * added xor eax, eax in dequant_(h263|mpeg)_.* functions
+       (just to make sure the returned value isn't random)
+     * synced cpuid.asm XVID_CPU_feature constants with the one
+       defined in the C code (xvid.h)
+     * enabled all cpu tests in xvid_bench.c
+
+    modified files:
+     examples/xvid_bench.c src/quant/quant_h263.c
+     src/quant/quant_mpeg.c
+     src/quant/x86_asm/quantize_h263_3dne.asm
+     src/quant/x86_asm/quantize_h263_mmx.asm
+     src/quant/x86_asm/quantize_mpeg_mmx.asm
+     src/quant/x86_asm/quantize_mpeg_xmm.asm
+     src/utils/x86_asm/cpuid.asm src/xvid.h
+
+
+2003-10-08 21:05:47 GMT	                                	patch-66
+
+    Summary:
+      Updated xvid_bench for quant API changes
+    Revision:
+      xvidcore--devapi4--1.0--patch-66
+
+    Updated xvid_bench for quant API changes
+    
+
+    modified files:
+     examples/xvid_bench.c
+
+
+2003-10-07 13:03:51 GMT	                                	patch-65
+
+    Summary:
+      Quant functions API changes (first step)
+    Revision:
+      xvidcore--devapi4--1.0--patch-65
+
+    In the road to instance safe mpeg quantization, a small cleanup
+    to the quant API was needed. It consists in changing the way we
+    name the functions quant_{mpeg|h263}_{inter|intra}_{arch} and in
+    a move to a more unified API (even intra functions return the sum
+    of coefficients, it can be used as a complexity measure at a later
+    time).
+    
+    This patch touch lot of files, but all changes are trivial.
+    
+    NB: we should check the IA64 asm validity, i changed things but
+        i can't test them.
+
+    new files:
+     src/quant/.arch-ids/quant.h.id src/quant/quant.h
+
+    removed files:
+     src/quant/.arch-ids/quant_h263.h.id
+     src/quant/.arch-ids/quant_mpeg4.h.id src/quant/quant_h263.h
+     src/quant/quant_mpeg4.h
+
+    modified files:
+     build/generic/sources.inc build/win32/libxvidcore.dsp
+     src/decoder.c src/encoder.c src/image/qpel.c
+     src/motion/estimation_rd_based.c
+     src/quant/ia64_asm/quant_h263_ia64.s src/quant/quant_h263.c
+     src/quant/quant_matrix.c src/quant/quant_matrix.h
+     src/quant/quant_mpeg.c
+     src/quant/x86_asm/quantize_h263_3dne.asm
+     src/quant/x86_asm/quantize_h263_mmx.asm
+     src/quant/x86_asm/quantize_mpeg_mmx.asm
+     src/quant/x86_asm/quantize_mpeg_xmm.asm
+     src/utils/mbtransquant.c src/xvid.c src/xvid.h
+
+    renamed files:
+     src/quant/.arch-ids/quant_mpeg4.c.id
+       ==> src/quant/.arch-ids/quant_mpeg.c.id
+     src/quant/quant_mpeg4.c
+       ==> src/quant/quant_mpeg.c
+     src/quant/x86_asm/.arch-ids/quantize4_mmx.asm.id
+       ==> src/quant/x86_asm/.arch-ids/quantize_mpeg_mmx.asm.id
+     src/quant/x86_asm/.arch-ids/quantize4_xmm.asm.id
+       ==> src/quant/x86_asm/.arch-ids/quantize_mpeg_xmm.asm.id
+     src/quant/x86_asm/.arch-ids/quantize_3dne.asm.id
+       ==> src/quant/x86_asm/.arch-ids/quantize_h263_3dne.asm.id
+     src/quant/x86_asm/.arch-ids/quantize_mmx.asm.id
+       ==> src/quant/x86_asm/.arch-ids/quantize_h263_mmx.asm.id
+     src/quant/x86_asm/quantize4_mmx.asm
+       ==> src/quant/x86_asm/quantize_mpeg_mmx.asm
+     src/quant/x86_asm/quantize4_xmm.asm
+       ==> src/quant/x86_asm/quantize_mpeg_xmm.asm
+     src/quant/x86_asm/quantize_3dne.asm
+       ==> src/quant/x86_asm/quantize_h263_3dne.asm
+     src/quant/x86_asm/quantize_mmx.asm
+       ==> src/quant/x86_asm/quantize_h263_mmx.asm
+
+
+2003-10-05 00:15:15 GMT	                                	patch-64
+
+    Summary:
+      Updated ChangeLog
+    Revision:
+      xvidcore--devapi4--1.0--patch-64
+
+    Updated ChangeLog
+    
+
+    modified files:
+     changelog.txt
+
 
 2003-10-04 16:04:30 GMT	                                	patch-63
 
