@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.58 2003-12-18 14:47:44 edgomez Exp $
+ * $Id: xvid.h,v 1.27.2.59 2003-12-18 21:40:11 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -645,6 +645,7 @@ extern int xvid_encore(void *handle, int opt, void *param1, void *param2);
 #define XVID_ME_CHROMA_PVOP           (1<<12) /* also use chroma for P_VOP/S_VOP ME */
 #define XVID_ME_CHROMA_BVOP           (1<<13) /* also use chroma for B_VOP ME */
 #define XVID_ME_FASTREFINE16		  (1<<25) /* use low-complexity refinement functions */
+#define XVID_ME_FASTREFINE8           (1<<29) /* low-complexity 8x8 sub-block refinement */
 
 /* Rate Distortion based flags
  * Valid when XVID_VOP_MODEDECISION_BITS is enabled */
