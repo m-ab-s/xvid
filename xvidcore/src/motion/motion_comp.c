@@ -1,3 +1,4 @@
+// 04.10.2002	added qpel support to MBMotionCompensation
 // 01.05.2002   updated MBMotionCompensationBVOP
 // 14.04.2002   bframe compensation
 
@@ -12,30 +13,42 @@
 
 
 static __inline void
-compensate8x8_halfpel(int16_t * const dct_codes,
-					  uint8_t * const cur,
-					  const uint8_t * const ref,
-					  const uint8_t * const refh,
-					  const uint8_t * const refv,
-					  const uint8_t * const refhv,
-					  const uint32_t x,
-					  const uint32_t y,
-					  const int32_t dx,
-					  const int dy,
-					  const uint32_t stride)
+compensate8x8_interpolate(int16_t * const dct_codes,
+						  uint8_t * const cur,
+						  const uint8_t * const ref,
+						  const uint8_t * const refh,
+						  const uint8_t * const refv,
+						  const uint8_t * const refhv,
+						  const uint32_t x,
+						  const uint32_t y,
+						  const int32_t dx,
+						  const int32_t dy,
+						  const uint32_t stride,
+  						  const uint32_t quarterpel,
+						  const uint32_t rounding)
 {
-	const uint8_t * reference;
+	if(quarterpel) {
+		interpolate8x8_quarterpel((uint8_t *) refv, (uint8_t *) ref, (uint8_t *) refh,
+			(uint8_t *) refh + 64, (uint8_t *) refhv, x, y, dx, dy, stride, rounding);
 
-	switch (((dx & 1) << 1) + (dy & 1))	// ((dx%2)?2:0)+((dy%2)?1:0)
-	{
-	case 0:	reference = ref + ((y + dy / 2) * stride + x + dx / 2); break;
-	case 1:	reference = refv + ((y + (dy-1) / 2) * stride + x + dx / 2); break;
-	case 2: reference = refh + ((y + dy / 2) * stride + x + (dx-1) / 2); break;
-	default:					// case 3:
-		reference = refhv + ((y + (dy-1) / 2) * stride + x + (dx-1) / 2); break;
+		transfer_8to16sub(dct_codes, cur + y*stride + x, 
+						  refv + y*stride + x, stride);
 	}
-	transfer_8to16sub(dct_codes, cur + y * stride + x,
-						  reference, stride);
+	else
+	{
+		const uint8_t * reference;
+
+		switch (((dx & 1) << 1) + (dy & 1))	// ((dx%2)?2:0)+((dy%2)?1:0)
+		{
+		case 0:	reference = ref + ((y + dy / 2) * stride + x + dx / 2); break;
+		case 1:	reference = refv + ((y + (dy-1) / 2) * stride + x + dx / 2); break;
+		case 2: reference = refh + ((y + dy / 2) * stride + x + (dx-1) / 2); break;
+		default:					// case 3:
+			reference = refhv + ((y + (dy-1) / 2) * stride + x + (dx-1) / 2); break;
+		}
+		transfer_8to16sub(dct_codes, cur + y * stride + x,
+							  reference, stride);
+	}
 }
 
 void
@@ -51,6 +64,7 @@ MBMotionCompensation(MACROBLOCK * const mb,
 					 const uint32_t width,
 					 const uint32_t height,
 					 const uint32_t edged_width,
+					 const uint32_t quarterpel,
 					 const uint32_t rounding)
 {
 	if (mb->mode == MODE_NOT_CODED) {
@@ -80,18 +94,29 @@ MBMotionCompensation(MACROBLOCK * const mb,
 		int32_t dx = mb->mvs[0].x;
 		int32_t dy = mb->mvs[0].y;
 
-		compensate8x8_halfpel(&dct_codes[0 * 64], cur->y, ref->y, refh->y,
+		if(quarterpel) {
+			dx = mb->qmvs[0].x;
+			dy = mb->qmvs[0].y;
+		}
+
+		compensate8x8_interpolate(&dct_codes[0 * 64], cur->y, ref->y, refh->y,
 							  refv->y, refhv->y, 16 * i, 16 * j, dx, dy,
-							  edged_width);
-		compensate8x8_halfpel(&dct_codes[1 * 64], cur->y, ref->y, refh->y,
+							  edged_width, quarterpel, rounding);
+		compensate8x8_interpolate(&dct_codes[1 * 64], cur->y, ref->y, refh->y,
 							  refv->y, refhv->y, 16 * i + 8, 16 * j, dx, dy,
-							  edged_width);
-		compensate8x8_halfpel(&dct_codes[2 * 64], cur->y, ref->y, refh->y,
+							  edged_width, quarterpel, rounding);
+		compensate8x8_interpolate(&dct_codes[2 * 64], cur->y, ref->y, refh->y,
 							  refv->y, refhv->y, 16 * i, 16 * j + 8, dx, dy,
-							  edged_width);
-		compensate8x8_halfpel(&dct_codes[3 * 64], cur->y, ref->y, refh->y,
+							  edged_width, quarterpel, rounding);
+		compensate8x8_interpolate(&dct_codes[3 * 64], cur->y, ref->y, refh->y,
 							  refv->y, refhv->y, 16 * i + 8, 16 * j + 8, dx,
-							  dy, edged_width);
+							  dy, edged_width, quarterpel, rounding);
+
+		if (quarterpel)
+		{
+			dx = (dx >> 1) | (dx & 1);
+			dy = (dy >> 1) | (dy & 1);
+		}
 
 		dx = (dx & 3) ? (dx >> 1) | 1 : dx / 2;
 		dy = (dy & 3) ? (dy >> 1) | 1 : dy / 2;
@@ -111,25 +136,39 @@ MBMotionCompensation(MACROBLOCK * const mb,
 
 	} else {					// mode == MODE_INTER4V
 		int32_t sum, dx, dy;
+		VECTOR *mvs;
 
-		compensate8x8_halfpel(&dct_codes[0 * 64], cur->y, ref->y, refh->y,
-							  refv->y, refhv->y, 16 * i, 16 * j, mb->mvs[0].x,
-							  mb->mvs[0].y, edged_width);
-		compensate8x8_halfpel(&dct_codes[1 * 64], cur->y, ref->y, refh->y,
+		if(quarterpel)
+			mvs = mb->qmvs;
+		else
+			mvs = mb->mvs;
+
+		compensate8x8_interpolate(&dct_codes[0 * 64], cur->y, ref->y, refh->y,
+							  refv->y, refhv->y, 16 * i, 16 * j, mvs[0].x,
+							  mvs[0].y, edged_width, quarterpel, rounding);
+		compensate8x8_interpolate(&dct_codes[1 * 64], cur->y, ref->y, refh->y,
 							  refv->y, refhv->y, 16 * i + 8, 16 * j,
-							  mb->mvs[1].x, mb->mvs[1].y, edged_width);
-		compensate8x8_halfpel(&dct_codes[2 * 64], cur->y, ref->y, refh->y,
+							  mvs[1].x, mvs[1].y, edged_width, quarterpel, rounding);
+		compensate8x8_interpolate(&dct_codes[2 * 64], cur->y, ref->y, refh->y,
 							  refv->y, refhv->y, 16 * i, 16 * j + 8,
-							  mb->mvs[2].x, mb->mvs[2].y, edged_width);
-		compensate8x8_halfpel(&dct_codes[3 * 64], cur->y, ref->y, refh->y,
+							  mvs[2].x, mvs[2].y, edged_width, quarterpel, rounding);
+		compensate8x8_interpolate(&dct_codes[3 * 64], cur->y, ref->y, refh->y,
 							  refv->y, refhv->y, 16 * i + 8, 16 * j + 8,
-							  mb->mvs[3].x, mb->mvs[3].y, edged_width);
+							  mvs[3].x, mvs[3].y, edged_width, quarterpel, rounding);
 
-		sum = mb->mvs[0].x + mb->mvs[1].x + mb->mvs[2].x + mb->mvs[3].x;
+		sum = mvs[0].x + mvs[1].x + mvs[2].x + mvs[3].x;
+		
+		if(quarterpel)
+			sum /= 2;
+
 		dx = (sum ? SIGN(sum) *
 			  (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2) : 0);
 
-		sum = mb->mvs[0].y + mb->mvs[1].y + mb->mvs[2].y + mb->mvs[3].y;
+		sum = mvs[0].y + mvs[1].y + mvs[2].y + mvs[3].y;
+
+		if(quarterpel)
+			sum /= 2;
+
 		dy = (sum ? SIGN(sum) *
 			  (roundtab[ABS(sum) % 16] + (ABS(sum) / 16) * 2) : 0);
 
