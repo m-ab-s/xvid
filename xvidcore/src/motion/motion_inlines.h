@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_inlines.h,v 1.1.2.4 2003-10-24 13:28:23 syskin Exp $
+ * $Id: motion_inlines.h,v 1.1.2.5 2003-10-25 16:51:38 syskin Exp $
  *
  ****************************************************************************/
 
@@ -70,23 +70,22 @@ get_range(int32_t * const min_dx,
 	*min_dy = MAX(low, k);
 }
 
-/* mv.length table */
-static const int mvtab[64] = {
-	1, 2, 3, 4, 6, 7, 7, 7,
-	9, 9, 9, 10, 10, 10, 10, 10,
+/* reversed mv.length table */
+static const int r_mvtab[64] = {
+	12, 12, 12, 12, 12, 12, 12, 12,
+	12, 12, 12, 12, 12, 12, 12, 12,
+	12, 12, 12, 12, 12, 12, 12, 12,
+	12, 12, 12, 12, 12, 12, 12, 12,
+	12, 11, 11, 11, 11, 11, 11, 10,
 	10, 10, 10, 10, 10, 10, 10, 10,
-	10, 11, 11, 11, 11, 11, 11, 12,
-	12, 12, 12, 12, 12, 12, 12, 12,
-	12, 12, 12, 12, 12, 12, 12, 12,
-	12, 12, 12, 12, 12, 12, 12, 12,
-	12, 12, 12, 12, 12, 12, 12, 12
+	10, 10, 10, 10, 10, 9, 9, 9,
+	7, 7, 7, 6, 4, 3, 2, 1
 };
 
 static __inline uint32_t
 d_mv_bits(int x, int y, const VECTOR pred, const uint32_t iFcode, const int qpel, const int rrv)
 {
-	int bits;
-	const int q = (1 << (iFcode - 1)) - 1;
+	unsigned int bits;
 
 	x <<= qpel;
 	y <<= qpel;
@@ -94,17 +93,15 @@ d_mv_bits(int x, int y, const VECTOR pred, const uint32_t iFcode, const int qpel
 
 	x -= pred.x;
 	bits = (x != 0 ? iFcode:0);
-	x = abs(x);
-	x += q;
+	x = -abs(x);
 	x >>= (iFcode - 1);
-	bits += mvtab[x];
+	bits += r_mvtab[x+63];
 
 	y -= pred.y;
 	bits += (y != 0 ? iFcode:0);
-	y = abs(y);
-	y += q;
+	y = -abs(y);
 	y >>= (iFcode - 1);
-	bits += mvtab[y];
+	bits += r_mvtab[y+63];
 
 	return bits;
 }
