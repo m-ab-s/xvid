@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_decraw.c,v 1.1.2.3 2003-01-19 15:13:47 edgomez Exp $
+ * $Id: xvid_decraw.c,v 1.1.2.4 2003-02-09 06:46:54 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -56,7 +56,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#ifndef _MSC_VER
+#ifndef WIN32
 #include <sys/time.h>
 #else
 #include <time.h>
@@ -430,7 +430,7 @@ static void usage()
 static double
 msecond()
 {	
-#ifndef _MSC_VER
+#ifndef WIN32
 	struct timeval  tv;
 	gettimeofday(&tv, 0);
 	return (double)tv.tv_sec*1.0e3 + (double)tv.tv_usec*1.0e-3;
