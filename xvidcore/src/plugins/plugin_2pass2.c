@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.34 2004-01-07 13:51:24 edgomez Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.35 2004-01-21 06:59:23 syskin Exp $
  *
  *****************************************************************************/
 
@@ -618,7 +618,6 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	if (dbytes > s->length) {
 		dbytes = s->length;
 	} else
-#endif
 		if (dbytes < rc->min_length[s->type-1]) {
 		dbytes = rc->min_length[s->type-1];
 	} else if (dbytes > rc->max_length) {
@@ -630,7 +629,7 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 		DPRINTF(XVID_DEBUG_RC,"[xvid rc] -- frame:%d Capped to maximum frame size\n",
 				data->frame_num);
 	}
-
+#endif
 	/*------------------------------------------------------------------------
 	 * Desired frame length <-> quantizer mapping
 	 *-----------------------------------------------------------------------*/
