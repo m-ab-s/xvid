@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.10 2002-10-03 08:24:27 syskin Exp $
+ *  $Id: encoder.c,v 1.76.2.11 2002-10-03 12:06:42 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -880,7 +880,7 @@ bvop_loop:
 
 		if ((pEnc->global & XVID_GLOBAL_DEBUG)) {
 			image_printf(&pEnc->current->image, pEnc->mbParam.edged_width, pEnc->mbParam.height, 5, 5, 
-				"%i  if:%i  st:%i:%i", pEnc->m_framenum++, pEnc->iFrameNum, pEnc->current->seconds, pEnc->current->ticks);
+				"%i  if:%i  st:%i", pEnc->m_framenum++, pEnc->iFrameNum, pEnc->current->stamp);
 		}
 
 	/* %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -971,7 +971,7 @@ bvop_loop:
 		pEnc->flush_bframes = 1;
 
 		if ((pEnc->global & XVID_GLOBAL_PACKED) && pEnc->bframenum_tail > 0) {
-			BitstreamPad(&bs);
+			BitstreamPadAlways(&bs);
 			input_valid = 0;
 			goto ipvop_loop;
 		}
@@ -998,7 +998,7 @@ bvop_loop:
 		pEnc->flush_bframes = 1;
 
 		if ((pEnc->global & XVID_GLOBAL_PACKED)) {
-			BitstreamPad(&bs);
+			BitstreamPadAlways(&bs);
 			input_valid = 0;
 			goto ipvop_loop;
 		}

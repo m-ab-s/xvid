@@ -337,19 +337,6 @@ BitstreamForward(Bitstream * const bs,
 }
 
 
-/* pad bitstream to the next byte boundary */
-
-static void __inline
-BitstreamPad(Bitstream * const bs)
-{
-	uint32_t remainder = bs->pos % 8;
-
-	if (remainder) {
-		BitstreamForward(bs, 8 - remainder);
-	}
-}
-
-
 /* read n bits from bitstream */
 
 static uint32_t __inline
@@ -411,5 +398,43 @@ BitstreamPutBits(Bitstream * const bs,
 		BitstreamForward(bs, remainder);
 	}
 }
+
+
+static const int stuffing_codes[8] =
+{
+	        /* nbits     stuffing code */
+	0,		/* 1          0 */
+	1,		/* 2          01 */
+	3,		/* 3          011 */
+	7,		/* 4          0111 */
+	0xf,	/* 5          01111 */
+	0x1f,	/* 6          011111 */
+	0x3f,   /* 7          0111111 */
+	0x7f,	/* 8          01111111 */
+};
+
+/* pad bitstream to the next byte boundary */
+
+static void __inline
+BitstreamPad(Bitstream * const bs)
+{
+	int bits = 8 - (bs->pos % 8);
+	if (bits < 8)
+	{
+		BitstreamPutBits(bs, stuffing_codes[bits - 1], bits);
+	}
+}
+
+
+/* pad bitstream to the next byte boundary 
+   alway pad: even if currently at the byte boundary */
+
+static void __inline
+BitstreamPadAlways(Bitstream * const bs)
+{
+	int bits = 8 - (bs->pos % 8);
+	BitstreamPutBits(bs, stuffing_codes[bits - 1], bits);
+}
+
 
 #endif							/* _BITSTREAM_H_ */
