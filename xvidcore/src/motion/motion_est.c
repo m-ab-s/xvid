@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.c,v 1.58.2.17 2003-06-09 13:54:37 edgomez Exp $
+ * $Id: motion_est.c,v 1.58.2.18 2003-06-19 09:58:57 syskin Exp $
  *
  ****************************************************************************/
 
@@ -672,6 +672,15 @@ CheckCandidateBits16(const int x, const int y, const int Direction, int * const 
 
 	bits += t = BITS_MULT*d_mv_bits(x, y, data->predMV, data->iFcode, data->qpel^data->qpel_precision, 0);
 
+	if (data->temp[0] + t < data->iMinSAD[1]) {
+		data->iMinSAD[1] = data->temp[0] + t; current[1].x = x; current[1].y = y; }
+	if (data->temp[1] < data->iMinSAD[2]) {
+		data->iMinSAD[2] = data->temp[1]; current[2].x = x; current[2].y = y; }
+	if (data->temp[2] < data->iMinSAD[3]) {
+		data->iMinSAD[3] = data->temp[2]; current[3].x = x; current[3].y = y; }
+	if (data->temp[3] < data->iMinSAD[4]) {
+		data->iMinSAD[4] = data->temp[3]; current[4].x = x; current[4].y = y; }
+
 	bits += BITS_MULT*xvid_cbpy_tab[15-(cbp>>2)].len;
 
 	if (bits >= data->iMinSAD[0]) return;
@@ -698,17 +707,8 @@ CheckCandidateBits16(const int x, const int y, const int Direction, int * const 
 		current[0].x = x; current[0].y = y;
 		*dir = Direction;
 	}
-
-	if (data->temp[0] + t < data->iMinSAD[1]) {
-		data->iMinSAD[1] = data->temp[0] + t; current[1].x = x; current[1].y = y; }
-	if (data->temp[1] < data->iMinSAD[2]) {
-		data->iMinSAD[2] = data->temp[1]; current[2].x = x; current[2].y = y; }
-	if (data->temp[2] < data->iMinSAD[3]) {
-		data->iMinSAD[3] = data->temp[2]; current[3].x = x; current[3].y = y; }
-	if (data->temp[3] < data->iMinSAD[4]) {
-		data->iMinSAD[4] = data->temp[3]; current[4].x = x; current[4].y = y; }
-
 }
+
 static void
 CheckCandidateBits8(const int x, const int y, const int Direction, int * const dir, const SearchData * const data)
 {
@@ -1290,7 +1290,7 @@ SearchP(const IMAGE * const pRef,
 	Data->iMinSAD[3] = pMB->sad8[2];
 	Data->iMinSAD[4] = pMB->sad8[3];
 
-	if ((!(VopFlags & XVID_VOP_MODEDECISION_BITS)) || (x | y)) {
+	if ((!(VopFlags & XVID_VOP_MODEDECISION_BITS)) && (x | y)) {
 		threshA = Data->temp[0]; /* that's where we keep this SAD atm */
 		if (threshA < 512) threshA = 512;
 		else if (threshA > 1024) threshA = 1024;
