@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: vop_type_decision.c,v 1.1.2.5 2003-11-19 12:24:25 syskin Exp $
+ * $Id: vop_type_decision.c,v 1.1.2.6 2003-12-04 12:08:03 syskin Exp $
  *
  ****************************************************************************/
 
@@ -36,6 +36,15 @@
 #define INTRA_THRESH	2000
 #define INTER_THRESH	40
 #define INTRA_THRESH2	90
+
+/* when we are in 1/I_SENS_TH before forced keyframe, we start to decrese i-frame threshold */
+#define I_SENS_TH		3 
+
+/* how much we subtract from each p-frame threshold for 2nd, 3rd etc. b-frame in a row */
+#define P_SENS_BIAS		18
+
+/* .. but never below INTER_THRESH_MIN */
+#define INTER_THRESH_MIN 5
 
 static void
 CheckCandidate32I(const int x, const int y, SearchData * const data, const unsigned int Direction)
@@ -147,7 +156,10 @@ MEanalysis(	const IMAGE * const pRef,
 	int sSAD = 0;
 	MACROBLOCK * const pMBs = Current->mbs;
 	const IMAGE * const pCurrent = &Current->image;
-	int IntraThresh = INTRA_THRESH, InterThresh = INTER_THRESH + b_thresh;
+	int IntraThresh = INTRA_THRESH, 
+		InterThresh = INTER_THRESH + b_thresh,
+		IntraThresh2 = INTRA_THRESH2;
+		
 	int blocks = 10;
 	int complexity = 0;
 
@@ -158,15 +170,20 @@ MEanalysis(	const IMAGE * const pRef,
 	Data.qpel_precision = 0;
 
 	if (intraCount != 0) {
-		if (intraCount < 10) /* we're right after an I frame */
-			IntraThresh += 15* (intraCount - 10) * (intraCount - 10);
-		else
-			if ( 5*(maxIntra - intraCount) < maxIntra) /* we're close to maximum. 2 sec when max is 10 sec */
-				IntraThresh -= (IntraThresh * (maxIntra - 8*(maxIntra - intraCount)))/maxIntra;
+		if (intraCount < 30) {
+			/* we're right after an I frame 
+			   we increase thresholds to prevent consecutive i-frames */
+			if (intraCount < 10) IntraThresh += 15*(10 - intraCount)*(10 - intraCount);
+			IntraThresh2 += 4*(30 - intraCount);
+		} else if (I_SENS_TH*(maxIntra - intraCount) < maxIntra) {
+			/* we're close to maximum. we decrease thresholds to catch any good keyframe */
+			IntraThresh -= IntraThresh*((maxIntra - I_SENS_TH*(maxIntra - intraCount))/maxIntra);
+			IntraThresh2 -= IntraThresh2*((maxIntra - I_SENS_TH*(maxIntra - intraCount))/maxIntra);
+		}
 	}
 
-	InterThresh -= 20 * bCount;
-	if (InterThresh < 10 + b_thresh) InterThresh = 10 + b_thresh;
+	InterThresh -= P_SENS_BIAS * bCount;
+	if (InterThresh < INTER_THRESH_MIN) InterThresh = INTER_THRESH_MIN;
 
 	if (sadInit) (*sadInit) ();
 
@@ -199,9 +216,9 @@ MEanalysis(	const IMAGE * const pRef,
 
 				if (pMB->mvs[0].x == 0 && pMB->mvs[0].y == 0)
 					if (dev > 1000 && pMB->sad16 < 1000)
-						sSAD += 1000;
+						sSAD += 512;
 
-				sSAD += (dev < 4000) ? pMB->sad16 : pMB->sad16/2; /* blocks with big contrast differences usually have large SAD - while they look very good in b-frames */
+				sSAD += (dev < 3000) ? pMB->sad16 : pMB->sad16/2; /* blocks with big contrast differences usually have large SAD - while they look very good in b-frames */
 			}
 		}
 	}
@@ -209,8 +226,8 @@ MEanalysis(	const IMAGE * const pRef,
 
 	sSAD /= complexity + 4*blocks;
 
-	if (intraCount > 60 && sSAD > INTRA_THRESH2 ) return I_VOP;
-	if (sSAD > InterThresh ) return P_VOP;
+	if (sSAD > IntraThresh2) return I_VOP;
+	if (sSAD > InterThresh) return P_VOP;
 	emms();
 	return B_VOP;
 }
