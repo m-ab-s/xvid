@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib msvcrt.lib advapi32.lib winmm.lib ole32.lib uuid.lib strmbase.lib oleaut32.lib ..\xvidcore\build\win32\bin\core.lib /nologo /entry:"DllEntryPoint@12" /dll /machine:I386 /nodefaultlib /out:"bin\xvid.ax"
+# ADD LINK32 kernel32.lib user32.lib msvcrt.lib advapi32.lib winmm.lib ole32.lib uuid.lib strmbase.lib oleaut32.lib /nologo /entry:"DllEntryPoint@12" /dll /machine:I386 /nodefaultlib /out:"bin\xvid.ax"
 
 !ELSEIF  "$(CFG)" == "dshow - Win32 Debug"
 
@@ -79,7 +79,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib msvcrt.lib advapi32.lib winmm.lib ole32.lib uuid.lib strmbase.lib oleaut32.lib ..\xvidcore\build\win32\bin\libxvidcore.lib /nologo /entry:"DllEntryPoint@12" /dll /debug /machine:I386 /nodefaultlib /out:"bin\xvid.ax" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib msvcrt.lib advapi32.lib winmm.lib ole32.lib uuid.lib strmbase.lib oleaut32.lib /nologo /entry:"DllEntryPoint@12" /dll /debug /machine:I386 /nodefaultlib /out:"bin\xvid.ax" /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
@@ -156,9 +156,5 @@ SOURCE=.\src\XviD_logo.bmp
 SOURCE=.\src\xvid.ax.def
 # End Source File
 # End Group
-# Begin Source File
-
-SOURCE=..\xvidcore\build\win32\bin\libxvidcore.lib
-# End Source File
 # End Target
 # End Project
