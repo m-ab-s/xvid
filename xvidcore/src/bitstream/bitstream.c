@@ -558,18 +558,29 @@ BitstreamReadHeaders(Bitstream * bs,
 				DPRINTF(DPRINTF_HEADER, "low_delay %i", dec->low_delay);
 				if (BitstreamGetBit(bs))	// vbv_parameters
 				{
+					unsigned int bitrate;
+					unsigned int buffer_size;
+					unsigned int occupancy;
+
 					DPRINTF(DPRINTF_HEADER,"+ vbv_parameters");
-					BitstreamSkip(bs, 15);	// first_half_bitrate
+
+					bitrate = BitstreamGetBits(bs,15) << 15;	// first_half_bit_rate
 					READ_MARKER();
-					BitstreamSkip(bs, 15);	// latter_half_bitrate
+					bitrate |= BitstreamGetBits(bs,15);		// latter_half_bit_rate
 					READ_MARKER();
-					BitstreamSkip(bs, 15);	// first_half_vbv_buffer_size
+					
+					buffer_size = BitstreamGetBits(bs, 15) << 3;	// first_half_vbv_buffer_size
 					READ_MARKER();
-					BitstreamSkip(bs, 3);	// latter_half_vbv_buffer_size
-					BitstreamSkip(bs, 11);	// first_half_vbv_occupancy
+					buffer_size |= BitstreamGetBits(bs, 3);		// latter_half_vbv_buffer_size
+
+					occupancy = BitstreamGetBits(bs, 11) << 15;	// first_half_vbv_occupancy
 					READ_MARKER();
-					BitstreamSkip(bs, 15);	// latter_half_vbv_occupancy
+					occupancy |= BitstreamGetBits(bs, 15);	// latter_half_vbv_occupancy
 					READ_MARKER();
+
+					DPRINTF(DPRINTF_HEADER,"bitrate %d (unit=400 bps)", bitrate);
+					DPRINTF(DPRINTF_HEADER,"buffer_size %d (unit=16384 bits)", buffer_size);
+					DPRINTF(DPRINTF_HEADER,"occupancy %d (unit=64 bits)", occupancy);
 				}
 			}else{
 				dec->low_delay = dec->low_delay_default;
