@@ -101,6 +101,7 @@ typedef struct
 	int bytes2;
 	int desired_bytes2;
 
+	int keyframe_locations[20480];
 	int max_framesize;
 	double movie_curve;
 	double credits_start_curve;
@@ -115,7 +116,7 @@ typedef struct
 	double alt_curve_high_diff;
 	double alt_curve_mid_qual;
 	double alt_curve_qual_dev;
-	int overflow;
+	int overflow, KF_idx, KFoverflow, KFoverflow_partial;
 	int quant_count[32];
 
 	NNSTATS nns1;
