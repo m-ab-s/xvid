@@ -41,9 +41,14 @@ INTERPOLATE8X8_PTR interpolate8x8_halfpel_hv;
 INTERPOLATE8X8_AVG2_PTR interpolate8x8_avg2;
 INTERPOLATE8X8_AVG4_PTR interpolate8x8_avg4;
 
-INTERPOLATE8X8_LOWPASS_PTR interpolate8x8_lowpass_h;
-INTERPOLATE8X8_LOWPASS_PTR interpolate8x8_lowpass_v;
-INTERPOLATE8X8_LOWPASS_HV_PTR interpolate8x8_lowpass_hv;
+INTERPOLATE_LOWPASS_PTR interpolate8x8_lowpass_h;
+INTERPOLATE_LOWPASS_PTR interpolate8x8_lowpass_v;
+
+INTERPOLATE_LOWPASS_PTR interpolate16x16_lowpass_h;
+INTERPOLATE_LOWPASS_PTR interpolate16x16_lowpass_v;
+
+INTERPOLATE_LOWPASS_HV_PTR interpolate8x8_lowpass_hv;
+INTERPOLATE_LOWPASS_HV_PTR interpolate16x16_lowpass_hv;
 
 INTERPOLATE8X8_6TAP_LOWPASS_PTR interpolate8x8_6tap_lowpass_h;
 INTERPOLATE8X8_6TAP_LOWPASS_PTR interpolate8x8_6tap_lowpass_v;
@@ -186,6 +191,38 @@ void interpolate8x8_6tap_lowpass_h_c(uint8_t *dst, uint8_t *src, int32_t stride,
     }
 }
 
+void interpolate16x16_lowpass_h_c(uint8_t *dst, uint8_t *src, int32_t stride, int32_t rounding)
+{
+    int32_t i;
+	uint8_t round_add = 16 - rounding;
+
+    for(i = 0; i < 16; i++)
+    {
+
+        dst[0] = CLIP(((7 * ((src[0]<<1) - src[2]) +  23 * src[1] + 3 * src[3] - src[4] + round_add) >> 5), 0, 255);
+        dst[1] = CLIP(((19 * src[1] + 20 * src[2] - src[5] + 3 * (src[4] - src[0] - (src[3]<<1)) + round_add) >> 5), 0, 255);
+        dst[2] = CLIP(((20 * (src[2] + src[3]) + (src[0]<<1) + 3 * (src[5] - ((src[1] + src[4])<<1)) - src[6] + round_add) >> 5), 0, 255);
+
+        dst[3] = CLIP(((20 * (src[3] + src[4]) + 3 * ((src[6] + src[1]) - ((src[2] + src[5])<<1)) - (src[0] + src[7]) + round_add) >> 5), 0, 255);
+        dst[4] = CLIP(((20 * (src[4] + src[5]) - 3 * (((src[3] + src[6])<<1) - (src[2] + src[7])) - (src[1] + src[8]) + round_add) >> 5), 0, 255);
+        dst[5] = CLIP(((20 * (src[5] + src[6]) - 3 * (((src[4] + src[7])<<1) - (src[3] + src[8])) - (src[2] + src[9]) + round_add) >> 5), 0, 255);
+        dst[6] = CLIP(((20 * (src[6] + src[7]) - 3 * (((src[5] + src[8])<<1) - (src[4] + src[9])) - (src[3] + src[10]) + round_add) >> 5), 0, 255);
+        dst[7] = CLIP(((20 * (src[7] + src[8]) - 3 * (((src[6] + src[9])<<1) - (src[5] + src[10])) - (src[4] + src[11]) + round_add) >> 5), 0, 255);
+        dst[8] = CLIP(((20 * (src[8] + src[9]) - 3 * (((src[7] + src[10])<<1) - (src[6] + src[11])) - (src[5] + src[12]) + round_add) >> 5), 0, 255);
+        dst[9] = CLIP(((20 * (src[9] + src[10]) - 3 * (((src[8] + src[11])<<1) - (src[7] + src[12])) - (src[6] + src[13]) + round_add) >> 5), 0, 255);
+        dst[10] = CLIP(((20 * (src[10] + src[11]) - 3 * (((src[9] + src[12])<<1) - (src[8] + src[13])) - (src[7] + src[14]) + round_add) >> 5), 0, 255);
+        dst[11] = CLIP(((20 * (src[11] + src[12]) - 3 * (((src[10] + src[13])<<1) - (src[9] + src[14])) - (src[8] + src[15]) + round_add) >> 5), 0, 255);
+        dst[12] = CLIP(((20 * (src[12] + src[13]) - 3 * (((src[11] + src[14])<<1) - (src[10] + src[15])) - (src[9] + src[16]) + round_add) >> 5), 0, 255);
+
+        dst[13] = CLIP(((20 * (src[13] + src[14]) + (src[16]<<1) + 3 * (src[11] - ((src[12] + src[15]) << 1)) - src[10] + round_add) >> 5), 0, 255);
+        dst[14] = CLIP(((19 * src[15] + 20 * src[14] + 3 * (src[12] - src[16] - (src[13] << 1)) - src[11] + round_add) >> 5), 0, 255);
+        dst[15] = CLIP(((23 * src[15] + 7 * ((src[16]<<1) - src[14]) + 3 * src[13] - src[12] + round_add) >> 5), 0, 255);
+
+        dst += stride;
+        src += stride;
+    }
+}
+
 void interpolate8x8_lowpass_h_c(uint8_t *dst, uint8_t *src, int32_t stride, int32_t rounding)
 {
     int32_t i;
@@ -243,6 +280,56 @@ void interpolate8x8_6tap_lowpass_v_c(uint8_t *dst, uint8_t *src, int32_t stride,
     }
 }
 
+void interpolate16x16_lowpass_v_c(uint8_t *dst, uint8_t *src, int32_t stride, int32_t rounding)
+{
+    int32_t i;
+	uint8_t round_add = 16 - rounding;
+
+    for(i = 0; i < 16; i++)
+    {
+        int32_t src0 = src[0];
+        int32_t src1 = src[stride];
+        int32_t src2 = src[2 * stride];
+        int32_t src3 = src[3 * stride];
+        int32_t src4 = src[4 * stride];
+        int32_t src5 = src[5 * stride];
+        int32_t src6 = src[6 * stride];
+        int32_t src7 = src[7 * stride];
+        int32_t src8 = src[8 * stride];
+        int32_t src9 = src[9 * stride];
+        int32_t src10 = src[10 * stride];
+        int32_t src11 = src[11 * stride];
+        int32_t src12 = src[12 * stride];
+        int32_t src13 = src[13 * stride];
+        int32_t src14 = src[14 * stride];
+        int32_t src15 = src[15 * stride];
+        int32_t src16 = src[16 * stride];
+
+        
+        dst[0] = CLIP(((7 * ((src0<<1) - src2) +  23 * src1 + 3 * src3 - src4 + round_add) >> 5), 0, 255);
+        dst[stride] = CLIP(((19 * src1 + 20 * src2 - src5 + 3 * (src4 - src0 - (src3<<1)) + round_add) >> 5), 0, 255);
+        dst[2*stride] = CLIP(((20 * (src2 + src3) + (src0<<1) + 3 * (src5 - ((src1 + src4)<<1)) - src6 + round_add) >> 5), 0, 255);
+
+        dst[3*stride] = CLIP(((20 * (src3 + src4) + 3 * ((src6 + src1) - ((src2 + src5)<<1)) - (src0 + src7) + round_add) >> 5), 0, 255);
+        dst[4*stride] = CLIP(((20 * (src4 + src5) - 3 * (((src3 + src6)<<1) - (src2 + src7)) - (src1 + src8) + round_add) >> 5), 0, 255);
+        dst[5*stride] = CLIP(((20 * (src5 + src6) - 3 * (((src4 + src7)<<1) - (src3 + src8)) - (src2 + src9) + round_add) >> 5), 0, 255);
+        dst[6*stride] = CLIP(((20 * (src6 + src7) - 3 * (((src5 + src8)<<1) - (src4 + src9)) - (src3 + src10) + round_add) >> 5), 0, 255);
+        dst[7*stride] = CLIP(((20 * (src7 + src8) - 3 * (((src6 + src9)<<1) - (src5 + src10)) - (src4 + src11) + round_add) >> 5), 0, 255);
+        dst[8*stride] = CLIP(((20 * (src8 + src9) - 3 * (((src7 + src10)<<1) - (src6 + src11)) - (src5 + src12) + round_add) >> 5), 0, 255);
+        dst[9*stride] = CLIP(((20 * (src9 + src10) - 3 * (((src8 + src11)<<1) - (src7 + src12)) - (src6 + src13) + round_add) >> 5), 0, 255);
+        dst[10*stride] = CLIP(((20 * (src10 + src11) - 3 * (((src9 + src12)<<1) - (src8 + src13)) - (src7 + src14) + round_add) >> 5), 0, 255);
+        dst[11*stride] = CLIP(((20 * (src11 + src12) - 3 * (((src10 + src13)<<1) - (src9 + src14)) - (src8 + src15) + round_add) >> 5), 0, 255);
+        dst[12*stride] = CLIP(((20 * (src12 + src13) - 3 * (((src11 + src14)<<1) - (src10 + src15)) - (src9 + src16) + round_add) >> 5), 0, 255);
+
+        dst[13*stride] = CLIP(((20 * (src13 + src14) + (src16<<1) + 3 * (src11 - ((src12 + src15) << 1)) - src10 + round_add) >> 5), 0, 255);
+        dst[14*stride] = CLIP(((19 * src15 + 20 * src14 + 3 * (src12 - src16 - (src13 << 1)) - src11 + round_add) >> 5), 0, 255);
+        dst[15*stride] = CLIP(((23 * src15 + 7 * ((src16<<1) - src14) + 3 * src13 - src12 + round_add) >> 5), 0, 255);
+
+		dst++;
+        src++;
+    }
+}
+
 void interpolate8x8_lowpass_v_c(uint8_t *dst, uint8_t *src, int32_t stride, int32_t rounding)
 {
     int32_t i;
@@ -272,6 +359,42 @@ void interpolate8x8_lowpass_v_c(uint8_t *dst, uint8_t *src, int32_t stride, int3
 		dst++;
         src++;
     }
+}
+
+void interpolate16x16_lowpass_hv_c(uint8_t *dst1, uint8_t *dst2, uint8_t *src, int32_t stride, int32_t rounding)
+{
+	int32_t i;
+	uint8_t round_add = 16 - rounding;
+	uint8_t *h_ptr = dst2;
+
+    for(i = 0; i < 17; i++)
+    {
+
+        h_ptr[0] = CLIP(((7 * ((src[0]<<1) - src[2]) +  23 * src[1] + 3 * src[3] - src[4] + round_add) >> 5), 0, 255);
+        h_ptr[1] = CLIP(((19 * src[1] + 20 * src[2] - src[5] + 3 * (src[4] - src[0] - (src[3]<<1)) + round_add) >> 5), 0, 255);
+        h_ptr[2] = CLIP(((20 * (src[2] + src[3]) + (src[0]<<1) + 3 * (src[5] - ((src[1] + src[4])<<1)) - src[6] + round_add) >> 5), 0, 255);
+
+        h_ptr[3] = CLIP(((20 * (src[3] + src[4]) + 3 * ((src[6] + src[1]) - ((src[2] + src[5])<<1)) - (src[0] + src[7]) + round_add) >> 5), 0, 255);
+        h_ptr[4] = CLIP(((20 * (src[4] + src[5]) - 3 * (((src[3] + src[6])<<1) - (src[2] + src[7])) - (src[1] + src[8]) + round_add) >> 5), 0, 255);
+        h_ptr[5] = CLIP(((20 * (src[5] + src[6]) - 3 * (((src[4] + src[7])<<1) - (src[3] + src[8])) - (src[2] + src[9]) + round_add) >> 5), 0, 255);
+        h_ptr[6] = CLIP(((20 * (src[6] + src[7]) - 3 * (((src[5] + src[8])<<1) - (src[4] + src[9])) - (src[3] + src[10]) + round_add) >> 5), 0, 255);
+        h_ptr[7] = CLIP(((20 * (src[7] + src[8]) - 3 * (((src[6] + src[9])<<1) - (src[5] + src[10])) - (src[4] + src[11]) + round_add) >> 5), 0, 255);
+        h_ptr[8] = CLIP(((20 * (src[8] + src[9]) - 3 * (((src[7] + src[10])<<1) - (src[6] + src[11])) - (src[5] + src[12]) + round_add) >> 5), 0, 255);
+        h_ptr[9] = CLIP(((20 * (src[9] + src[10]) - 3 * (((src[8] + src[11])<<1) - (src[7] + src[12])) - (src[6] + src[13]) + round_add) >> 5), 0, 255);
+        h_ptr[10] = CLIP(((20 * (src[10] + src[11]) - 3 * (((src[9] + src[12])<<1) - (src[8] + src[13])) - (src[7] + src[14]) + round_add) >> 5), 0, 255);
+        h_ptr[11] = CLIP(((20 * (src[11] + src[12]) - 3 * (((src[10] + src[13])<<1) - (src[9] + src[14])) - (src[8] + src[15]) + round_add) >> 5), 0, 255);
+        h_ptr[12] = CLIP(((20 * (src[12] + src[13]) - 3 * (((src[11] + src[14])<<1) - (src[10] + src[15])) - (src[9] + src[16]) + round_add) >> 5), 0, 255);
+
+        h_ptr[13] = CLIP(((20 * (src[13] + src[14]) + (src[16]<<1) + 3 * (src[11] - ((src[12] + src[15]) << 1)) - src[10] + round_add) >> 5), 0, 255);
+        h_ptr[14] = CLIP(((19 * src[15] + 20 * src[14] + 3 * (src[12] - src[16] - (src[13] << 1)) - src[11] + round_add) >> 5), 0, 255);
+        h_ptr[15] = CLIP(((23 * src[15] + 7 * ((src[16]<<1) - src[14]) + 3 * src[13] - src[12] + round_add) >> 5), 0, 255);
+
+        h_ptr += stride;
+        src += stride;
+    }
+
+	interpolate16x16_lowpass_v_c(dst1, dst2, stride, rounding);
+
 }
 
 void interpolate8x8_lowpass_hv_c(uint8_t *dst1, uint8_t *dst2, uint8_t *src, int32_t stride, int32_t rounding)

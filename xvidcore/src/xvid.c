@@ -37,7 +37,7 @@
  *  - 22.12.2001  API change: added xvid_init() - Isibaar
  *  - 16.12.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: xvid.c,v 1.33.2.7 2002-10-06 07:05:50 suxen_drol Exp $
+ *  $Id: xvid.c,v 1.33.2.8 2002-10-10 12:15:48 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -224,6 +224,10 @@ xvid_init(void *handle,
 	interpolate8x8_halfpel_h  = interpolate8x8_halfpel_h_c;
 	interpolate8x8_halfpel_v  = interpolate8x8_halfpel_v_c;
 	interpolate8x8_halfpel_hv = interpolate8x8_halfpel_hv_c;
+
+	interpolate16x16_lowpass_h = interpolate16x16_lowpass_h_c;
+	interpolate16x16_lowpass_v = interpolate16x16_lowpass_v_c;
+	interpolate16x16_lowpass_hv = interpolate16x16_lowpass_hv_c;
 
 	interpolate8x8_lowpass_h = interpolate8x8_lowpass_h_c;
 	interpolate8x8_lowpass_v = interpolate8x8_lowpass_v_c;

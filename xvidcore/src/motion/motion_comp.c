@@ -13,6 +13,58 @@
 
 
 static __inline void
+compensate16x16_interpolate(int16_t * const dct_codes,
+			  			    uint8_t * const cur,
+						    const uint8_t * const ref,
+						    const uint8_t * const refh,
+						    const uint8_t * const refv,
+						    const uint8_t * const refhv,
+						    const uint32_t x,
+						    const uint32_t y,
+						    const int32_t dx,
+						    const int32_t dy,
+						    const uint32_t stride,
+  						    const uint32_t quarterpel,
+						    const uint32_t rounding)
+{
+	if(quarterpel) {
+		interpolate16x16_quarterpel((uint8_t *) refv, (uint8_t *) ref, (uint8_t *) refh,
+			(uint8_t *) refh + 64, (uint8_t *) refhv, x, y, dx, dy, stride, rounding);
+
+		transfer_8to16sub(dct_codes, cur + y*stride + x, 
+						  refv + y*stride + x, stride);
+		transfer_8to16sub(dct_codes+64, cur + y*stride + x + 8, 
+						  refv + y*stride + x + 8, stride);
+		transfer_8to16sub(dct_codes+128, cur + y*stride + x + 8*stride, 
+						  refv + y*stride + x + 8*stride, stride);
+		transfer_8to16sub(dct_codes+192, cur + y*stride + x + 8*stride + 8, 
+						  refv + y*stride + x + 8*stride+8, stride);
+
+	}
+	else
+	{
+		const uint8_t * reference;
+
+		switch (((dx & 1) << 1) + (dy & 1))	// ((dx%2)?2:0)+((dy%2)?1:0)
+		{
+		case 0:	reference = ref + ((y + dy / 2) * stride + x + dx / 2); break;
+		case 1:	reference = refv + ((y + (dy-1) / 2) * stride + x + dx / 2); break;
+		case 2: reference = refh + ((y + dy / 2) * stride + x + (dx-1) / 2); break;
+		default:					// case 3:
+			reference = refhv + ((y + (dy-1) / 2) * stride + x + (dx-1) / 2); break;
+		}
+		transfer_8to16sub(dct_codes, cur + y * stride + x,
+							  reference, stride);
+		transfer_8to16sub(dct_codes+64, cur + y * stride + x + 8,
+							  reference + 8, stride);
+		transfer_8to16sub(dct_codes+128, cur + y * stride + x + 8*stride,
+							  reference + 8*stride, stride);
+		transfer_8to16sub(dct_codes+192, cur + y * stride + x + 8*stride+8,
+							  reference + 8*stride + 8, stride);
+	}
+}
+
+static __inline void
 compensate8x8_interpolate(int16_t * const dct_codes,
 						  uint8_t * const cur,
 						  const uint8_t * const ref,
@@ -99,17 +151,8 @@ MBMotionCompensation(MACROBLOCK * const mb,
 			dy = mb->qmvs[0].y;
 		}
 
-		compensate8x8_interpolate(&dct_codes[0 * 64], cur->y, ref->y, refh->y,
-							  refv->y, refhv->y, 16 * i, 16 * j, dx, dy,
-							  edged_width, quarterpel, rounding);
-		compensate8x8_interpolate(&dct_codes[1 * 64], cur->y, ref->y, refh->y,
-							  refv->y, refhv->y, 16 * i + 8, 16 * j, dx, dy,
-							  edged_width, quarterpel, rounding);
-		compensate8x8_interpolate(&dct_codes[2 * 64], cur->y, ref->y, refh->y,
-							  refv->y, refhv->y, 16 * i, 16 * j + 8, dx, dy,
-							  edged_width, quarterpel, rounding);
-		compensate8x8_interpolate(&dct_codes[3 * 64], cur->y, ref->y, refh->y,
-							  refv->y, refhv->y, 16 * i + 8, 16 * j + 8, dx,
+		compensate16x16_interpolate(&dct_codes[0 * 64], cur->y, ref->y, refh->y,
+							  refv->y, refhv->y, 16 * i, 16 * j, dx,
 							  dy, edged_width, quarterpel, rounding);
 
 		if (quarterpel)
