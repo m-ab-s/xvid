@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.c,v 1.42.2.3 2004-05-28 21:40:11 edgomez Exp $
+ * $Id: bitstream.c,v 1.42.2.4 2004-05-31 21:26:23 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -814,23 +814,12 @@ BitstreamReadHeaders(Bitstream * bs,
 			if (coding_type != B_VOP) {
 				dec->last_time_base = dec->time_base;
 				dec->time_base += time_incr;
-				dec->time = time_increment;
-
-#if 0
-					dec->time_base * dec->time_inc_resolution +
-					time_increment;
-#endif
-					dec->time_pp = (uint32_t)
-						(dec->time_inc_resolution + dec->time - dec->last_non_b_time)%dec->time_inc_resolution;
+				dec->time = dec->time_base*dec->time_inc_resolution + time_increment;
+				dec->time_pp = (int32_t)(dec->time - dec->last_non_b_time);
 				dec->last_non_b_time = dec->time;
 			} else {
-				dec->time = time_increment;
-#if 0
-					(dec->last_time_base +
-					 time_incr) * dec->time_inc_resolution + time_increment;
-#endif
-				dec->time_bp = (uint32_t)
-					(dec->time_inc_resolution + dec->last_non_b_time - dec->time)%dec->time_inc_resolution;
+				dec->time = (dec->last_time_base + time_incr)*dec->time_inc_resolution + time_increment;
+				dec->time_bp = dec->time_pp - (int32_t)(dec->last_non_b_time - dec->time);
 			}
 			DPRINTF(XVID_DEBUG_HEADER,"time_pp=%i\n", dec->time_pp);
 			DPRINTF(XVID_DEBUG_HEADER,"time_bp=%i\n", dec->time_bp);
@@ -1023,7 +1012,7 @@ BitstreamReadHeaders(Bitstream * bs,
 				else
 					sscanf(tmp, "XviD%d", &dec->bs_version);
 
-				DPRINTF(XVID_DEBUG_HEADER, "xvid bitstream version=%i", dec->bs_version);
+				DPRINTF(XVID_DEBUG_HEADER, "xvid bitstream version=%i\n", dec->bs_version);
 			}
 
 		    /* divx detection */
