@@ -193,7 +193,7 @@ LRESULT compress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * 
 
 	if (lpbiOutput == NULL) 
 	{
-		return sizeof(BITMAPV4HEADER);
+		return sizeof(BITMAPINFOHEADER);
 	}
 
 	memcpy(outhdr, inhdr, sizeof(BITMAPINFOHEADER));
