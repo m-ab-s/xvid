@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.9 2003-07-10 17:39:51 edgomez Exp $
+ * $Id: xvid.c,v 1.45.2.10 2003-07-14 12:40:16 syskin Exp $
  *
  ****************************************************************************/
 
@@ -403,7 +403,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		add_upsampled_8x8_16to8 = xvid_Add_Upsampled_8x8_16To8_xmm;
 
 		/* Quantization */
-		quant4_intra = quant4_intra_xmm;
+//		quant4_intra = quant4_intra_xmm;
 		quant4_inter = quant4_inter_xmm;
 
 		dequant_intra = dequant_intra_xmm;
@@ -451,7 +451,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 		/* Quantization */
 		dequant4_intra = dequant4_intra_3dne;
 		dequant4_inter = dequant4_inter_3dne;
-		quant_intra = quant_intra_3dne;
+//		quant_intra = quant_intra_3dne;
 		quant_inter = quant_inter_3dne;
 		dequant_intra = dequant_intra_3dne;
 		dequant_inter = dequant_inter_3dne;
