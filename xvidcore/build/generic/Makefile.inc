@@ -17,8 +17,11 @@ SRC = \
 	$(SRCDIR)/image/colorspace.c \
 	$(SRCDIR)/image/image.c \
 	$(SRCDIR)/image/interpolate8x8.c \
+	$(SRCDIR)/image/reduced.c \
+	$(SRCDIR)/image/font.c \
 	$(SRCDIR)/motion/motion_comp.c \
 	$(SRCDIR)/motion/motion_est.c \
+	$(SRCDIR)/motion/smp_motion_est.c \
 	$(SRCDIR)/motion/sad.c \
 	$(SRCDIR)/prediction/mbprediction.c \
 	$(SRCDIR)/quant/adapt_quant.c \
@@ -50,16 +53,15 @@ SRC_INTEL = \
 	$(SRCDIR)/dct/x86_asm/fdct_mmx.asm \
 	$(SRCDIR)/dct/x86_asm/idct_mmx.asm \
 	$(SRCDIR)/image/x86_asm/interpolate8x8_mmx.asm \
-	$(SRCDIR)/image/x86_asm/rgb_to_yv12_mmx.asm \
-	$(SRCDIR)/image/x86_asm/yuv_to_yv12_mmx.asm \
-	$(SRCDIR)/image/x86_asm/yuyv_to_yv12_mmx.asm \
-	$(SRCDIR)/image/x86_asm/yv12_to_rgb24_mmx.asm \
-	$(SRCDIR)/image/x86_asm/yv12_to_rgb32_mmx.asm \
-	$(SRCDIR)/image/x86_asm/yv12_to_yuyv_mmx.asm \
+	$(SRCDIR)/image/x86_asm/reduced_mmx.asm \
+	$(SRCDIR)/image/x86_asm/colorspace_rgb_mmx.asm \
+	$(SRCDIR)/image/x86_asm/colorspace_yuyv_mmx.asm \
+	$(SRCDIR)/image/x86_asm/colorspace_yuv_mmx.asm \
 	$(SRCDIR)/motion/x86_asm/sad_mmx.asm \
 	$(SRCDIR)/quant/x86_asm/quantize4_mmx.asm \
 	$(SRCDIR)/quant/x86_asm/quantize_mmx.asm \
 	$(SRCDIR)/utils/x86_asm/mem_transfer_mmx.asm	\
+	$(SRCDIR)/utils/x86_asm/interlacing_mmx.asm \
 	\
 	$(SRCDIR)/image/x86_asm/interpolate8x8_xmm.asm	\
 	$(SRCDIR)/motion/x86_asm/sad_xmm.asm \
