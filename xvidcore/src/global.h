@@ -50,7 +50,7 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: global.h,v 1.18 2002-12-15 01:21:12 edgomez Exp $
+ * $Id: global.h,v 1.18.2.1 2003-04-04 22:12:07 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -88,6 +88,7 @@ typedef struct
 	uint32_t *tail;
 	uint32_t *start;
 	uint32_t length;
+	uint32_t initpos;
 }
 Bitstream;
 

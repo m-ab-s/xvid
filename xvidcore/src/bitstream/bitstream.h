@@ -50,12 +50,14 @@
  *  exception also makes it possible to release a modified version which
  *  carries forward this exception.
  *
- * $Id: bitstream.h,v 1.16 2003-02-09 19:32:52 edgomez Exp $
+ * $Id: bitstream.h,v 1.16.2.1 2003-04-04 22:12:07 edgomez Exp $
  *
  ****************************************************************************/
 
 #ifndef _BITSTREAM_H_
 #define _BITSTREAM_H_
+
+#include <stdio.h>
 
 #include "../portab.h"
 #include "../decoder.h"
@@ -165,23 +167,31 @@ BitstreamInit(Bitstream * const bs,
 			  uint32_t length)
 {
 	uint32_t tmp;
+	size_t bitpos;
+	ptr_t adjbitstream = (ptr_t)bitstream;
 
-	bs->start = bs->tail = (uint32_t *) bitstream;
+	/*
+	 * Start the stream on a uint32_t boundary, by rounding down to the
+	 * previous uint32_t and skipping the intervening bytes.
+	 */
+	bitpos = ((sizeof(uint32_t)-1) & (size_t)bitstream);
+	adjbitstream = adjbitstream - bitpos;
+	bs->start = bs->tail = (uint32_t *) adjbitstream;
 
-	tmp = *(uint32_t *) bitstream;
+	tmp = *bs->start;
 #ifndef ARCH_IS_BIG_ENDIAN
 	BSWAP(tmp);
 #endif
 	bs->bufa = tmp;
 
-	tmp = *((uint32_t *) bitstream + 1);
+	tmp = *(bs->start + 1);
 #ifndef ARCH_IS_BIG_ENDIAN
 	BSWAP(tmp);
 #endif
 	bs->bufb = tmp;
 
 	bs->buf = 0;
-	bs->pos = 0;
+	bs->pos = bs->initpos = bitpos*8;
 	bs->length = length;
 }
 
@@ -208,7 +218,7 @@ BitstreamReset(Bitstream * const bs)
 	bs->bufb = tmp;
 
 	bs->buf = 0;
-	bs->pos = 0;
+	bs->pos = bs->initpos;
 }
 
 
@@ -301,7 +311,7 @@ BitstreamByteAlign(Bitstream * const bs)
 static uint32_t __inline
 BitstreamPos(const Bitstream * const bs)
 {
-	return((uint32_t)(8*((ptr_t)bs->tail - (ptr_t)bs->start) + bs->pos));
+	return((uint32_t)(8*((ptr_t)bs->tail - (ptr_t)bs->start) + bs->pos - bs->initpos));
 }
 
 
@@ -324,6 +334,10 @@ BitstreamLength(Bitstream * const bs)
 
 		len += (bs->pos + 7) / 8;
 	}
+
+	/* initpos is always on a byte boundary */
+	if (bs->initpos)
+		len -= bs->initpos/8;
 
 	return len;
 }
