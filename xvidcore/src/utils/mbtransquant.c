@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbtransquant.c,v 1.21.2.18 2003-10-07 13:02:35 edgomez Exp $
+ * $Id: mbtransquant.c,v 1.21.2.19 2003-11-23 17:01:08 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -43,6 +43,7 @@
 #include "../encoder.h"
 
 #include "../image/reduced.h"
+#include  "../quant/quant_matrix.h"
 
 MBFIELDTEST_PTR MBFieldTest;
 
@@ -176,26 +177,13 @@ MBDeQuantIntra(const MBParam * pParam,
 	stop_iquant_timer();
 }
 
-
-typedef int (*trellis_func_ptr_t)(int16_t *const Out,
-								  const int16_t *const In,
-								  int Q,
-								  const uint16_t * const Zigzag,
-								  int Non_Zero);
-
 static int
-dct_quantize_trellis_h263_c(int16_t *const Out,
-							const int16_t *const In,
-							int Q,
-							const uint16_t * const Zigzag,
-							int Non_Zero);
-
-static int
-dct_quantize_trellis_mpeg_c(int16_t *const Out,
-							const int16_t *const In,
-							int Q,
-							const uint16_t * const Zigzag,
-							int Non_Zero);
+dct_quantize_trellis_c(int16_t *const Out,
+					   const int16_t *const In,
+					   int Q,
+					   const uint16_t * const Zigzag,
+					   const uint16_t * const QuantMatrix,
+					   int Non_Zero);
 
 /* Quantize all blocks -- Inter mode */
 static __inline uint8_t
@@ -219,12 +207,6 @@ MBQuantInter(const MBParam * pParam,
 			quant_mpeg_inter
 		};
 
-	trellis_func_ptr_t const trellis[2] =
-		{
-			dct_quantize_trellis_h263_c,
-			dct_quantize_trellis_mpeg_c
-		};
-
 	mpeg = !!(pParam->vol_flags & XVID_VOL_MPEGQUANT);
 
 	for (i = 0; i < 6; i++) {
@@ -235,7 +217,21 @@ MBQuantInter(const MBParam * pParam,
 		sum = quant[mpeg](&qcoeff[i*64], &data[i*64], pMB->quant);
 
 		if(sum && (frame->vop_flags & XVID_VOP_TRELLISQUANT)) {
-			sum = trellis[mpeg](&qcoeff[i*64], &data[i*64], pMB->quant, &scan_tables[0][0], 63);
+			const static uint16_t h263matrix[] =
+				{
+					16, 16, 16, 16, 16, 16, 16, 16,
+					16, 16, 16, 16, 16, 16, 16, 16,
+					16, 16, 16, 16, 16, 16, 16, 16,
+					16, 16, 16, 16, 16, 16, 16, 16,
+					16, 16, 16, 16, 16, 16, 16, 16,
+					16, 16, 16, 16, 16, 16, 16, 16,
+					16, 16, 16, 16, 16, 16, 16, 16,
+					16, 16, 16, 16, 16, 16, 16, 16
+				};
+			sum = dct_quantize_trellis_c(&qcoeff[i*64], &data[i*64],
+										 pMB->quant, &scan_tables[0][0],
+										 (mpeg)?(uint16_t*)get_inter_matrix():h263matrix,
+										 63);
 		}
 		stop_quant_timer();
 
@@ -755,7 +751,14 @@ static const uint8_t * const B16_17_Code_Len_Last[6] = { /* levels [1..6] */
 	Code_Len24,Code_Len23,Code_Len22,Code_Len21, Code_Len3, Code_Len1,
 };
 
-#define TL(q) 0xfe00/(q*q)
+/* TL_SHIFT controls the precision of the RD optimizations in trellis
+ * valid range is [10..16]. The bigger, the more trellis is vulnerable
+ * to overflows in cost formulas.
+ *  - 10 allows ac values up to 2^11 == 2048
+ *  - 16 allows ac values up to 2^8 == 256
+ */
+#define TL_SHIFT 11
+#define TL(q) ((0xfe00>>(16-TL_SHIFT))/(q*q))
 
 static const int Trellis_Lambda_Tabs[31] = {
 	TL( 1),TL( 2),TL( 3),TL( 4),TL( 5),TL( 6), TL( 7),
@@ -785,10 +788,15 @@ Compute_Sum(const int16_t *C, int last)
 
 	return(sum);
 }
-/* this routine has been strippen of all debug code */
 
+/* this routine has been strippen of all debug code */
 static int
-dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, const uint16_t * const Zigzag, int Non_Zero)
+dct_quantize_trellis_c(int16_t *const Out,
+					   const int16_t *const In,
+					   int Q,
+					   const uint16_t * const Zigzag,
+					   const uint16_t * const QuantMatrix,
+					   int Non_Zero)
 {
 
     /*
@@ -802,28 +810,31 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
 	NODE Nodes[65], Last;
 	uint32_t Run_Costs0[64+1];
 	uint32_t * const Run_Costs = Run_Costs0 + 1;
-	const int Mult = 2*Q;
-	const int Bias = (Q-1) | 1;
-	const int Lev0 = Mult + Bias;
+
 	const int Lambda = Trellis_Lambda_Tabs[Q-1];    /* it's 1/lambda, actually */
 
 	int Run_Start = -1;
-	uint32_t Min_Cost = 2<<16;
+	uint32_t Min_Cost = 2<<TL_SHIFT;
 
 	int Last_Node = -1;
 	uint32_t Last_Cost = 0;
 
 	int i, j, sum;
-	Run_Costs[-1] = 2<<16;                          /* source (w/ CBP penalty) */
+	Run_Costs[-1] = 2<<TL_SHIFT;                          /* source (w/ CBP penalty) */
 
 	Non_Zero = Find_Last(Out, Zigzag, Non_Zero);
 	if (Non_Zero<0)
 		return 0; /* Sum is zero if there are only zero coeffs */
 
 	for(i=0; i<=Non_Zero; i++) {
+		const int q = ((Q*QuantMatrix[Zigzag[i]])>>4);
+		const int Mult = 2*q;
+		const int Bias = (q-1) | 1;
+		const int Lev0 = Mult + Bias;
+
 		const int AC = In[Zigzag[i]];
 		const int Level1 = Out[Zigzag[i]];
-		const int Dist0 = Lambda* AC*AC;
+		const unsigned int Dist0 = Lambda* AC*AC;
 		uint32_t Best_Cost = 0xf0000000;
 		Last_Cost += Dist0;
 
@@ -843,11 +854,11 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
 			Cost0 = Lambda*dQ*dQ;
 
 			Nodes[i].Run = 1;
-			Best_Cost = (Code_Len20[0]<<16) + Run_Costs[i-1]+Cost0;
+			Best_Cost = (Code_Len20[0]<<TL_SHIFT) + Run_Costs[i-1]+Cost0;
 			for(Run=i-Run_Start; Run>0; --Run) {
 				const uint32_t Cost_Base = Cost0 + Run_Costs[i-Run];
-				const uint32_t Cost = Cost_Base + (Code_Len20[Run-1]<<16);
-				const uint32_t lCost = Cost_Base + (Code_Len24[Run-1]<<16);
+				const uint32_t Cost = Cost_Base + (Code_Len20[Run-1]<<TL_SHIFT);
+				const uint32_t lCost = Cost_Base + (Code_Len24[Run-1]<<TL_SHIFT);
 
 				/*
 				 * TODO: what about tie-breaks? Should we favor short runs or
@@ -912,8 +923,8 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
 				 * (? doesn't seem to have any effect -- gruel )
 				 */
 
-				Cost1 = Cost_Base + (Tbl_L1[Run-1]<<16);
-				Cost2 = Cost_Base + (Tbl_L2[Run-1]<<16) + dDist21;
+				Cost1 = Cost_Base + (Tbl_L1[Run-1]<<TL_SHIFT);
+				Cost2 = Cost_Base + (Tbl_L2[Run-1]<<TL_SHIFT) + dDist21;
 
 				if (Cost2<Cost1) {
 					Cost1 = Cost2;
@@ -928,8 +939,8 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
 					Nodes[i].Level = bLevel;
 				}
 
-				Cost1 = Cost_Base + (Tbl_L1_Last[Run-1]<<16);
-				Cost2 = Cost_Base + (Tbl_L2_Last[Run-1]<<16) + dDist21;
+				Cost1 = Cost_Base + (Tbl_L1_Last[Run-1]<<TL_SHIFT);
+				Cost2 = Cost_Base + (Tbl_L2_Last[Run-1]<<TL_SHIFT) + dDist21;
 
 				if (Cost2<Cost1) {
 					Cost1 = Cost2;
@@ -960,7 +971,7 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
 			 * it a chance by not moving the left barrier too much.
 			 */
 
-			while( Run_Costs[Run_Start]>Min_Cost+(1<<16) )
+			while( Run_Costs[Run_Start]>Min_Cost+(1<<TL_SHIFT) )
 				Run_Start++;
 
 			/* spread on preceding coeffs the cost incurred by skipping this one */
@@ -986,13 +997,6 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
 	}
 
 	return sum;
-}
-
-static int
-dct_quantize_trellis_mpeg_c(int16_t *const Out, const int16_t *const In, int Q, const uint16_t * const Zigzag, int Non_Zero)
-{
-	/* ToDo: Ok ok it's just a place holder for Gruel -- damn write this one :-) */
-	return Compute_Sum(Out, 63);
 }
 
 /* original version including heavy debugging info */
@@ -1051,7 +1055,7 @@ static __inline uint32_t Evaluate_Cost(const int16_t *C, int Mult, int Bias,
 		V -= Ref[Zigzag[i]];
 		Dist += V*V;
 	}
-	Cost = Lambda*Dist + (Bits<<16);
+	Cost = Lambda*Dist + (Bits<<TL_SHIFT);
 	if (DBG==1)
 		printf( " Last:%2d/%2d Cost = [(Bits=%5.0d) + Lambda*(Dist=%6.0d) = %d ] >>12= %d ", Last,Max, Bits, Dist, Cost, Cost>>12 );
 	return Cost;
@@ -1083,8 +1087,8 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
 	const int Lambda = Trellis_Lambda_Tabs[Q-1];    /* it's 1/lambda, actually */
 
 	int Run_Start = -1;
-	Run_Costs[-1] = 2<<16;                          /* source (w/ CBP penalty) */
-	uint32_t Min_Cost = 2<<16;
+	Run_Costs[-1] = 2<<TL_SHIFT;                          /* source (w/ CBP penalty) */
+	uint32_t Min_Cost = 2<<TL_SHIFT;
 
 	int Last_Node = -1;
 	uint32_t Last_Cost = 0;
@@ -1123,12 +1127,12 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
 			Cost0 = Lambda*dQ*dQ;
 
 			Nodes[i].Run = 1;
-			Best_Cost = (Code_Len20[0]<<16) + Run_Costs[i-1]+Cost0;
+			Best_Cost = (Code_Len20[0]<<TL_SHIFT) + Run_Costs[i-1]+Cost0;
 			for(Run=i-Run_Start; Run>0; --Run)
 			{
 				const uint32_t Cost_Base = Cost0 + Run_Costs[i-Run];
-				const uint32_t Cost = Cost_Base + (Code_Len20[Run-1]<<16);
-				const uint32_t lCost = Cost_Base + (Code_Len24[Run-1]<<16);
+				const uint32_t Cost = Cost_Base + (Code_Len20[Run-1]<<TL_SHIFT);
+				const uint32_t lCost = Cost_Base + (Code_Len24[Run-1]<<TL_SHIFT);
 
 				/*
 				 * TODO: what about tie-breaks? Should we favor short runs or
@@ -1204,8 +1208,8 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
  * for sub-optimal (but slightly worth it, speed-wise) search, uncomment the following:
  *        if (Cost_Base>=Best_Cost) continue;
  */
-				Cost1 = Cost_Base + (Tbl_L1[Run-1]<<16);
-				Cost2 = Cost_Base + (Tbl_L2[Run-1]<<16) + dDist21;
+				Cost1 = Cost_Base + (Tbl_L1[Run-1]<<TL_SHIFT);
+				Cost2 = Cost_Base + (Tbl_L2[Run-1]<<TL_SHIFT) + dDist21;
 
 				if (Cost2<Cost1) {
 					Cost1 = Cost2;
@@ -1219,8 +1223,8 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
 					Nodes[i].Level = bLevel;
 				}
 
-				Cost1 = Cost_Base + (Tbl_L1_Last[Run-1]<<16);
-				Cost2 = Cost_Base + (Tbl_L2_Last[Run-1]<<16) + dDist21;
+				Cost1 = Cost_Base + (Tbl_L1_Last[Run-1]<<TL_SHIFT);
+				Cost2 = Cost_Base + (Tbl_L2_Last[Run-1]<<TL_SHIFT) + dDist21;
 
 				if (Cost2<Cost1) {
 					Cost1 = Cost2;
@@ -1266,7 +1270,7 @@ dct_quantize_trellis_h263_c(int16_t *const Out, const int16_t *const In, int Q, 
 			 * it a chance by not moving the left barrier too much.
 			 */
 
-			while( Run_Costs[Run_Start]>Min_Cost+(1<<16) )
+			while( Run_Costs[Run_Start]>Min_Cost+(1<<TL_SHIFT) )
 				Run_Start++;
 
 			/* spread on preceding coeffs the cost incurred by skipping this one */
