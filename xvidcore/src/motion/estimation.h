@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation.h,v 1.1.2.6 2003-11-30 16:13:16 edgomez Exp $
+ * $Id: estimation.h,v 1.1.2.7 2003-12-03 11:51:28 syskin Exp $
  *
  ****************************************************************************/
 
@@ -38,12 +38,12 @@
 #define MV_MAX_ERROR	(4096 * 256)
 
 /* INTER bias for INTER/INTRA decision; mpeg4 spec suggests 2*nb */
-#define MV16_INTER_BIAS	512
+#define MV16_INTER_BIAS	450
 
 /* vector map (vlc delta size) smoother parameters ! float !*/
 #define NEIGH_TEND_16X16		10.5
 #define NEIGH_TEND_8X8			40.0
-#define NEIGH_8X8_BIAS			30
+#define NEIGH_8X8_BIAS			40
 
 #define BITS_MULT				16
 

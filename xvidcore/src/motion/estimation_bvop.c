@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_bvop.c,v 1.1.2.5 2003-11-19 12:24:25 syskin Exp $
+ * $Id: estimation_bvop.c,v 1.1.2.6 2003-12-03 11:51:28 syskin Exp $
  *
  ****************************************************************************/
 
@@ -365,7 +365,7 @@ SearchBF(	const IMAGE * const pRef,
 	*Data->iMinSAD = MV_MAX_ERROR;
 	Data->iFcode = iFcode;
 	Data->qpel_precision = 0;
-	Data->chromaX = Data->chromaX = Data->chromaSAD = 256*4096; /* reset chroma-sad cache */
+	Data->chromaX = Data->chromaY = Data->chromaSAD = 256*4096; /* reset chroma-sad cache */
 
 	Data->RefP[0] = pRef->y + (x + Data->iEdgedWidth*y) * 16;
 	Data->RefP[2] = pRefH + (x + Data->iEdgedWidth*y) * 16;
@@ -391,12 +391,14 @@ SearchBF(	const IMAGE * const pRef,
 		if (!vector_repeats(pmv, i) )
 			CheckCandidate16no4v(pmv[i].x, pmv[i].y, Data, i);
 
-	if (MotionFlags & XVID_ME_USESQUARES16) MainSearchPtr = xvid_me_SquareSearch;
-	else if (MotionFlags & XVID_ME_ADVANCEDDIAMOND16) MainSearchPtr = xvid_me_AdvDiamondSearch;
-		else MainSearchPtr = xvid_me_DiamondSearch;
-
 	if (*Data->iMinSAD > 512) {
 		unsigned int mask = make_mask(pmv, 7, Data->dir);
+
+		MainSearchFunc *MainSearchPtr;
+		if (MotionFlags & XVID_ME_USESQUARES16) MainSearchPtr = xvid_me_SquareSearch;
+		else if (MotionFlags & XVID_ME_ADVANCEDDIAMOND16) MainSearchPtr = xvid_me_AdvDiamondSearch;
+		else MainSearchPtr = xvid_me_DiamondSearch;
+		
 		MainSearchPtr(Data->currentMV->x, Data->currentMV->y, Data, mask, CheckCandidate16no4v);
 	}
 
@@ -446,42 +448,46 @@ SkipDecisionB(const IMAGE * const pCur,
 				const uint32_t x, const uint32_t y,
 				const SearchData * const Data)
 {
-	int dx = 0, dy = 0, b_dx = 0, b_dy = 0;
-	int32_t sum;
 	int k;
-	const uint32_t stride = Data->iEdgedWidth/2;
-	/* this is not full chroma compensation, only it's fullpel approximation. should work though */
 
-	for (k = 0; k < 4; k++) {
-		dy += Data->directmvF[k].y >> Data->qpel;
-		dx += Data->directmvF[k].x >> Data->qpel;
-		b_dy += Data->directmvB[k].y >> Data->qpel;
-		b_dx += Data->directmvB[k].x >> Data->qpel;
+	if (!Data->chroma) {
+		int dx = 0, dy = 0, b_dx = 0, b_dy = 0;
+		int32_t sum;
+		const uint32_t stride = Data->iEdgedWidth/2;
+		/* this is not full chroma compensation, only it's fullpel approximation. should work though */
+
+		for (k = 0; k < 4; k++) {
+			dy += Data->directmvF[k].y >> Data->qpel;
+			dx += Data->directmvF[k].x >> Data->qpel;
+			b_dy += Data->directmvB[k].y >> Data->qpel;
+			b_dx += Data->directmvB[k].x >> Data->qpel;
+		}
+
+		dy = (dy >> 3) + roundtab_76[dy & 0xf];
+		dx = (dx >> 3) + roundtab_76[dx & 0xf];
+		b_dy = (b_dy >> 3) + roundtab_76[b_dy & 0xf];
+		b_dx = (b_dx >> 3) + roundtab_76[b_dx & 0xf];
+
+		sum = sad8bi(pCur->u + 8 * x + 8 * y * stride,
+						f_Ref->u + (y*8 + dy/2) * stride + x*8 + dx/2,
+						b_Ref->u + (y*8 + b_dy/2) * stride + x*8 + b_dx/2,
+						stride);
+
+		if (sum >= MAX_CHROMA_SAD_FOR_SKIP * (int)Data->iQuant) return; /* no skip */
+
+		sum += sad8bi(pCur->v + 8*x + 8 * y * stride,
+						f_Ref->v + (y*8 + dy/2) * stride + x*8 + dx/2,
+						b_Ref->v + (y*8 + b_dy/2) * stride + x*8 + b_dx/2,
+						stride);
+		
+		if (sum >= MAX_CHROMA_SAD_FOR_SKIP * (int)Data->iQuant) return; /* no skip */
 	}
 
-	dy = (dy >> 3) + roundtab_76[dy & 0xf];
-	dx = (dx >> 3) + roundtab_76[dx & 0xf];
-	b_dy = (b_dy >> 3) + roundtab_76[b_dy & 0xf];
-	b_dx = (b_dx >> 3) + roundtab_76[b_dx & 0xf];
-
-	sum = sad8bi(pCur->u + 8 * x + 8 * y * stride,
-					f_Ref->u + (y*8 + dy/2) * stride + x*8 + dx/2,
-					b_Ref->u + (y*8 + b_dy/2) * stride + x*8 + b_dx/2,
-					stride);
-
-	if (sum >= MAX_CHROMA_SAD_FOR_SKIP * (int)Data->iQuant) return; /* no skip */
-
-	sum += sad8bi(pCur->v + 8*x + 8 * y * stride,
-					f_Ref->v + (y*8 + dy/2) * stride + x*8 + dx/2,
-					b_Ref->v + (y*8 + b_dy/2) * stride + x*8 + b_dx/2,
-					stride);
-
-	if (sum < MAX_CHROMA_SAD_FOR_SKIP * (int)Data->iQuant) {
-		pMB->mode = MODE_DIRECT_NONE_MV; /* skipped */
-		for (k = 0; k < 4; k++) {
-			pMB->qmvs[k] = pMB->mvs[k] = Data->directmvF[k];
-			pMB->b_qmvs[k] = pMB->b_mvs[k] =  Data->directmvB[k];
-		}
+	/* skip */
+	pMB->mode = MODE_DIRECT_NONE_MV; /* skipped */
+	for (k = 0; k < 4; k++) {
+		pMB->qmvs[k] = pMB->mvs[k] = Data->directmvF[k];
+		pMB->b_qmvs[k] = pMB->b_mvs[k] =  Data->directmvB[k];
 	}
 }
 
@@ -563,22 +569,12 @@ SearchDirect(const IMAGE * const f_Ref,
 	/* initial (fast) skip decision */
 	if (*Data->iMinSAD < (int)Data->iQuant * INITIAL_SKIP_THRESH * (Data->chroma?3:2)) {
 		/* possible skip */
-		if (Data->chroma) {
-			pMB->mode = MODE_DIRECT_NONE_MV;
-			return *Data->iMinSAD; /* skip. */
-		} else {
-			SkipDecisionB(pCur, f_Ref, b_Ref, pMB, x, y, Data);
-			if (pMB->mode == MODE_DIRECT_NONE_MV) return *Data->iMinSAD; /* skip. */
-		}
+		SkipDecisionB(pCur, f_Ref, b_Ref, pMB, x, y, Data);
+		if (pMB->mode == MODE_DIRECT_NONE_MV) return *Data->iMinSAD; /* skipped */
 	}
 
 	*Data->iMinSAD += Data->lambda16;
 	skip_sad = *Data->iMinSAD;
-
-	/*
-	 * DIRECT MODE DELTA VECTOR SEARCH.
-	 * This has to be made more effective, but at the moment I'm happy it's running at all
-	 */
 
 	if (MotionFlags & XVID_ME_USESQUARES16) MainSearchPtr = xvid_me_SquareSearch;
 		else if (MotionFlags & XVID_ME_ADVANCEDDIAMOND16) MainSearchPtr = xvid_me_AdvDiamondSearch;
@@ -753,7 +749,7 @@ SearchInterpolate(const IMAGE * const f_Ref,
 		SubpelRefine_dir(Data, CheckCandidateInt, 2);
 	}
 
-	*Data->iMinSAD += (2+3) * Data->lambda16; /* two bits are needed to code interpolate mode. */
+	*Data->iMinSAD += 2 * Data->lambda16; /* two bits are needed to code interpolate mode. */
 
 	if (*Data->iMinSAD < *best_sad) {
 		*best_sad = *Data->iMinSAD;
@@ -811,7 +807,6 @@ MotionEstimationBVOP(MBParam * const pParam,
 	memset(&Data, 0, sizeof(SearchData));
 
 	Data.iEdgedWidth = pParam->edged_width;
-	Data.lambda16 = xvid_me_lambda_vec16[MAX(frame->quant-2, 2)];
 	Data.qpel = pParam->vol_flags & XVID_VOL_QUARTERPEL ? 1 : 0;
 	Data.rounding = 0;
 	Data.chroma = frame->motion_flags & XVID_ME_CHROMA_BVOP;
@@ -835,6 +830,8 @@ MotionEstimationBVOP(MBParam * const pParam,
 					pMB->mvs[0] = pMB->b_mvs[0] = zeroMV;
 					continue;
 				}
+			
+			Data.lambda16 = xvid_me_lambda_vec16[b_mb->quant];
 
 			Data.Cur = frame->image.y + (j * Data.iEdgedWidth + i) * 16;
 			Data.CurU = frame->image.u + (j * Data.iEdgedWidth/2 + i) * 8;
@@ -883,8 +880,9 @@ MotionEstimationBVOP(MBParam * const pParam,
 						&Data);
 
 			/* final skip decision */
-			if ( (skip_sad < Data.iQuant * MAX_SAD00_FOR_SKIP * 2)
-					&& ((100*best_sad)/(skip_sad+1) > FINAL_SKIP_THRESH) )
+			if ( (skip_sad < Data.iQuant * MAX_SAD00_FOR_SKIP * (Data.chroma ? 3:2) )
+				&& ((100*best_sad)/(skip_sad+1) > FINAL_SKIP_THRESH) )
+
 				SkipDecisionB(&frame->image, f_ref, b_ref, pMB, i, j, &Data);
 
 			switch (pMB->mode) {

@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_pvop.c,v 1.1.2.9 2003-11-30 16:13:16 edgomez Exp $
+ * $Id: estimation_pvop.c,v 1.1.2.10 2003-12-03 11:51:28 syskin Exp $
  *
  ****************************************************************************/
 
@@ -479,7 +479,7 @@ ModeDecision_SAD(SearchData * const Data,
 
 	/* intra decision */
 
-	if (iQuant > 8) InterBias += 100 * (iQuant - 8); /* to make high quants work */
+	if (iQuant > 10) InterBias += 60 * (iQuant - 10); /* to make high quants work */
 	if (y != 0)
 		if ((pMB - pParam->mb_width)->mode == MODE_INTRA ) InterBias -= 80;
 	if (x != 0)
@@ -798,7 +798,7 @@ SearchP(const IMAGE * const pRef,
 				bSAD = Data->iMinSAD[0]; Data->iMinSAD[0] = MV_MAX_ERROR;
 
 				CheckCandidate(startMV.x, startMV.y, Data, 255);
-				MainSearchPtr(startMV.x, startMV.y, Data, 255, CheckCandidate);
+				xvid_me_DiamondSearch(startMV.x, startMV.y, Data, 255, CheckCandidate);
 				if (bSAD < Data->iMinSAD[0]) {
 					Data->currentMV[0] = backupMV;
 					Data->iMinSAD[0] = bSAD; }
@@ -810,7 +810,7 @@ SearchP(const IMAGE * const pRef,
 				bSAD = Data->iMinSAD[0]; Data->iMinSAD[0] = MV_MAX_ERROR;
 
 				CheckCandidate(startMV.x, startMV.y, Data, 255);
-				MainSearchPtr(startMV.x, startMV.y, Data, 255, CheckCandidate);
+				xvid_me_DiamondSearch(startMV.x, startMV.y, Data, 255, CheckCandidate);
 				if (bSAD < Data->iMinSAD[0]) {
 					Data->currentMV[0] = backupMV;
 					Data->iMinSAD[0] = bSAD;
