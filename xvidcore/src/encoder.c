@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.37 2003-01-13 14:33:24 chl Exp $
+ *  $Id: encoder.c,v 1.76.2.38 2003-01-13 23:52:50 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -658,10 +658,11 @@ set_timecodes(FRAMEINFO* pCur,FRAMEINFO *pRef, int32_t time_base)
 /* convert pFrame->intra to coding_type */
 static int intra2coding_type(int intra)
 {
-	if (intra < 0)		return -1;
-	if (intra == 1)		return I_VOP;
-	if (intra == 2)		return B_VOP;
-	
+	if (intra < 0)  return -1;
+	if (intra == 1) return I_VOP;
+	if (intra == 2) return B_VOP;
+	if (intra == 3) return S_VOP;
+
 	return P_VOP;
 }
 
@@ -732,9 +733,20 @@ ipvop_loop:
 
 			BitstreamPadAlways(&bs);
 			pFrame->length = BitstreamLength(&bs);
-			pFrame->intra = 0;
+			if(pEnc->current->coding_type == P_VOP)
+				pFrame->intra = 0;
+			else
+				pFrame->intra = 3;
 
 			emms();
+
+			if (pResult) {
+				pResult->quant = pEnc->current->quant;
+				pResult->hlength = pFrame->length - (pEnc->current->sStat.iTextBits / 8);
+				pResult->kblks = pEnc->current->sStat.kblks;
+				pResult->mblks = pEnc->current->sStat.mblks;
+				pResult->ublks = pEnc->current->sStat.ublks;
+			}
 
 			return XVID_ERR_OK;
 		}
@@ -750,6 +762,14 @@ ipvop_loop:
 		BitstreamPadAlways(&bs);
 		pFrame->length = BitstreamLength(&bs);
 		pFrame->intra = 2;
+
+		if (pResult) {
+			pResult->quant = pEnc->current->quant;
+			pResult->hlength = pFrame->length - (pEnc->current->sStat.iTextBits / 8);
+			pResult->kblks = pEnc->current->sStat.kblks;
+			pResult->mblks = pEnc->current->sStat.mblks;
+			pResult->ublks = pEnc->current->sStat.ublks;
+		}
 
 		if (input_valid)
 			queue_image(pEnc, pFrame);
@@ -786,6 +806,14 @@ ipvop_loop:
 			BitstreamPadAlways(&bs);
 			pFrame->length = BitstreamLength(&bs);
 			pFrame->intra = 4;
+
+			if (pResult) {
+				pResult->quant = pEnc->current->quant;
+				pResult->hlength = pFrame->length - (pEnc->current->sStat.iTextBits / 8);
+				pResult->kblks = pEnc->current->sStat.kblks;
+				pResult->mblks = pEnc->current->sStat.mblks;
+				pResult->ublks = pEnc->current->sStat.ublks;
+			}
 
 			if (input_valid)
 				queue_image(pEnc, pFrame);
@@ -862,10 +890,43 @@ bvop_loop:
 
 		//	BitstreamPutBits(&bs, 0x7f, 8);
 			pFrame->intra = 5;
+
+			if (pResult) {
+				/*
+				 * We must decide what to put there because i know some apps
+				 * are storing statistics about quantizers and just do
+				 * stats[quant]++ or stats[quant-1]++
+				 * transcode is one of these app with its 2pass module
+				 */
+
+				/*
+				 * For now i prefer 31 than 0 that could lead to a segfault
+				 * in transcode
+				 */
+				pResult->quant = 31;
+
+				pResult->hlength = 0;
+				pResult->kblks = 0;
+				pResult->mblks = 0;
+				pResult->ublks = 0;
+			}
+
+		} else {
+
+			if (pResult) {
+				pResult->quant = pEnc->current->quant;
+				pResult->hlength = pFrame->length - (pEnc->current->sStat.iTextBits / 8);
+				pResult->kblks = pEnc->current->sStat.kblks;
+				pResult->mblks = pEnc->current->sStat.mblks;
+				pResult->ublks = pEnc->current->sStat.ublks;
+			}
+
 		}
 
 		pFrame->length = BitstreamLength(&bs);
+
 		emms();
+
 		return XVID_ERR_OK;
 	}
 
@@ -1003,8 +1064,12 @@ bvop_loop:
 			FrameCodeP(pEnc, &bs, &bits, 1, 0);
 			bframes_count = 0;
 
-			pFrame->intra = 0;
-			
+			if(pEnc->current->coding_type == P_VOP)
+				pFrame->intra = 0;
+			else
+				pFrame->intra = 3;
+
+
 		} else {
 
 			FrameCodeI(pEnc, &bs, &bits);
@@ -1026,7 +1091,7 @@ bvop_loop:
 		 * NB : sequences like "IIBB" decode fine with msfdam but,
 		 *      go screwy with divx 5.00
 		 */
-	} else if (mode == P_VOP || pEnc->bframenum_tail >= pEnc->mbParam.max_bframes) {
+	} else if (mode == P_VOP || mode == S_VOP || pEnc->bframenum_tail >= pEnc->mbParam.max_bframes) {
 		/*
 		 * This will be coded as a Predicted Frame
 		 */
@@ -1041,7 +1106,10 @@ bvop_loop:
 
 		FrameCodeP(pEnc, &bs, &bits, 1, 0);
 		bframes_count = 0;
-		pFrame->intra = 0;
+		if(pEnc->current->coding_type == P_VOP)
+			pFrame->intra = 0;
+		else
+			pFrame->intra = 3;
 		pEnc->flush_bframes = 1;
 
 		if ((pEnc->mbParam.global & XVID_GLOBAL_PACKED) && (pEnc->bframenum_tail > 0)) {
