@@ -67,59 +67,63 @@ int pmvfast_presets[7] = {
 
 int get_colorspace(BITMAPINFOHEADER * hdr)
 {
-	if (hdr->biHeight < 0) 
-	{
-		DEBUGERR("colorspace: inverted input format not supported");
-		return XVID_CSP_NULL;
-	}
-	
+	/* rgb only: negative height specifies top down image */
+	int rgb_flip = (hdr->biHeight < 0 ? 0 : XVID_CSP_VFLIP);
+
 	switch(hdr->biCompression)
 	{
 	case BI_RGB :
 		if (hdr->biBitCount == 16)
 		{
 			DEBUG("RGB16 (RGB555)");
-			return XVID_CSP_VFLIP | XVID_CSP_RGB555;
+			return rgb_flip | XVID_CSP_RGB555;
 		}
 		if (hdr->biBitCount == 24) 
 		{
 			DEBUG("RGB24");
-			return XVID_CSP_VFLIP | XVID_CSP_RGB24;
+			return rgb_flip | XVID_CSP_RGB24;
 		}
 		if (hdr->biBitCount == 32) 
 		{
 			DEBUG("RGB32");
-			return XVID_CSP_VFLIP | XVID_CSP_RGB32;
+			return rgb_flip | XVID_CSP_RGB32;
 		}
 
-		DEBUG1("BI_RGB unsupported", hdr->biBitCount);
+		DEBUG1("unsupported BI_RGB biBitCount", hdr->biBitCount);
 		return XVID_CSP_NULL;
 
-// how do these work in BITMAPINFOHEADER ???
-/*	case BI_BITFIELDS :
-		if (hdr->biBitCount == 16
-		if(hdr->biBitCount == 16 &&
-			hdr->bV4RedMask == 0x7c00 &&
-			hdr->bV4GreenMask == 0x3e0 &&
-			hdr->bV4BlueMask == 0x1f)
+	case BI_BITFIELDS :
+		if (hdr->biSize >= sizeof(BITMAPV4HEADER))
 		{
-			DEBUG("RGB555");
-			return XVID_CSP_VFLIP | XVID_CSP_RGB555;
-		}
-		if(hdr->bV4BitCount == 16 &&
-			hdr->bV4RedMask == 0xf800 &&
-			hdr->bV4GreenMask == 0x7e0 &&
-			hdr->bV4BlueMask == 0x1f)
-		{
-			DEBUG("RGB565");
-			return XVID_CSP_VFLIP | XVID_CSP_RGB565;
+			BITMAPV4HEADER * hdr4 = (BITMAPV4HEADER *)hdr;
+
+			if (hdr4->bV4BitCount == 16 &&
+				hdr4->bV4RedMask == 0x7c00 &&
+				hdr4->bV4GreenMask == 0x3e0 &&
+				hdr4->bV4BlueMask == 0x1f)
+			{
+				DEBUG("RGB555");
+				return rgb_flip | XVID_CSP_RGB555;
+			}
+
+			if(hdr4->bV4BitCount == 16 &&
+				hdr4->bV4RedMask == 0xf800 &&
+				hdr4->bV4GreenMask == 0x7e0 &&
+				hdr4->bV4BlueMask == 0x1f)
+			{
+				DEBUG("RGB565");
+				return rgb_flip | XVID_CSP_RGB565;
+			}
+
+			DEBUG("unsupported BI_BITFIELDS mode");
+			return XVID_CSP_NULL;
 		}
 		
-		DEBUG1("BI_FIELDS unsupported", hdr->bV4BitCount);
+		DEBUG("unsupported BI_BITFIELDS/BITMAPHEADER combination");
 		return XVID_CSP_NULL;
-*/
-	case FOURCC_I420:
-	case FOURCC_IYUV:
+
+	case FOURCC_I420 :
+	case FOURCC_IYUV :
 		DEBUG("IYUY");
 		return XVID_CSP_I420;
 
@@ -129,21 +133,21 @@ int get_colorspace(BITMAPINFOHEADER * hdr)
 	
 	case FOURCC_YUYV :
 	case FOURCC_YUY2 :
-	case FOURCC_V422 :
 		DEBUG("YUY2");
 		return XVID_CSP_YUY2;
 
-	case FOURCC_YVYU:
+	case FOURCC_YVYU :
 		DEBUG("YVYU");
 		return XVID_CSP_YVYU;
 
-	case FOURCC_UYVY:
+	case FOURCC_UYVY :
 		DEBUG("UYVY");
 		return XVID_CSP_UYVY;
 
+	default :
+		DEBUGFOURCC("unsupported colorspace", hdr->biCompression);
+		return XVID_CSP_NULL;
 	}
-	DEBUGFOURCC("colorspace: unknown", hdr->biCompression);
-	return XVID_CSP_NULL;
 }
 
 
@@ -194,7 +198,6 @@ LRESULT compress_get_format(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * 
 
 	memcpy(outhdr, inhdr, sizeof(BITMAPINFOHEADER));
 	outhdr->biSize = sizeof(BITMAPINFOHEADER);
-	outhdr->biBitCount = 24;  // or 16
 	outhdr->biSizeImage = compress_get_size(codec, lpbiInput, lpbiOutput);
 	outhdr->biXPelsPerMeter = 0;
 	outhdr->biYPelsPerMeter = 0;
