@@ -627,7 +627,7 @@ int codec_2pass_init(CODEC* codec)
 
 	int	frames = 0, credits_frames = 0, i_frames = 0;
 	__int64 total = 0, i_total = 0, i_boost_total = 0, start = 0, end = 0, start_curved = 0, end_curved = 0;
-	__int64 desired = codec->config.desired_size * 1024;
+	__int64 desired = (__int64)codec->config.desired_size * 1024;
 
 	double total1 = 0.0;
 	double total2 = 0.0;
@@ -747,7 +747,7 @@ int codec_2pass_init(CODEC* codec)
 				++frames;
 			}
 
-			twopass->movie_curve = ((float)(total + i_boost_total) / total);
+			twopass->movie_curve = ((double)(total + i_boost_total) / total);
 			twopass->average_frame = ((double)(total - i_total) / (frames - credits_frames - i_frames) / twopass->movie_curve);
 
 			SetFilePointer(twopass->stats1, sizeof(DWORD), 0, FILE_BEGIN);
@@ -764,7 +764,7 @@ int codec_2pass_init(CODEC* codec)
 				twopass->alt_curve_high_diff = twopass->alt_curve_high - twopass->average_frame;
 				if (codec->config.alt_curve_use_auto)
 				{
-					if (twopass->movie_curve > 1.0f)
+					if (twopass->movie_curve > 1.0)
 					{
 						codec->config.alt_curve_min_rel_qual = (int)(100.0 - (100.0 - 100.0 / twopass->movie_curve) * (double)codec->config.alt_curve_auto_str / 100.0);
 						if (codec->config.alt_curve_min_rel_qual < 20)
@@ -960,13 +960,13 @@ int codec_2pass_init(CODEC* codec)
 
 				// credits curve = (total / desired_size) * (100 / credits_rate)
 				twopass->credits_start_curve = twopass->credits_end_curve =
-					((float)total / desired) * ((float)100 / codec->config.credits_rate);
+					((double)total / desired) * ((double)100 / codec->config.credits_rate);
 
 				start_curved = (__int64)(start / twopass->credits_start_curve);
 				end_curved = (__int64)(end / twopass->credits_end_curve);
 
 				// movie curve = (total - credits) / (desired_size - curved credits)
-				twopass->movie_curve = (float)
+				twopass->movie_curve = (double)
 					(total - start - end) /
 					(desired - start_curved - end_curved);
 
@@ -975,7 +975,7 @@ int codec_2pass_init(CODEC* codec)
 			case CREDITS_MODE_QUANT :
 
 				// movie curve = (total - credits) / (desired_size - credits)
-				twopass->movie_curve = (float)
+				twopass->movie_curve = (double)
 					(total - start - end) / (desired - start - end);
 
 				// aid the average asymmetric frame calculation below
@@ -987,18 +987,18 @@ int codec_2pass_init(CODEC* codec)
 			case CREDITS_MODE_SIZE :
 
 				// start curve = (start / start desired size)
-				twopass->credits_start_curve = (float)
+				twopass->credits_start_curve = (double)
 					(start / 1024) / codec->config.credits_start_size;
 
 				// end curve = (end / end desired size)
-				twopass->credits_end_curve = (float)
+				twopass->credits_end_curve = (double)
 					(end / 1024) / codec->config.credits_end_size;
 
 				start_curved = (__int64)(start / twopass->credits_start_curve);
 				end_curved = (__int64)(end / twopass->credits_end_curve);
 
 				// movie curve = (total - credits) / (desired_size - curved credits)
-				twopass->movie_curve = (float)
+				twopass->movie_curve = (double)
 					(total - start - end) /
 					(desired - start_curved - end_curved);
 
@@ -1024,7 +1024,7 @@ int codec_2pass_init(CODEC* codec)
 				twopass->alt_curve_high_diff = twopass->alt_curve_high - twopass->average_frame;
 				if (codec->config.alt_curve_use_auto)
 				{
-					if (twopass->movie_curve > 1.0f)
+					if (twopass->movie_curve > 1.0)
 					{
 						codec->config.alt_curve_min_rel_qual = (int)(100.0 - (100.0 - 100.0 / twopass->movie_curve) * (double)codec->config.alt_curve_auto_str / 100.0);
 						if (codec->config.alt_curve_min_rel_qual < 20)
