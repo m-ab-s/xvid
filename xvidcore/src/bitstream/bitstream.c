@@ -67,6 +67,8 @@
 
 
 #include <string.h>
+#include <stdio.h>
+
 #include "bitstream.h"
 #include "zigzag.h"
 #include "../quant/quant_matrix.h"

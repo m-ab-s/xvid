@@ -1,6 +1,8 @@
 #ifndef _IMAGE_H_
 #define _IMAGE_H_
 
+#include <stdlib.h>
+
 #include "../portab.h"
 #include "../global.h"
 #include "colorspace.h"

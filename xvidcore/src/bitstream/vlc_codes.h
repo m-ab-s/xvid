@@ -1317,7 +1317,7 @@ get_coeff(Bitstream * bs,
 		level = BitstreamGetBits(bs, 8);
 
 		if (level == 0 || level == 128)
-			DEBUG1("Illegal LEVEL for ESCAPE mode 4:", level);
+			DPRINTF(DPRINTF_ERROR,"Illegal LEVEL for ESCAPE mode 4: %i", level);
 
 		return (level >= 128 ? -(256 - level) : level);
 	}

@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.21 2002-12-14 06:07:02 suxen_drol Exp $
+ *  $Id: decoder.c,v 1.37.2.22 2002-12-14 09:39:42 suxen_drol Exp $
  *
  *************************************************************************/
 
@@ -678,7 +678,7 @@ decoder_iframe(DECODER * dec,
 
 			if (dec->interlacing) {
 				mb->field_dct = BitstreamGetBit(bs);
-				DEBUG1("deci: field_dct: ", mb->field_dct);
+				DPRINTF(DPRINTF_MB,"deci: field_dct: %i", mb->field_dct);
 			}
 
 			decoder_mbintra(dec, mb, x, y, acpred_flag, cbp, bs, quant,
@@ -856,18 +856,18 @@ decoder_pframe(DECODER * dec,
 				if (dec->interlacing) {
 					if (cbp || intra) {
 						mb->field_dct = BitstreamGetBit(bs);
-						DEBUG1("decp: field_dct: ", mb->field_dct);
+						DPRINTF(DPRINTF_MB,"decp: field_dct: %i", mb->field_dct);
 					}
 
 					if (mb->mode == MODE_INTER || mb->mode == MODE_INTER_Q) {
 						mb->field_pred = BitstreamGetBit(bs);
-						DEBUG1("decp: field_pred: ", mb->field_pred);
+						DPRINTF(DPRINTF_MB, "decp: field_pred: %i", mb->field_pred);
 
 						if (mb->field_pred) {
 							mb->field_for_top = BitstreamGetBit(bs);
-							DEBUG1("decp: field_for_top: ", mb->field_for_top);
+							DPRINTF(DPRINTF_MB,"decp: field_for_top: %i", mb->field_for_top);
 							mb->field_for_bot = BitstreamGetBit(bs);
-							DEBUG1("decp: field_for_bot: ", mb->field_for_bot);
+							DPRINTF(DPRINTF_MB,"decp: field_for_bot: %i", mb->field_for_bot);
 						}
 					}
 				}
@@ -1581,7 +1581,7 @@ decoder_bframe(DECODER * dec,
 				break;
 
 			default:
-				DEBUG1("Not support B-frame mb_type =", mb->mb_type);
+				DPRINTF(DPRINTF_ERROR,"Not support B-frame mb_type = %i", mb->mb_type);
 			}
 
 		}						// end of FOR

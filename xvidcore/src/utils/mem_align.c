@@ -33,7 +33,7 @@
  *
  *  - Thu Jun 13 23:50:07 2002 Added legal header
  *
- *  $Id: mem_align.c,v 1.8 2002-06-14 13:27:28 Isibaar Exp $
+ *  $Id: mem_align.c,v 1.8.2.1 2002-12-14 09:39:42 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -71,7 +71,7 @@ xvid_malloc(size_t size,
 		if ((mem_ptr = (uint8_t *) malloc(size + 1)) != NULL) {
 
 			/* Store (mem_ptr - "real allocated memory") in *(mem_ptr-1) */
-			*mem_ptr = 0;
+			*mem_ptr = 1;
 
 			/* Return the mem_ptr pointer */
 			return (void *) mem_ptr++;

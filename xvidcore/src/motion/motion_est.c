@@ -31,6 +31,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>	// memcpy
 
 #include "../encoder.h"
 #include "../utils/mbfunctions.h"
@@ -2015,7 +2016,7 @@ CheckGMC(int x, int y, const int dir, int * iDirection,
 }
 
 
-static __inline VECTOR
+static VECTOR
 GlobalMotionEst(const MACROBLOCK * const pMBs, const MBParam * const pParam, const uint32_t iFcode)
 {
 

@@ -217,7 +217,7 @@ MBMotionCompensation(MACROBLOCK * const mb,
 		/* uv-block-based compensation */
 		if (reduced_resolution)
 		{
-			const stride = edged_width/2;
+			const int stride = edged_width/2;
 			uint8_t * current, * reference;
  			
 			current = cur->u + 16*j*stride + 16*i;
@@ -297,7 +297,7 @@ MBMotionCompensation(MACROBLOCK * const mb,
 		/* uv-block-based compensation */
 		if (reduced_resolution)
 		{
-			const stride = edged_width/2;
+			const int stride = edged_width/2;
 			uint8_t * current, * reference;
  			
 			current = cur->u + 16*j*stride + 16*i;

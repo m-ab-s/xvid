@@ -24,7 +24,7 @@
  *
  *  - Mon Jun 17 13:04:15 2002 Added legal header
  *
- *  $Id: ratecontrol.c,v 1.13 2002-06-17 12:23:32 edgomez Exp $
+ *  $Id: ratecontrol.c,v 1.13.2.1 2002-12-14 09:39:42 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -131,8 +131,10 @@ RateControlUpdate(RateControl * rate_control,
 					 (double) rate_control->framerate) *
 					(double) rate_control->frames));
 
-	DEBUGCBR((int32_t) (rate_control->frames - 1), rate_control->rtn_quant,
-			 (int32_t) deviation);
+	DPRINTF(DPRINTF_RC, "CBR: frame: %i, quant: %i, deviation: %i\n",
+					(int32_t)(rate_control->frames - 1), 
+					rate_control->rtn_quant,
+					(int32_t) deviation);
 
 	if (rate_control->rtn_quant >= 2) {
 		averaging_period = (double) rate_control->averaging_period;

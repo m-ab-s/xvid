@@ -36,6 +36,8 @@
   *                                                                            *
   ******************************************************************************/
 
+#include <stdio.h>
+#include <stdarg.h>
 
 #include "image.h"
 #include "font.h"
