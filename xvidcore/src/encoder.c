@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.59 2003-12-17 15:16:16 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.60 2003-12-19 10:55:58 syskin Exp $
  *
  ****************************************************************************/
 
@@ -1268,7 +1268,7 @@ repeat:
 		pEnc->iFrameNum = 1;
 
 		/* ---- update vol flags at IVOP ----------- */
-		pEnc->mbParam.vol_flags = frame->vol_flags;
+		pEnc->mbParam.vol_flags = pEnc->current->vol_flags;
 
 		/* Aspect ratio */
 		switch(frame->par) {
