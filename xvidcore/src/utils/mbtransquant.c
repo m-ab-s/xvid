@@ -1,55 +1,29 @@
- /******************************************************************************
-  *                                                                            *
-  *  This file is part of XviD, a free MPEG-4 video encoder/decoder            *
-  *                                                                            *
-  *  XviD is an implementation of a part of one or more MPEG-4 Video tools     *
-  *  as specified in ISO/IEC 14496-2 standard.  Those intending to use this    *
-  *  software module in hardware or software products are advised that its     *
-  *  use may infringe existing patents or copyrights, and any such use         *
-  *  would be at such party's own risk.  The original developer of this        *
-  *  software module and his/her company, and subsequent editors and their     *
-  *  companies, will have no liability for use of this software or             *
-  *  modifications or derivatives thereof.                                     *
-  *                                                                            *
-  *  XviD is free software; you can redistribute it and/or modify it           *
-  *  under the terms of the GNU General Public License as published by         *
-  *  the Free Software Foundation; either version 2 of the License, or         *
-  *  (at your option) any later version.                                       *
-  *                                                                            *
-  *  XviD is distributed in the hope that it will be useful, but               *
-  *  WITHOUT ANY WARRANTY; without even the implied warranty of                *
-  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the             *
-  *  GNU General Public License for more details.                              *
-  *                                                                            *
-  *  You should have received a copy of the GNU General Public License         *
-  *  along with this program; if not, write to the Free Software               *
-  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA  *
-  *                                                                            *
-  ******************************************************************************/
-
- /******************************************************************************
-  *                                                                            *
-  *  mbtransquant.c                                                            *
-  *                                                                            *
-  *  Copyright (C) 2001 - Peter Ross <pross@cs.rmit.edu.au>                    *
-  *  Copyright (C) 2001 - Michael Militzer <isibaar@xvid.org>                  *
-  *                                                                            *
-  *  For more information visit the XviD homepage: http://www.xvid.org         *
-  *                                                                            *
-  ******************************************************************************/
-
- /******************************************************************************
-  *                                                                            *
-  *  Revision history:                                                         *
-  *                                                                            *
-  *  29.03.2002 interlacing speedup - used transfer strides instead of		   *
-  *             manual field-to-frame conversion							   *
-  *  26.03.2002 interlacing support - moved transfers outside loops			   *
-  *  22.12.2001 get_dc_scaler() moved to common.h							   *
-  *  19.11.2001 introduced coefficient thresholding (Isibaar)                  *
-  *  17.11.2001 initial version                                                *
-  *                                                                            *
-  ******************************************************************************/
+/*****************************************************************************
+ *
+ *  XVID MPEG-4 VIDEO CODEC
+ *  - MB Transfert/Quantization functions -
+ *
+ *  Copyright(C) 2001-2003  Peter Ross <pross@xvid.org>
+ *               2001-2003  Michael Militzer <isibaar@xvid.org>
+ *               2003       Edouard Gomez <ed.gomez@free.fr>
+ *
+ *  This program is free software ; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation ; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY ; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program ; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+ *
+ * $Id: mbtransquant.c,v 1.21.2.6 2003-03-30 13:16:41 edgomez Exp $
+ *
+ ****************************************************************************/
 
 #include <string.h>
 
@@ -69,54 +43,39 @@
 
 MBFIELDTEST_PTR MBFieldTest;
 
-#define TOOSMALL_LIMIT 	1	/* skip blocks having a coefficient sum below this value */
+/*
+ * Skip blocks having a coefficient sum below this value. This value will be
+ * corrected according to the MB quantizer to avoid artifacts for quant==1
+ */
+#define PVOP_TOOSMALL_LIMIT 1
+#define BVOP_TOOSMALL_LIMIT 3
 
-void
-MBTransQuantIntra(const MBParam * pParam,
-				  FRAMEINFO * frame,
-				  MACROBLOCK * pMB,
-				  const uint32_t x_pos,
-				  const uint32_t y_pos,
-				  int16_t data[6 * 64],
-				  int16_t qcoeff[6 * 64])
+/*****************************************************************************
+ * Local functions
+ ****************************************************************************/
+
+/* permute block and return field dct choice */
+static __inline uint32_t
+MBDecideFieldDCT(int16_t data[6 * 64])
 {
+	uint32_t field = MBFieldTest(data);
 
-	uint32_t stride = pParam->edged_width;
-	uint32_t stride2 = stride / 2;
-	uint32_t next_block = stride * ((frame->vop_flags & XVID_VOP_REDUCED)?16:8);
-	uint32_t i;
-	const uint32_t iQuant = pMB->quant;
-	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
-	IMAGE *pCurrent = &frame->image;
+	if (field)
+		MBFrameToField(data);
 
-	start_timer();
-	if ((frame->vop_flags & XVID_VOP_REDUCED))
-	{
-		pY_Cur = pCurrent->y + (y_pos << 5) * stride + (x_pos << 5);
-		pU_Cur = pCurrent->u + (y_pos << 4) * stride2 + (x_pos << 4);
-		pV_Cur = pCurrent->v + (y_pos << 4) * stride2 + (x_pos << 4);
+	return field;
+}
 
-		filter_18x18_to_8x8(&data[0 * 64], pY_Cur, stride);
-		filter_18x18_to_8x8(&data[1 * 64], pY_Cur + 16, stride);
-		filter_18x18_to_8x8(&data[2 * 64], pY_Cur + next_block, stride);
-		filter_18x18_to_8x8(&data[3 * 64], pY_Cur + next_block + 16, stride);
-		filter_18x18_to_8x8(&data[4 * 64], pU_Cur, stride2);
-		filter_18x18_to_8x8(&data[5 * 64], pV_Cur, stride2);
-	}else{
-		pY_Cur = pCurrent->y + (y_pos << 4) * stride + (x_pos << 4);
-		pU_Cur = pCurrent->u + (y_pos << 3) * stride2 + (x_pos << 3);
-		pV_Cur = pCurrent->v + (y_pos << 3) * stride2 + (x_pos << 3);
-
-		transfer_8to16copy(&data[0 * 64], pY_Cur, stride);
-		transfer_8to16copy(&data[1 * 64], pY_Cur + 8, stride);
-		transfer_8to16copy(&data[2 * 64], pY_Cur + next_block, stride);
-		transfer_8to16copy(&data[3 * 64], pY_Cur + next_block + 8, stride);
-		transfer_8to16copy(&data[4 * 64], pU_Cur, stride2);
-		transfer_8to16copy(&data[5 * 64], pV_Cur, stride2);
-	}
-	stop_transfer_timer();
-
-	/* XXX: rrv+interlacing is buggy */
+/* Performs Forward DCT on all blocks */
+static __inline void
+MBfDCT(const MBParam * pParam,
+	   FRAMEINFO * frame,
+	   MACROBLOCK * pMB,
+	   uint32_t x_pos,
+	   uint32_t y_pos,
+	   int16_t data[6 * 64])
+{	
+	/* Handles interlacing */
 	start_timer();
 	pMB->field_dct = 0;
 	if ((frame->vol_flags & XVID_VOL_INTERLACING) &&
@@ -126,72 +85,304 @@ MBTransQuantIntra(const MBParam * pParam,
 	}
 	stop_interlacing_timer();
 
+	/* Perform DCT */
+	start_timer();
+	fdct(&data[0 * 64]);
+	fdct(&data[1 * 64]);
+	fdct(&data[2 * 64]);
+	fdct(&data[3 * 64]);
+	fdct(&data[4 * 64]);
+	fdct(&data[5 * 64]);
+	stop_dct_timer();
+}
+
+/* Performs Inverse DCT on all blocks */
+static __inline void
+MBiDCT(int16_t data[6 * 64],
+	   const uint8_t cbp)
+{
+	start_timer();
+	if(cbp & (1 << (5 - 0))) idct(&data[0 * 64]);
+	if(cbp & (1 << (5 - 1))) idct(&data[1 * 64]);
+	if(cbp & (1 << (5 - 2))) idct(&data[2 * 64]);
+	if(cbp & (1 << (5 - 3))) idct(&data[3 * 64]);
+	if(cbp & (1 << (5 - 4))) idct(&data[4 * 64]);
+	if(cbp & (1 << (5 - 5))) idct(&data[5 * 64]);
+	stop_idct_timer();
+}
+
+/* Quantize all blocks -- Intra mode */
+static __inline void
+MBQuantIntra(const MBParam * pParam,
+			 const MACROBLOCK * pMB,
+		     int16_t qcoeff[6 * 64],
+			 int16_t data[6*64])
+{
+	int i;
+
+	for (i = 0; i < 6; i++) {
+		uint32_t iDcScaler = get_dc_scaler(pMB->quant, i < 4);
+
+		/* Quantize the block */
+		start_timer();
+		if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT))
+			quant_intra(&data[i * 64], &qcoeff[i * 64], pMB->quant, iDcScaler);
+		else
+			quant4_intra(&data[i * 64], &qcoeff[i * 64], pMB->quant, iDcScaler);
+		stop_quant_timer();
+	}
+}
+
+/* DeQuantize all blocks -- Intra mode */
+static __inline void
+MBDeQuantIntra(const MBParam * pParam,
+			   const int iQuant,
+			   int16_t qcoeff[6 * 64],
+			   int16_t data[6*64])
+{
+	int i;
+
 	for (i = 0; i < 6; i++) {
 		uint32_t iDcScaler = get_dc_scaler(iQuant, i < 4);
 
 		start_timer();
-		fdct(&data[i * 64]);
-		stop_dct_timer();
-
-		if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT)) {
-			start_timer();
-			quant_intra(&qcoeff[i * 64], &data[i * 64], iQuant, iDcScaler);
-			stop_quant_timer();
-		} else {
-			start_timer();
-			quant4_intra(&qcoeff[i * 64], &data[i * 64], iQuant, iDcScaler);
-			stop_quant_timer();
-		}
-
-		/* speedup: dont decode when encoding only ivops */
-		if (pParam->iMaxKeyInterval != 1 || pParam->max_bframes > 0)
-		{
-			if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT)) {
-				start_timer();
-				dequant_intra(&data[i * 64], &qcoeff[i * 64], iQuant, iDcScaler);
-				stop_iquant_timer();
-			} else {
-				start_timer();
-				dequant4_intra(&data[i * 64], &qcoeff[i * 64], iQuant, iDcScaler);
-				stop_iquant_timer();
-			}
-
-			start_timer();
-			idct(&data[i * 64]);
-			stop_idct_timer();
-		}
+		if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT))
+			dequant_intra(&qcoeff[i * 64], &data[i * 64], iQuant, iDcScaler);
+		else
+			dequant4_intra(&qcoeff[i * 64], &data[i * 64], iQuant, iDcScaler);
+		stop_iquant_timer();
 	}
+}
 
-	/* speedup: dont decode when encoding only ivops */
-	if (pParam->iMaxKeyInterval != 1 || pParam->max_bframes > 0)
-	{
+/* Quantize all blocks -- Inter mode */
+static __inline uint8_t
+MBQuantInter(const MBParam * pParam,
+			 const MACROBLOCK * pMB,
+			 int16_t data[6 * 64],
+			 int16_t qcoeff[6 * 64],
+			 int bvop,
+			 int limit)
+{
 
-		if (pMB->field_dct) {
-			next_block = stride;
-			stride *= 2;
-		}
+	int i;
+	uint8_t cbp = 0;
+	int sum;
+	int code_block;
 
+	for (i = 0; i < 6; i++) {
+	
+		/* Quantize the block */
 		start_timer();
-		if ((frame->vop_flags & XVID_VOP_REDUCED))
-		{
-			copy_upsampled_8x8_16to8(pY_Cur, &data[0 * 64], stride);
-			copy_upsampled_8x8_16to8(pY_Cur + 16, &data[1 * 64], stride);
-			copy_upsampled_8x8_16to8(pY_Cur + next_block, &data[2 * 64], stride);
-			copy_upsampled_8x8_16to8(pY_Cur + next_block + 16, &data[3 * 64], stride);
-			copy_upsampled_8x8_16to8(pU_Cur, &data[4 * 64], stride2);
-			copy_upsampled_8x8_16to8(pV_Cur, &data[5 * 64], stride2);
+		if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT))
+			sum = quant_inter(&qcoeff[i * 64], &data[i * 64], pMB->quant);
+		else
+			sum = quant4_inter(&qcoeff[i * 64], &data[i * 64], pMB->quant);
+		stop_quant_timer();
 
-		}else{
-			transfer_16to8copy(pY_Cur, &data[0 * 64], stride);
-			transfer_16to8copy(pY_Cur + 8, &data[1 * 64], stride);
-			transfer_16to8copy(pY_Cur + next_block, &data[2 * 64], stride);
-			transfer_16to8copy(pY_Cur + next_block + 8, &data[3 * 64], stride);
-			transfer_16to8copy(pU_Cur, &data[4 * 64], stride2);
-			transfer_16to8copy(pV_Cur, &data[5 * 64], stride2);
+		/*
+		 * We code the block if the sum is higher than the limit and if the first
+		 * two AC coefficients in zig zag order are not zero.
+		 */
+		code_block = 0;
+		if ((sum >= limit) || (qcoeff[i*64+1] != 0) || (qcoeff[i*64+8] != 0)) {
+			code_block = 1;
+		} else {
+
+			if (bvop && (pMB->mode == MODE_DIRECT || pMB->mode == MODE_DIRECT_NO4V)) {
+				/* dark blocks prevention for direct mode */
+				if ((qcoeff[i*64] < -1) || (qcoeff[i*64] > 0))
+					code_block = 1;
+			} else {
+				/* not direct mode */
+				if (qcoeff[i*64] != 0)
+					code_block = 1;
+			}
 		}
-		stop_transfer_timer();
+
+		/* Set the corresponding cbp bit */
+		cbp |= code_block << (5 - i);
+
 	}
 
+	return(cbp);
+}
+
+/* DeQuantize all blocks -- Inter mode */
+static __inline void 
+MBDeQuantInter(const MBParam * pParam,
+			   const int iQuant,
+			   int16_t data[6 * 64],
+			   int16_t qcoeff[6 * 64],
+			   const uint8_t cbp)
+{
+	int i;
+
+	for (i = 0; i < 6; i++) {
+		if (cbp & (1 << (5 - i))) {	
+			start_timer();
+			if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT))
+				dequant_inter(&data[i * 64], &qcoeff[i * 64], iQuant);
+			else
+				dequant4_inter(&data[i * 64], &qcoeff[i * 64], iQuant);
+			stop_iquant_timer();
+		}
+	}
+}
+
+typedef void (transfer_operation_8to16_t) (int16_t *Dst, const uint8_t *Src, int BpS);
+typedef void (transfer_operation_16to8_t) (uint8_t *Dst, const int16_t *Src, int BpS);
+
+
+static __inline void
+MBTrans8to16(const MBParam * pParam,
+			 FRAMEINFO * frame,
+			 MACROBLOCK * pMB,
+			 const uint32_t x_pos,
+			 const uint32_t y_pos,
+			 int16_t data[6 * 64])
+{
+	uint32_t stride = pParam->edged_width;
+	uint32_t stride2 = stride / 2;
+	uint32_t next_block = stride * 8;
+	int32_t cst; 
+	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
+	IMAGE *pCurrent = &frame->image;
+	transfer_operation_8to16_t *transfer_op = NULL;
+
+	if ((frame->vop_flags & XVID_VOP_REDUCED)) {
+
+		/* Image pointers */
+		pY_Cur = pCurrent->y + (y_pos << 5) * stride  + (x_pos << 5);
+		pU_Cur = pCurrent->u + (y_pos << 4) * stride2 + (x_pos << 4);
+		pV_Cur = pCurrent->v + (y_pos << 4) * stride2 + (x_pos << 4);
+
+		/* Block size */
+		cst = 16;
+
+		/* Operation function */
+		transfer_op = (transfer_operation_8to16_t*)filter_18x18_to_8x8;
+	} else {
+
+		/* Image pointers */
+		pY_Cur = pCurrent->y + (y_pos << 4) * stride  + (x_pos << 4);
+		pU_Cur = pCurrent->u + (y_pos << 3) * stride2 + (x_pos << 3);
+		pV_Cur = pCurrent->v + (y_pos << 3) * stride2 + (x_pos << 3);
+
+		/* Block size */
+		cst = 8;
+
+		/* Operation function */
+		transfer_op = (transfer_operation_8to16_t*)transfer_8to16copy;
+	}
+
+	/* Do the transfer */
+	start_timer();
+	transfer_op(&data[0 * 64], pY_Cur, stride);
+	transfer_op(&data[1 * 64], pY_Cur + cst, stride);
+	transfer_op(&data[2 * 64], pY_Cur + next_block, stride);
+	transfer_op(&data[3 * 64], pY_Cur + next_block + cst, stride);
+	transfer_op(&data[4 * 64], pU_Cur, stride2);
+	transfer_op(&data[5 * 64], pV_Cur, stride2);
+	stop_transfer_timer();
+}	
+
+static __inline void
+MBTrans16to8(const MBParam * pParam,
+			 FRAMEINFO * frame,
+			 MACROBLOCK * pMB,
+			 const uint32_t x_pos,
+			 const uint32_t y_pos,
+			 int16_t data[6 * 64],
+			 const uint32_t add,
+			 const uint8_t cbp)
+{
+	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
+	uint32_t stride = pParam->edged_width;
+	uint32_t stride2 = stride / 2;
+	uint32_t next_block = stride * 8;
+	uint32_t cst; 
+	IMAGE *pCurrent = &frame->image;
+	transfer_operation_16to8_t *transfer_op = NULL;
+
+	if (pMB->field_dct) {
+		next_block = stride;
+		stride *= 2;
+	}
+
+	if ((frame->vop_flags & XVID_VOP_REDUCED)) {
+
+		/* Image pointers */
+		pY_Cur = pCurrent->y + (y_pos << 5) * stride  + (x_pos << 5);
+		pU_Cur = pCurrent->u + (y_pos << 4) * stride2 + (x_pos << 4);
+		pV_Cur = pCurrent->v + (y_pos << 4) * stride2 + (x_pos << 4);
+
+		/* Block size */
+		cst = 16;
+
+		/* Operation function */
+		if(add)
+			transfer_op = (transfer_operation_16to8_t*)add_upsampled_8x8_16to8;
+		else
+			transfer_op = (transfer_operation_16to8_t*)copy_upsampled_8x8_16to8;
+	} else {
+
+		/* Image pointers */
+		pY_Cur = pCurrent->y + (y_pos << 4) * stride  + (x_pos << 4);
+		pU_Cur = pCurrent->u + (y_pos << 3) * stride2 + (x_pos << 3);
+		pV_Cur = pCurrent->v + (y_pos << 3) * stride2 + (x_pos << 3);
+
+		/* Block size */
+		cst = 8;
+
+		/* Operation function */
+		if(add)
+			transfer_op = (transfer_operation_16to8_t*)transfer_16to8add;
+		else
+			transfer_op = (transfer_operation_16to8_t*)transfer_16to8copy;
+	}
+
+	/* Do the operation */
+	start_timer();
+	if (cbp&32) transfer_op(pY_Cur, &data[0 * 64], stride);
+	if (cbp&16) transfer_op(pY_Cur + cst, &data[1 * 64], stride);
+	if (cbp& 8) transfer_op(pY_Cur + next_block, &data[2 * 64], stride);
+	if (cbp& 4) transfer_op(pY_Cur + next_block + cst, &data[3 * 64], stride);
+	if (cbp& 2) transfer_op(pU_Cur, &data[4 * 64], stride2);
+	if (cbp& 1) transfer_op(pV_Cur, &data[5 * 64], stride2);
+	stop_transfer_timer();
+}
+
+/*****************************************************************************
+ * Module functions
+ ****************************************************************************/
+
+void 
+MBTransQuantIntra(const MBParam * pParam,
+				  FRAMEINFO * frame,
+				  MACROBLOCK * pMB,
+				  const uint32_t x_pos,
+				  const uint32_t y_pos,
+				  int16_t data[6 * 64],
+				  int16_t qcoeff[6 * 64])
+{
+
+	/* Transfer data */
+	MBTrans8to16(pParam, frame, pMB, x_pos, y_pos, data);
+
+	/* Perform DCT (and field decision) */
+	MBfDCT(pParam, frame, pMB, x_pos, y_pos, data);
+
+	/* Quantize the block */
+	MBQuantIntra(pParam, pMB, data, qcoeff);
+
+	/* DeQuantize the block */
+	MBDeQuantIntra(pParam, pMB->quant, data, qcoeff);
+
+	/* Perform inverse DCT*/
+	MBiDCT(data, 0x3F);
+
+ 	/* Transfer back the data -- Don't add data */
+	MBTrans16to8(pParam, frame, pMB, x_pos, y_pos, data, 0, 0x3F);
 }
 
 
@@ -204,157 +395,33 @@ MBTransQuantInter(const MBParam * pParam,
 				  int16_t data[6 * 64],
 				  int16_t qcoeff[6 * 64])
 {
-
-	uint32_t stride = pParam->edged_width;
-	uint32_t stride2 = stride / 2;
-	uint32_t next_block = stride * ((frame->vop_flags & XVID_VOP_REDUCED)?16:8);
-	uint32_t i;
-	const uint32_t iQuant = pMB->quant;
-	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
-	uint8_t cbp = 0;
-	uint32_t sum;
-	IMAGE *pCurrent = &frame->image;
-
-	if ((frame->vop_flags & XVID_VOP_REDUCED))
-	{
-		pY_Cur = pCurrent->y + (y_pos << 5) * stride + (x_pos << 5);
-		pU_Cur = pCurrent->u + (y_pos << 4) * stride2 + (x_pos << 4);
-		pV_Cur = pCurrent->v + (y_pos << 4) * stride2 + (x_pos << 4);
-	}else{
-		pY_Cur = pCurrent->y + (y_pos << 4) * stride + (x_pos << 4);
-		pU_Cur = pCurrent->u + (y_pos << 3) * stride2 + (x_pos << 3);
-		pV_Cur = pCurrent->v + (y_pos << 3) * stride2 + (x_pos << 3);
-	}
-
-	start_timer();
-	pMB->field_dct = 0;
-	if ((frame->vol_flags & XVID_VOL_INTERLACING) &&
-		(x_pos>0) && (x_pos<pParam->mb_width-1) &&
-		(y_pos>0) && (y_pos<pParam->mb_height-1)) {
-		pMB->field_dct = MBDecideFieldDCT(data);
-	}
-	stop_interlacing_timer();
-
-	for (i = 0; i < 6; i++) {
-		uint32_t increase_limit = (iQuant == 1) ? 1 : 0;
-
-		/* 
-		 *  no need to transfer 8->16-bit
-		 * (this is performed already in motion compensation) 
-		 */
-		start_timer();
-		fdct(&data[i * 64]);
-		stop_dct_timer();
-
-		if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT)) {
-			start_timer();
-			sum = quant_inter(&qcoeff[i * 64], &data[i * 64], iQuant);
-			stop_quant_timer();
-		} else {
-			start_timer();
-			sum = quant4_inter(&qcoeff[i * 64], &data[i * 64], iQuant);
-			stop_quant_timer();
-		}
-
-		if ((sum >= TOOSMALL_LIMIT + increase_limit) || (qcoeff[i*64] != 0) ||
-			(qcoeff[i*64+1] != 0) || (qcoeff[i*64+8] != 0)) {
-
-			if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT)) {
-				start_timer();
-				dequant_inter(&data[i * 64], &qcoeff[i * 64], iQuant);
-				stop_iquant_timer();
-			} else {
-				start_timer();
-				dequant4_inter(&data[i * 64], &qcoeff[i * 64], iQuant);
-				stop_iquant_timer();
-			}
-
-			cbp |= 1 << (5 - i);
-
-			start_timer();
-			idct(&data[i * 64]);
-			stop_idct_timer();
-		}
-	}
-
-	if (pMB->field_dct) {
-		next_block = stride;
-		stride *= 2;
-	}
-
-	start_timer();
-	if ((frame->vop_flags & XVID_VOP_REDUCED))
-	{
-		if (cbp & 32)
-			add_upsampled_8x8_16to8(pY_Cur, &data[0 * 64], stride);
-		if (cbp & 16)
-			add_upsampled_8x8_16to8(pY_Cur + 16, &data[1 * 64], stride);
-		if (cbp & 8)
-			add_upsampled_8x8_16to8(pY_Cur + next_block, &data[2 * 64], stride);
-		if (cbp & 4)
-			add_upsampled_8x8_16to8(pY_Cur + 16 + next_block, &data[3 * 64], stride);
-		if (cbp & 2)
-			add_upsampled_8x8_16to8(pU_Cur, &data[4 * 64], stride2);
-		if (cbp & 1)
-			add_upsampled_8x8_16to8(pV_Cur, &data[5 * 64], stride2);
-	}else{
-		if (cbp & 32)
-			transfer_16to8add(pY_Cur, &data[0 * 64], stride);
-		if (cbp & 16)
-			transfer_16to8add(pY_Cur + 8, &data[1 * 64], stride);
-		if (cbp & 8)
-			transfer_16to8add(pY_Cur + next_block, &data[2 * 64], stride);
-		if (cbp & 4)
-			transfer_16to8add(pY_Cur + next_block + 8, &data[3 * 64], stride);
-		if (cbp & 2)
-			transfer_16to8add(pU_Cur, &data[4 * 64], stride2);
-		if (cbp & 1)
-			transfer_16to8add(pV_Cur, &data[5 * 64], stride2);
-	}
-	stop_transfer_timer();
-
-	return cbp;
-
-}
-
-void 
-MBTransQuantIntra2(const MBParam * pParam,
-				  FRAMEINFO * frame,
-				  MACROBLOCK * pMB,
-				  const uint32_t x_pos,
-				  const uint32_t y_pos,
-				  int16_t data[6 * 64],
-				  int16_t qcoeff[6 * 64])
-{
-	MBTrans(pParam,frame,pMB,x_pos,y_pos,data);
-	MBfDCT(pParam,frame,pMB,data);
-	MBQuantIntra(pParam,frame,pMB,data,qcoeff);
-	MBDeQuantIntra(pParam,pMB->quant,data,qcoeff);
-	MBiDCT(data,0x3F);
-	MBTransAdd(pParam,frame,pMB,x_pos,y_pos,data,0x3F);
-}
-
-
-uint8_t
-MBTransQuantInter2(const MBParam * pParam,
-				  FRAMEINFO * frame,
-				  MACROBLOCK * pMB,
-				  const uint32_t x_pos,
-				  const uint32_t y_pos,
-				  int16_t data[6 * 64],
-				  int16_t qcoeff[6 * 64])
-{
 	uint8_t cbp;
-	
-/* there is no MBTrans for Inter block, that's done in motion compensation already */
+	uint32_t limit;
 
-	MBfDCT(pParam,frame,pMB,data);
-	cbp = MBQuantInter(pParam,pMB->quant,data,qcoeff);
-	MBDeQuantInter(pParam,pMB->quant,data,qcoeff,cbp);
-	MBiDCT(data,cbp);
-	MBTransAdd(pParam,frame,pMB,x_pos,y_pos,data,cbp);
+	/*
+	 * There is no MBTrans8to16 for Inter block, that's done in motion compensation
+	 * already
+	 */
+
+	/* Perform DCT (and field decision) */
+	MBfDCT(pParam, frame, pMB, x_pos, y_pos, data);
+
+	/* Set the limit threshold */
+	limit = PVOP_TOOSMALL_LIMIT + ((pMB->quant == 1)? 1 : 0);
+
+	/* Quantize the block */
+	cbp = MBQuantInter(pParam, pMB, data, qcoeff, 0, limit);
+
+	/* DeQuantize the block */
+	MBDeQuantInter(pParam, pMB->quant, data, qcoeff, cbp);
+
+	/* Perform inverse DCT*/
+	MBiDCT(data, cbp);
+
+ 	/* Transfer back the data -- Add the data */
+	MBTrans16to8(pParam, frame, pMB, x_pos, y_pos, data, 1, cbp);
 	
-	return cbp;
+	return(cbp);
 }
 
 uint8_t
@@ -367,309 +434,45 @@ MBTransQuantInterBVOP(const MBParam * pParam,
 				  int16_t qcoeff[6 * 64])
 {
 	uint8_t cbp;
+	uint32_t limit;
 	
-/* there is no MBTrans for Inter block, that's done in motion compensation already */
+	/*
+	 * There is no MBTrans8to16 for Inter block, that's done in motion compensation
+	 * already
+	 */
 
-	MBfDCT(pParam,frame,pMB,data);
-	cbp = MBQuantInter(pParam,pMB->quant,data,qcoeff);
+	/* Perform DCT (and field decision) */
+	MBfDCT(pParam, frame, pMB, x_pos, y_pos, data);
+
+	/* Set the limit threshold */
+	limit = BVOP_TOOSMALL_LIMIT;
+
+	/* Quantize the block */
+	cbp = MBQuantInter(pParam, pMB, data, qcoeff, 1, limit);
 
 	/*
 	 * History comment:
-	 * we don't have to DeQuant, iDCT and Transfer back data for B-frames
-	 */
-
-	/* 
-	 * As an exception to the previous rule, if we are willing to have extra
-	 * stats then we have to DeQuant, iDCT and Transfer back the data :-)
+	 * We don't have to DeQuant, iDCT and Transfer back data for B-frames.
+	 *
+	 * BUT some plugins require the original frame to be passed so we have
+	 * to take care of that here
 	 */
 	if((pParam->plugin_flags & XVID_REQORIGINAL)) {
-		MBDeQuantInter(pParam,pMB->quant,data,qcoeff,cbp);
-		MBiDCT(data,cbp);
-		MBTransAdd(pParam,frame,pMB,x_pos,y_pos,data,cbp);
+
+		/* DeQuantize the block */
+		MBDeQuantInter(pParam, pMB->quant, data, qcoeff, cbp);
+
+		/* Perform inverse DCT*/
+		MBiDCT(data, cbp);
+
+		/* Transfer back the data -- Add the data */
+		MBTrans16to8(pParam, frame, pMB, x_pos, y_pos, data, 1, cbp);
 	}
 
-	return cbp;
+	return(cbp);
 }
-
-
-void
-MBfDCT(const MBParam * pParam,
-				  FRAMEINFO * frame,
-				  MACROBLOCK * pMB,
-				  int16_t data[6 * 64])
-{	
-	int i;
-
-	start_timer();
-	pMB->field_dct = 0;
-	if ((frame->vol_flags & XVID_VOL_INTERLACING)) {
-		pMB->field_dct = MBDecideFieldDCT(data);
-	}
-	stop_interlacing_timer();
-
-	for (i = 0; i < 6; i++) {
-		start_timer();
-		fdct(&data[i * 64]);
-		stop_dct_timer();
-	}
-}
-
-void
-MBQuantDeQuantIntra(const MBParam * pParam,
-				  	FRAMEINFO * frame,
-				  	MACROBLOCK * pMB,
-				  	int16_t qcoeff[6 * 64],
-  				  	int16_t data[6*64])
-{
-	int i;
-	int iQuant = pMB->quant;
-
-	start_timer();
-	pMB->field_dct = 0;
-	if ((frame->vol_flags & XVID_VOL_INTERLACING)) {
-		pMB->field_dct = MBDecideFieldDCT(data);
-	}
-	stop_interlacing_timer();
-
-	for (i = 0; i < 6; i++) {
-		uint32_t iDcScaler = get_dc_scaler(iQuant, i < 4);
-
-		if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT)) {
-			start_timer();
-			quant_intra(&qcoeff[i * 64], &data[i * 64], iQuant, iDcScaler);
-			stop_quant_timer();
-
-			start_timer();
-			dequant_intra(&data[i * 64], &qcoeff[i * 64], iQuant, iDcScaler);
-			stop_iquant_timer();
-		} else {
-			start_timer();
-			quant4_intra(&qcoeff[i * 64], &data[i * 64], iQuant, iDcScaler);
-			stop_quant_timer();
-
-			start_timer();
-			dequant4_intra(&data[i * 64], &qcoeff[i * 64], iQuant, iDcScaler);
-			stop_iquant_timer();
-		}
-	}
-}
-
-void
-MBQuantIntra(const MBParam * pParam,
-		  	 FRAMEINFO * frame,
-			 MACROBLOCK *pMB,
-		     int16_t qcoeff[6 * 64],
-			 int16_t data[6*64])
-{
-	int i;
-	int iQuant = pMB->quant;
-
-	start_timer();
-	pMB->field_dct = 0;
-	if ((frame->vol_flags & XVID_VOL_INTERLACING)) {
-		pMB->field_dct = MBDecideFieldDCT(data);
-	}
-	stop_interlacing_timer();
-
-	for (i = 0; i < 6; i++) {
-		uint32_t iDcScaler = get_dc_scaler(iQuant, i < 4);
-
-		if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT)) {
-			start_timer();
-			quant_intra(&qcoeff[i * 64], &data[i * 64], iQuant, iDcScaler);
-			stop_quant_timer();
-		} else {
-			start_timer();
-			quant4_intra(&qcoeff[i * 64], &data[i * 64], iQuant, iDcScaler);
-			stop_quant_timer();
-		}
-	}
-}
-
-void
-MBDeQuantIntra(const MBParam * pParam,
-			   const int iQuant,
-				  int16_t qcoeff[6 * 64],
-				  int16_t data[6*64])
-{
-	int i;
-
-	for (i = 0; i < 6; i++) {
-		uint32_t iDcScaler = get_dc_scaler(iQuant, i < 4);
-
-		if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT)) {
-			start_timer();
-			dequant_intra(&data[i * 64], &qcoeff[i * 64], iQuant, iDcScaler);
-			stop_iquant_timer();
-		} else {
-			start_timer();
-			dequant4_intra(&data[i * 64], &qcoeff[i * 64], iQuant, iDcScaler);
-			stop_iquant_timer();
-		}
-	}
-}
-
-uint8_t
-MBQuantInter(const MBParam * pParam,
-			 const int iQuant,
-				  int16_t data[6 * 64],
-				  int16_t qcoeff[6 * 64])
-{
-
-	int i;
-	uint8_t cbp = 0;
-	int sum;
-
-	for (i = 0; i < 6; i++) {
-	
-		if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT)) {
-			start_timer();
-			sum = quant_inter(&qcoeff[i * 64], &data[i * 64], iQuant);
-			stop_quant_timer();
-		} else {
-			start_timer();
-			sum = quant4_inter(&qcoeff[i * 64], &data[i * 64], iQuant);
-			stop_quant_timer();
-		}
-
-		if (sum >= TOOSMALL_LIMIT) {	// skip block ?
-			cbp |= 1 << (5 - i);
-		}
-	}
-	return cbp;
-}
-
-void 
-MBDeQuantInter(	const MBParam * pParam,
-				const int iQuant,
-				  int16_t data[6 * 64],
-				  int16_t qcoeff[6 * 64],
-				  const uint8_t cbp)
-{
-	int i;
-
-	for (i = 0; i < 6; i++) {
-		if (cbp & (1 << (5 - i)))
-		{	
-			if (!(pParam->vol_flags & XVID_VOL_MPEGQUANT)) {
-				start_timer();
-				dequant_inter(&data[i * 64], &qcoeff[i * 64], iQuant);
-				stop_iquant_timer();
-			} else {
-				start_timer();
-				dequant4_inter(&data[i * 64], &qcoeff[i * 64], iQuant);
-				stop_iquant_timer();
-			}
-		}
-	}
-}
-
-void
-MBiDCT(	int16_t data[6 * 64],
-		const uint8_t cbp)
-{
-	int i;
-
-	for (i = 0; i < 6; i++) {
-		if (cbp & (1 << (5 - i)))
-		{	
-			start_timer();
-			idct(&data[i * 64]);
-			stop_idct_timer();
-		
-		}
-	}
-}
-
-
-void
-MBTrans(const MBParam * pParam,
-				  FRAMEINFO * frame,
-				  MACROBLOCK * pMB,
-				  const uint32_t x_pos,
-				  const uint32_t y_pos,
-				  int16_t data[6 * 64])
-{
-	uint32_t stride = pParam->edged_width;
-	uint32_t stride2 = stride / 2;
-	uint32_t next_block = stride * 8;
-	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
-	IMAGE *pCurrent = &frame->image;
-
-	pY_Cur = pCurrent->y + (y_pos << 4) * stride + (x_pos << 4);
-	pU_Cur = pCurrent->u + (y_pos << 3) * stride2 + (x_pos << 3);
-	pV_Cur = pCurrent->v + (y_pos << 3) * stride2 + (x_pos << 3);
-
-	start_timer();
-	transfer_8to16copy(&data[0 * 64], pY_Cur, stride);
-	transfer_8to16copy(&data[1 * 64], pY_Cur + 8, stride);
-	transfer_8to16copy(&data[2 * 64], pY_Cur + next_block, stride);
-	transfer_8to16copy(&data[3 * 64], pY_Cur + next_block + 8, stride);
-	transfer_8to16copy(&data[4 * 64], pU_Cur, stride2);
-	transfer_8to16copy(&data[5 * 64], pV_Cur, stride2);
-	stop_transfer_timer();
-}
-	
-void
-MBTransAdd(const MBParam * pParam,
-				  FRAMEINFO * frame,
-				  MACROBLOCK * pMB,
-				  const uint32_t x_pos,
-				  const uint32_t y_pos,
-				  int16_t data[6 * 64],
-				  const uint8_t cbp)
-{
-	uint8_t *pY_Cur, *pU_Cur, *pV_Cur;
-	uint32_t stride = pParam->edged_width;
-	uint32_t stride2 = stride / 2;
-	uint32_t next_block = stride * 8;
-	IMAGE *pCurrent = &frame->image;
-
-	pY_Cur = pCurrent->y + (y_pos << 4) * stride + (x_pos << 4);
-	pU_Cur = pCurrent->u + (y_pos << 3) * stride2 + (x_pos << 3);
-	pV_Cur = pCurrent->v + (y_pos << 3) * stride2 + (x_pos << 3);
-
-	if (pMB->field_dct) {
-		next_block = stride;
-		stride *= 2;
-	}
-
-	start_timer();
-	if (cbp & 32)
-		transfer_16to8add(pY_Cur, &data[0 * 64], stride);
-	if (cbp & 16)
-		transfer_16to8add(pY_Cur + 8, &data[1 * 64], stride);
-	if (cbp & 8)
-		transfer_16to8add(pY_Cur + next_block, &data[2 * 64], stride);
-	if (cbp & 4)
-		transfer_16to8add(pY_Cur + next_block + 8, &data[3 * 64], stride);
-	if (cbp & 2)
-		transfer_16to8add(pU_Cur, &data[4 * 64], stride2);
-	if (cbp & 1)
-		transfer_16to8add(pV_Cur, &data[5 * 64], stride2);
-	stop_transfer_timer();
-}
-
-
-
-/* permute block and return field dct choice */
-
-
-uint32_t
-MBDecideFieldDCT(int16_t data[6 * 64])
-{
-	uint32_t field = MBFieldTest(data);
-
-	if (field) {
-		MBFrameToField(data);
-	}
-
-	return field;
-}
-
 
 /* if sum(diff between field lines) < sum(diff between frame lines), use field dct */
-
 uint32_t
 MBFieldTest_c(int16_t data[6 * 64])
 {
