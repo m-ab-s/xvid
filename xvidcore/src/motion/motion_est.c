@@ -550,7 +550,7 @@ MotionEstimation(MBParam * const pParam,
 
 	uint32_t x, y;
 	uint32_t iIntra = 0;
-	int32_t InterBias;
+	int32_t InterBias, quant = current->quant;
 
 	// some pre-initialized thingies for SearchP
 	int32_t temp[5];
@@ -577,6 +577,13 @@ MotionEstimation(MBParam * const pParam,
 			if (!(current->global_flags & XVID_LUMIMASKING)) {
 				pMB->dquant = NO_CHANGE;
 				pMB->quant = current->quant; }
+			else
+				if (pMB->dquant != NO_CHANGE) {
+					quant += DQtab[pMB->dquant];
+					if (quant > 31) quant = 31;
+					else if (quant < 1) quant = 1;
+					pMB->quant = quant;
+				}
 
 //initial skip decision
 
@@ -1569,7 +1576,7 @@ MotionEstimationHinted(	MBParam * const pParam,
 	const IMAGE *const pRef = &reference->image;
 
 	uint32_t x, y;
-	int32_t temp[5];
+	int32_t temp[5], quant = current->quant;
 	int32_t iMinSAD[5];
 	VECTOR currentMV[5];
 	SearchData Data;
@@ -1589,9 +1596,17 @@ MotionEstimationHinted(	MBParam * const pParam,
 //intra mode is copied from the first pass. At least for the time being
 			if  ((pMB->mode == MODE_INTRA) || (pMB->mode == MODE_NOT_CODED) ) continue;
 
+
 			if (!(current->global_flags & XVID_LUMIMASKING)) {
 				pMB->dquant = NO_CHANGE;
 				pMB->quant = current->quant; }
+			else
+				if (pMB->dquant != NO_CHANGE) {
+					quant += DQtab[pMB->dquant];
+					if (quant > 31) quant = 31;
+					else if (quant < 1) quant = 1;
+					pMB->quant = quant;
+				}
 
 			SearchPhinted(pRef->y, pRefH->y, pRefV->y, pRefHV->y, pCurrent, x,
 							y, current->motion_flags, pMB->quant,

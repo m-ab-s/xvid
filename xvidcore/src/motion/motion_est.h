@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: motion_est.h,v 1.1.2.2 2002-09-25 21:27:12 Isibaar Exp $
+ *  $Id: motion_est.h,v 1.1.2.3 2002-10-02 10:16:36 syskin Exp $
  *
  ***************************************************************************/
 
@@ -94,6 +94,11 @@ static const uint32_t mvtab[33] = {
 	10, 10, 10, 10, 10, 10, 10, 10,
 	10, 11, 11, 11, 11, 11, 11, 12, 12
 };
+
+static const int DQtab[4] = {
+	-1, -2, 1, 2
+};
+
 
 typedef struct
 	{
