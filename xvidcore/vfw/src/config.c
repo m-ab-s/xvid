@@ -184,9 +184,9 @@ static const REG_INT reg_ints[] = {
 	{"kfthreshold",				&reg.kfthreshold,				1},
 	{"curve_compression_high",	&reg.curve_compression_high,	0},
 	{"curve_compression_low",	&reg.curve_compression_low,		0},
-	{"overflow_control_strength", &reg.overflow_control_strength, 10},
-	{"twopass_max_overflow_improvement", &reg.twopass_max_overflow_improvement, 60},
-	{"twopass_max_overflow_degradation", &reg.twopass_max_overflow_degradation, 60},
+	{"overflow_control_strength", &reg.overflow_control_strength, 5},
+	{"twopass_max_overflow_improvement", &reg.twopass_max_overflow_improvement, 5},
+	{"twopass_max_overflow_degradation", &reg.twopass_max_overflow_degradation, 5},
 
     /* motion */
     {"motion_search",			&reg.motion_search,				6},
