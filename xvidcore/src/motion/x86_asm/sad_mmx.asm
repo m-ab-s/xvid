@@ -48,6 +48,7 @@ mmx_one	times 4	dw 1
 section .text
 
 cglobal  sad16_mmx
+cglobal  sad16v_mmx
 cglobal  sad8_mmx
 cglobal  sad16bi_mmx
 cglobal  sad8bi_mmx
@@ -202,6 +203,130 @@ sad8_mmx:
     ret
 
 
+;===========================================================================
+;
+; uint32_t sad16v_mmx(const uint8_t * const cur,
+;				      const uint8_t * const ref,
+;					  const uint32_t stride,
+;					  int32_t *sad);
+;
+;===========================================================================
+
+%macro SADV_16x16_MMX 0
+    movq mm0, [eax]
+    movq mm1, [edx]
+
+    movq mm2, [eax+8]
+    movq mm3, [edx+8]
+
+    movq mm4, mm0
+    psubusb mm0, mm1
+
+    psubusb mm1, mm4
+    por mm0, mm1
+    lea eax,[eax+ecx]
+
+    movq mm4, mm2
+    psubusb mm2, mm3
+
+    psubusb mm3, mm4
+    por mm2, mm3
+    lea edx,[edx+ecx]
+
+    movq mm1,mm0
+    movq mm3,mm2
+
+    punpcklbw mm0,mm7
+    punpckhbw mm1,mm7
+    punpcklbw mm2,mm7
+    punpckhbw mm3,mm7
+
+    paddusw mm0,mm1
+    paddusw mm2,mm3
+
+	paddusw	mm5, mm0
+	paddusw	mm6, mm2
+%endmacro
+
+align 16
+sad16v_mmx:
+
+	push ebx
+	push edi
+
+    mov eax, [esp + 8 + 4] ; Src1
+    mov edx, [esp + 8 + 8] ; Src2
+    mov ecx, [esp + 8 + 12] ; Stride
+    mov ebx, [esp + 8 + 16] ; sad ptr
+    
+	pxor mm5, mm5 ; accum
+    pxor mm6, mm6 ; accum
+    pxor mm7, mm7 ; zero
+
+    SADV_16x16_MMX
+    SADV_16x16_MMX
+    SADV_16x16_MMX
+    SADV_16x16_MMX
+    SADV_16x16_MMX
+    SADV_16x16_MMX
+    SADV_16x16_MMX
+    SADV_16x16_MMX
+
+    pmaddwd mm5, [mmx_one] ; collapse
+    pmaddwd mm6, [mmx_one] ; collapse
+
+    movq mm2, mm5
+    movq mm3, mm6
+
+    psrlq mm2, 32 
+    psrlq mm3, 32 
+
+    paddd mm5, mm2
+    paddd mm6, mm3
+	
+	movd [ebx], mm5
+	movd [ebx + 4], mm6
+
+	paddd mm5, mm6
+
+	movd edi, mm5
+
+	pxor mm5, mm5
+	pxor mm6, mm6
+
+    SADV_16x16_MMX
+    SADV_16x16_MMX
+    SADV_16x16_MMX
+    SADV_16x16_MMX
+    SADV_16x16_MMX
+    SADV_16x16_MMX
+    SADV_16x16_MMX
+    SADV_16x16_MMX
+
+    pmaddwd mm5, [mmx_one] ; collapse
+    pmaddwd mm6, [mmx_one] ; collapse
+
+    movq mm2, mm5
+    movq mm3, mm6
+
+    psrlq mm2, 32 
+    psrlq mm3, 32 
+
+    paddd mm5, mm2
+    paddd mm6, mm3
+	
+	movd [ebx + 8], mm5
+	movd [ebx + 12], mm6
+
+	paddd mm5, mm6
+
+	movd eax, mm5
+	
+    add eax, edi
+
+	pop edi
+    pop ebx
+	ret
 
 
 

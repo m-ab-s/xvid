@@ -37,7 +37,7 @@
  *  - 22.12.2001  API change: added xvid_init() - Isibaar
  *  - 16.12.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: xvid.c,v 1.33.2.1 2002-09-23 20:36:01 chl Exp $
+ *  $Id: xvid.c,v 1.33.2.2 2002-09-24 16:30:05 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -308,6 +308,7 @@ xvid_init(void *handle,
 		sad16bi = sad16bi_mmx;
 		sad8bi  = sad8bi_mmx;
 		dev16    = dev16_mmx;
+		sad16v	 = sad16v_mmx;
 
 	}
 

@@ -80,6 +80,7 @@ typedef uint32_t (sad16vFunc)(	const uint8_t * const cur,
 typedef sad16vFunc *sad16vFuncPtr;
 extern sad16vFuncPtr sad16v;
 sad16vFunc sad16v_xmm;
+sad16vFunc sad16v_mmx;
 sad16vFunc sad16v_c;
 sad16vFunc mrsad16v;
 sad16vFunc mrsad16v_c;
