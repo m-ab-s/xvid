@@ -100,8 +100,8 @@ BEGIN
     EDITTEXT        IDC_BITRATE,88,52,100,12,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "X",IDC_BITRATE_MIN,16,70,40,8
     RTEXT           "X",IDC_BITRATE_MAX,164,70,44,8
-    LTEXT           "Target bitrate (kbps):",IDC_BITRATE_S,14,52,66,12,
-                    SS_NOTIFY | SS_CENTERIMAGE
+    LTEXT           "Target bitrate (kbps):",IDC_BITRATE_S,14,52,72,12,
+                    SS_NOTIFY | SS_CENTERIMAGE,WS_EX_DLGMODALFRAME
     PUSHBUTTON      "...",IDC_BITRATE_CALC,196,52,16,12
 END
 
@@ -557,8 +557,7 @@ BEGIN
                     WS_TABSTOP,16,140,47,10
     CONTROL         "Chroma optimizer",IDC_ZONE_CHROMAOPT,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,16,156,69,10
-    EDITTEXT        IDC_ZONE_BVOPTHRESHOLD,100,170,84,12,ES_AUTOHSCROLL | 
-                    ES_NUMBER
+    EDITTEXT        IDC_ZONE_BVOPTHRESHOLD,100,170,84,12,ES_AUTOHSCROLL
     CONTROL         "Weight:",IDC_ZONE_MODE_WEIGHT,"Button",
                     BS_AUTORADIOBUTTON | WS_GROUP,16,38,41,10
     CONTROL         "Quantizer:",IDC_ZONE_MODE_QUANT,"Button",

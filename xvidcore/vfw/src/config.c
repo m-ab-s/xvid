@@ -1437,7 +1437,7 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
             case IDC_BITRATE_CALC :
                 main_download(hDlg, config);
                 adv_dialog(hDlg, config, bitrate_dlgs, sizeof(bitrate_dlgs)/sizeof(int));
-                SetDlgItemInt(hDlg, IDC_BITRATE, config->bitrate, FALSE);
+                //SetDlgItemInt(hDlg, IDC_BITRATE, config->bitrate, FALSE);
                 main_mode(hDlg, config);
                 break;
 
