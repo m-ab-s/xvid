@@ -84,7 +84,7 @@ REG_INT const reg_ints[] = {
 	{"rc_averaging_period",		&reg.rc_averaging_period,		100},
 	{"rc_buffer",				&reg.rc_buffer,					100},
 
-	{"motion_search",			&reg.motion_search,				5},
+	{"motion_search",			&reg.motion_search,				6},
 	{"quant_type",				&reg.quant_type,				0},
 	{"fourcc_used",				&reg.fourcc_used,				0},
 	{"max_key_interval",		&reg.max_key_interval,			300},
@@ -101,7 +101,7 @@ REG_INT const reg_ints[] = {
 	{"bquant_ratio",			&reg.bquant_ratio,				150},
 	{"bquant_offset",			&reg.bquant_offset,				100},
 	{"packed",					&reg.packed,					0},
-	{"dx50bvop",				&reg.dx50bvop,					0},
+	{"dx50bvop",				&reg.dx50bvop,					1},
 	{"debug",					&reg.debug,						0},
 	{"frame_drop_ratio",		&reg.frame_drop_ratio,			0},
 
@@ -116,11 +116,11 @@ REG_INT const reg_ints[] = {
 	{"dummy2pass",				&reg.dummy2pass,				0},
 // added by koepi for new two-pass curve treatment
 	{"kftreshold",				&reg.kftreshold,				10},
-	{"kfreduction",				&reg.kfreduction,				30},
+	{"kfreduction",				&reg.kfreduction,				20},
 // end of koepi's additions
-	{"curve_compression_high",	&reg.curve_compression_high,	25},
-	{"curve_compression_low",	&reg.curve_compression_low,		10},
-	{"use_alt_curve",			&reg.use_alt_curve,				1},
+	{"curve_compression_high",	&reg.curve_compression_high,	0},
+	{"curve_compression_low",	&reg.curve_compression_low,		0},
+	{"use_alt_curve",			&reg.use_alt_curve,				0},
 	{"alt_curve_use_auto",		&reg.alt_curve_use_auto,		1},
 	{"alt_curve_auto_str",		&reg.alt_curve_auto_str,		30},
 	{"alt_curve_use_auto_bonus_bias",	&reg.alt_curve_use_auto_bonus_bias,	1},
