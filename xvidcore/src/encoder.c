@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.29 2003-06-11 12:37:41 suxen_drol Exp $
+ * $Id: encoder.c,v 1.95.2.30 2003-06-13 12:11:27 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -687,8 +687,8 @@ static void call_plugins(Encoder * pEnc, FRAMEINFO * frame, IMAGE * original,
     data.frame_num = frame->frame_num;
 
     if (opt == XVID_PLG_BEFORE) {
-        data.type = XVID_TYPE_AUTO;
-        data.quant = 0;
+        data.type = *type;
+        data.quant = *quant;
         
 		if ((pEnc->mbParam.plugin_flags & XVID_REQDQUANTS)) {
             data.dquant = pEnc->temp_dquants;
