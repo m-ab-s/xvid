@@ -266,14 +266,14 @@ init_vlc_tables(void)
 
 		for (l=-(2*limit-1); l <= -limit; l++)
 		{
-			sprite_trajectory_code[i+16384].code = (2*limit-1)+l;
-			sprite_trajectory_code[i+16384].len = k+1;
+			sprite_trajectory_code[l+16384].code = (2*limit-1)+l;
+			sprite_trajectory_code[l+16384].len = k+1;
 		}
 
 		for (l=limit; l<= 2*limit-1; l++)
 		{
-			sprite_trajectory_code[i+16384].code = l; 
-			sprite_trajectory_code[i+16384].len = k+1;
+			sprite_trajectory_code[l+16384].code = l; 
+			sprite_trajectory_code[l+16384].len = k+1;
 		}
 	}
 }
