@@ -932,10 +932,7 @@ PreparePredictionsP(VECTOR * const pmv, int x, int y, int iWcount,
     else pmv[4].x = pmv[4].y = 0;
 
 	// [1] median prediction
-	if (rrv) { //median is in halfzero-precision
-		pmv[1].x = RRV_MV_SCALEUP(pmv[0].x);
-		pmv[1].y = RRV_MV_SCALEUP(pmv[0].y);
-	} else { pmv[1].x = EVEN(pmv[0].x); pmv[1].y = EVEN(pmv[0].y); }
+	pmv[1].x = EVEN(pmv[0].x); pmv[1].y = EVEN(pmv[0].y);
 
 	pmv[0].x = pmv[0].y = 0; // [0] is zero; not used in the loop (checked before) but needed here for make_mask
 
@@ -950,8 +947,8 @@ PreparePredictionsP(VECTOR * const pmv, int x, int y, int iWcount,
 	if (rrv) {
 		int i;
 		for (i = 0; i < 7; i++) {
-			pmv[i].x = RRV_MV_SCALEDOWN(pmv[i].x);
-			pmv[i].x = RRV_MV_SCALEUP(pmv[i].x); // a trick
+			pmv[i].x = RRV_MV_SCALEUP(pmv[i].x); // halfzero->halfpel
+			pmv[i].y = RRV_MV_SCALEUP(pmv[i].y);
 		}
 	}
 }
@@ -1310,7 +1307,7 @@ PreparePredictionsBF(VECTOR * const pmv, const int x, const int y,
 
 	if ((x != 0)&&(y != 0)) {
 		pmv[6] = ChoosePred(pMB-1-iWcount, mode_curr);
-		pmv[6].x = EVEN(pmv[5].x); pmv[5].y = EVEN(pmv[5].y);
+		pmv[6].x = EVEN(pmv[6].x); pmv[6].y = EVEN(pmv[6].y);
 	} else pmv[6].x = pmv[6].y = 0;
 
 // more?
@@ -1415,43 +1412,25 @@ SearchBF(	const uint8_t * const pRef,
 
 static void
 SkipDecisionB(const IMAGE * const pCur,
-			  const IMAGE * const f_Ref,
-			  const IMAGE * const b_Ref,
-			  MACROBLOCK * const pMB,
-			  const uint32_t quant,
-			  const uint32_t x, const uint32_t y,
-			  const SearchData * const Data)
+				const IMAGE * const f_Ref,
+				const IMAGE * const b_Ref,
+				MACROBLOCK * const pMB,
+				const uint32_t x, const uint32_t y,
+				const SearchData * const Data)
 {
-	int dx, dy, b_dx, b_dy;
+	int dx = 0, dy = 0, b_dx = 0, b_dy = 0;
 	uint32_t sum;
+	const int div = 1 + Data->qpel;
+	int k;
+	const uint32_t quant = pMB->quant;
 //this is not full chroma compensation, only it's fullpel approximation. should work though
-	if (Data->qpel) {
-		dy = Data->directmvF[0].y/2 + Data->directmvF[1].y/2 +
-				Data->directmvF[2].y/2 + Data->directmvF[3].y/2;
-		
-		dx = Data->directmvF[0].x/2 + Data->directmvF[1].x/2 +
-				Data->directmvF[2].x/2 + Data->directmvF[3].x/2;
 
-		b_dy = Data->directmvB[0].y/2 + Data->directmvB[1].y/2 +
-				Data->directmvB[2].y/2 + Data->directmvB[3].y/2;
-
-		b_dx = Data->directmvB[0].x/2 + Data->directmvB[1].x/2 +
-				Data->directmvB[2].x/2 + Data->directmvB[3].x/2;	
-
-	} else {
-		dy = Data->directmvF[0].y + Data->directmvF[1].y +
-				Data->directmvF[2].y + Data->directmvF[3].y;
-		
-		dx = Data->directmvF[0].x + Data->directmvF[1].x +
-				Data->directmvF[2].x + Data->directmvF[3].x;
-
-		b_dy = Data->directmvB[0].y + Data->directmvB[1].y +
-				Data->directmvB[2].y + Data->directmvB[3].y;
-
-		b_dx = Data->directmvB[0].x + Data->directmvB[1].x +
-				Data->directmvB[2].x + Data->directmvB[3].x;
+	for (k = 0; k < 4; k++) {
+		dy += Data->directmvF[k].y / div;
+		dx += Data->directmvF[0].x / div;
+		b_dy += Data->directmvB[0].y / div;
+		b_dx += Data->directmvB[0].x / div;
 	}
-
 
 	dy = (dy >> 3) + roundtab_76[dy & 0xf];
 	dx = (dx >> 3) + roundtab_76[dx & 0xf];
@@ -1462,12 +1441,15 @@ SkipDecisionB(const IMAGE * const pCur,
 					f_Ref->u + (y*8 + dy/2) * (Data->iEdgedWidth/2) + x*8 + dx/2,
 					b_Ref->u + (y*8 + b_dy/2) * (Data->iEdgedWidth/2) + x*8 + b_dx/2,
 					Data->iEdgedWidth/2);
+
+	if (sum >= 2 * MAX_CHROMA_SAD_FOR_SKIP * quant) return; //no skip
+
 	sum += sad8bi(pCur->v + 8*x + 8*y*(Data->iEdgedWidth/2),
 					f_Ref->v + (y*8 + dy/2) * (Data->iEdgedWidth/2) + x*8 + dx/2,
 					b_Ref->v + (y*8 + b_dy/2) * (Data->iEdgedWidth/2) + x*8 + b_dx/2,
 					Data->iEdgedWidth/2);
 
-	if (sum < 2*MAX_CHROMA_SAD_FOR_SKIP * quant) pMB->mode = MODE_DIRECT_NONE_MV; //skipped
+	if (sum < 2 * MAX_CHROMA_SAD_FOR_SKIP * quant) pMB->mode = MODE_DIRECT_NONE_MV; //skipped
 }
 
 
@@ -1551,7 +1533,7 @@ SearchDirect(const IMAGE * const f_Ref,
 
 // initial (fast) skip decision
 	if (*Data->iMinSAD < pMB->quant * INITIAL_SKIP_THRESH*2) {
-		SkipDecisionB(pCur, f_Ref, b_Ref, pMB, x, y, Data->chroma, Data); //possible skip - checking chroma
+		SkipDecisionB(pCur, f_Ref, b_Ref, pMB, x, y, Data); //possible skip - checking chroma
 		if (pMB->mode == MODE_DIRECT_NONE_MV) return *Data->iMinSAD; // skip.
 	}
 
@@ -1836,7 +1818,7 @@ MotionEstimationBVOP(MBParam * const pParam,
 // final skip decision
 			if ( (skip_sad < frame->quant * MAX_SAD00_FOR_SKIP*2)
 					&& ((100*best_sad)/(skip_sad+1) > FINAL_SKIP_THRESH) )
-				SkipDecisionB(&frame->image, f_ref, b_ref, pMB,frame->quant, i, j, &Data);
+				SkipDecisionB(&frame->image, f_ref, b_ref, pMB, i, j, &Data);
 
 			switch (pMB->mode) {
 				case MODE_FORWARD:
