@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.17 2003-04-18 20:06:58 chl Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.18 2003-04-19 11:26:47 chl Exp $
  *
  ****************************************************************************/
 
@@ -174,6 +174,7 @@ main(int argc,
 
 	double enctime;
 	double totalenctime = 0.;
+	float totalPSNR[3] = {0., 0., 0.};
 
 	int totalsize;
 	int result;
@@ -427,6 +428,10 @@ main(int argc,
 					   SSE2PSNR(sse[0], XDIM, YDIM), SSE2PSNR(sse[1], XDIM / 2,
 															  YDIM / 2),
 					   SSE2PSNR(sse[2], XDIM / 2, YDIM / 2));
+
+				totalPSNR[0] += SSE2PSNR(sse[0], XDIM, YDIM);
+				totalPSNR[1] += SSE2PSNR(sse[1], XDIM/2, YDIM/2);
+				totalPSNR[2] += SSE2PSNR(sse[2], XDIM/2, YDIM/2);
 			}
 
 		}
@@ -483,13 +488,21 @@ main(int argc,
 	if (input_num > 0) {
 		totalsize /= input_num;
 		totalenctime /= input_num;
+		totalPSNR[0] /= input_num;
+		totalPSNR[1] /= input_num;
+		totalPSNR[2] /= input_num;
 	} else {
 		totalsize = -1;
 		totalenctime = -1;
 	}
 
-	printf("Avg: enctime(ms) =%7.2f, fps =%7.2f, length(bytes) = %7d\n",
+	printf("Avg: enctime(ms) =%7.2f, fps =%7.2f, length(bytes) = %7d, ",
 		   totalenctime, 1000 / totalenctime, (int) totalsize);
+   if (ARG_STATS) {
+       printf("psnr y = %2.2f, psnr u = %2.2f, psnr v = %2.2f",
+    		  totalPSNR[0],totalPSNR[1],totalPSNR[2]);
+	}
+	printf("\n");
 
 
 /*****************************************************************************
