@@ -161,7 +161,7 @@ int codec_2pass_init(CODEC* codec)
 				{
 					if (twopass->nns1.quant & NNSTATS_KEYFRAME)
 					{
-						i_boost_total = twopass->nns2.bytes * codec->config.keyframe_boost / 100;
+						i_boost_total += twopass->nns2.bytes * codec->config.keyframe_boost / 100;
 						i_total += twopass->nns2.bytes;
 						twopass->keyframe_locations[i_frames] = frames;
 						++i_frames;
@@ -794,7 +794,27 @@ int codec_2pass_get_quant(CODEC* codec, XVID_ENC_FRAME* frame)
 		}
 		else	// DLG_MODE_2PASS_2_EXT
 		{
-			bytes2 = twopass->nns2.bytes;
+			if (codec->config.credits_mode == CREDITS_MODE_QUANT)
+			{
+				if (codec->config.credits_quant_i != codec->config.credits_quant_p)
+				{
+					frame->quant = frame->intra ?
+						codec->config.credits_quant_i :
+						codec->config.credits_quant_p;
+				}
+				else
+				{
+					frame->quant = codec->config.credits_quant_p;
+					frame->intra = -1;
+				}
+
+				twopass->bytes1 = bytes1;
+				twopass->bytes2 = bytes1;
+				twopass->desired_bytes2 = bytes1;
+				return ICERR_OK;				
+			}
+			else
+				bytes2 = twopass->nns2.bytes;
 		}
 	}
 	else	// Foxer: apply curve compression outside credits
