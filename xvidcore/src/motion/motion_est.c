@@ -1536,7 +1536,7 @@ SearchInterpolate(const uint8_t * const f_Ref,
 	bData.RefHV = fData->bRefHV = b_RefHV + (x + y * iEdgedWidth) * 16;
 	bData.RefQ = fData->RefQ;
 	fData->qpel_precision = bData.qpel_precision = 0;
-	bData.rounding = 0;
+	bData.rounding = 0; bData.qpel = fData->qpel;
 
 	bData.bpredMV = fData->predMV = *f_predMV;
 	fData->bpredMV = bData.predMV = *b_predMV;
