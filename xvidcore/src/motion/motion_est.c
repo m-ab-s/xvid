@@ -148,12 +148,11 @@ Interpolate8x8qpel(const int x, const int y, const int block, const int dir, con
 	const int halfpel_y = y/2;
 	const uint8_t *ref1, *ref2, *ref3, *ref4;
 
-	ref1 = GetReference(halfpel_x, halfpel_y, dir, data); // this reference is used in all cases
+	ref1 = GetReference(halfpel_x, halfpel_y, dir, data);
 	ref1 += 8 * (block&1) + 8 * (block>>1) * iEdgedWidth;
 	switch( ((x&1)<<1) + (y&1) ) {
 	case 0: // pure halfpel position
-		Reference = (uint8_t *) GetReference(halfpel_x, halfpel_y, dir, data);
-		Reference += 8 * (block&1) + 8 * (block>>1) * iEdgedWidth;
+		return (uint8_t *) ref1;
 		break;
 
 	case 1: // x halfpel, y qpel - top or bottom during qpel refinement
@@ -193,10 +192,10 @@ Interpolate16x16qpel(const int x, const int y, const int dir, const SearchData *
 	const int halfpel_y = y/2;
 	const uint8_t *ref1, *ref2, *ref3, *ref4;
 
-	ref1 = GetReference(halfpel_x, halfpel_y, dir, data); // this reference is used in all cases
+	ref1 = GetReference(halfpel_x, halfpel_y, dir, data);
 	switch( ((x&1)<<1) + (y&1) ) {
 	case 0: // pure halfpel position
-		return (uint8_t *) GetReference(halfpel_x, halfpel_y, dir, data);
+		return (uint8_t *) ref1;
 	case 1: // x halfpel, y qpel - top or bottom during qpel refinement
 		ref2 = GetReference(halfpel_x, y - halfpel_y, dir, data);
 		interpolate8x8_avg2(Reference, ref1, ref2, iEdgedWidth, rounding, 8);
@@ -1138,6 +1137,7 @@ SearchP(const IMAGE * const pRef,
 			Data->currentMV[0].x = RRV_MV_SCALEDOWN(Data->currentMV[0].x);
 			Data->currentMV[0].y = RRV_MV_SCALEDOWN(Data->currentMV[0].y);
 	}
+
 	if (!(inter4v) ||
 		(Data->iMinSAD[0] < Data->iMinSAD[1] + Data->iMinSAD[2] + 
 			Data->iMinSAD[3] + Data->iMinSAD[4] + IMV16X16 * (int32_t)iQuant )) {
@@ -1338,7 +1338,7 @@ SearchBF(	const uint8_t * const pRef,
 
 	const int32_t iEdgedWidth = pParam->edged_width;
 	
-	int i, iDirection, mask;
+	int i, iDirection = 255, mask;
 	VECTOR pmv[7];
 	MainSearchFunc *MainSearchPtr;
 	*Data->iMinSAD = MV_MAX_ERROR;
@@ -1363,7 +1363,7 @@ SearchBF(	const uint8_t * const pRef,
 	CheckCandidate = CheckCandidate16no4v;
 
 // main loop. checking all predictions
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < 7; i++) {
 		if (!(mask = make_mask(pmv, i)) ) continue;
 		CheckCandidate16no4v(pmv[i].x, pmv[i].y, mask, &iDirection, Data);
 	}
@@ -1374,11 +1374,11 @@ SearchBF(	const uint8_t * const pRef,
 		MainSearchPtr = AdvDiamondSearch;
 		else MainSearchPtr = DiamondSearch;
 
-	(*MainSearchPtr)(Data->currentMV->x, Data->currentMV->y, Data, 255);
+	(*MainSearchPtr)(Data->currentMV->x, Data->currentMV->y, Data, iDirection);
 
 	SubpelRefine(Data);
 	
-	if (Data->qpel) {
+	if (Data->qpel && *Data->iMinSAD < *best_sad + 300) {
 		Data->currentQMV->x = 2*Data->currentMV->x;
 		Data->currentQMV->y = 2*Data->currentMV->y;
 		Data->qpel_precision = 1;
@@ -1388,7 +1388,7 @@ SearchBF(	const uint8_t * const pRef,
 	}
 
 // three bits are needed to code backward mode. four for forward
-// we treat the bits just like they were vector's
+
 	if (mode_current == MODE_FORWARD) *Data->iMinSAD +=  4 * Data->lambda16;
 	else *Data->iMinSAD +=  3 * Data->lambda16;
 
@@ -1688,6 +1688,7 @@ SearchInterpolate(const uint8_t * const f_Ref,
 	} while (!(iDirection));
 
 	if (fData->qpel) {
+		if (*fData->iMinSAD > *best_sad + 500) return;
 		CheckCandidate = CheckCandidateInt;
 		fData->qpel_precision = bData.qpel_precision = 1;
 		get_range(&fData->min_dx, &fData->max_dx, &fData->min_dy, &fData->max_dy, x, y, 16, pParam->width, pParam->height, fcode, 1, 0);
@@ -1697,11 +1698,12 @@ SearchInterpolate(const uint8_t * const f_Ref,
 		fData->currentQMV[1].x = 2 * fData->currentMV[1].x;
 		fData->currentQMV[1].y = 2 * fData->currentMV[1].y;
 		SubpelRefine(fData);
+		if (*fData->iMinSAD > *best_sad + 300) return;
 		fData->currentQMV[2] = fData->currentQMV[0];
 		SubpelRefine(&bData);
 	}
 	
-	*fData->iMinSAD +=  (2+2) * fData->lambda16; // two bits are needed to code interpolate mode.
+	*fData->iMinSAD +=  (2+3) * fData->lambda16; // two bits are needed to code interpolate mode.
 
 	if (*fData->iMinSAD < *best_sad) {
 		*best_sad = *fData->iMinSAD;
