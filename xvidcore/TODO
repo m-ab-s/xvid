@@ -1,0 +1,56 @@
+TODO
+====
+
+This file lists the TODO items stll pending for the 1.0 release.
+
+
+Active Items to work on:
+------------------------
+
+* update vfw & dshow decoder frontends
+  - GUI isn't perfect for vfw and dshow still links against xvid.dll
+    which doesn't export internal functions anymore because of the license
+    change. Use xvid -> link against libxvidcore.(lib|dll), use xvid
+    through vfw, use the the vfw framework and anything else.
+* update/fix 2pass plugin
+  - Commited but needs additional testing/feedback (ed.gomez)
+* update/fix CBR plugin
+  - misses target bitrate, bitrate burst in static motion/high motion
+    transistions
+* update/fix Lumimasking
+  - doesn't take care of frame type (plugin framework problem, before
+    operation is done before type is known). Taking care of frame type
+    is important because bframe allowed dquants aren't the same as
+    i/pframes allowed dquants
+* bug hunting (ed.gomez/sysKin)
+  - xvidcore is still a place were bugs feel confortable
+* quant matrix usage (not thread nor instance safe)
+  - i (ed.gomez) started an API change to matrix related functions
+    (quant_mpeg_xxx). But the remaining problem is that matrices should
+    be put in FRAMEINFO structures, and matrices should be pushed down 
+    through many function calls. I had no idea how to do that w/o
+    hacking nastly.
+* docbook writing (ed.gomez)
+  - New API has to be documented.
+
+
+Already completed items:
+------------------------
+
+* remove divx4 api (ed.gomez)
+* remove VOP_TYPE enumerations (peter)
+* remove HINTed ME stuff (ed.gomez)
+* xvid_image_t/xvid_gbl_convert_t (peter)
+* xvid_global structs (peter)
+* errors codes (peter)
+* xvid_decoder structs (peter)
+* apply encoder api changes "HEAPS" (peter)
+* rawdec (use xvid_decraw instead) (ed.gomez)
+* Support for GMC 3 warp points (christoph)
+* New Qpel code (michael)
+* ME splitting and ME improvements (sysKin)
+* New unix build process (ed.gomez)
+* New thread/instance safe sse2 code (p.massimino)
+* INSTALL guide for Unix and Win32 (ed.gomez)
+
+Last edited: $Date: 2003-11-15 01:53:22 $

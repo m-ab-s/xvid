@@ -1,10 +1,5 @@
-----------------------------------------------------------------------
-			XviD Core coding style
-
-	      Inspired by the Linux Kernel Coding Style
-
-----------------------------------------------------------------------
-$Id: CodingStyle,v 1.2.4.1 2003-10-21 16:48:58 edgomez Exp $
+CodingStyle
+===========
 
 
 This is a short document describing the preferred coding style for the
@@ -283,3 +278,5 @@ For the moment, the supported platforms are :
     the pure C version of the library)
   - *BSD (same archs as GNU/Linux)
   - Solaris.
+
+Last edited: $Date: 2003-11-15 01:53:22 $
