@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.17 2002-11-11 20:53:34 Isibaar Exp $
+ *  $Id: encoder.c,v 1.76.2.18 2002-11-12 14:44:53 syskin Exp $
  *
  ****************************************************************************/
 
@@ -666,6 +666,7 @@ encoder_encode_bframes(Encoder * pEnc,
 	uint32_t bits, mode;
 
 	int input_valid = 1;
+	int bframes_count = 0;
 
 #ifdef _DEBUG_PSNR
 	float psnr;
@@ -706,6 +707,7 @@ ipvop_loop:
 			SWAP(pEnc->current, pEnc->bframes[pEnc->bframenum_tail]);
 
 			FrameCodeP(pEnc, &bs, &bits, 1, 0);
+			bframes_count = 0;
 
 			BitstreamPad(&bs);
 			pFrame->length = BitstreamLength(&bs);
@@ -928,11 +930,10 @@ bvop_loop:
 	if (pEnc->iFrameNum == 0 || pFrame->intra == 1 || pEnc->bframenum_dx50bvop >= 0 ||
 		(pFrame->intra < 0 && pEnc->iMaxKeyInterval > 0 &&
 		 pEnc->iFrameNum >= pEnc->iMaxKeyInterval)
-		|| /*image_mad(&pEnc->reference->image, &pEnc->current->image,
-					 pEnc->mbParam.edged_width, pEnc->mbParam.width,
-					 pEnc->mbParam.height) > 30) {*/
-			2 == (mode = MEanalysis(&pEnc->reference->image, &pEnc->current->image,
-					 &pEnc->mbParam, pEnc->current->mbs, pEnc->current->fcode))) {
+		|| 2 == (mode = MEanalysis(&pEnc->reference->image, pEnc->current,
+									&pEnc->mbParam, pEnc->iMaxKeyInterval,
+									(pFrame->intra < 0) ? pEnc->iFrameNum : 0,
+									bframes_count++))) {
 
 		/*
 		 * This will be coded as an Intra Frame
@@ -958,12 +959,14 @@ bvop_loop:
 				image_printf(&pEnc->current->image, pEnc->mbParam.edged_width, pEnc->mbParam.height, 5, 100, "DX50 BVOP->PVOP");
 			}
 			FrameCodeP(pEnc, &bs, &bits, 1, 0);
+			bframes_count = 0;
 
 			pFrame->intra = 0;
 			
 		} else {
 
 			FrameCodeI(pEnc, &bs, &bits);
+			bframes_count = 0;
 			pFrame->intra = 1;
 
 			pEnc->bframenum_dx50bvop = -1;
@@ -981,8 +984,7 @@ bvop_loop:
 		 * NB : sequences like "IIBB" decode fine with msfdam but,
 		 *      go screwy with divx 5.00
 		 */
-	} else if ((pEnc->bframenum_tail >= pEnc->mbParam.max_bframes) || (mode != 0)) {
-
+	} else if (pEnc->bframenum_tail >= pEnc->mbParam.max_bframes || mode != 0) {
 		/*
 		 * This will be coded as a Predicted Frame
 		 */
@@ -996,6 +998,7 @@ bvop_loop:
 		}
 
 		FrameCodeP(pEnc, &bs, &bits, 1, 0);
+		bframes_count = 0;
 		pFrame->intra = 0;
 		pEnc->flush_bframes = 1;
 
@@ -1908,7 +1911,7 @@ FrameCodeB(Encoder * pEnc,
 		((int32_t)(pEnc->current->stamp - pEnc->reference->stamp)), 	// time_pp
 			pEnc->reference->mbs, f_ref,
 						 &pEnc->f_refh, &pEnc->f_refv, &pEnc->f_refhv,
-						 pEnc->current->mbs, b_ref, &pEnc->vInterH,
+						 pEnc->current, b_ref, &pEnc->vInterH,
 						 &pEnc->vInterV, &pEnc->vInterHV);
 
 
