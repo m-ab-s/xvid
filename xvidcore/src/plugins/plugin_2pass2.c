@@ -25,7 +25,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_2pass2.c,v 1.1.2.32 2003-12-21 12:41:48 syskin Exp $
+ * $Id: plugin_2pass2.c,v 1.1.2.33 2003-12-21 17:38:17 edgomez Exp $
  *
  *****************************************************************************/
 
@@ -457,19 +457,28 @@ rc_2pass2_before(rc_2pass2_t * rc, xvid_plg_data_t * data)
 	if (data->quant > 0)
 		return(0);
 
-	/* Second case: insufficent stats data */
+	/* Second case: insufficent stats data
+	 * We can't guess much what we should do, let core decide all alone */
 	if (data->frame_num >= rc->num_frames) {
 		DPRINTF(XVID_DEBUG_RC,"[xvid rc] -- stats file too short (now processing frame %d)",
 			data->frame_num);
 		return(0);
 	}
 
-	/* Third case: We are in a Quant zone */
+	/* Third case: We are in a Quant zone
+	 * Quant zones must just ensure we use the same settings as first pass
+	 * So set the quantizer and the type */
 	if (s->zone_mode == XVID_ZONE_QUANT) {
+		/* Quant stuff */
 		rc->fq_error += s->weight;
 		data->quant = (int)rc->fq_error;
 		rc->fq_error -= data->quant;
 
+		/* The type stuff */
+		data->type = s->type;
+
+		/* The only required data for AFTER step is this one for the overflow
+		 * control */
 		s->desired_length = s->length;
 
 		return(0);
@@ -1126,6 +1135,7 @@ first_pass_scale_curve_internal(rc_2pass2_t *rc)
 		scaler = 1.0;
 	}
 #endif
+
 	/* Compute min frame lengths (for each frame type) according to the number
 	 * of MBs. We sum all block type counters of frame 0, this gives us the
 	 * number of MBs.
