@@ -385,6 +385,7 @@
 #define IDC_AR_4_3                      1365
 #define IDC_AR_16_9                     1366
 #define IDC_AR_235_100                  1368
+#define IDC_TURBO                       1369
 
 // Next default values for new objects
 // 
