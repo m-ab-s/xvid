@@ -161,11 +161,11 @@ static const REG_INT reg_ints[] = {
 	{"qpel",					&reg.qpel,						0},
 	{"gmc",						&reg.gmc,						0},
 	{"reduced_resolution",		&reg.reduced_resolution,		0},
-    {"use_bvop",				&reg.use_bvop,	    			0},
+    {"use_bvop",				&reg.use_bvop,	    			1},
 	{"max_bframes",				&reg.max_bframes,				2},
 	{"bquant_ratio",			&reg.bquant_ratio,				150},   /* 100-base float */
 	{"bquant_offset",			&reg.bquant_offset,				100},   /* 100-base float */
-	{"packed",					&reg.packed,					0},
+	{"packed",					&reg.packed,					1},
 	{"closed_gov",				&reg.closed_gov,				1},
 	
 	/* aspect ratio */
@@ -199,8 +199,8 @@ static const REG_INT reg_ints[] = {
 
     /* motion */
     {"motion_search",			&reg.motion_search,				6},
-	{"vhq_mode",				&reg.vhq_mode,					0},
-    {"chromame",				&reg.chromame,					0},
+	{"vhq_mode",				&reg.vhq_mode,					1},
+    {"chromame",				&reg.chromame,					1},
     {"cartoon_mode",			&reg.cartoon_mode,				0},
 	{"max_key_interval",		&reg.max_key_interval,			300},
 	{"frame_drop_ratio",		&reg.frame_drop_ratio,			0},	
