@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.c,v 1.39.2.20 2003-11-30 16:13:15 edgomez Exp $
+ * $Id: bitstream.c,v 1.39.2.21 2003-12-03 02:22:30 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -1106,10 +1106,8 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	 * byte aligned, and that always 1-8 padding bits have been written
 	 */
 
-    if (pParam->profile) {
-	    BitstreamPutBits(bs, VISOBJSEQ_START_CODE, 32);
-	    BitstreamPutBits(bs, pParam->profile, 8);
-    }
+    BitstreamPutBits(bs, VISOBJSEQ_START_CODE, 32);
+    BitstreamPutBits(bs, pParam->profile, 8);
 
 	/* visual_object_start_code */
 	BitstreamPad(bs);
