@@ -55,7 +55,7 @@
  *  22.12.2001  lock based interpolation
  *  01.12.2001  inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: decoder.c,v 1.37.2.28 2003-01-11 20:37:46 chl Exp $
+ *  $Id: decoder.c,v 1.37.2.29 2003-01-11 21:22:24 chl Exp $
  *
  *************************************************************************/
 
@@ -412,7 +412,7 @@ decoder_mbinter(DECODER * dec,
 				const MACROBLOCK * pMB,
 				const uint32_t x_pos,
 				const uint32_t y_pos,
-				const uint32_t acpred_flag,
+				const uint32_t fcode,
 				const uint32_t cbp,
 				Bitstream * bs,
 				const uint32_t quant,
@@ -621,13 +621,26 @@ decoder_mbinter(DECODER * dec,
 	stop_transfer_timer();
 }
 
+static __inline int gmc_sanitize(int value, int quarterpel, int fcode)
+{
+	int length = 1 << (fcode+4);
+
+	if (quarterpel) value *= 2;
+
+	if (value < -length) 
+		return -length;
+	else if (value >= length) 
+		return length-1;
+	else return value;
+}
+
 
 static void
 decoder_mbgmc(DECODER * dec,
 				MACROBLOCK * const pMB,
 				const uint32_t x_pos,
 				const uint32_t y_pos,
-				const uint32_t acpred_flag,
+				const uint32_t fcode,
 				const uint32_t cbp,
 				Bitstream * bs,
 				const uint32_t quant,
@@ -650,9 +663,25 @@ decoder_mbgmc(DECODER * dec,
 	pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = pMB->amv;
 
 	start_timer();
-	transfer16x16_copy(pY_Cur, dec->gmc.y + (y_pos << 4)*stride + (x_pos  << 4), stride);
+	
+/* this is where the calculations are done */
+	
+	{
+		pMB->amv = generate_GMCimageMB(&dec->gmc_data, &dec->refn[0], x_pos, y_pos, 
+					stride, stride2, dec->quarterpel, rounding, &dec->cur);
+
+		pMB->amv.x = gmc_sanitize(pMB->amv.x, dec->quarterpel, fcode);
+		pMB->amv.y = gmc_sanitize(pMB->amv.y, dec->quarterpel, fcode);
+	}
+	pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = pMB->amv;
+	
+	
+/*	transfer16x16_copy(pY_Cur, dec->gmc.y + (y_pos << 4)*stride + (x_pos  << 4), stride);
 	transfer8x8_copy(pU_Cur, dec->gmc.u + (y_pos << 3)*stride2 + (x_pos  << 3), stride2);
 	transfer8x8_copy(pV_Cur, dec->gmc.v + (y_pos << 3)*stride2 + (x_pos << 3), stride2);
+*/
+
+
 	stop_transfer_timer();
 	
 	if (!cbp) return;
@@ -834,18 +863,6 @@ get_motion_vector(DECODER * dec,
 
 
 
-static __inline int gmc_sanitize(int value, int quarterpel, int fcode)
-{
-	int length = 1 << (fcode+4);
-
-	if (quarterpel) value *= 2;
-
-	if (value < -length) 
-		return -length;
-	else if (value >= length) 
-		return length-1;
-	else return value;
-}
 
 
 /* for P_VOP set gmc_warp to NULL */
@@ -866,7 +883,6 @@ decoder_pframe(DECODER * dec,
 	uint32_t mb_width = dec->mb_width;
 	uint32_t mb_height = dec->mb_height;
 	
-	static int framecount=0;
 	if (reduced_resolution)
 	{
 		mb_width = (dec->width + 31) / 32;
@@ -893,12 +909,14 @@ decoder_pframe(DECODER * dec,
 				(2 << dec->sprite_warping_accuracy), gmc_warp, 
 				dec->width, dec->height, &dec->gmc_data);
 
-		generate_GMCimage(&dec->gmc_data, &dec->refn[0], 
+/* image warping is done block-based  in decoder_mbgmc(), now */	
+/*
+	generate_GMCimage(&dec->gmc_data, &dec->refn[0], 
 					mb_width, mb_height, 
 					dec->edged_width, dec->edged_width/2,
 					fcode, dec->quarterpel, 0, 
 					rounding, dec->mbs, &dec->gmc);
-
+*/
 	}
 
 	bound = 0;
@@ -992,7 +1010,7 @@ decoder_pframe(DECODER * dec,
 				}
 				
 				if (mcsel) {
-					decoder_mbgmc(dec, mb, x, y, 0, cbp, bs, quant,
+					decoder_mbgmc(dec, mb, x, y, fcode, cbp, bs, quant,
 								rounding, reduced_resolution);
 					continue;
 
@@ -1025,7 +1043,7 @@ decoder_pframe(DECODER * dec,
 					continue;
 				}
 
-				decoder_mbinter(dec, mb, x, y, 0, cbp, bs, quant,
+				decoder_mbinter(dec, mb, x, y, fcode, cbp, bs, quant,
 								rounding, reduced_resolution);
 
 			}
@@ -1035,7 +1053,7 @@ decoder_pframe(DECODER * dec,
 
 				start_timer();
 
-				decoder_mbgmc(dec, mb, x, y, 0, 0x00, bs, quant,
+				decoder_mbgmc(dec, mb, x, y, fcode, 0x00, bs, quant,
 								rounding, reduced_resolution);
 
 				stop_transfer_timer();
