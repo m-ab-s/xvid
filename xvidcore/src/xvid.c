@@ -37,7 +37,7 @@
  *  - 22.12.2001  API change: added xvid_init() - Isibaar
  *  - 16.12.2001	inital version; (c)2001 peter ross <pross@cs.rmit.edu.au>
  *
- *  $Id: xvid.c,v 1.33.2.8 2002-10-10 12:15:48 Isibaar Exp $
+ *  $Id: xvid.c,v 1.33.2.9 2002-10-11 23:18:37 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -313,7 +313,7 @@ xvid_init(void *handle,
 		interpolate8x8_6tap_lowpass_h = interpolate8x8_6tap_lowpass_h_mmx;
 		interpolate8x8_6tap_lowpass_v = interpolate8x8_6tap_lowpass_v_mmx;
 
-		interpolate8x8_avg2 = interpolate8x8_avg2_mmx;
+//		interpolate8x8_avg2 = interpolate8x8_avg2_mmx;
 		interpolate8x8_avg4 = interpolate8x8_avg4_mmx;
 
 		/* Image RGB->YV12 related functions */
@@ -376,8 +376,6 @@ xvid_init(void *handle,
 		sad8bi  = sad8bi_xmm;
 		dev16 = dev16_xmm;
 		sad16v	 = sad16v_xmm;
-		fprintf(stderr,"sad16v=XMM\n");
-
 	}
 
 	if ((cpu_flags & XVID_CPU_3DNOW) > 0) {
