@@ -102,7 +102,7 @@ BEGIN
                     SS_CENTERIMAGE
     COMBOBOX        IDC_MOTION,112,16,76,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
-    GROUPBOX        "Global settings",IDC_STATIC,4,4,192,108
+    GROUPBOX        "Global settings",IDC_STATIC,4,4,192,120
     LTEXT           "Quantization type:",IDC_STATIC,12,32,80,12,
                     SS_CENTERIMAGE
     COMBOBOX        IDC_QUANTTYPE,112,32,76,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
@@ -114,9 +114,12 @@ BEGIN
     LTEXT           "Maximum I-frame interval:",IDC_STATIC,12,64,80,12,
                     SS_CENTERIMAGE
     CONTROL         "Enable lumi masking",IDC_LUMMASK,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,16,84,80,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,96,80,10
     CONTROL         "Enable interlacing",IDC_INTERLACING,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,16,96,72,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,108,72,10
+    LTEXT           "Minimum I-frame interval:",IDC_STATIC,12,80,100,12,
+                    SS_CENTERIMAGE
+    EDITTEXT        IDC_MINKEY,112,80,76,12,ES_AUTOHSCROLL | ES_NUMBER
 END
 
 IDD_QUANT DIALOG DISCARDABLE  0, 0, 200, 217
@@ -171,9 +174,6 @@ BEGIN
                     BS_AUTORADIOBUTTON | WS_GROUP,16,128,96,12
     CONTROL         "Payback proportionally",IDC_PAYBACKPROP,"Button",
                     BS_AUTORADIOBUTTON,16,139,96,12
-    LTEXT           "Min I-frame interval:",IDC_STATIC,12,32,100,12,
-                    SS_CENTERIMAGE
-    EDITTEXT        IDC_MINKEY,112,32,76,12,ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "Discard first pass",IDC_DISCARD1PASS,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,16,48,69,10
     CONTROL         "Dummy 2nd pass",IDC_DUMMY2PASS,"Button",BS_AUTOCHECKBOX | 
@@ -564,11 +564,11 @@ BEGIN
     LTEXT           "Low distance from average %:",IDC_STATIC,12,52,100,12,
                     SS_CENTERIMAGE
     EDITTEXT        IDC_ALTCURVELOW,112,52,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "Strength %:",IDC_STATIC,16,85,96,12,SS_CENTERIMAGE
-    EDITTEXT        IDC_AUTOSTR,112,85,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "Manually set bonus bias:",IDC_STATIC,16,137,96,12,
+    LTEXT           "Strength %:",IDC_STATIC,16,84,96,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_AUTOSTR,112,84,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Manually set bonus bias:",IDC_STATIC,16,136,96,12,
                     SS_CENTERIMAGE
-    EDITTEXT        IDC_BONUSBIAS,112,137,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_BONUSBIAS,112,136,76,12,ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "Use Alternative curve system",IDC_USEALT,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,12,4,107,10
     CONTROL         "Enable automatic minimum relative quality",IDC_USEAUTO,
@@ -580,6 +580,15 @@ BEGIN
                     SS_CENTERIMAGE
     COMBOBOX        IDC_CURVETYPE,112,20,76,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
+    LTEXT           "Max bitrate (Kilobit/s):",IDC_STATIC,12,164,100,12,
+                    SS_CENTERIMAGE
+    EDITTEXT        IDC_MAXBITRATE,112,164,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Max overflow improvement %:",IDC_STATIC,12,180,100,12,
+                    SS_CENTERIMAGE
+    EDITTEXT        IDC_OVERIMP,112,180,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Max overflow degradation %:",IDC_STATIC,12,196,100,12,
+                    SS_CENTERIMAGE
+    EDITTEXT        IDC_OVERDEG,112,196,76,12,ES_AUTOHSCROLL | ES_NUMBER
 END
 
 
@@ -666,7 +675,7 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDC_MODE                "1-pass CBR encodes to your specified bitrate (buggy).\n1-pass quality and quantizer encodes every frame at the same quality.\n2-pass 1st pass gathers statistics for the 2nd pass.\n2-pass internal scales the 2nd pass to your desired file size.\n2-pass external relies on GKnot to scale the .stats file."
+    IDC_MODE                "1-pass CBR encodes to your specified bitrate.\n1-pass quality and quantizer encodes every frame at the same quality.\n2-pass 1st pass gathers statistics for the 2nd pass.\n2-pass internal scales the 2nd pass to your desired file size.\n2-pass external relies on GKnot to scale the .stats file."
     IDC_CBRBUFFER           "Governs how quickly the rate control system reacts to changes in scene intensity - lower values respond faster"
 END
 
@@ -683,7 +692,7 @@ BEGIN
     IDC_MAXPQUANT           "Maximum quantizer allowed for P-frames."
     IDC_QUANTMATRIX         "Define your own MPEG quantization matrices.  Quantization type must be set to ""Custom"" to affect encoding."
     IDC_KFBOOST             "A value of 20 will give 20% more bits to every I-frame"
-    IDC_MINKEY              "Minimum space between I-frames - should be less than 10"
+    IDC_MINKEY              "Minimum space between I-frames - should be less than 10, set to 1 to disable forced I-frame spacing"
     IDC_DISCARD1PASS        "Check this if you would like to skip the storage of the 1st pass output.  It is often very large."
 END
 
@@ -733,6 +742,9 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDC_ALTCURVELOW         "Distance from the average framesize where the best quality will be applied"
     IDC_MINQUAL             "The minimum produced quality in relation to the best produced quality"
+    IDC_OVERDEG             "How much of the overflow the codec can eat into during oversized sections - larger values will bridge the gap faster"
+    IDC_OVERIMP             "How much of the overflow the codec can eat into during undersized sections - larger values will bridge the gap faster"
+    IDC_MAXBITRATE          "Constrains 2-pass encodes to the specified maximum bitrate"
 END
 
 #endif    // English (Australia) resources

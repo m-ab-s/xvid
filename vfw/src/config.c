@@ -23,6 +23,8 @@
  *
  *	History:
  *
+ *	07.04.2002	min keyframe interval checkbox
+ *				2-pass max bitrate and overflow customization
  *	04.04.2002	interlacing support
  *				hinted ME support
  *	24.03.2002	daniel smith <danielsmith@astroboymail.com>
@@ -75,6 +77,7 @@ REG_INT const reg_ints[] = {
 	{"quant_type",				&reg.quant_type,				0},
 	{"fourcc_used",				&reg.fourcc_used,				0},
 	{"max_key_interval",		&reg.max_key_interval,			300},
+	{"min_key_interval",		&reg.min_key_interval,			1},
 	{"lum_masking",				&reg.lum_masking,				0},
 	{"interlacing",				&reg.interlacing,				0},
 
@@ -85,7 +88,6 @@ REG_INT const reg_ints[] = {
 
 	{"desired_size",			&reg.desired_size,				570000},
 	{"keyframe_boost",			&reg.keyframe_boost,			20},
-	{"min_key_interval",		&reg.min_key_interval,			6},
 	{"discard1pass",			&reg.discard1pass,				1},
 	{"dummy2pass",				&reg.dummy2pass,				0},
 	{"curve_compression_high",	&reg.curve_compression_high,	25},
@@ -101,6 +103,9 @@ REG_INT const reg_ints[] = {
 	{"alt_curve_min_rel_qual",	&reg.alt_curve_min_rel_qual,	50},
 	{"bitrate_payback_delay",	&reg.bitrate_payback_delay,		240},
 	{"bitrate_payback_method",	&reg.bitrate_payback_method,	0},
+	{"twopass_max_bitrate",		&reg.twopass_max_bitrate,		10000 * CONFIG_KBPS},
+	{"twopass_max_overflow_improvement", &reg.twopass_max_overflow_improvement, 60},
+	{"twopass_max_overflow_degradation", &reg.twopass_max_overflow_degradation, 60},
 	{"hinted_me",				&reg.hinted_me,					0},
 
 	{"credits_start",			&reg.credits_start,				0},
@@ -453,7 +458,7 @@ void adv_mode(HWND hDlg, int mode)
 {
 	// create arrays of controls to be disabled for each mode
 	const int cbr_disable[] = {
-		IDC_KFBOOST, IDC_MINKEY, IDC_DISCARD1PASS, IDC_DUMMY2PASS,
+		IDC_KFBOOST, IDC_DISCARD1PASS, IDC_DUMMY2PASS,
 		IDC_CURVECOMPH, IDC_CURVECOMPL, IDC_PAYBACK, IDC_PAYBACKBIAS, IDC_PAYBACKPROP,
 		IDC_STATS1, IDC_STATS1_BROWSE, IDC_STATS2, IDC_STATS2_BROWSE,
 		IDC_CREDITS_START, IDC_CREDITS_END, IDC_CREDITS_START_BEGIN, IDC_CREDITS_START_END,
@@ -464,7 +469,7 @@ void adv_mode(HWND hDlg, int mode)
 	};
 
 	const int qual_disable[] = {
-		IDC_KFBOOST, IDC_MINKEY, IDC_DISCARD1PASS, IDC_DUMMY2PASS,
+		IDC_KFBOOST, IDC_DISCARD1PASS, IDC_DUMMY2PASS,
 		IDC_CURVECOMPH, IDC_CURVECOMPL, IDC_PAYBACK, IDC_PAYBACKBIAS, IDC_PAYBACKPROP,
 		IDC_STATS1, IDC_STATS1_BROWSE, IDC_STATS2, IDC_STATS2_BROWSE,
 		IDC_CREDITS_SIZE_RADIO, IDC_CREDITS_END_STATIC, IDC_CREDITS_START_SIZE, IDC_CREDITS_END_SIZE
@@ -472,7 +477,7 @@ void adv_mode(HWND hDlg, int mode)
 
 	const int quant_disable[] = {
 		IDC_MINIQUANT, IDC_MAXIQUANT, IDC_MINPQUANT, IDC_MAXPQUANT,
-		IDC_KFBOOST, IDC_MINKEY, IDC_DISCARD1PASS, IDC_DUMMY2PASS,
+		IDC_KFBOOST, IDC_DISCARD1PASS, IDC_DUMMY2PASS,
 		IDC_CURVECOMPH, IDC_CURVECOMPL, IDC_PAYBACK, IDC_PAYBACKBIAS, IDC_PAYBACKPROP,
 		IDC_STATS1, IDC_STATS1_BROWSE, IDC_STATS2, IDC_STATS2_BROWSE,
 		IDC_CREDITS_SIZE_RADIO, IDC_CREDITS_END_STATIC, IDC_CREDITS_START_SIZE, IDC_CREDITS_END_SIZE
@@ -563,6 +568,7 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 		SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_SETCURSEL, config->quant_type, 0);
 		SendDlgItemMessage(hDlg, IDC_FOURCC, CB_SETCURSEL, config->fourcc_used, 0);
 		SetDlgItemInt(hDlg, IDC_MAXKEY, config->max_key_interval, FALSE);
+		SetDlgItemInt(hDlg, IDC_MINKEY, config->min_key_interval, FALSE);
 		CheckDlgButton(hDlg, IDC_LUMMASK, config->lum_masking ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_INTERLACING, config->interlacing ? BST_CHECKED : BST_UNCHECKED);
 		break;
@@ -576,7 +582,6 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 
 	case DLG_2PASS :
 		SetDlgItemInt(hDlg, IDC_KFBOOST, config->keyframe_boost, FALSE);
-		SetDlgItemInt(hDlg, IDC_MINKEY, config->min_key_interval, FALSE);
 		CheckDlgButton(hDlg, IDC_DISCARD1PASS, config->discard1pass ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_DUMMY2PASS, config->dummy2pass ? BST_CHECKED : BST_UNCHECKED);
 
@@ -605,6 +610,10 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 
 		CheckDlgButton(hDlg, IDC_USEAUTOBONUS, config->alt_curve_use_auto_bonus_bias ? BST_CHECKED : BST_UNCHECKED);
 		SetDlgItemInt(hDlg, IDC_BONUSBIAS, config->alt_curve_bonus_bias, FALSE);
+
+		SetDlgItemInt(hDlg, IDC_MAXBITRATE, config->twopass_max_bitrate / CONFIG_KBPS, FALSE);
+		SetDlgItemInt(hDlg, IDC_OVERIMP, config->twopass_max_overflow_improvement, FALSE);
+		SetDlgItemInt(hDlg, IDC_OVERDEG, config->twopass_max_overflow_degradation, FALSE);
 		break;
 
 	case DLG_CREDITS :
@@ -665,6 +674,7 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 		config->quant_type = SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_GETCURSEL, 0, 0);
 		config->fourcc_used = SendDlgItemMessage(hDlg, IDC_FOURCC, CB_GETCURSEL, 0, 0);
 		config->max_key_interval = config_get_int(hDlg, IDC_MAXKEY, config->max_key_interval);
+		config->min_key_interval = config_get_int(hDlg, IDC_MINKEY, config->min_key_interval);
 		config->lum_masking = ISDLGSET(IDC_LUMMASK);
 		config->interlacing = ISDLGSET(IDC_INTERLACING);
 		break;
@@ -683,7 +693,6 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 
 	case DLG_2PASS :
 		config->keyframe_boost = GetDlgItemInt(hDlg, IDC_KFBOOST, NULL, FALSE);
-		config->min_key_interval = config_get_int(hDlg, IDC_MINKEY, config->min_key_interval);
 		config->discard1pass = ISDLGSET(IDC_DISCARD1PASS);
 		config->dummy2pass = ISDLGSET(IDC_DUMMY2PASS);
 		config->curve_compression_high = GetDlgItemInt(hDlg, IDC_CURVECOMPH, NULL, FALSE);
@@ -724,6 +733,15 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 		config->alt_curve_high_dist = config_get_int(hDlg, IDC_ALTCURVEHIGH, config->alt_curve_high_dist);
 		config->alt_curve_low_dist = config_get_int(hDlg, IDC_ALTCURVELOW, config->alt_curve_low_dist);
 		config->alt_curve_min_rel_qual = config_get_int(hDlg, IDC_MINQUAL, config->alt_curve_min_rel_qual);
+
+		config->twopass_max_bitrate /= CONFIG_KBPS;
+		config->twopass_max_bitrate = config_get_int(hDlg, IDC_MAXBITRATE, config->twopass_max_bitrate);
+		config->twopass_max_bitrate *= CONFIG_KBPS;
+		config->twopass_max_overflow_improvement = config_get_int(hDlg, IDC_OVERIMP, config->twopass_max_overflow_improvement);
+		config->twopass_max_overflow_degradation = config_get_int(hDlg, IDC_OVERDEG, config->twopass_max_overflow_degradation);
+
+		CONSTRAINVAL(config->twopass_max_overflow_improvement, 1, 80);
+		CONSTRAINVAL(config->twopass_max_overflow_degradation, 1, 80);
 		break;
 
 	case DLG_CREDITS :

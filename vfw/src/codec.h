@@ -101,6 +101,7 @@ typedef struct
 	int bytes2;
 	int desired_bytes2;
 
+	int max_framesize;
 	double movie_curve;
 	double credits_start_curve;
 	double credits_end_curve;
