@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * $Id: plugin_cbr.c,v 1.1.2.1 2003-03-23 04:03:01 suxen_drol Exp $
+ * $Id: plugin_cbr.c,v 1.1.2.2 2003-03-23 09:39:29 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -87,9 +87,9 @@ static int rc_cbr_create(xvid_plg_create_t * create, rc_cbr_t ** handle)
 
 	/* Last bunch of variables */
     
-    printf("bytes_per_sec: %i\n", rc->bytes_per_sec);
-    printf("frame rate   : %f\n", (double)create->fbase / create->fincr);
-    printf("target_framesize: %f\n",rc->target_framesize);
+    DPRINTF(DPRINTF_RC, "bytes_per_sec: %i\n", rc->bytes_per_sec);
+    DPRINTF(DPRINTF_RC, "frame rate   : %f\n", (double)create->fbase / create->fincr);
+    DPRINTF(DPRINTF_RC, "target_framesize: %f\n",rc->target_framesize);
 
     rc->sequence_quality = 2.0 / (double) rc->rtn_quant;
 	rc->avg_framesize = rc->target_framesize;
