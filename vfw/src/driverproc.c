@@ -55,7 +55,6 @@ __declspec(dllexport) LRESULT WINAPI DriverProc(
 	LPARAM lParam2) 
 {
 	CODEC * codec = (CODEC *)dwDriverId;
-	CONFIG temp;
 
 	switch(uMsg)
 	{
@@ -71,13 +70,15 @@ __declspec(dllexport) LRESULT WINAPI DriverProc(
 		{
 			ICOPEN * icopen = (ICOPEN *)lParam2;
 			
-			if (icopen != NULL && icopen->fccType != ICTYPE_VIDEO) {
+			if (icopen != NULL && icopen->fccType != ICTYPE_VIDEO)
+			{
 				return DRV_CANCEL;
 			}
 			codec = malloc(sizeof(CODEC));
 			if (codec == NULL)
 			{
-				if (icopen != NULL) {
+				if (icopen != NULL)
+				{
 					icopen->dwError = ICERR_MEMORY;
 				}
 				return 0;
@@ -85,7 +86,8 @@ __declspec(dllexport) LRESULT WINAPI DriverProc(
 			codec->ehandle = codec->dhandle = NULL;
 			config_reg_get(&codec->config);
 
-			if (icopen != NULL) {
+			if (icopen != NULL)
+			{
 				icopen->dwError = ICERR_OK;
 			}
 			return (LRESULT)codec;
@@ -134,94 +136,39 @@ __declspec(dllexport) LRESULT WINAPI DriverProc(
 						
 			return lParam2; /* size of struct */
 		}
+		DEBUG("ICM_GETINFO end");
 
 		
 		/* state control */
 
 	case ICM_ABOUT :
+		DEBUG("ICM_ABOUT");
+		DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_ABOUT), (HWND)lParam1, about_proc, 0);
+		return ICERR_OK;
+
 	case ICM_CONFIGURE :
-
 		DEBUG("ICM_CONFIGURE");
+		if (lParam1 != -1)
+		{
+			CONFIG temp;
 
-		codec->config.save = FALSE;
-		memcpy(&temp, &codec->config, sizeof(CONFIG));
+			codec->config.save = FALSE;
+			memcpy(&temp, &codec->config, sizeof(CONFIG));
 
-		if (lParam1 != -1) {
-			PROPSHEETINFO psi[DLG_COUNT];
-			PROPSHEETPAGE psp[DLG_COUNT];
-			PROPSHEETHEADER psh;
-	
-			psp[DLG_MAIN].dwSize = sizeof(PROPSHEETPAGE);
-			psp[DLG_MAIN].dwFlags = 0;
-			psp[DLG_MAIN].hInstance = hInst;
-			psp[DLG_MAIN].pszTemplate = MAKEINTRESOURCE(IDD_MAIN);
-			psp[DLG_MAIN].pfnDlgProc = config_proc;
-				psi[DLG_MAIN].page = DLG_MAIN;
-				psi[DLG_MAIN].config = &temp;
-			psp[DLG_MAIN].lParam = (LPARAM)&psi[DLG_MAIN];
-			psp[DLG_MAIN].pfnCallback = NULL;
+			DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_MAIN), (HWND)lParam1, main_proc, (LPARAM)&temp);
 
-			psp[DLG_ADV].dwSize = sizeof(PROPSHEETPAGE);
-			psp[DLG_ADV].dwFlags = 0;
-			psp[DLG_ADV].hInstance = hInst;
-			psp[DLG_ADV].pszTemplate = MAKEINTRESOURCE(IDD_ADV);
-			psp[DLG_ADV].pfnDlgProc = config_proc;
-				psi[DLG_ADV].page = DLG_ADV;
-				psi[DLG_ADV].config = &temp;
-			psp[DLG_ADV].lParam = (LPARAM)&psi[DLG_ADV];
-			psp[DLG_ADV].pfnCallback = NULL;
-
-			psp[DLG_DEBUG].dwSize = sizeof(PROPSHEETPAGE);
-			psp[DLG_DEBUG].dwFlags = 0;
-			psp[DLG_DEBUG].hInstance = hInst;
-			psp[DLG_DEBUG].pszTemplate = MAKEINTRESOURCE(IDD_DEBUG);
-			psp[DLG_DEBUG].pfnDlgProc = config_proc;
-				psi[DLG_DEBUG].page = DLG_DEBUG;
-				psi[DLG_DEBUG].config = &temp;
-			psp[DLG_DEBUG].lParam = (LPARAM)&psi[DLG_DEBUG];
-			psp[DLG_DEBUG].pfnCallback = NULL;
-
-			psp[DLG_CPU].dwSize = sizeof(PROPSHEETPAGE);
-			psp[DLG_CPU].dwFlags = 0;
-			psp[DLG_CPU].hInstance = hInst;
-			psp[DLG_CPU].pszTemplate = MAKEINTRESOURCE(IDD_CPU);
-			psp[DLG_CPU].pfnDlgProc = config_proc;
-				psi[DLG_CPU].page = DLG_CPU;
-				psi[DLG_CPU].config = &temp;
-			psp[DLG_CPU].lParam = (LPARAM)&psi[DLG_CPU];
-			psp[DLG_CPU].pfnCallback = NULL;
-
-			psp[DLG_ABOUT].dwSize = sizeof(PROPSHEETPAGE);
-			psp[DLG_ABOUT].dwFlags = 0;
-			psp[DLG_ABOUT].hInstance = hInst;
-			psp[DLG_ABOUT].pszTemplate = MAKEINTRESOURCE(IDD_ABOUT);
-			psp[DLG_ABOUT].pfnDlgProc = config_proc;
-				psi[DLG_ABOUT].page = DLG_ABOUT;
-				psi[DLG_ABOUT].config = &temp;
-			psp[DLG_ABOUT].lParam = (LPARAM)&psi[DLG_ABOUT];
-			psp[DLG_ABOUT].pfnCallback = NULL;
-
-			psh.dwSize = sizeof(PROPSHEETHEADER);
-			psh.dwFlags = PSH_PROPSHEETPAGE | PSH_NOAPPLYNOW;
-			psh.hwndParent = (HWND)lParam1;
-			psh.hInstance = hInst;
-			psh.pszCaption = (LPSTR) "XviD Configuration";
-			psh.nPages = sizeof(psp) / sizeof(PROPSHEETPAGE);
-			psh.nStartPage = (uMsg == ICM_CONFIGURE ? DLG_MAIN : DLG_ABOUT);
-			psh.ppsp = (LPCPROPSHEETPAGE)&psp;
-			psh.pfnCallback = NULL;
-
-			PropertySheet(&psh);
-
-			if(temp.save) {
+			if (temp.save)
+			{
 				memcpy(&codec->config, &temp, sizeof(CONFIG));
+				config_reg_set(&codec->config);
 			}
 		}
 		return ICERR_OK;
 			
 	case ICM_GETSTATE :
 		DEBUG("ICM_GETSTATE");
-		if ((void*)lParam1 == NULL) {
+		if ((void*)lParam1 == NULL)
+		{
 			return sizeof(CONFIG);
 		}
 		memcpy((void*)lParam1, &codec->config, sizeof(CONFIG));
@@ -229,7 +176,8 @@ __declspec(dllexport) LRESULT WINAPI DriverProc(
 
 	case ICM_SETSTATE :
 		DEBUG("ICM_SETSTATE");
-		if ((void*)lParam1 == NULL) {
+		if ((void*)lParam1 == NULL)
+		{
 			DEBUG("ICM_SETSTATE : DEFAULT");
 			config_reg_get(&codec->config);
 			return 0;

@@ -13,7 +13,7 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Deutsch (Deutschland) resources
+// German (Germany) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
 #ifdef _WIN32
@@ -27,12 +27,12 @@ LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
 //
 
 IDB_LOGO                BITMAP  DISCARDABLE     "XviD_logo.bmp"
-#endif    // Deutsch (Deutschland) resources
+#endif    // German (Germany) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////////////////////////////////
-// Englisch (Australien) resources
+// English (Australia) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENA)
 #ifdef _WIN32
@@ -71,217 +71,203 @@ END
 // Dialog
 //
 
-IDD_MAIN DIALOG DISCARDABLE  0, 0, 216, 189
-STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
-CAPTION "Main"
-FONT 8, "MS Sans Serif"
+IDD_MAIN DIALOGEX 0, 0, 184, 157
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "XviD Configuration"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
-    GROUPBOX        "Encoder control",IDC_STATIC,4,4,208,88
-    LTEXT           "Mode:",IDC_STATIC,12,16,21,12,SS_CENTERIMAGE
-    COMBOBOX        IDC_MODE,116,16,88,100,CBS_DROPDOWNLIST | WS_TABSTOP
-    LTEXT           "",IDC_VALUE_STATIC,12,52,88,12,SS_CENTERIMAGE
-    EDITTEXT        IDC_VALUE,116,52,88,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Encoding Mode:",IDC_STATIC,12,16,68,12,SS_CENTERIMAGE
+    COMBOBOX        IDC_MODE,96,16,76,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
     CONTROL         "Slider1",IDC_SLIDER,"msctls_trackbar32",TBS_BOTH | 
-                    TBS_NOTICKS | WS_TABSTOP,116,36,88,12
-    LTEXT           "",IDC_SLIDER_STATIC,12,36,88,12,SS_CENTERIMAGE
-    EDITTEXT        IDC_2PASS_STATS2,72,129,112,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_2PASS_STATS2_BROWSE,188,129,16,11
-    LTEXT           "2nd pass stats:",IDC_STATIC,12,129,48,12,SS_CENTERIMAGE
-    LTEXT           "1st pass stats:",IDC_2PASS_STATS1_STATIC2,12,114,48,12,
+                    TBS_NOTICKS | WS_TABSTOP,96,32,76,12
+    EDITTEXT        IDC_VALUE,96,48,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "",IDC_SLIDER_STATIC,12,32,68,12,SS_CENTERIMAGE
+    LTEXT           "",IDC_VALUE_STATIC,12,48,68,12,SS_CENTERIMAGE
+    GROUPBOX        "Encoding options",IDC_STATIC,4,4,176,80
+    EDITTEXT        IDC_CBRBUFFER,96,64,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "CBR buffer (bytes):",IDC_CBRBUFFER_STATIC,12,64,68,12,
                     SS_CENTERIMAGE
-    EDITTEXT        IDC_2PASS_STATS1,72,113,112,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_2PASS_STATS1_BROWSE,188,113,16,11
-    CONTROL         "Discard encoded bitstream on 1st-pass",IDC_DISCARD1PASS,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,148,192,10
-    GROUPBOX        "2-pass control",IDC_STATIC,4,100,208,84
-    PUSHBUTTON      "&Credits encoding options...",IDC_CREDITS,60,72,92,12
-    PUSHBUTTON      "&2-pass options...",IDC_2PASS_INT,60,164,92,12
+    PUSHBUTTON      "Advanced options...",IDC_ADVANCED,52,92,80,12
+    DEFPUSHBUTTON   "OK",IDOK,52,108,80,12
+    GROUPBOX        "",IDC_STATIC,-4,126,192,36
+    CTEXT           "",IDC_STATIC_HELP,4,136,176,20,0,WS_EX_TRANSPARENT
 END
 
-IDD_ADV DIALOG DISCARDABLE  0, 0, 216, 189
-STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
-CAPTION "Advanced"
+IDD_GLOBAL DIALOGEX 0, 0, 200, 244
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Global"
 FONT 8, "MS Sans Serif"
 BEGIN
-    GROUPBOX        "Encoder tuning",IDC_STATIC,4,4,208,64
-    LTEXT           "Minimum quantizer:",IDC_STATIC,12,92,61,12,
+    LTEXT           "Motion search precision:",IDC_STATIC,12,16,80,12,
                     SS_CENTERIMAGE
-    EDITTEXT        IDC_MINQ,128,92,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "Maximum quantizer:",IDC_STATIC,12,108,63,12,
-                    SS_CENTERIMAGE
-    EDITTEXT        IDC_MAXQ,128,108,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    CONTROL         "Luminance masking",IDC_LUMMASK,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,16,124,188,10
-    LTEXT           "Motion search precision:",IDC_STATIC,12,16,78,12,
-                    SS_CENTERIMAGE
-    COMBOBOX        IDC_MOTION,128,16,76,84,CBS_DROPDOWNLIST | WS_TABSTOP
-    LTEXT           "Quantization type:",IDC_STATIC,12,32,58,12,
-                    SS_CENTERIMAGE
-    COMBOBOX        IDC_QTYPE,128,32,76,44,CBS_DROPDOWNLIST | WS_VSCROLL | 
+    COMBOBOX        IDC_MOTION,112,16,76,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
-    LTEXT           "FourCC used:",IDC_STATIC,12,161,58,12,SS_CENTERIMAGE
-    COMBOBOX        IDC_FOURCC,128,161,76,36,CBS_DROPDOWNLIST | WS_VSCROLL | 
+    GROUPBOX        "Global settings",IDC_STATIC,4,4,192,96
+    LTEXT           "Quantization type:",IDC_STATIC,12,32,80,12,
+                    SS_CENTERIMAGE
+    COMBOBOX        IDC_QUANTTYPE,112,32,76,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
                     WS_TABSTOP
-    GROUPBOX        "Quantization tuning",IDC_STATIC,4,80,208,60
-    GROUPBOX        "Misc",IDC_STATIC,4,148,208,32
-    LTEXT           "Max keyframe interval:",IDC_STATIC,12,48,72,12,
+    LTEXT           "FourCC used:",IDC_STATIC,12,48,80,12,SS_CENTERIMAGE
+    COMBOBOX        IDC_FOURCC,112,48,76,76,CBS_DROPDOWNLIST | WS_VSCROLL | 
+                    WS_TABSTOP
+    EDITTEXT        IDC_MAXKEY,112,64,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Maximum I-frame interval:",IDC_STATIC,12,64,80,12,
                     SS_CENTERIMAGE
-    EDITTEXT        IDC_MAXKEY,128,48,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Enable lumi masking",IDC_LUMMASK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,84,80,10
+    CTEXT           "",IDC_STATIC_HELP,4,222,192,20,0,WS_EX_TRANSPARENT
 END
 
-IDD_CPU DIALOG DISCARDABLE  0, 0, 216, 189
-STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
-CAPTION "CPU"
-FONT 8, "MS Sans Serif"
+IDD_QUANT DIALOGEX 0, 0, 200, 244
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Quantization"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
-    CONTROL         "Automatically detect optimizations",IDC_CPU_AUTO,"Button",
-                    BS_AUTORADIOBUTTON | WS_GROUP,12,20,121,10
-    CONTROL         "Force optimizations",IDC_CPU_FORCE,"Button",
-                    BS_AUTORADIOBUTTON,12,36,76,10
-    CONTROL         "MMX",IDC_CPU_MMX,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    24,52,33,10
-    CONTROL         "Integer SSE",IDC_CPU_MMXEXT,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,24,64,54,10
-    CONTROL         "SSE",IDC_CPU_SSE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
-                    24,76,30,10
-    CONTROL         "SSE2",IDC_CPU_SSE2,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,24,88,34,10
-    CONTROL         "3DNow!",IDC_CPU_3DNOW,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,24,100,42,10
-    CONTROL         "3DNow! 2",IDC_CPU_3DNOWEXT,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,24,112,48,10
-    GROUPBOX        "Performance optimizations",IDC_STATIC,4,4,208,180
-    CTEXT           "this page is currently experimental",IDC_STATIC,12,132,
-                    192,44,SS_CENTERIMAGE | SS_SUNKEN
+    GROUPBOX        "Quantizer restrictions",IDC_STATIC,4,4,192,112
+    EDITTEXT        IDC_MINIQUANT,112,16,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Min I-frame quantizer:",IDC_STATIC,12,16,76,12,
+                    SS_CENTERIMAGE
+    EDITTEXT        IDC_MAXIQUANT,112,32,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Max I-frame quantizer:",IDC_STATIC,12,32,76,12,
+                    SS_CENTERIMAGE
+    EDITTEXT        IDC_MINPQUANT,112,48,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Min P-frame quantizer:",IDC_STATIC,12,48,76,12,
+                    SS_CENTERIMAGE
+    EDITTEXT        IDC_MAXPQUANT,112,64,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Max P-frame quantizer:",IDC_STATIC,12,64,76,12,
+                    SS_CENTERIMAGE
+    EDITTEXT        IDC_MINBQUANT,112,80,76,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    WS_DISABLED
+    LTEXT           "Min B-frame quantizer:",IDC_STATIC,12,80,76,12,
+                    SS_CENTERIMAGE
+    EDITTEXT        IDC_MAXBQUANT,112,96,76,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    WS_DISABLED
+    LTEXT           "Max B-frame quantizer:",IDC_STATIC,12,96,76,12,
+                    SS_CENTERIMAGE
+    PUSHBUTTON      "Edit Quantizer Matrix...",IDC_QUANTMATRIX,60,124,80,12
+    CTEXT           "",IDC_STATIC_HELP,4,222,192,20,0,WS_EX_TRANSPARENT
 END
 
-IDD_ABOUT DIALOG DISCARDABLE  0, 0, 216, 189
-STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
-CAPTION "About"
-FONT 8, "MS Sans Serif"
+IDD_2PASS DIALOGEX 0, 0, 200, 244
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Two Pass"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
-    CTEXT           "XVID MPEG-4 VIDEO CODEC",IDC_STATIC,8,12,200,20,
-                    SS_CENTERIMAGE | SS_SUNKEN
-    CTEXT           "WEBSITE",IDC_WEBSITE,73,106,64,8,SS_NOTIFY | 
+    GROUPBOX        "Two-pass tuning",IDC_STATIC,4,4,192,72
+    LTEXT           "Bitrate payback delay (frames):",IDC_STATIC,12,128,100,
+                    12,SS_CENTERIMAGE
+    EDITTEXT        IDC_PAYBACK,112,128,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "High bitrate scenes %:",IDC_STATIC,12,96,100,12,
                     SS_CENTERIMAGE
-    CTEXT           "BUILD",IDC_BUILD,8,48,200,8,SS_CENTERIMAGE
-    CONTROL         122,IDC_STATIC,"Static",SS_BITMAP,35,73,142,27
-    CTEXT           "Core Version",IDC_CORE_VERSION,7,58,200,8,
+    EDITTEXT        IDC_CURVECOMPH,112,96,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Low bitrate scenes %:",IDC_STATIC,12,112,100,12,
                     SS_CENTERIMAGE
-END
-
-IDD_DEBUG DIALOG DISCARDABLE  0, 0, 216, 189
-STYLE WS_CHILD | WS_DISABLED | WS_CAPTION
-CAPTION "Debug"
-FONT 8, "MS Sans Serif"
-BEGIN
-    GROUPBOX        "CBR mode only",IDC_STATIC,4,4,208,38
-    EDITTEXT        IDC_RC_BUFFERSIZE,128,17,76,12,ES_AUTOHSCROLL | 
-                    ES_NUMBER
-    LTEXT           "Buffersize:",IDC_RC_AVERAGE_STATIC,12,17,68,11,
+    EDITTEXT        IDC_CURVECOMPL,112,112,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    GROUPBOX        "Curve compression",IDC_STATIC,4,84,192,88
+    LTEXT           "Keyframe boost %:",IDC_STATIC,12,16,100,12,
                     SS_CENTERIMAGE
+    EDITTEXT        IDC_KFBOOST,112,16,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Payback with bias",IDC_PAYBACKBIAS,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP,16,144,96,12
+    CONTROL         "Payback proportionally",IDC_PAYBACKPROP,"Button",
+                    BS_AUTORADIOBUTTON,16,155,96,12
+    LTEXT           "Min keyframe interval:",IDC_STATIC,12,32,100,12,
+                    SS_CENTERIMAGE
+    EDITTEXT        IDC_MINKEY,112,32,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Discard first pass",IDC_DISCARD1PASS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,48,69,10
     CONTROL         "Dummy 2nd pass",IDC_DUMMY2PASS,"Button",BS_AUTOCHECKBOX | 
-                    WS_TABSTOP,16,120,188,10
-    GROUPBOX        "2-pass",IDC_STATIC,4,76,208,60
-    LTEXT           "I-frame minimum quantizer:",IDC_IMINQ_STATIC,12,88,88,
-                    12,SS_CENTERIMAGE
-    EDITTEXT        IDC_IMINQ,128,88,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "I-frame maximum quantizer:",IDC_IMAXQ_STATIC,12,104,88,
-                    12,SS_CENTERIMAGE
-    EDITTEXT        IDC_IMAXQ,128,104,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    PUSHBUTTON      "&Edit Custom Quantization Matrix...",IDC_QUANTMATRIX,48,
-                    156,120,12
+                    WS_TABSTOP,16,60,70,10
+    EDITTEXT        IDC_STATS2,64,196,112,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_STATS2_BROWSE,180,196,16,11
+    LTEXT           "2nd pass stats:",IDC_STATIC,4,196,48,12,SS_CENTERIMAGE
+    LTEXT           "1st pass stats:",IDC_STATIC,4,182,48,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_STATS1,64,180,112,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_STATS1_BROWSE,180,180,16,11
+    CTEXT           "",IDC_STATIC_HELP,4,222,192,20,0,WS_EX_TRANSPARENT
 END
 
-IDD_CREDITS DIALOG DISCARDABLE  0, 0, 236, 285
+IDD_CREDITS DIALOGEX 0, 0, 200, 244
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Credits"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,84,264,48,12
-    LTEXT           "Credits start at frame no.:",IDC_STATIC,16,32,108,12,
+    LTEXT           "Credits start at frame no.:",IDC_STATIC,12,16,88,12,
                     SS_CENTERIMAGE
-    EDITTEXT        IDC_CREDITS_START_BEGIN,132,32,76,12,ES_AUTOHSCROLL | 
+    EDITTEXT        IDC_CREDITS_START_BEGIN,112,16,76,12,ES_AUTOHSCROLL | 
                     ES_NUMBER
-    LTEXT           "Credits end at frame no.:",IDC_STATIC,16,120,108,12,
+    LTEXT           "Credits end at frame no.:",IDC_STATIC,12,88,88,12,
                     SS_CENTERIMAGE
-    EDITTEXT        IDC_CREDITS_END_END,132,120,76,12,ES_AUTOHSCROLL | 
+    EDITTEXT        IDC_CREDITS_END_END,112,88,76,12,ES_AUTOHSCROLL | 
                     ES_NUMBER
-    CONTROL         "Process credits at start of movie:",IDC_CREDITS_START,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,17,192,10
-    CONTROL         "Process credits at end of movie:",IDC_CREDITS_END,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,89,192,10
-    EDITTEXT        IDC_CREDITS_RATE,132,160,76,12,ES_AUTOHSCROLL | 
+    EDITTEXT        IDC_CREDITS_RATE,112,128,76,12,ES_AUTOHSCROLL | 
                     ES_NUMBER
-    GROUPBOX        "Starting credits",IDC_STATIC,4,4,212,64
-    GROUPBOX        "Ending credits",IDC_STATIC,4,76,212,64
-    LTEXT           "Credits end at frame no.:",IDC_STATIC,16,48,108,12,
+    GROUPBOX        "",IDC_STATIC,4,4,192,48
+    GROUPBOX        "",IDC_STATIC,4,60,192,48
+    LTEXT           "Credits end at frame no.:",IDC_STATIC,12,32,88,12,
                     SS_CENTERIMAGE
-    EDITTEXT        IDC_CREDITS_START_END,132,48,76,12,ES_AUTOHSCROLL | 
+    EDITTEXT        IDC_CREDITS_START_END,112,32,76,12,ES_AUTOHSCROLL | 
                     ES_NUMBER
-    LTEXT           "Credits begin at frame no.:",IDC_STATIC,16,104,108,12,
+    LTEXT           "Credits begin at frame no.:",IDC_STATIC,12,72,88,12,
                     SS_CENTERIMAGE
-    EDITTEXT        IDC_CREDITS_END_BEGIN,132,104,76,12,ES_AUTOHSCROLL | 
+    EDITTEXT        IDC_CREDITS_END_BEGIN,112,72,76,12,ES_AUTOHSCROLL | 
                     ES_NUMBER
-    GROUPBOX        "Credits rate reduction",IDC_STATIC,4,148,212,100
-    CONTROL         "Encode credits at % rate:",IDC_CREDITS_RATE_RADIO,
-                    "Button",BS_AUTORADIOBUTTON | WS_GROUP,12,160,112,12
-    CONTROL         "Encode I-frames with quantizer:",
-                    IDC_CREDITS_QUANT_RADIO,"Button",BS_AUTORADIOBUTTON,12,
-                    176,112,12
-    EDITTEXT        IDC_CREDITS_QUANTI,132,176,76,12,ES_AUTOHSCROLL | 
+    GROUPBOX        "Credits rate reduction",IDC_STATIC,4,116,192,96
+    CONTROL         "Desired % rate:",IDC_CREDITS_RATE_RADIO,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP,12,128,88,12
+    CONTROL         "I-frame quantizer:",IDC_CREDITS_QUANT_RADIO,"Button",
+                    BS_AUTORADIOBUTTON,12,144,88,12
+    EDITTEXT        IDC_CREDITS_QUANTI,112,144,76,12,ES_AUTOHSCROLL | 
                     ES_NUMBER
-    CONTROL         "Encode starting credits to size:",
-                    IDC_CREDITS_SIZE_RADIO,"Button",BS_AUTORADIOBUTTON,12,
-                    208,112,12
-    EDITTEXT        IDC_CREDITS_START_SIZE,132,208,76,12,ES_AUTOHSCROLL | 
+    CONTROL         "Starting size (KBytes):",IDC_CREDITS_SIZE_RADIO,"Button",
+                    BS_AUTORADIOBUTTON,12,176,88,12
+    EDITTEXT        IDC_CREDITS_START_SIZE,112,176,76,12,ES_AUTOHSCROLL | 
                     ES_NUMBER
-    EDITTEXT        IDC_CREDITS_END_SIZE,132,224,76,12,ES_AUTOHSCROLL | 
+    EDITTEXT        IDC_CREDITS_END_SIZE,112,192,76,12,ES_AUTOHSCROLL | 
                     ES_NUMBER
-    LTEXT           "Encode ending credits to size:",IDC_CREDITS_END_STATIC,
-                    24,224,100,12,SS_CENTERIMAGE
-    EDITTEXT        IDC_CREDITS_QUANTP,132,192,76,12,ES_AUTOHSCROLL | 
-                    ES_NUMBER
-    LTEXT           "Encode P-frames with quantizer:",
-                    IDC_CREDITS_QUANT_STATIC,24,192,100,12,SS_CENTERIMAGE
-END
-
-IDD_2PASS DIALOG DISCARDABLE  0, 0, 216, 197
-STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Internal 2-pass options"
-FONT 8, "MS Sans Serif"
-BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,84,176,47,13
-    LTEXT           "Desired file size (KBytes):",IDC_STATIC,12,16,100,12,
-                    SS_CENTERIMAGE
-    EDITTEXT        IDC_DESIRED,128,16,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    GROUPBOX        "Internal 2-pass tuning",IDC_STATIC,4,4,208,64
-    LTEXT           "Bitrate payback delay (frames):",IDC_STATIC,12,120,100,
+    LTEXT           "Ending size (KBytes):",IDC_CREDITS_END_STATIC,24,192,76,
                     12,SS_CENTERIMAGE
-    EDITTEXT        IDC_PAYBACK,128,120,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "High bitrate scenes %:",IDC_STATIC,12,88,100,12,
-                    SS_CENTERIMAGE
-    EDITTEXT        IDC_CURVECOMPH,128,88,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "Low bitrate scenes %:",IDC_STATIC,12,104,100,12,
-                    SS_CENTERIMAGE
-    EDITTEXT        IDC_CURVECOMPL,128,104,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    GROUPBOX        "Curve compression",IDC_STATIC,4,76,208,92
-    LTEXT           "Keyframe boost %:",IDC_STATIC,12,32,100,12,
-                    SS_CENTERIMAGE
-    EDITTEXT        IDC_KFBOOST,128,32,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    CONTROL         "Payback with bias",IDC_PAYBACKBIAS,"Button",
-                    BS_AUTORADIOBUTTON | WS_GROUP,16,136,96,12
-    CONTROL         "Payback proportionally",IDC_PAYBACKPROP,"Button",
-                    BS_AUTORADIOBUTTON,16,148,96,12
-    LTEXT           "Min keyframe interval:",IDC_STATIC,12,48,100,12,
-                    SS_CENTERIMAGE
-    EDITTEXT        IDC_MINKEY,128,48,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_CREDITS_QUANTP,112,160,76,12,ES_AUTOHSCROLL | 
+                    ES_NUMBER
+    LTEXT           "P-frame quantizer:",IDC_CREDITS_QUANT_STATIC,24,160,76,
+                    12,SS_CENTERIMAGE
+    CONTROL         "Credits at start of movie",IDC_CREDITS_START,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,4,88,10
+    CONTROL         "Credits at end of movie",IDC_CREDITS_END,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,60,88,10
+    CTEXT           "",IDC_STATIC_HELP,4,222,192,20,0,WS_EX_TRANSPARENT
 END
 
-IDD_QUANTMATRIX DIALOG DISCARDABLE  0, 0, 288, 149
+IDD_CPU DIALOGEX 0, 0, 200, 244
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Quantization Matrices"
-FONT 8, "MS Sans Serif"
+CAPTION "CPU"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    CONTROL         "Automatically detect optimizations",IDC_CPU_AUTO,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP,8,16,121,10
+    CONTROL         "Force optimizations",IDC_CPU_FORCE,"Button",
+                    BS_AUTORADIOBUTTON,8,28,76,10
+    CONTROL         "MMX",IDC_CPU_MMX,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    20,40,33,10
+    CONTROL         "Integer SSE",IDC_CPU_MMXEXT,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,20,52,54,10
+    CONTROL         "SSE",IDC_CPU_SSE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    20,64,30,10
+    CONTROL         "SSE2",IDC_CPU_SSE2,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,20,76,34,10
+    CONTROL         "3DNow!",IDC_CPU_3DNOW,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,20,88,42,10
+    CONTROL         "3DNow! 2",IDC_CPU_3DNOWEXT,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,20,100,48,10
+    GROUPBOX        "Performance optimizations",IDC_STATIC,4,4,192,112
+    CTEXT           "",IDC_STATIC_HELP,4,222,192,20,0,WS_EX_TRANSPARENT
+END
+
+IDD_QUANTMATRIX DIALOGEX 0, 0, 288, 177
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Custom quantization matrix"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,172,128,47,13
     EDITTEXT        IDC_QINTRA00,8,16,15,11,ES_AUTOHSCROLL | ES_NUMBER | 
@@ -544,6 +530,25 @@ BEGIN
     GROUPBOX        "Inter matrix",IDC_STATIC,148,4,136,112
     PUSHBUTTON      "&Load matrix...",IDC_LOAD,68,128,47,13
     PUSHBUTTON      "&Save matrix...",IDC_SAVE,120,128,47,13
+    GROUPBOX        "",IDC_STATIC,-4,144,300,36
+    CTEXT           "",IDC_STATIC_HELP,4,154,280,20,0,WS_EX_TRANSPARENT
+END
+
+IDD_ABOUT DIALOG DISCARDABLE  0, 0, 192, 165
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "XviD MPEG4 Video Codec"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CTEXT           "GPL'ed MPEG4 video codec demonstration.\nFor educational purposes only.",
+                    IDC_STATIC,12,112,168,20
+    CTEXT           "WEBSITE",IDC_WEBSITE,64,92,64,8,SS_NOTIFY | 
+                    SS_CENTERIMAGE
+    CTEXT           "BUILD",IDC_BUILD,8,28,176,8,SS_CENTERIMAGE
+    CONTROL         "IDB_LOGO",IDC_STATIC,"Static",SS_BITMAP,24,56,15,13
+    CTEXT           "XviD MPEG4 video codec",IDC_STATIC,8,16,176,12
+    GROUPBOX        "About",IDC_STATIC,4,4,184,132
+    DEFPUSHBUTTON   "OK",IDOK,56,144,80,12
+    CTEXT           "CORE",IDC_CORE,8,40,176,8,SS_CENTERIMAGE
 END
 
 
@@ -558,57 +563,47 @@ BEGIN
     IDD_MAIN, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 209
         TOPMARGIN, 7
-        BOTTOMMARGIN, 182
+        BOTTOMMARGIN, 150
     END
 
-    IDD_ADV, DIALOG
+    IDD_GLOBAL, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 209
+        RIGHTMARGIN, 193
         TOPMARGIN, 7
-        BOTTOMMARGIN, 182
+        BOTTOMMARGIN, 211
     END
 
-    IDD_CPU, DIALOG
+    IDD_QUANT, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 209
+        RIGHTMARGIN, 177
         TOPMARGIN, 7
-        BOTTOMMARGIN, 182
-    END
-
-    IDD_ABOUT, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 209
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 182
-    END
-
-    IDD_DEBUG, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 209
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 182
-    END
-
-    IDD_CREDITS, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 229
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 278
+        BOTTOMMARGIN, 162
     END
 
     IDD_2PASS, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 209
+        RIGHTMARGIN, 193
         TOPMARGIN, 7
-        BOTTOMMARGIN, 190
+    END
+
+    IDD_CREDITS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 193
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 242
+    END
+
+    IDD_CPU, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 193
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 242
     END
 
     IDD_QUANTMATRIX, DIALOG
@@ -616,12 +611,82 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 281
         TOPMARGIN, 7
-        BOTTOMMARGIN, 142
+        BOTTOMMARGIN, 170
+    END
+
+    IDD_ABOUT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 185
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 158
     END
 END
 #endif    // APSTUDIO_INVOKED
 
-#endif    // Englisch (Australien) resources
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_MODE                "Select encoding mode - 2-pass Ext. relies on GKnot scaling the .stats file"
+    IDC_CBRBUFFER           "Size, in bytes, that the codec can flex inside for CBR encoding"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_MOTION              "Higher settings give higher-quality results, at the cost of slower encoding"
+    IDC_QUANTTYPE           "H.263 smooths, MPEG sharpens.  Modulated varies between the two, and custom lets you define your own matrix."
+    IDC_FOURCC              "Choose what you would like the avi to identify itself as"
+    IDC_MAXKEY              "Maximum number of frames allowed between I-frames"
+    IDC_LUMMASK             "Turns on Lumi masking - applies more compression to dark/light areas that the eye can't notice easily"
+    IDC_MINIQUANT           "Minimum quantizer allowed for I-frames.  Only functional in 2-pass second pass."
+    IDC_MAXIQUANT           "Maximum quantizer allowed for I-frames.  Only functional in 2-pass second pass."
+    IDC_MINPQUANT           "Minimum quantizer allowed for P-frames.  Only functional in 2-pass second pass."
+    IDC_MAXPQUANT           "Maximum quantizer allowed for P-frames.  Only functional in 2-pass second pass."
+    IDC_QUANTMATRIX         "Define your own MPEG quantization matrices.  Quantization type must be set to ""Custom"" to be functional."
+    IDC_KFBOOST             "A value of 20, would give 20% more bits to every I-frame"
+    IDC_MINKEY              "Minimum space between I-frames - should be less than 10"
+    IDC_DISCARD1PASS        "Check this if you would like to skip the storage of the 1st pass output, it is often very large"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_DUMMY2PASS          "Performs a dummy 2nd pass - doesn't output any video data"
+    IDC_CURVECOMPH          "The higher this value, the more bits get taken from frames larger than the average size, and redistributed to others"
+    IDC_CURVECOMPL          "The higher this value, the more bits get assigned to frames below the average frame size"
+    IDC_PAYBACK             "The higher this value, the longer the codec has to smooth out bit allocation"
+    IDC_PAYBACKBIAS         "Payback with bias to small frames"
+    IDC_PAYBACKPROP         "Payback proportionally (all frames treated equally)"
+    IDC_STATS1              "Location for 1st pass stats file to be saved to"
+    IDC_STATS2              "Location for 2nd pass curve stats to be loaded from - External mode only"
+    IDC_CREDITS_START_BEGIN "Credits begin at this frame"
+    IDC_CREDITS_START_END   "Credits end at this frame"
+    IDC_CREDITS_END_START   "Credits start at this frame"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_CREDITS_END_END     "Credits end at this frame"
+    IDC_CREDITS_RATE        "Encode credits at this % rate of the rest of the movie"
+    IDC_CREDITS_QUANTI      "Encode credits I-frames with this quantizer"
+    IDC_CREDITS_QUANTP      "Encode credits P-frames with this quantizer"
+    IDC_CREDITS_START_SIZE  "Encode starting credits to fit into this many KBytes"
+    IDC_CREDITS_END_SIZE    "Encode ending credits to fit into this size"
+    IDC_CPU_AUTO            "Enable XviD's internal CPU detection"
+    IDC_CPU_FORCE           "Override XviD's internal CPU detection"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_LOAD                "Load a pair of custom intra/inter matrices"
+    IDC_SAVE                "Save the current intra/inter matrices to a file"
+END
+
+#endif    // English (Australia) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
