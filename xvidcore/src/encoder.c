@@ -39,7 +39,7 @@
  *             MinChen <chenm001@163.com>
  *  14.04.2002 added FrameCodeB()
  *
- *  $Id: encoder.c,v 1.76.2.6 2002-09-29 15:56:21 chl Exp $
+ *  $Id: encoder.c,v 1.76.2.7 2002-09-30 09:19:26 chl Exp $
  *
  ****************************************************************************/
 
@@ -411,8 +411,10 @@ encoder_create(XVID_ENC_PARAM * pParam)
 	pEnc->queue_size = 0;
 
 	pEnc->mbParam.m_stamp = 0;
-;
+
 	pEnc->m_framenum = 0;
+	pEnc->current->stamp = 0;
+	pEnc->reference->stamp = 0;
 
 	pParam->handle = (void *) pEnc;
 
