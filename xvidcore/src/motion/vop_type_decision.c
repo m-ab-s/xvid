@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: vop_type_decision.c,v 1.1.2.2 2003-09-30 18:20:31 edgomez Exp $
+ * $Id: vop_type_decision.c,v 1.1.2.3 2003-11-15 14:48:41 syskin Exp $
  *
  ****************************************************************************/
 
@@ -33,9 +33,9 @@
 #include "motion_inlines.h"
 
 
-#define INTRA_THRESH	2200
+#define INTRA_THRESH	2000
 #define INTER_THRESH	40
-#define INTRA_THRESH2	95
+#define INTRA_THRESH2	90
 
 static void
 CheckCandidate32I(const int x, const int y, const SearchData * const data, const unsigned int Direction)
@@ -147,7 +147,7 @@ MEanalysis(	const IMAGE * const pRef,
 	MACROBLOCK * const pMBs = Current->mbs;
 	const IMAGE * const pCurrent = &Current->image;
 	int IntraThresh = INTRA_THRESH, InterThresh = INTER_THRESH + b_thresh;
-	int blocks = 0;
+	int blocks = 10;
 	int complexity = 0;
 
 	int32_t iMinSAD[5], temp[5];
@@ -215,7 +215,7 @@ MEanalysis(	const IMAGE * const pRef,
 
 	sSAD /= complexity + 4*blocks;
 
-	if (intraCount > 80 && sSAD > INTRA_THRESH2 ) return I_VOP;
+	if (intraCount > 60 && sSAD > INTRA_THRESH2 ) return I_VOP;
 	if (sSAD > InterThresh ) return P_VOP;
 	emms();
 	return B_VOP;
