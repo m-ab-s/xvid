@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.c,v 1.58.2.27 2003-08-07 15:42:50 chl Exp $
+ * $Id: motion_est.c,v 1.58.2.28 2003-08-25 15:10:13 syskin Exp $
  *
  ****************************************************************************/
 
@@ -109,49 +109,39 @@ static int32_t ChromaSAD2(const int fx, const int fy, const int bx, const int by
 {
 	int sad;
 	const uint32_t stride = data->iEdgedWidth/2;
-	uint8_t * f_refu = data->RefQ,
-		* f_refv = data->RefQ + 8,
-		* b_refu = data->RefQ + 16,
-		* b_refv = data->RefQ + 24;
-	int offset = (fx>>1) + (fy>>1)*stride;
+	uint8_t *f_refu, *f_refv, *b_refu, *b_refv;
 
-	switch (((fx & 1) << 1) | (fy & 1))	{
-		case 0:
-			f_refu = (uint8_t*)data->RefP[4] + offset;
-			f_refv = (uint8_t*)data->RefP[5] + offset;
-			break;
-		case 1:
-			interpolate8x8_halfpel_v(f_refu, data->RefP[4] + offset, stride, data->rounding);
-			interpolate8x8_halfpel_v(f_refv, data->RefP[5] + offset, stride, data->rounding);
-			break;
-		case 2:
-			interpolate8x8_halfpel_h(f_refu, data->RefP[4] + offset, stride, data->rounding);
-			interpolate8x8_halfpel_h(f_refv, data->RefP[5] + offset, stride, data->rounding);
-			break;
-		default:
-			interpolate8x8_halfpel_hv(f_refu, data->RefP[4] + offset, stride, data->rounding);
-			interpolate8x8_halfpel_hv(f_refv, data->RefP[5] + offset, stride, data->rounding);
-			break;
+	const INTERPOLATE8X8_PTR interpolate8x8_halfpel[] = {
+		NULL,
+		interpolate8x8_halfpel_v,
+		interpolate8x8_halfpel_h,
+		interpolate8x8_halfpel_hv
+	};
+
+	int offset = (fx>>1) + (fy>>1)*stride;
+	int filter = ((fx & 1) << 1) | (fy & 1);
+
+	if (filter != 0) {
+		f_refu = data->RefQ;
+		f_refv = data->RefQ + 8;
+		interpolate8x8_halfpel[filter](f_refu, data->RefP[4] + offset, stride, data->rounding);
+		interpolate8x8_halfpel[filter](f_refv, data->RefP[5] + offset, stride, data->rounding);
+	} else {
+		f_refu = (uint8_t*)data->RefP[4] + offset;
+		f_refv = (uint8_t*)data->RefP[5] + offset;
 	}
 
 	offset = (bx>>1) + (by>>1)*stride;
-	switch (((bx & 1) << 1) | (by & 1))	{
-		case 0:
-			b_refu = (uint8_t*)data->b_RefP[4] + offset;
-			b_refv = (uint8_t*)data->b_RefP[5] + offset;
-			break;
-		case 1:
-			interpolate8x8_halfpel_v(b_refu, data->b_RefP[4] + offset, stride, data->rounding);
-			interpolate8x8_halfpel_v(b_refv, data->b_RefP[5] + offset, stride, data->rounding);
-			break;
-		case 2:
-			interpolate8x8_halfpel_h(b_refu, data->b_RefP[4] + offset, stride, data->rounding);
-			interpolate8x8_halfpel_h(b_refv, data->b_RefP[5] + offset, stride, data->rounding);
-			break;
-		default:
-			interpolate8x8_halfpel_hv(b_refu, data->b_RefP[4] + offset, stride, data->rounding);
-			interpolate8x8_halfpel_hv(b_refv, data->b_RefP[5] + offset, stride, data->rounding);
-			break;
+	filter = ((bx & 1) << 1) | (by & 1);
+
+	if (filter != 0) {
+		b_refu = data->RefQ + 16;
+		b_refv = data->RefQ + 24;
+		interpolate8x8_halfpel[filter](b_refu, data->b_RefP[4] + offset, stride, data->rounding);
+		interpolate8x8_halfpel[filter](b_refv, data->b_RefP[5] + offset, stride, data->rounding);
+	} else {
+		b_refu = (uint8_t*)data->b_RefP[4] + offset;
+		b_refv = (uint8_t*)data->b_RefP[5] + offset;
 	}
 
 	sad = sad8bi(data->CurU, b_refu, f_refu, stride);
@@ -300,6 +290,7 @@ Interpolate16x16qpel(const int x, const int y, const uint32_t dir, const SearchD
 		interpolate8x8_avg2(Reference+8*iEdgedWidth, ref1+8*iEdgedWidth, ref2+8*iEdgedWidth, iEdgedWidth, rounding, 8);
 		interpolate8x8_avg2(Reference+8*iEdgedWidth+8, ref1+8*iEdgedWidth+8, ref2+8*iEdgedWidth+8, iEdgedWidth, rounding, 8);
 		break;
+
 
 	default: /* pure halfpel position */
 		return (uint8_t *) ref1;
@@ -1347,8 +1338,8 @@ SearchP(const IMAGE * const pRef,
 	VECTOR pmv[7];
 	int inter4v = (VopFlags & XVID_VOP_INTER4V) && (pMB->dquant == 0);
 
-	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
-						pParam->width, pParam->height, Data->iFcode - Data->qpel, 0, Data->rrv);
+	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
+						pParam->width, pParam->height, Data->iFcode - Data->qpel, 1, Data->rrv);
 
 	get_pmvdata2(pMBs, pParam->mb_width, 0, x, y, 0, pmv, Data->temp);
 
@@ -1461,8 +1452,8 @@ SearchP(const IMAGE * const pRef,
 	}
 
 	if (Data->qpel) {
-		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
-				pParam->width, pParam->height, Data->iFcode, 1, 0);
+		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
+				pParam->width, pParam->height, Data->iFcode, 2, 0);
 		Data->qpel_precision = 1;
 		if (MotionFlags & XVID_ME_QUARTERPELREFINE16)
 			SubpelRefine(Data);
@@ -1540,8 +1531,8 @@ Search8(const SearchData * const OldData,
 		Data->Cur = OldData->Cur + i * ((block&1) + Data->iEdgedWidth*(block>>1));
 		Data->qpel_precision = 0;
 
-		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 8,
-					pParam->width, pParam->height, Data->iFcode - Data->qpel, 0, Data->rrv);
+		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 3,
+					pParam->width, pParam->height, Data->iFcode - Data->qpel, 1, Data->rrv);
 
 		if (!Data->rrv) CheckCandidate = CheckCandidate8;
 		else CheckCandidate = CheckCandidate16no4v;
@@ -1575,8 +1566,8 @@ Search8(const SearchData * const OldData,
 
 		if (Data->qpel && MotionFlags & XVID_ME_QUARTERPELREFINE8) {
 				Data->qpel_precision = 1;
-				get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 8,
-					pParam->width, pParam->height, Data->iFcode, 1, 0);
+				get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 3,
+					pParam->width, pParam->height, Data->iFcode, 2, 0);
 				SubpelRefine(Data);
 		}
 	}
@@ -1680,8 +1671,8 @@ SearchBF(	const IMAGE * const pRef,
 
 	Data->predMV = *predMV;
 
-	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
-				pParam->width, pParam->height, iFcode - Data->qpel, 0, 0);
+	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
+				pParam->width, pParam->height, iFcode - Data->qpel, 1, 0);
 
 	pmv[0] = Data->predMV;
 	if (Data->qpel) { pmv[0].x /= 2; pmv[0].y /= 2; }
@@ -1709,8 +1700,8 @@ SearchBF(	const IMAGE * const pRef,
 		Data->currentQMV->x = 2*Data->currentMV->x;
 		Data->currentQMV->y = 2*Data->currentMV->y;
 		Data->qpel_precision = 1;
-		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
-					pParam->width, pParam->height, iFcode, 1, 0);
+		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
+					pParam->width, pParam->height, iFcode, 2, 0);
 		SubpelRefine(Data);
 	}
 
@@ -1976,8 +1967,8 @@ SearchInterpolate(const IMAGE * const f_Ref,
 	fData->bpredMV = bData.predMV = *b_predMV;
 	fData->currentMV[0] = fData->currentMV[2];
 
-	get_range(&fData->min_dx, &fData->max_dx, &fData->min_dy, &fData->max_dy, x, y, 16, pParam->width, pParam->height, fcode - fData->qpel, 0, 0);
-	get_range(&bData.min_dx, &bData.max_dx, &bData.min_dy, &bData.max_dy, x, y, 16, pParam->width, pParam->height, bcode - fData->qpel, 0, 0);
+	get_range(&fData->min_dx, &fData->max_dx, &fData->min_dy, &fData->max_dy, x, y, 4, pParam->width, pParam->height, fcode - fData->qpel, 1, 0);
+	get_range(&bData.min_dx, &bData.max_dx, &bData.min_dy, &bData.max_dy, x, y, 4, pParam->width, pParam->height, bcode - fData->qpel, 1, 0);
 
 	if (fData->currentMV[0].x > fData->max_dx) fData->currentMV[0].x = fData->max_dx;
 	if (fData->currentMV[0].x < fData->min_dx) fData->currentMV[0].x = fData->min_dx;
@@ -2017,8 +2008,8 @@ SearchInterpolate(const IMAGE * const f_Ref,
 		if (*fData->iMinSAD > *best_sad + 500) return;
 		CheckCandidate = CheckCandidateInt;
 		fData->qpel_precision = bData.qpel_precision = 1;
-		get_range(&fData->min_dx, &fData->max_dx, &fData->min_dy, &fData->max_dy, x, y, 16, pParam->width, pParam->height, fcode, 1, 0);
-		get_range(&bData.min_dx, &bData.max_dx, &bData.min_dy, &bData.max_dy, x, y, 16, pParam->width, pParam->height, bcode, 1, 0);
+		get_range(&fData->min_dx, &fData->max_dx, &fData->min_dy, &fData->max_dy, x, y, 4, pParam->width, pParam->height, fcode, 2, 0);
+		get_range(&bData.min_dx, &bData.max_dx, &bData.min_dy, &bData.max_dy, x, y, 4, pParam->width, pParam->height, bcode, 2, 0);
 		fData->currentQMV[2].x = fData->currentQMV[0].x = 2 * fData->currentMV[0].x;
 		fData->currentQMV[2].y = fData->currentQMV[0].y = 2 * fData->currentMV[0].y;
 		fData->currentQMV[1].x = 2 * fData->currentMV[1].x;
@@ -2219,8 +2210,8 @@ MEanalyzeMB (	const uint8_t * const pRef,
 			Data->predMV = (pMB - 1)->mvs[0]; /* left instead of median */
 			else Data->predMV = get_pmv2(pMBs, pParam->mb_width, 0, x, y, 0); /* else median */
 
-	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
-			pParam->width, pParam->height, Data->iFcode - quarterpel, 0, 0);
+	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
+			pParam->width, pParam->height, Data->iFcode - quarterpel, 1, 0);
 
 	Data->Cur = pCur + (x + y * pParam->edged_width) * 16;
 	Data->RefP[0] = pRef + (x + y * pParam->edged_width) * 16;
@@ -2365,8 +2356,8 @@ findRDinter(SearchData * const Data,
 
 		if (MotionFlags & (XVID_ME_HALFPELREFINE16_RD | XVID_ME_EXTSEARCH_RD)) { /* we have to prepare for halfpixel-precision search */
 			for(i = 0; i < 5; i++) bsad[i] = Data->iMinSAD[i];
-			get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
-						pParam->width, pParam->height, Data->iFcode - Data->qpel, 0, Data->rrv);
+			get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
+						pParam->width, pParam->height, Data->iFcode - Data->qpel, 1, Data->rrv);
 			Data->qpel_precision = 0;
 			if (Data->currentQMV->x & 1 || Data->currentQMV->y & 1)
 				CheckCandidateRD16(Data->currentMV[0].x, Data->currentMV[0].y, 255, &iDirection, Data);
@@ -2390,8 +2381,8 @@ findRDinter(SearchData * const Data,
 
 			/* preparing for qpel-precision search */
 			Data->qpel_precision = 1;
-			get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
-					pParam->width, pParam->height, Data->iFcode, 1, 0);
+			get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
+					pParam->width, pParam->height, Data->iFcode, 2, 0);
 		}
 		if (MotionFlags&XVID_ME_QUARTERPELREFINE16_RD) SubpelRefine(Data);
 	}
@@ -2443,8 +2434,8 @@ findRDinter4v(const SearchData * const Data,
 										Data8->predMV, Data8->iFcode, 0, 0);
 		}
 
-		get_range(&Data8->min_dx, &Data8->max_dx, &Data8->min_dy, &Data8->max_dy, 2*x + (i&1), 2*y + (i>>1), 8,
-					pParam->width, pParam->height, Data8->iFcode, Data8->qpel, 0);
+		get_range(&Data8->min_dx, &Data8->max_dx, &Data8->min_dy, &Data8->max_dy, 2*x + (i&1), 2*y + (i>>1), 3,
+					pParam->width, pParam->height, Data8->iFcode, Data8->qpel+1, 0);
 
 		*Data8->iMinSAD += BITS_MULT*t;
 
@@ -2462,8 +2453,8 @@ findRDinter4v(const SearchData * const Data,
 				Data8->currentMV->x = Data8->currentQMV->x/2;
 				Data8->currentMV->y = Data8->currentQMV->y/2;
 				Data8->qpel_precision = 0;
-				get_range(&Data8->min_dx, &Data8->max_dx, &Data8->min_dy, &Data8->max_dy, 2*x + (i&1), 2*y + (i>>1), 8,
-							pParam->width, pParam->height, Data8->iFcode - 1, 0, 0);
+				get_range(&Data8->min_dx, &Data8->max_dx, &Data8->min_dy, &Data8->max_dy, 2*x + (i&1), 2*y + (i>>1), 3,
+							pParam->width, pParam->height, Data8->iFcode - 1, 1, 0);
 
 				if (Data8->currentQMV->x & 1 || Data8->currentQMV->y & 1)
 					CheckCandidateRD8(Data8->currentMV->x, Data8->currentMV->y, 255, &iDirection, Data8);
@@ -2480,8 +2471,8 @@ findRDinter4v(const SearchData * const Data,
 				}
 
 				Data8->qpel_precision = 1;
-				get_range(&Data8->min_dx, &Data8->max_dx, &Data8->min_dy, &Data8->max_dy, 2*x + (i&1), 2*y + (i>>1), 8,
-							pParam->width, pParam->height, Data8->iFcode, 1, 0);
+				get_range(&Data8->min_dx, &Data8->max_dx, &Data8->min_dy, &Data8->max_dy, 2*x + (i&1), 2*y + (i>>1), 3,
+							pParam->width, pParam->height, Data8->iFcode, 2, 0);
 
 			}
 			if (MotionFlags & XVID_ME_QUARTERPELREFINE8_RD) SubpelRefine(Data8);
@@ -2636,8 +2627,8 @@ GMEanalyzeMB (	const uint8_t * const pCur,
 
 	Data->predMV = get_pmv2(pMBs, pParam->mb_width, 0, x, y, 0);
 
-	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
-				pParam->width, pParam->height, 16, 0, 0);
+	get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
+				pParam->width, pParam->height, 16, 1, 0);
 
 	Data->Cur = pCur + 16*(x + y * pParam->edged_width);
 	Data->RefP[0] = pRef + 16*(x + y * pParam->edged_width);
@@ -2661,8 +2652,8 @@ GMEanalyzeMB (	const uint8_t * const pCur,
 		Data->currentQMV->x = 2*Data->currentMV->x;
 		Data->currentQMV->y = 2*Data->currentMV->y;
 		Data->qpel_precision = 1;
-		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 16,
-					pParam->width, pParam->height, iFcode, 1, 0);
+		get_range(&Data->min_dx, &Data->max_dx, &Data->min_dy, &Data->max_dy, x, y, 4,
+					pParam->width, pParam->height, iFcode, 2, 0);
 		SubpelRefine(Data);
 	}
 */

@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: motion_est.h,v 1.3.2.15 2003-08-03 10:10:54 syskin Exp $
+ * $Id: motion_est.h,v 1.3.2.16 2003-08-25 15:10:30 syskin Exp $
  *
  ****************************************************************************/
 
@@ -160,33 +160,33 @@ get_range(int32_t * const min_dx,
 		  int32_t * const max_dy,
 		  const uint32_t x,
 		  const uint32_t y,
-		  uint32_t block_sz, /* block dimension, 8 or 16 */
+		  uint32_t block_sz, /* block dimension, 3(8) or 4(16) */
 		  const uint32_t width,
 		  const uint32_t height,
 		  const uint32_t fcode,
-		  const int qpel, /* 1 if the resulting range should be in qpel precision; otherwise 0 */
+		  const int precision, /* 2 for qpel, 1 for halfpel */
 		  const int rrv)
 {
-	int k, m = qpel ? 4 : 2;
-	const int search_range = 32 << (fcode - 1);
+	int k;
+	const int search_range = 16 << fcode;
 	int high = search_range - 1;
 	int low = -search_range;
 	
 	if (rrv) {
 		high = RRV_MV_SCALEUP(high);
 		low = RRV_MV_SCALEUP(low);
-		block_sz *= 2;
+		block_sz++;
 	}
 
-	k = m * (int)(width - x * block_sz);
-	*max_dx = MIN(high, k);
-	k = m * (int)(height -  y * block_sz);
-	*max_dy = MIN(high, k);
+	k = (int)(width - (x<<block_sz))<<precision;
+	*max_dx = min(high, k);
+	k = (int)(height -  (y<<block_sz))<<precision;
+	*max_dy = min(high, k);
 	
-	k = -m * (int)((x+1) * block_sz);
-	*min_dx = MAX(low, k);
-	k = -m * (int)((y+1) * block_sz);
-	*min_dy = MAX(low, k);
+	k = (-(int)((x+1)<<block_sz))<<precision;
+	*min_dx = max(low, k);
+	k = (-(int)((y+1)<<block_sz))<<precision;
+	*min_dy = max(low, k);
 }
 
 typedef void MainSearchFunc(int x, int y, const SearchData * const Data, int bDirection);
