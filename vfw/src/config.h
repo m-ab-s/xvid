@@ -166,6 +166,8 @@ typedef struct
 #ifdef _SMP
 	int num_threads;
 #endif
+	int chroma_opt;
+
 	int frame_drop_ratio;
 
 	/* decoder */

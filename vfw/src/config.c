@@ -105,6 +105,7 @@ REG_INT const reg_ints[] = {
 	{"dx50bvop",				&reg.dx50bvop,					1},
 	{"debug",					&reg.debug,						0},
 	{"reduced_resolution",		&reg.reduced_resolution,		0},
+	{"chroma_opt",				&reg.chroma_opt,				0},
 	{"frame_drop_ratio",		&reg.frame_drop_ratio,			0},
 
 	{"min_iquant",				&reg.min_iquant,				2},
@@ -756,6 +757,7 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 #ifdef _SMP
 		SetDlgItemInt(hDlg, IDC_NUMTHREADS, config->num_threads, FALSE);
 #endif
+		CheckDlgButton(hDlg, IDC_CHROMA_OPT, (config->chroma_opt) ? BST_CHECKED : BST_UNCHECKED);
 		SetDlgItemInt(hDlg, IDC_FRAMEDROP, config->frame_drop_ratio, FALSE);
 		SetDlgItemInt(hDlg, IDC_CBR_REACTIONDELAY, config->rc_reaction_delay_factor, FALSE);
 		SetDlgItemInt(hDlg, IDC_CBR_AVERAGINGPERIOD, config->rc_averaging_period, FALSE);
@@ -920,6 +922,7 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 #ifdef _SMP
 		config->num_threads = config_get_uint(hDlg, IDC_NUMTHREADS, config->num_threads);
 #endif
+		config->chroma_opt = ISDLGSET(IDC_CHROMA_OPT);
 		config->frame_drop_ratio = config_get_uint(hDlg, IDC_FRAMEDROP, config->frame_drop_ratio);
 		config->rc_reaction_delay_factor = config_get_uint(hDlg, IDC_CBR_REACTIONDELAY, config->rc_reaction_delay_factor);
 		config->rc_averaging_period = config_get_uint(hDlg, IDC_CBR_AVERAGINGPERIOD, config->rc_averaging_period);

@@ -411,6 +411,8 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 	if (codec->config.reduced_resolution) 
 		frame.general |= XVID_REDUCED;
 
+	if (codec->config.chroma_opt)
+		frame.general |= XVID_CHROMAOPT;
 // added by koepi for credits greyscale
 
 	check_greyscale_mode(&codec->config, &frame, codec->framenum);

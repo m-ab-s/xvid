@@ -291,7 +291,7 @@ BEGIN
                     WS_TABSTOP,20,88,42,10
     CONTROL         "3DNow! 2",IDC_CPU_3DNOWEXT,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,20,100,48,10
-    GROUPBOX        "Performance optimizations",IDC_STATIC,4,4,192,124
+    GROUPBOX        "Performance optimizations",IDC_STATIC,4,4,192,120
     GROUPBOX        "CBR options",IDC_STATIC,4,148,192,64
     EDITTEXT        IDC_CBR_REACTIONDELAY,112,161,76,12,ES_AUTOHSCROLL | 
                     ES_NUMBER
@@ -303,10 +303,12 @@ BEGIN
                     SS_CENTERIMAGE
     EDITTEXT        IDC_CBR_BUFFER,112,193,76,12,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "Smoother:",IDC_STATIC,12,193,80,12,SS_CENTERIMAGE
-    EDITTEXT        IDC_NUMTHREADS,112,112,75,12,ES_AUTOHSCROLL
-    LTEXT           "Number of threads:",IDC_NUMTHREADS_STATIC,7,114,61,8
-    LTEXT           "Frame drop ratio:",IDC_FRAMEDROP_STATIC,7,135,68,10
-    EDITTEXT        IDC_FRAMEDROP,111,135,75,11,ES_AUTOHSCROLL
+    EDITTEXT        IDC_NUMTHREADS,112,110,75,12,ES_AUTOHSCROLL
+    LTEXT           "Number of threads:",IDC_NUMTHREADS_STATIC,7,112,61,8
+    LTEXT           "Frame drop ratio:",IDC_FRAMEDROP_STATIC,7,138,68,10
+    EDITTEXT        IDC_FRAMEDROP,111,137,75,11,ES_AUTOHSCROLL
+    CONTROL         "Chroma Optimizer",IDC_CHROMA_OPT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,127,71,10
 END
 
 IDD_QUANTMATRIX DIALOG DISCARDABLE  0, 0, 288, 149
@@ -834,6 +836,7 @@ BEGIN
     IDC_CHROMAME            "Use chroma information to detect motion (slow!)"
     IDC_BQUANTOFFSET        "B-frame quantizer offset from last p-frame quantizer; refer to b-frame quant ratio (above)"
     IDC_VHQ                 "VHQ enables an additional search process to increase quality."
+    IDC_CHROMA_OPT          "Interpolates colours in bright/dark areas for achieving a nicer edge impression"
 END
 
 #endif    // Englisch (Australien) resources
