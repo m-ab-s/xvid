@@ -637,14 +637,7 @@ LRESULT compress(CODEC * codec, ICCOMPRESS * icc)
 
 	// force keyframe spacing in 2-pass 1st pass
 	if (codec->config.motion_search == 0)
-	{
 		frame.type = XVID_TYPE_IVOP;
-	}
-	else if (codec->keyspacing < codec->config.min_key_interval && codec->framenum)
-	{
-		DPRINTF("current frame forced to p-frame");
-		frame.type = XVID_TYPE_PVOP;
-	}
 
     /* frame-based stuff */
     apply_zone_modifiers(&frame, &codec->config, codec->framenum);

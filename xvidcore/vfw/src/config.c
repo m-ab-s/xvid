@@ -797,6 +797,7 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
 
 		SetDlgItemInt(hDlg, IDC_CURVECOMPH, config->curve_compression_high, FALSE);
 		SetDlgItemInt(hDlg, IDC_CURVECOMPL, config->curve_compression_low, FALSE);
+		SetDlgItemInt(hDlg, IDC_MINKEY, config->min_key_interval, FALSE);
 		break;
 
     case IDD_ZONE :
@@ -822,7 +823,6 @@ void adv_upload(HWND hDlg, int idd, CONFIG * config)
         CheckDlg(hDlg, IDC_CARTOON, config->cartoon_mode);
 		SetDlgItemInt(hDlg, IDC_FRAMEDROP, config->frame_drop_ratio, FALSE);
 		SetDlgItemInt(hDlg, IDC_MAXKEY, config->max_key_interval, FALSE);
-		SetDlgItemInt(hDlg, IDC_MINKEY, config->min_key_interval, FALSE);
         break;
         
 	case IDD_QUANT :
@@ -917,6 +917,8 @@ void adv_download(HWND hDlg, int idd, CONFIG * config)
 		CONSTRAINVAL(config->curve_compression_high, 0, 100);
 		CONSTRAINVAL(config->curve_compression_low, 0, 100);
 
+		config->min_key_interval = config_get_uint(hDlg, IDC_MINKEY, config->min_key_interval);
+
 		break;
 
     case IDD_ZONE :
@@ -947,7 +949,6 @@ void adv_download(HWND hDlg, int idd, CONFIG * config)
         config->frame_drop_ratio = config_get_uint(hDlg, IDC_FRAMEDROP, config->frame_drop_ratio);
 
 		config->max_key_interval = config_get_uint(hDlg, IDC_MAXKEY, config->max_key_interval);
-		config->min_key_interval = config_get_uint(hDlg, IDC_MINKEY, config->min_key_interval);
 		break;
 
 	case IDD_QUANT :

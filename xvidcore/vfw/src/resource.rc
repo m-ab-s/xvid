@@ -63,10 +63,7 @@ BEGIN
                     SS_CENTERIMAGE
     EDITTEXT        IDC_FRAMEDROP,112,82,75,11,ES_AUTOHSCROLL | ES_NUMBER
     EDITTEXT        IDC_MAXKEY,112,100,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    EDITTEXT        IDC_MINKEY,112,120,76,12,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "Maximum I-frame interval:",IDC_STATIC,12,102,80,12,
-                    SS_CENTERIMAGE
-    LTEXT           "Minimum I-frame interval:",IDC_STATIC,12,120,94,12,
                     SS_CENTERIMAGE
     CONTROL         "Use cartoon mode",IDC_CARTOON,"Button",BS_AUTOCHECKBOX | 
                     WS_TABSTOP,13,143,74,10
@@ -138,33 +135,34 @@ STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "2nd Pass"
 FONT 8, "MS Sans Serif"
 BEGIN
-    EDITTEXT        IDC_KFBOOST,120,34,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    EDITTEXT        IDC_KFREDUCTION,120,66,75,12,ES_AUTOHSCROLL | ES_NUMBER
-    EDITTEXT        IDC_CURVECOMPH,120,130,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    EDITTEXT        IDC_CURVECOMPL,120,146,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    EDITTEXT        IDC_OVERFLOW_CONTROL_STRENGTH,120,162,76,12,
+    EDITTEXT        IDC_KFBOOST,118,34,78,12,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_KFREDUCTION,117,72,76,12,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_CURVECOMPH,118,150,75,12,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_CURVECOMPL,118,166,75,12,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_OVERFLOW_CONTROL_STRENGTH,118,182,75,12,
                     ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "Stats filename:",IDC_STATIC,8,6,52,12,SS_CENTERIMAGE
     EDITTEXT        IDC_STATS,72,6,112,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_STATS_BROWSE,188,6,16,11
-    GROUPBOX        "Two-pass tuning",IDC_STATIC,8,22,196,94
-    LTEXT           "Overflow control strength %:",IDC_STATIC,16,162,100,12,
+    GROUPBOX        "Two-pass tuning",IDC_STATIC,8,22,196,104
+    LTEXT           "Overflow control strength %:",IDC_STATIC,13,182,100,12,
                     SS_CENTERIMAGE
-    LTEXT           "High bitrate scenes %:",IDC_STATIC,16,130,100,12,
+    LTEXT           "High bitrate scenes %:",IDC_STATIC,13,150,100,12,
                     SS_CENTERIMAGE
-    LTEXT           "Low bitrate scenes %:",IDC_STATIC,16,146,100,12,
+    LTEXT           "Low bitrate scenes %:",IDC_STATIC,13,166,100,12,
                     SS_CENTERIMAGE
-    GROUPBOX        "Curve compression",IDC_STATIC,8,120,196,88
-    LTEXT           "I-frame boost %:",IDC_STATIC,16,34,100,12,
+    GROUPBOX        "Curve compression",IDC_STATIC,8,133,196,75
+    LTEXT           "I-frame boost %:",IDC_STATIC,13,34,91,12,SS_CENTERIMAGE
+    LTEXT           "...are reduced by %:",IDC_STATIC,13,73,100,12
+    EDITTEXT        IDC_OVERIMP,118,94,75,12,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_OVERDEG,118,110,75,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Max overflow improvement %:",IDC_STATIC,13,94,100,12,
                     SS_CENTERIMAGE
-    LTEXT           "CC I-frame bitrate reduction %:",IDC_STATIC,16,66,100,
+    LTEXT           "Max overflow degradation %:",IDC_STATIC,13,110,100,12,
+                    SS_CENTERIMAGE
+    EDITTEXT        IDC_MINKEY,118,56,75,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "I-frames closer than... frames:",IDC_STATIC,13,57,105,
                     12
-    EDITTEXT        IDC_OVERIMP,120,82,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    EDITTEXT        IDC_OVERDEG,120,98,76,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "Max overflow improvement %:",IDC_STATIC,16,82,100,12,
-                    SS_CENTERIMAGE
-    LTEXT           "Max overflow degradation %:",IDC_STATIC,16,98,100,12,
-                    SS_CENTERIMAGE
 END
 
 IDD_DEBUG DIALOG DISCARDABLE  0, 0, 212, 212
@@ -763,6 +761,8 @@ BEGIN
     BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 193
+        VERTGUIDE, 13
+        VERTGUIDE, 118
         TOPMARGIN, 7
     END
 
