@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_bench.c,v 1.9.2.3 2003-06-10 09:14:48 edgomez Exp $
+ * $Id: xvid_bench.c,v 1.9.2.4 2003-08-13 11:43:45 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -115,26 +115,32 @@ typedef struct {
 
 CPU cpu_list[] = 
 { { "PLAINC", 0 }
+#ifdef ARCH_IS_IA32
   , { "MMX   ", XVID_CPU_MMX }
   , { "MMXEXT", XVID_CPU_MMXEXT | XVID_CPU_MMX }
   , { "SSE2  ", XVID_CPU_SSE2 | XVID_CPU_MMX }
   , { "3DNOW ", XVID_CPU_3DNOW }
   , { "3DNOWE", XVID_CPU_3DNOWEXT }
+#endif
 //, { "IA64  ", XVID_CPU_IA64 }  
 //, { "TSC   ", XVID_CPU_TSC }
   , { 0, 0 } };
 
 CPU  cpu_short_list[] =
 { { "PLAINC", 0 }
+#ifdef ARCH_IS_IA32
   , { "MMX   ", XVID_CPU_MMX }
 //, { "MMXEXT", XVID_CPU_MMXEXT | XVID_CPU_MMX }
+#endif
 //, { "IA64  ", XVID_CPU_IA64 }
   , { 0, 0 } };
 
 CPU cpu_short_list2[] = 
 { { "PLAINC", 0 }
+#ifdef ARCH_IS_IA32
   , { "MMX   ", XVID_CPU_MMX }
   , { "SSE2  ", XVID_CPU_SSE2 | XVID_CPU_MMX }
+#endif
   , { 0, 0 } };
 
 
@@ -143,7 +149,11 @@ int init_cpu(CPU *cpu)
 	int xerr, cpu_type;
 	xvid_gbl_init_t xinit;
 
+#ifdef ARCH_IS_IA32
 	cpu_type = check_cpu_features() & cpu->cpu;
+#else
+	cpu_type = XVID_CPU_ASM;
+#endif
 	memset(&xinit, 0, sizeof(xinit));
 	xinit.cpu_flags = cpu_type | XVID_CPU_FORCE;
 	xinit.version = XVID_VERSION;

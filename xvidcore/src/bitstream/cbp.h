@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: cbp.h,v 1.9.2.1 2003-06-09 13:52:03 edgomez Exp $
+ * $Id: cbp.h,v 1.9.2.2 2003-08-13 11:43:49 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -36,10 +36,20 @@ typedef cbpFunc *cbpFuncPtr;
 extern cbpFuncPtr calc_cbp;
 
 extern cbpFunc calc_cbp_c;
+extern cbpFunc calc_cbp_plain;
+
+#ifdef ARCH_IS_IA32
 extern cbpFunc calc_cbp_mmx;
 extern cbpFunc calc_cbp_3dne;
 extern cbpFunc calc_cbp_sse2;
+#endif
+
+#ifdef ARCH_IS_PPC
 extern cbpFunc calc_cbp_ppc;
+#endif
+
+#ifdef ARCH_IS_ALTIVEC
 extern cbpFunc calc_cbp_altivec;
+#endif
 
 #endif /* _ENCODER_CBP_H_ */

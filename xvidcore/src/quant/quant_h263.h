@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: quant_h263.h,v 1.10.2.2 2003-06-09 13:55:16 edgomez Exp $
+ * $Id: quant_h263.h,v 1.10.2.3 2003-08-13 11:43:59 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -40,17 +40,29 @@ extern quanth263_intraFuncPtr quant_intra;
 extern quanth263_intraFuncPtr dequant_intra;
 
 quanth263_intraFunc quant_intra_c;
+
+#ifdef ARCH_IS_IA32
 quanth263_intraFunc quant_intra_mmx;
 quanth263_intraFunc quant_intra_3dne;
 quanth263_intraFunc quant_intra_sse2;
+#endif
+
+#ifdef ARCH_IS_IA64
 quanth263_intraFunc quant_intra_ia64;
+#endif
 
 quanth263_intraFunc dequant_intra_c;
+
+#ifdef ARCH_IS_IA32
 quanth263_intraFunc dequant_intra_mmx;
 quanth263_intraFunc dequant_intra_xmm;
 quanth263_intraFunc dequant_intra_3dne;
 quanth263_intraFunc dequant_intra_sse2;
+#endif
+
+#ifdef ARCH_IS_IA64
 quanth263_intraFunc dequant_intra_ia64;
+#endif
 
 /* inter_quant */
 typedef uint32_t(quanth263_interFunc) (int16_t * coeff,
@@ -62,10 +74,16 @@ typedef quanth263_interFunc *quanth263_interFuncPtr;
 extern quanth263_interFuncPtr quant_inter;
 
 quanth263_interFunc quant_inter_c;
+
+#ifdef ARCH_IS_IA32
 quanth263_interFunc quant_inter_mmx;
 quanth263_interFunc quant_inter_3dne;
 quanth263_interFunc quant_inter_sse2;
+#endif
+
+#ifdef ARCH_IS_IA64
 quanth263_interFunc quant_inter_ia64;
+#endif
 
 /* inter_dequant */
 typedef void (dequanth263_interFunc) (int16_t * coeff,
@@ -77,10 +95,16 @@ typedef dequanth263_interFunc *dequanth263_interFuncPtr;
 extern dequanth263_interFuncPtr dequant_inter;
 
 dequanth263_interFunc dequant_inter_c;
+
+#ifdef ARCH_IS_IA32
 dequanth263_interFunc dequant_inter_mmx;
 dequanth263_interFunc dequant_inter_xmm;
 dequanth263_interFunc dequant_inter_3dne;
 dequanth263_interFunc dequant_inter_sse2;
+#endif
+
+#ifdef ARCH_IS_IA64
 dequanth263_interFunc dequant_inter_ia64;
+#endif
 
 #endif							/* _QUANT_H263_H_ */

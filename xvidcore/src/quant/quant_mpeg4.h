@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: quant_mpeg4.h,v 1.7.2.2 2003-06-09 13:55:27 edgomez Exp $
+ * $Id: quant_mpeg4.h,v 1.7.2.3 2003-08-13 11:44:00 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -40,12 +40,18 @@ extern quant_intraFuncPtr quant4_intra;
 extern quant_intraFuncPtr dequant4_intra;
 
 quant_intraFunc quant4_intra_c;
+
+#ifdef ARCH_IS_IA32
 quant_intraFunc quant4_intra_mmx;
 quant_intraFunc quant4_intra_xmm;
+#endif
 
 quant_intraFunc dequant4_intra_c;
+
+#ifdef ARCH_IS_IA32
 quant_intraFunc dequant4_intra_mmx;
 quant_intraFunc dequant4_intra_3dne;
+#endif
 
 /* inter_quant */
 typedef uint32_t(quant_interFunc) (int16_t * coeff,
@@ -57,8 +63,11 @@ typedef quant_interFunc *quant_interFuncPtr;
 extern quant_interFuncPtr quant4_inter;
 
 quant_interFunc quant4_inter_c;
+
+#ifdef ARCH_IS_IA32
 quant_interFunc quant4_inter_mmx;
 quant_interFunc quant4_inter_xmm;
+#endif
 
 /*inter_dequant */
 typedef void (dequant_interFunc) (int16_t * coeff,
@@ -70,7 +79,10 @@ typedef dequant_interFunc *dequant_interFuncPtr;
 extern dequant_interFuncPtr dequant4_inter;
 
 dequant_interFunc dequant4_inter_c;
+
+#ifdef ARCH_IS_IA32
 dequant_interFunc dequant4_inter_mmx;
 dequant_interFunc dequant4_inter_3dne;
+#endif
 
 #endif							/* _QUANT_MPEG4_H_ */

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: interpolate8x8.h,v 1.10.2.3 2003-07-13 10:01:00 syskin Exp $
+ * $Id: interpolate8x8.h,v 1.10.2.4 2003-08-13 11:43:57 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -96,6 +96,7 @@ INTERPOLATE8X8 interpolate8x8_halfpel_h_c;
 INTERPOLATE8X8 interpolate8x8_halfpel_v_c;
 INTERPOLATE8X8 interpolate8x8_halfpel_hv_c;
 
+#ifdef ARCH_IS_IA32
 INTERPOLATE8X8 interpolate8x8_halfpel_h_mmx;
 INTERPOLATE8X8 interpolate8x8_halfpel_v_mmx;
 INTERPOLATE8X8 interpolate8x8_halfpel_hv_mmx;
@@ -111,16 +112,21 @@ INTERPOLATE8X8 interpolate8x8_halfpel_hv_3dn;
 INTERPOLATE8X8 interpolate8x8_halfpel_h_3dne;
 INTERPOLATE8X8 interpolate8x8_halfpel_v_3dne;
 INTERPOLATE8X8 interpolate8x8_halfpel_hv_3dne;
+#endif
 
+#ifdef ARCH_IS_IA64
 INTERPOLATE8X8 interpolate8x8_halfpel_h_ia64;
 INTERPOLATE8X8 interpolate8x8_halfpel_v_ia64;
 INTERPOLATE8X8 interpolate8x8_halfpel_hv_ia64;
+#endif
 
 INTERPOLATE8X8_AVG2 interpolate8x8_avg2_c;
 INTERPOLATE8X8_AVG4 interpolate8x8_avg4_c;
 
+#ifdef ARCH_IS_IA32
 INTERPOLATE8X8_AVG2 interpolate8x8_avg2_mmx;
 INTERPOLATE8X8_AVG4 interpolate8x8_avg4_mmx;
+#endif
 
 INTERPOLATE_LOWPASS interpolate8x8_lowpass_h_c;
 INTERPOLATE_LOWPASS interpolate8x8_lowpass_v_c;
@@ -134,8 +140,10 @@ INTERPOLATE_LOWPASS_HV interpolate16x16_lowpass_hv_c;
 INTERPOLATE8X8_6TAP_LOWPASS interpolate8x8_6tap_lowpass_h_c;
 INTERPOLATE8X8_6TAP_LOWPASS interpolate8x8_6tap_lowpass_v_c;
 
+#ifdef ARCH_IS_IA32
 INTERPOLATE8X8_6TAP_LOWPASS interpolate8x8_6tap_lowpass_h_mmx;
 INTERPOLATE8X8_6TAP_LOWPASS interpolate8x8_6tap_lowpass_v_mmx;
+#endif
 
 static __inline void
 interpolate8x8_switch(uint8_t * const cur,

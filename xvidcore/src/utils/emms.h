@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: emms.h,v 1.13.2.1 2003-06-09 13:55:32 edgomez Exp $
+ * $Id: emms.h,v 1.13.2.2 2003-08-13 11:44:02 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -40,8 +40,11 @@ extern emmsFuncPtr emms;
 /* Implemented functions */
 
 emmsFunc emms_c;
+
+#ifdef ARCH_IS_IA32
 emmsFunc emms_mmx;
 emmsFunc emms_3dn;
+#endif
 
 /*****************************************************************************
  * Prototypes

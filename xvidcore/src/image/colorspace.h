@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: colorspace.h,v 1.5.2.2 2003-06-09 13:53:27 edgomez Exp $
+ * $Id: colorspace.h,v 1.5.2.3 2003-08-13 11:43:55 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -91,6 +91,7 @@ packedFunc yuyvi_to_yv12_c;
 packedFunc uyvyi_to_yv12_c;
 
 
+#ifdef ARCH_IS_IA32
 /* mmx */
 packedFunc bgr_to_yv12_mmx;
 packedFunc bgra_to_yv12_mmx;
@@ -104,6 +105,7 @@ packedFunc uyvy_to_yv12_3dn;
 /* xmm */
 packedFunc yuyv_to_yv12_xmm;
 packedFunc uyvy_to_yv12_xmm;
+#endif
 
 
 /* yv12_to_xxx colorspace conversion functions (decoder) */
@@ -145,6 +147,7 @@ packedFunc yv12_to_rgbai_c;
 packedFunc yv12_to_yuyvi_c;
 packedFunc yv12_to_uyvyi_c;
 
+#ifdef ARCH_IS_IA32
 /* mmx */
 packedFunc yv12_to_bgr_mmx;
 packedFunc yv12_to_bgra_mmx;
@@ -153,6 +156,7 @@ packedFunc yv12_to_uyvy_mmx;
 
 packedFunc yv12_to_yuyvi_mmx;
 packedFunc yv12_to_uyvyi_mmx;
+#endif
 
 
 typedef void (planarFunc) (
@@ -166,8 +170,11 @@ typedef planarFunc *planarFuncPtr;
 extern planarFuncPtr yv12_to_yv12;
 
 planarFunc yv12_to_yv12_c;
+
+#ifdef ARCH_IS_IA32
 planarFunc yv12_to_yv12_mmx;
 planarFunc yv12_to_yv12_xmm;
+#endif
 
 
 #endif							/* _COLORSPACE_H_ */

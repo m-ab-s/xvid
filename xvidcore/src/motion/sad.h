@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: sad.h,v 1.18.2.1 2003-06-09 13:54:51 edgomez Exp $
+ * $Id: sad.h,v 1.18.2.2 2003-08-13 11:43:59 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -43,12 +43,21 @@ typedef uint32_t(sad16Func) (const uint8_t * const cur,
 typedef sad16Func *sad16FuncPtr;
 extern sad16FuncPtr sad16;
 sad16Func sad16_c;
+
+#ifdef ARCH_IS_IA32
 sad16Func sad16_mmx;
 sad16Func sad16_xmm;
 sad16Func sad16_3dne;
 sad16Func sad16_sse2;
+#endif
+
+#ifdef ARCH_IS_ALTIVEC
 sad16Func sad16_altivec;
+#endif
+
+#ifdef ARCH_IS_IA64
 sad16Func sad16_ia64;
+#endif
 
 sad16Func mrsad16_c;
 
@@ -58,12 +67,20 @@ typedef uint32_t(sad8Func) (const uint8_t * const cur,
 typedef sad8Func *sad8FuncPtr;
 extern sad8FuncPtr sad8;
 sad8Func sad8_c;
+
+#ifdef ARCH_IS_IA32
 sad8Func sad8_mmx;
 sad8Func sad8_xmm;
 sad8Func sad8_3dne;
-sad8Func sad8_altivec;
-sad8Func sad8_ia64;
+#endif
 
+#ifdef ARCH_IS_ALTIVEC
+sad8Func sad8_altivec;
+#endif
+
+#ifdef ARCH_IS_IA64
+sad8Func sad8_ia64;
+#endif
 
 typedef uint32_t(sad16biFunc) (const uint8_t * const cur,
 							   const uint8_t * const ref1,
@@ -72,12 +89,17 @@ typedef uint32_t(sad16biFunc) (const uint8_t * const cur,
 typedef sad16biFunc *sad16biFuncPtr;
 extern sad16biFuncPtr sad16bi;
 sad16biFunc sad16bi_c;
-sad16biFunc sad16bi_ia64;
+
+#ifdef ARCH_IS_IA32
 sad16biFunc sad16bi_mmx;
 sad16biFunc sad16bi_xmm;
 sad16biFunc sad16bi_3dne;
 sad16biFunc sad16bi_3dn;
+#endif
 
+#ifdef ARCH_IS_IA64
+sad16biFunc sad16bi_ia64;
+#endif
 
 typedef uint32_t(sad8biFunc) (const uint8_t * const cur,
 							   const uint8_t * const ref1,
@@ -86,10 +108,13 @@ typedef uint32_t(sad8biFunc) (const uint8_t * const cur,
 typedef sad8biFunc *sad8biFuncPtr;
 extern sad8biFuncPtr sad8bi;
 sad8biFunc sad8bi_c;
+
+#ifdef ARCH_IS_IA32
 sad8biFunc sad8bi_mmx;
 sad8biFunc sad8bi_xmm;
 sad8biFunc sad8bi_3dne;
 sad8biFunc sad8bi_3dn;
+#endif
 
 
 typedef uint32_t(dev16Func) (const uint8_t * const cur,
@@ -97,24 +122,36 @@ typedef uint32_t(dev16Func) (const uint8_t * const cur,
 typedef dev16Func *dev16FuncPtr;
 extern dev16FuncPtr dev16;
 dev16Func dev16_c;
+
+#ifdef ARCH_IS_IA32
 dev16Func dev16_mmx;
 dev16Func dev16_xmm;
 dev16Func dev16_3dne;
 dev16Func dev16_sse2;
+#endif
+
+#ifdef ARCH_IS_ALTIVEC
 dev16Func dev16_altivec;
+#endif
+
+#ifdef ARCH_IS_IA64
 dev16Func dev16_ia64;
+#endif
 
 typedef uint32_t (sad16vFunc)(	const uint8_t * const cur,
 								const uint8_t * const ref,
 								const uint32_t stride, int32_t *sad8);
 typedef sad16vFunc *sad16vFuncPtr;
 extern sad16vFuncPtr sad16v;
-sad16vFunc sad16v_xmm;
-sad16vFunc sad16v_mmx;
+
 sad16vFunc sad16v_c;
 sad16vFunc sad32v_c;
 sad16vFunc mrsad16v;
 sad16vFunc mrsad16v_c;
+
+#ifdef ARCH_IS_IA32
+sad16vFunc sad16v_xmm;
+sad16vFunc sad16v_mmx;
 
 int32_t sad8x8mean_mmx(	const uint8_t * const current,
 						const uint8_t * const reference,
@@ -122,5 +159,6 @@ int32_t sad8x8mean_mmx(	const uint8_t * const current,
 						const int mean);
 
 void sad16x8total_mmx(const uint8_t *, const uint32_t, int32_t[]);
+#endif
 
 #endif							/* _ENCODER_SAD_H_ */

@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: idct.h,v 1.8.2.1 2003-06-09 13:53:06 edgomez Exp $
+ * $Id: idct.h,v 1.8.2.2 2003-08-13 11:43:53 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -35,16 +35,23 @@ typedef idctFunc *idctFuncPtr;
 extern idctFuncPtr idct;
 
 idctFunc idct_int32;
+idctFunc simple_idct_c;		/* Michael Niedermayer */
 
+#ifdef ARCH_IS_IA32
 idctFunc idct_mmx;			/* AP-992, Peter Gubanov, Michel Lespinasse */
 idctFunc idct_xmm;			/* AP-992, Peter Gubanov, Michel Lespinasse */
 idctFunc idct_3dne;			/* AP-992, Peter Gubanov, Michel Lespinasse, Jaan Kalda */
 idctFunc idct_sse2;			/* Dmitry Rozhdestvensky */
-idctFunc simple_idct_c;		/* Michael Niedermayer */
 idctFunc simple_idct_mmx;	/* Michael Niedermayer; expects permutated data */
 idctFunc simple_idct_mmx2;	/* Michael Niedermayer */
+#endif
 
+#ifdef ARCH_IS_ALTIVEC
 idctFunc idct_altivec;
+#endif
+
+#ifdef ARCH_IS_IA64
 idctFunc idct_ia64;
+#endif
 
 #endif							/* _IDCT_H_ */
