@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.23 2003-05-15 17:21:08 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.24 2003-05-15 17:53:11 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -87,27 +87,24 @@ static xvid_vop_t const vop_presets[] = {
 	0,
 
 	/* quality 1 */
-	XVID_VOP_DYNAMIC_BFRAMES,
+	0,
 
 	/* quality 2 */
-	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL,
+	XVID_VOP_HALFPEL,
 
 	/* quality 3 */
-	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL |
-	XVID_VOP_INTER4V,
+	XVID_VOP_HALFPEL | XVID_VOP_INTER4V,
 
 	/* quality 4 */
-	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL |
-	XVID_VOP_INTER4V,
+	XVID_VOP_HALFPEL | XVID_VOP_INTER4V,
 
 	/* quality 5 */
-	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL |
-	XVID_VOP_INTER4V | XVID_VOP_TRELLISQUANT,
+	XVID_VOP_HALFPEL | XVID_VOP_INTER4V |
+	XVID_VOP_TRELLISQUANT,
 
 	/* quality 6 */
-	XVID_VOP_DYNAMIC_BFRAMES | XVID_VOP_HALFPEL |
-	XVID_VOP_INTER4V | XVID_VOP_TRELLISQUANT |
-	XVID_VOP_HQACPRED,
+	XVID_VOP_HALFPEL | XVID_VOP_INTER4V |
+	XVID_VOP_TRELLISQUANT | XVID_VOP_HQACPRED,
 
 };
 #define VOP_ELEMENTS (sizeof(vop_presets)/sizeof(vop_presets[0]))
