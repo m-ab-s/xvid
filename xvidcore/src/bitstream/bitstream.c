@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.c,v 1.39.2.13 2003-06-12 14:16:41 Isibaar Exp $
+ * $Id: bitstream.c,v 1.39.2.14 2003-06-29 16:17:51 chl Exp $
  *
  ****************************************************************************/
 
@@ -1185,7 +1185,7 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	if (vol_ver_id != 1) 
 	{	if ((pParam->vol_flags & XVID_VOL_GMC))
 		{	BitstreamPutBits(bs, 2, 2);		/* sprite_enable=='GMC' */
-			BitstreamPutBits(bs, 2, 6);		/* no_of_sprite_warping_points */
+			BitstreamPutBits(bs, 3, 6);		/* no_of_sprite_warping_points */
 			BitstreamPutBits(bs, 3, 2);		/* sprite_warping_accuracy 0==1/2, 1=1/4, 2=1/8, 3=1/16 */
 			BitstreamPutBit(bs, 0);			/* sprite_brightness_change (not supported) */
 
@@ -1322,7 +1322,7 @@ BitstreamWriteVopHeader(
 	if (frame->coding_type == S_VOP) {
 		if (1)	{		/* no_of_sprite_warping_points>=1 (we use 2!) */
 			int k;
-			for (k=0;k<2;k++)
+			for (k=0;k<3;k++)
 			{
 				bs_put_spritetrajectory(bs, frame->warp.duv[k].x ); /* du[k]  */
 				WRITE_MARKER();
