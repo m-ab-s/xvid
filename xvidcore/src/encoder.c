@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.45 2003-10-07 13:02:35 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.46 2003-10-27 00:50:05 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -994,7 +994,9 @@ repeat:
 				SWAP(FRAMEINFO*, pEnc->current, pEnc->bframes[pEnc->bframenum_tail]);
 
 				/* convert B-VOP to P-VOP */
-                pEnc->current->quant = ((pEnc->current->quant*100) - pEnc->mbParam.bquant_offset) / pEnc->mbParam.bquant_ratio;
+                pEnc->current->quant  = 100*pEnc->current->quant - pEnc->mbParam.bquant_offset;
+				pEnc->current->quant += pEnc->mbParam.bquant_ratio - 1; /* to avoid rouding issues */
+				pEnc->current->quant /= pEnc->mbParam.bquant_ratio;
 
                 if ((pEnc->mbParam.plugin_flags & XVID_REQORIGINAL)) {
 		            image_copy(&pEnc->sOriginal, &pEnc->current->image,
@@ -1161,7 +1163,9 @@ repeat:
 		}
 
 		/* convert B-VOP quant to P-VOP */
-		pEnc->current->quant = ((pEnc->current->quant*100) - pEnc->mbParam.bquant_offset) / pEnc->mbParam.bquant_ratio;
+		pEnc->current->quant  = 100*pEnc->current->quant - pEnc->mbParam.bquant_offset;
+		pEnc->current->quant += pEnc->mbParam.bquant_ratio - 1; /* to avoid rouding issues */
+		pEnc->current->quant /= pEnc->mbParam.bquant_ratio;
         type = P_VOP;
     }
 
