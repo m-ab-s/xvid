@@ -265,6 +265,7 @@ dnl ==========================================================================
 AC_MSG_CHECKING(for platform specific LDFLAGS/CFLAGS)
 SPECIFIC_LDFLAGS=""
 SPECIFIC_CFLAGS=""
+PRE_SHARED_LIB=""
 case "$target_os" in
      *bsd*|linux*|irix*|solaris*)
 	AC_MSG_RESULT([ok])
@@ -289,9 +290,10 @@ case "$target_os" in
 	   SHARED_LIB="libxvidcore.\$(API_MAJOR).\$(SHARED_EXTENSION)"
 	   SPECIFIC_LDFLAGS="-dynamiclib -flat_namespace -compatibility_version \$(API_MAJOR) -current_version \$(API_MINOR) -install_name \$(libdir)/\$(SHARED_LIB)"
 	else 
-	   AC_MSG_RESULT(["module options])
-	   SHARED_LIB="libxvidcore.\$(SHARED_EXTENSION)-temp.o"
-	   SPECIFIC_LDFLAGS="-r -keep_private_externs -nostdlib && \$(CC) \$(LDFLAGS) \$(SHARED_LIB) -o libxvidcore.\$(SHARED_EXTENSION).\$(API_MAJOR) -bundle -flat_namespace -undefined suppress"
+	   AC_MSG_RESULT([module options])
+ 	   PRE_SHARED_LIB="libxvidcore.\$(SHARED_EXTENSION)-temp.o"
+	   SHARED_LIB="libxvidcore.\$(SHARED_EXTENSION).\$(API_MAJOR)"
+	   SPECIFIC_LDFLAGS="-r -keep_private_externs -nostdlib && \$(CC) \$(LDFLAGS) \$(PRE_SHARED_LIB) -o libxvidcore.\$(SHARED_EXTENSION).\$(API_MAJOR) -bundle -flat_namespace -undefined suppress"
 	fi
 	;;
      beos)
@@ -309,6 +311,10 @@ case "$target_os" in
 	SPECIFIC_CFLAGS=""
 	;;
 esac
+
+if test x"$PRE_SHARED_LIB" = x; then 
+  PRE_SHARED_LIB=$SHARED_LIB
+fi
 
 dnl ==========================================================================
 dnl
@@ -492,6 +498,7 @@ AC_SUBST(RANLIB)
 AC_SUBST(API_MAJOR)
 AC_SUBST(API_MINOR)
 AC_SUBST(STATIC_LIB)
+AC_SUBST(PRE_SHARED_LIB)
 AC_SUBST(SHARED_LIB)
 
 dnl ==========================================================================

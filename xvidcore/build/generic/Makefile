@@ -86,7 +86,7 @@ $(STATIC_LIB): $(OBJECTS)
 $(SHARED_LIB): $(OBJECTS)
 	@echo
 	@echo -n "Linking the shared library... "
-	@$(CC) $(LDFLAGS) $(OBJECTS) -o $(SHARED_LIB) $(SPECIFIC_LDFLAGS)
+	@$(CC) $(LDFLAGS) $(OBJECTS) -o $(PRE_SHARED_LIB) $(SPECIFIC_LDFLAGS)
 	@echo "Done"
 
 #-----------------------------------------------------------------------------
