@@ -19,10 +19,9 @@ nasm_prog="nasm"
 
 dnl Default CFLAGS -- Big impact on overall speed
 our_cflags_defaults="-Wall"
-our_cflags_defaults="$our_cflags_defaults -O1"
+our_cflags_defaults="$our_cflags_defaults -O2"
 our_cflags_defaults="$our_cflags_defaults -fstrength-reduce"
 our_cflags_defaults="$our_cflags_defaults -finline-functions"
-our_cflags_defaults="$our_cflags_defaults -fgcse"
 our_cflags_defaults="$our_cflags_defaults -freduce-all-givs"
 our_cflags_defaults="$our_cflags_defaults -ffast-math"
 our_cfalgs_defaults="$our_cflags_defaults -fomit-frame-pointer"
