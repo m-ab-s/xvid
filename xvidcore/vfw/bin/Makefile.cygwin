@@ -6,13 +6,13 @@
 # Modified by : Edouard Gomez <ed.gomez at free.fr>
 #               Peter Ross <pross@xvid.org>
 #
-# $Id: Makefile.cygwin,v 1.1.2.1 2003-10-03 19:59:16 edgomez Exp $
+# $Id: Makefile.cygwin,v 1.1.2.2 2003-10-04 00:38:49 edgomez Exp $
 ##############################################################################
 
 include Makefile.inc
 
-XVIDCOREINC=/usr/local/include
-XVIDCORELIB=/usr/local/lib
+LOCAL_XVID_SRCTREE=../../src
+LOCAL_XVID_BUILDTREE=../../build/generic/=build
 
 RM = rm -rf
 
@@ -21,7 +21,7 @@ RM = rm -rf
 
 # Constants which should not be modified
 # The `mingw-runtime` package is required when building with -mno-cygwin
-CFLAGS += -I$(SRCDIR)/w32api -I$(XVIDCOREINC)
+CFLAGS += -I$(SRCDIR)/w32api -I$(LOCAL_XVID_SRCTREE)
 CFLAGS += -D_WIN32_IE=0x0500
 CFLAGS += -mno-cygwin
 
@@ -32,9 +32,6 @@ CFLAGS += -mno-cygwin
   # Warning level options
       # Shows all warnings
   CFLAGS += -Wall
-      # To detect non ANSI C code (xvid is not ANSI C (yet?))
-  # CFLAGS += -pedantic
-
 
   # General Optimization options
       # Optimize code for size (implies -O2)
@@ -61,8 +58,8 @@ all: $(LIBSO)
 
 $(LIBSO): $(SRC:.c=.o) $(SRC_RES:.rc=.res.o)
 	$(CC) $(CFLAGS) -shared -Wl,-dll,--out-implib,$@.a,--enable-stdcall-fixup \
-		 -o $@ $^ ../src/driverproc.def -L$(XVIDCORELIB) \
-		 -lxvidcore -lgdi32 -lwinmm -lcomdlg32 -lcomctl32
+		 -o $@ $^ $(LOCAL_XVID_BUILDTREE)/libxvidcore.a $(SRCDIR)/driverproc.def \
+		 -lgdi32 -lwinmm -lcomdlg32 -lcomctl32
 
 clean:
 	$(RM) $(SRC:.c=.o) $(SRC_RES:.rc=.res.o)

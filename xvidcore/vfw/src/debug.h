@@ -19,9 +19,10 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: debug.h,v 1.1.2.2 2003-06-09 13:55:56 edgomez Exp $
+ * $Id: debug.h,v 1.1.2.3 2003-10-04 00:38:49 edgomez Exp $
  *
  ****************************************************************************/
+
 #ifndef _DEBUG_H_
 #define _DEBUG_H_
 
@@ -41,4 +42,4 @@ static __inline void DPRINTF(char *fmt, ...)
 static __inline void DPRINTF(char *fmt, ...) { }
 #endif
 
-#endif _DEBUG_H_
+#endif /* _DEBUG_H_ */
