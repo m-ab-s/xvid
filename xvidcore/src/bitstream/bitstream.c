@@ -173,7 +173,7 @@ read_video_packet_header(Bitstream *bs,
 
 	if (dec->shape != VIDOBJLAY_SHAPE_BINARY_ONLY)
 	{
-		*quant = BitstreamGetBits(bs, 5);	/* quant_scale */
+		*quant = BitstreamGetBits(bs, dec->quant_bits);	/* quant_scale */	
 		DPRINTF(DPRINTF_HEADER, "quant %i", *quant);
 	}
 
@@ -326,7 +326,7 @@ read_vop_complexity_estimation_header(Bitstream * bs, DECODER * dec, int coding_
 {
 	ESTIMATION * e = &dec->estimation;
 
-	if (e->method == 0) 
+	if (e->method == 0 || e->method == 1)
 	{
 		if (coding_type == I_VOP) {
 			if (e->opaque)		BitstreamSkip(bs, 8);	/* dcecs_opaque */
@@ -1114,6 +1114,8 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 						const MBParam * pParam,
 						const FRAMEINFO * const frame)
 {
+	static const vo_id = 0;
+	static const vol_id = 0;
 	int vol_ver_id=1;
 
 	if ( pParam->m_quarterpel ||  (frame->global_flags & XVID_GMC) || 
@@ -1122,12 +1124,10 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	
 	// video object_start_code & vo_id
 	BitstreamPad(bs);
-	BitstreamPutBits(bs, VO_START_CODE, 27);
-	BitstreamPutBits(bs, 0, 5);
+	BitstreamPutBits(bs, VIDOBJ_START_CODE|(vo_id&0x5), 32);
 
 	// video_object_layer_start_code & vol_id
-	BitstreamPutBits(bs, VOL_START_CODE, 28);
-	BitstreamPutBits(bs, 0, 4);
+	BitstreamPutBits(bs, VIDOBJLAY_START_CODE|(vol_id&0x4), 32);
 
 	BitstreamPutBit(bs, 0);		// random_accessible_vol
 	BitstreamPutBits(bs, 0, 8);	// video_object_type_indication

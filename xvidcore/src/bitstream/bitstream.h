@@ -59,6 +59,8 @@
 
 // comment any #defs we dont use
 
+/* start codes */
+
 #define VIDOBJ_START_CODE		0x00000100	/* ..0x0000011f  */
 #define VIDOBJLAY_START_CODE	0x00000120	/* ..0x0000012f */
 #define VISOBJSEQ_START_CODE	0x000001b0
@@ -67,8 +69,8 @@
 #define GRPOFVOP_START_CODE		0x000001b3
 //#define VIDSESERR_ERROR_CODE  0x000001b4
 #define VISOBJ_START_CODE		0x000001b5
-//#define SLICE_START_CODE      0x000001b7
-//#define EXT_START_CODE        0x000001b8
+#define VOP_START_CODE			0x000001b6
+//#define STUFFING_START_CODE	0x000001c3
 
 
 #define VISOBJ_TYPE_VIDEO				1
@@ -112,9 +114,6 @@
 #define SPRITE_GMC		2
 
 
-#define VO_START_CODE	0x8
-#define VOL_START_CODE	0x12
-#define VOP_START_CODE	0x1b6
 
 #define READ_MARKER()	BitstreamSkip(bs, 1)
 #define WRITE_MARKER()	BitstreamPutBit(bs, 1)
