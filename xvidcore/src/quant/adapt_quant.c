@@ -130,8 +130,14 @@ adaptive_quantization(unsigned char *buf,
 			}
 		}
 	}
+
+	i = normalize_quantizer_field(quant, intquant,
+								  mb_width * mb_height,
+								  min_quant, max_quant);
+
 	free(val);
 	free(quant);
-	return normalize_quantizer_field(quant, intquant, mb_width * mb_height,
-									 min_quant, max_quant);
+
+	return(i);
+
 }
