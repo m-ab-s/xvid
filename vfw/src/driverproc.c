@@ -62,7 +62,7 @@ __declspec(dllexport) LRESULT WINAPI DriverProc(
 
 	case DRV_LOAD :
 	case DRV_FREE :
-		DRV_OK;
+		return DRV_OK;
 
 	case DRV_OPEN :
 		DEBUG("DRV_OPEN");
@@ -145,8 +145,6 @@ __declspec(dllexport) LRESULT WINAPI DriverProc(
 						
 			return lParam2; /* size of struct */
 		}
-		DEBUG("ICM_GETINFO end");
-
 		
 		/* state control */
 
