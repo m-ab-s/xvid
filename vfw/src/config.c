@@ -23,6 +23,7 @@
  *
  *	History:
  *
+ *	15.06.2002	added bframes options
  *	21.04.2002	fixed custom matrix support, tried to get dll size down
  *	17.04.2002	re-enabled lumi masking in 1st pass
  *	15.04.2002	updated cbr support
@@ -85,6 +86,11 @@ REG_INT const reg_ints[] = {
 	{"min_key_interval",		&reg.min_key_interval,			1},
 	{"lum_masking",				&reg.lum_masking,				0},
 	{"interlacing",				&reg.interlacing,				0},
+#ifdef BFRAMES
+	{"max_bframes",				&reg.max_bframes,				0},
+	{"bquant_ratio",			&reg.bquant_ratio,				200},
+	{"packed",					&reg.packed,					1},
+#endif BFRAMES
 
 	{"min_iquant",				&reg.min_iquant,				1},
 	{"max_iquant",				&reg.max_iquant,				31},
@@ -275,7 +281,17 @@ void config_reg_default(CONFIG * config)
 
 /* leaves current config value if dialog item is empty */
 
-int config_get_int(HWND hDlg, UINT item, int config)
+int config_get_int(HWND hDlg, INT item, int config)
+{
+	BOOL success = FALSE;
+
+	int tmp = GetDlgItemInt(hDlg, item, &success, TRUE);
+
+	return (success) ? tmp : config;
+}
+
+
+int config_get_uint(HWND hDlg, UINT item, int config)
 {
 	BOOL success = FALSE;
 
@@ -293,19 +309,19 @@ void main_download(HWND hDlg, CONFIG * config)
 	{
 	default :
 	case DLG_MODE_CBR :
-		config->rc_bitrate = config_get_int(hDlg, IDC_VALUE, config->rc_bitrate) * CONFIG_KBPS;
+		config->rc_bitrate = config_get_uint(hDlg, IDC_VALUE, config->rc_bitrate) * CONFIG_KBPS;
 		break;
 
 	case DLG_MODE_VBR_QUAL :
-		config->quality = config_get_int(hDlg, IDC_VALUE, config->quality);
+		config->quality = config_get_uint(hDlg, IDC_VALUE, config->quality);
 		break;
 
 	case DLG_MODE_VBR_QUANT :
-		config->quant = config_get_int(hDlg, IDC_VALUE, config->quant);
+		config->quant = config_get_uint(hDlg, IDC_VALUE, config->quant);
 		break;
 
 	case DLG_MODE_2PASS_2_INT :
-		config->desired_size = config_get_int(hDlg, IDC_VALUE, config->desired_size);
+		config->desired_size = config_get_uint(hDlg, IDC_VALUE, config->desired_size);
 		break;
 	}
 
@@ -596,6 +612,11 @@ void adv_upload(HWND hDlg, int page, CONFIG * config)
 		SetDlgItemInt(hDlg, IDC_MINKEY, config->min_key_interval, FALSE);
 		CheckDlgButton(hDlg, IDC_LUMMASK, config->lum_masking ? BST_CHECKED : BST_UNCHECKED);
 		CheckDlgButton(hDlg, IDC_INTERLACING, config->interlacing ? BST_CHECKED : BST_UNCHECKED);
+#ifdef BFRAMES
+		SetDlgItemInt(hDlg, IDC_MAXBFRAMES, config->max_bframes, TRUE);
+		SetDlgItemInt(hDlg, IDC_BQUANTRATIO, config->bquant_ratio, FALSE);
+		CheckDlgButton(hDlg, IDC_PACKED, config->packed ? BST_CHECKED : BST_UNCHECKED);
+#endif
 		break;
 
 	case DLG_QUANT :
@@ -702,17 +723,22 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 		config->motion_search = SendDlgItemMessage(hDlg, IDC_MOTION, CB_GETCURSEL, 0, 0);
 		config->quant_type = SendDlgItemMessage(hDlg, IDC_QUANTTYPE, CB_GETCURSEL, 0, 0);
 		config->fourcc_used = SendDlgItemMessage(hDlg, IDC_FOURCC, CB_GETCURSEL, 0, 0);
-		config->max_key_interval = config_get_int(hDlg, IDC_MAXKEY, config->max_key_interval);
-		config->min_key_interval = config_get_int(hDlg, IDC_MINKEY, config->min_key_interval);
+		config->max_key_interval = config_get_uint(hDlg, IDC_MAXKEY, config->max_key_interval);
+		config->min_key_interval = config_get_uint(hDlg, IDC_MINKEY, config->min_key_interval);
 		config->lum_masking = ISDLGSET(IDC_LUMMASK);
 		config->interlacing = ISDLGSET(IDC_INTERLACING);
+#ifdef BFRAMES
+		config->max_bframes = config_get_int(hDlg, IDC_MAXBFRAMES, config->max_bframes);
+		config->bquant_ratio = config_get_uint(hDlg, IDC_BQUANTRATIO, config->bquant_ratio);
+		config->packed = ISDLGSET(IDC_PACKED);
+#endif
 		break;
 
 	case DLG_QUANT :
-		config->min_iquant = config_get_int(hDlg, IDC_MINIQUANT, config->min_iquant);
-		config->max_iquant = config_get_int(hDlg, IDC_MAXIQUANT, config->max_iquant);
-		config->min_pquant = config_get_int(hDlg, IDC_MINPQUANT, config->min_pquant);
-		config->max_pquant = config_get_int(hDlg, IDC_MAXPQUANT, config->max_pquant);
+		config->min_iquant = config_get_uint(hDlg, IDC_MINIQUANT, config->min_iquant);
+		config->max_iquant = config_get_uint(hDlg, IDC_MAXIQUANT, config->max_iquant);
+		config->min_pquant = config_get_uint(hDlg, IDC_MINPQUANT, config->min_pquant);
+		config->max_pquant = config_get_uint(hDlg, IDC_MAXPQUANT, config->max_pquant);
 
 		CONSTRAINVAL(config->min_iquant, 1, 31);
 		CONSTRAINVAL(config->max_iquant, config->min_iquant, 31);
@@ -726,7 +752,7 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 		config->dummy2pass = ISDLGSET(IDC_DUMMY2PASS);
 		config->curve_compression_high = GetDlgItemInt(hDlg, IDC_CURVECOMPH, NULL, FALSE);
 		config->curve_compression_low = GetDlgItemInt(hDlg, IDC_CURVECOMPL, NULL, FALSE);
-		config->bitrate_payback_delay = config_get_int(hDlg, IDC_PAYBACK, config->bitrate_payback_delay);
+		config->bitrate_payback_delay = config_get_uint(hDlg, IDC_PAYBACK, config->bitrate_payback_delay);
 		config->bitrate_payback_method = ISDLGSET(IDC_PAYBACKPROP);
 		config->hinted_me = ISDLGSET(IDC_HINTEDME);
 
@@ -753,21 +779,21 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 		config->use_alt_curve = ISDLGSET(IDC_USEALT);
 
 		config->alt_curve_use_auto = ISDLGSET(IDC_USEAUTO);
-		config->alt_curve_auto_str = config_get_int(hDlg, IDC_AUTOSTR, config->alt_curve_auto_str);
+		config->alt_curve_auto_str = config_get_uint(hDlg, IDC_AUTOSTR, config->alt_curve_auto_str);
 
 		config->alt_curve_use_auto_bonus_bias = ISDLGSET(IDC_USEAUTOBONUS);
-		config->alt_curve_bonus_bias = config_get_int(hDlg, IDC_BONUSBIAS, config->alt_curve_bonus_bias);
+		config->alt_curve_bonus_bias = config_get_uint(hDlg, IDC_BONUSBIAS, config->alt_curve_bonus_bias);
 
 		config->alt_curve_type = SendDlgItemMessage(hDlg, IDC_CURVETYPE, CB_GETCURSEL, 0, 0);
-		config->alt_curve_high_dist = config_get_int(hDlg, IDC_ALTCURVEHIGH, config->alt_curve_high_dist);
-		config->alt_curve_low_dist = config_get_int(hDlg, IDC_ALTCURVELOW, config->alt_curve_low_dist);
-		config->alt_curve_min_rel_qual = config_get_int(hDlg, IDC_MINQUAL, config->alt_curve_min_rel_qual);
+		config->alt_curve_high_dist = config_get_uint(hDlg, IDC_ALTCURVEHIGH, config->alt_curve_high_dist);
+		config->alt_curve_low_dist = config_get_uint(hDlg, IDC_ALTCURVELOW, config->alt_curve_low_dist);
+		config->alt_curve_min_rel_qual = config_get_uint(hDlg, IDC_MINQUAL, config->alt_curve_min_rel_qual);
 
 		config->twopass_max_bitrate /= CONFIG_KBPS;
-		config->twopass_max_bitrate = config_get_int(hDlg, IDC_MAXBITRATE, config->twopass_max_bitrate);
+		config->twopass_max_bitrate = config_get_uint(hDlg, IDC_MAXBITRATE, config->twopass_max_bitrate);
 		config->twopass_max_bitrate *= CONFIG_KBPS;
-		config->twopass_max_overflow_improvement = config_get_int(hDlg, IDC_OVERIMP, config->twopass_max_overflow_improvement);
-		config->twopass_max_overflow_degradation = config_get_int(hDlg, IDC_OVERDEG, config->twopass_max_overflow_degradation);
+		config->twopass_max_overflow_improvement = config_get_uint(hDlg, IDC_OVERIMP, config->twopass_max_overflow_improvement);
+		config->twopass_max_overflow_degradation = config_get_uint(hDlg, IDC_OVERDEG, config->twopass_max_overflow_degradation);
 
 		CONSTRAINVAL(config->twopass_max_overflow_improvement, 1, 80);
 		CONSTRAINVAL(config->twopass_max_overflow_degradation, 1, 80);
@@ -776,16 +802,16 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 	case DLG_CREDITS :
 		config->credits_start = ISDLGSET(IDC_CREDITS_START);
 		config->credits_start_begin = GetDlgItemInt(hDlg, IDC_CREDITS_START_BEGIN, NULL, FALSE);
-		config->credits_start_end = config_get_int(hDlg, IDC_CREDITS_START_END, config->credits_start_end);
+		config->credits_start_end = config_get_uint(hDlg, IDC_CREDITS_START_END, config->credits_start_end);
 		config->credits_end = ISDLGSET(IDC_CREDITS_END);
-		config->credits_end_begin = config_get_int(hDlg, IDC_CREDITS_END_BEGIN, config->credits_end_begin);
-		config->credits_end_end = config_get_int(hDlg, IDC_CREDITS_END_END, config->credits_end_end);
+		config->credits_end_begin = config_get_uint(hDlg, IDC_CREDITS_END_BEGIN, config->credits_end_begin);
+		config->credits_end_end = config_get_uint(hDlg, IDC_CREDITS_END_END, config->credits_end_end);
 
-		config->credits_rate = config_get_int(hDlg, IDC_CREDITS_RATE, config->credits_rate);
-		config->credits_quant_i = config_get_int(hDlg, IDC_CREDITS_QUANTI, config->credits_quant_i);
-		config->credits_quant_p = config_get_int(hDlg, IDC_CREDITS_QUANTP, config->credits_quant_p);
-		config->credits_start_size = config_get_int(hDlg, IDC_CREDITS_START_SIZE, config->credits_start_size);
-		config->credits_end_size = config_get_int(hDlg, IDC_CREDITS_END_SIZE, config->credits_end_size);
+		config->credits_rate = config_get_uint(hDlg, IDC_CREDITS_RATE, config->credits_rate);
+		config->credits_quant_i = config_get_uint(hDlg, IDC_CREDITS_QUANTI, config->credits_quant_i);
+		config->credits_quant_p = config_get_uint(hDlg, IDC_CREDITS_QUANTP, config->credits_quant_p);
+		config->credits_start_size = config_get_uint(hDlg, IDC_CREDITS_START_SIZE, config->credits_start_size);
+		config->credits_end_size = config_get_uint(hDlg, IDC_CREDITS_END_SIZE, config->credits_end_size);
 
 		config->credits_mode = 0;
 		config->credits_mode = ISDLGSET(IDC_CREDITS_RATE_RADIO) ? CREDITS_MODE_RATE : config->credits_mode;
@@ -818,9 +844,9 @@ void adv_download(HWND hDlg, int page, CONFIG * config)
 		config->cpu |= ISDLGSET(IDC_CPU_3DNOWEXT) ? XVID_CPU_3DNOWEXT: 0;
 		config->cpu |= ISDLGSET(IDC_CPU_FORCE) ? XVID_CPU_FORCE : 0;
 
-		config->rc_reaction_delay_factor = config_get_int(hDlg, IDC_CBR_REACTIONDELAY, config->rc_reaction_delay_factor);
-		config->rc_averaging_period = config_get_int(hDlg, IDC_CBR_AVERAGINGPERIOD, config->rc_averaging_period);
-		config->rc_buffer = config_get_int(hDlg, IDC_CBR_BUFFER, config->rc_buffer);
+		config->rc_reaction_delay_factor = config_get_uint(hDlg, IDC_CBR_REACTIONDELAY, config->rc_reaction_delay_factor);
+		config->rc_averaging_period = config_get_uint(hDlg, IDC_CBR_AVERAGINGPERIOD, config->rc_averaging_period);
+		config->rc_buffer = config_get_uint(hDlg, IDC_CBR_BUFFER, config->rc_buffer);
 		break;
 	}
 }
@@ -846,11 +872,11 @@ void quant_download(HWND hDlg, CONFIG* config)
 	{
 		int temp;
 
-		temp = config_get_int(hDlg, i + IDC_QINTRA00, config->qmatrix_intra[i]);
+		temp = config_get_uint(hDlg, i + IDC_QINTRA00, config->qmatrix_intra[i]);
 		CONSTRAINVAL(temp, 1, 255);
 		config->qmatrix_intra[i] = temp;
 
-		temp = config_get_int(hDlg, i + IDC_QINTER00, config->qmatrix_inter[i]);
+		temp = config_get_uint(hDlg, i + IDC_QINTER00, config->qmatrix_inter[i]);
 		CONSTRAINVAL(temp, 1, 255);
 		config->qmatrix_inter[i] = temp;
 	}
@@ -958,7 +984,7 @@ BOOL CALLBACK main_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		}
 		else if (HIWORD(wParam) == EN_UPDATE && LOWORD(wParam) == IDC_VALUE)
 		{
-			int value = config_get_int(hDlg, IDC_VALUE, 1);
+			int value = config_get_uint(hDlg, IDC_VALUE, 1);
 			int max = 1;
 
 			max = (config->mode == DLG_MODE_CBR) ? 10000 :
@@ -1034,6 +1060,15 @@ BOOL CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"XVID");
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DIVX");
 			SendDlgItemMessage(hDlg, IDC_FOURCC, CB_ADDSTRING, 0, (LPARAM)"DX50");
+
+#ifndef BFRAMES
+			EnableWindow(GetDlgItem(hDlg, IDC_BSTATIC1), FALSE);
+			EnableWindow(GetDlgItem(hDlg, IDC_BSTATIC2), FALSE);
+			EnableWindow(GetDlgItem(hDlg, IDC_BSTATIC3), FALSE);
+			EnableWindow(GetDlgItem(hDlg, IDC_MAXBFRAMES), FALSE);
+			EnableWindow(GetDlgItem(hDlg, IDC_BQUANTRATIO), FALSE);
+			EnableWindow(GetDlgItem(hDlg, IDC_PACKED), FALSE);
+#endif
 		}
 		else if (psi->page == DLG_2PASSALT)
 		{
