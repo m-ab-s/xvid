@@ -19,12 +19,13 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.4 2003-03-11 20:15:40 edgomez Exp $
+ * $Id: xvid.h,v 1.27.2.5 2003-03-13 11:07:20 suxen_drol Exp $
  *
  ****************************************************************************/
 
 #ifndef _XVID_H_
 #define _XVID_H_
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -254,6 +255,95 @@ typedef struct
 } xvid_dec_stats_t;
 
 
+/*****************************************************************************
+  xvid plugin system -- internals
+
+  xvidcore will call XVID_PLG_INFO and XVID_PLG_CREATE during XVID_ENC_CREATE
+  before encoding each frame xvidcore will call XVID_PLG_BEFORE
+  after encoding each frame xvidcore will call XVID_PLG_AFTER
+  xvidcore will call XVID_PLG_DESTROY during XVID_ENC_DESTROY
+ ****************************************************************************/
+
+#define XVID_PLG_CREATE     0
+#define XVID_PLG_DESTROY    1
+#define XVID_PLG_INFO       2
+#define XVID_PLG_BEFORE     3
+#define XVID_PLG_AFTER      4
+
+/* xvid_plg_info_t.flags */
+#define XVID_PLG_ORIGINAL   1  /* plugin requires a copy of the original (uncompressed) image */
+
+
+typedef struct
+{
+    int version;
+    int flags;              /* plugin flags */
+} xvid_plg_info_t;
+
+
+typedef struct
+{
+    int version;
+
+    int width, height;
+	int fincr, fbase;
+
+    void * param;
+} xvid_plg_create_t;
+
+
+typedef struct
+{
+    int version;
+   
+    xvid_image_t reference;
+    xvid_image_t current;
+    xvid_image_t original;	    /* after: points the original (uncompressed) copy of the current frame */
+
+    int type;                   /* [in,out] */
+    int quant;                  /* [in,out] */
+
+    unsigned char * qscale;	/* [in,out]	pointer to quantizer table */
+	int qscale_stride;		/* [in,out]	quantizer scale stride */
+
+    int vop_flags;          /* [in,out] */
+    int vol_flags;          /* [in,out] */
+    int motion_flags;       /* [in,out] */
+
+    int length;                 /* [out] after: length of encoded frame */
+    int kblks, mblks, ublks;	/* [out] after: */
+} xvid_plg_data_t;
+
+
+/*****************************************************************************
+  xvid plugin system -- external
+
+  the application passes xvid an array of "xvid_plugin_t" at XVID_ENC_CREATE. the array
+  indicates the plugin function pointer and plugin-specific data.
+  xvidcore handles the rest. example:
+
+  xvid_enc_create_t create;
+  xvid_enc_plugin_t plugins[2];
+
+  plugins[0].func = xvid_psnr_func;
+  plugins[0].param = NULL;
+  plugins[1].func = xvid_cbr_func;
+  plugins[1].param = &cbr_data;
+  
+  create.num_plugins = 2;
+  create.plugins = plugins;
+
+ ****************************************************************************/
+
+typedef int (xvid_plugin_func)(void * handle, int opt, void * param1, void * param2);
+
+typedef struct
+{
+    xvid_plugin_func * func;
+    void * param;
+} xvid_enc_plugin_t;
+
+
 
 /*****************************************************************************
  * xvid_encore()
@@ -355,6 +445,9 @@ typedef struct {
 	int version;
 	int width;				/* [in]		frame dimensions; width, pixel units */
 	int height;				/* [in]		frame dimensions; height, pixel units */
+
+    int num_plugins;        /* [in:opt] number of plugins */
+    xvid_enc_plugin_t * plugins; /*        ^^ plugin array */
 
 	int num_threads;		/* [in:opt]	number of threads */
 	int max_bframes;		/* [in:opt] max sequential bframes (0=disable bframes) */
@@ -472,5 +565,6 @@ xvid_enc_stats_t;
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif

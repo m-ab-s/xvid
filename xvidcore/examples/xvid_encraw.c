@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_encraw.c,v 1.11.2.4 2003-03-11 23:39:47 edgomez Exp $
+ * $Id: xvid_encraw.c,v 1.11.2.5 2003-03-13 11:07:20 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -101,6 +101,7 @@ static int   YDIM = 0;
 static int   ARG_BQRATIO = 150;
 static int   ARG_BQOFFSET = 100;
 static int   ARG_MAXBFRAMES = 0;
+static int   ARG_PACKED = 0;
 #define IMAGE_SIZE(x,y) ((x)*(y)*3/2)
 
 #define MAX(A,B) ( ((A)>(B)) ? (A) : (B) )
@@ -141,7 +142,10 @@ static int enc_init(int use_assembler);
 static int enc_stop();
 static int enc_main(unsigned char* image,
 					unsigned char* bitstream,
-					long *frametype,
+                    int *key,
+					int *stats_type,
+                    int *stats_quant,
+                    int *stats_length,
 					int stats[3]);
 
 /*****************************************************************************
@@ -158,11 +162,13 @@ int main(int argc, char *argv[])
 	double enctime;
 	double totalenctime=0.;
   
-	long totalsize;
+	int totalsize;
 	int status;
-	long frame_type;
-  
-	long m4v_size;
+	int m4v_size;
+    int key;
+	int stats_type;
+    int stats_quant;
+    int stats_length;
 	int use_assembler=0;
   
 	char filename[256];
@@ -197,6 +203,9 @@ int main(int argc, char *argv[])
 		else if (strcmp("-bn", argv[i]) == 0 && i < argc - 1 ) {
 			i++;
 			ARG_MAXBFRAMES = atoi(argv[i]);
+		}
+		else if (strcmp("-p", argv[i]) == 0) {
+            ARG_PACKED = 1;
 		}
 		else if (strcmp("-bqr", argv[i]) == 0 && i < argc - 1 ) {
 			i++;
@@ -366,52 +375,57 @@ int main(int argc, char *argv[])
  ****************************************************************************/
 
 		enctime = msecond();
-		m4v_size = enc_main(in_buffer, mp4_buffer, &frame_type, stats);
+		m4v_size = enc_main(in_buffer, mp4_buffer, &key, &stats_type, &stats_quant, &stats_length, stats);
 		enctime = msecond() - enctime;
 
-		/* Not coded frames return 0 */
-		if(m4v_size == 0) goto next_frame;
-
 		/* Write the Frame statistics */
-		switch(frame_type) {
-		case XVID_TYPE_IVOP:
-			type = "I";
-			break;
-		case XVID_TYPE_PVOP:
-			type = "P";
-			break;
-		case XVID_TYPE_BVOP:
-			type = "B";
-			break;
-		case XVID_TYPE_SVOP:
-			type = "S";
-			break;
-		case XVID_TYPE_NOTHING:
-			type = "N";
-			break;
-		default:
-			type = "U";
-			break;
-		}		
-
-		printf("Frame %5d: type = %s, enctime(ms) =%6.1f, length(bytes) =%7d",
+       
+		printf("Frame %5d: key=%i, time(ms)=%6.1f, length=%7d",
 			   (int)filenr,
-			   type,
+			   key,
 			   (float)enctime,
 			   (int)m4v_size);
 
-		if(ARG_STATS) {
-			printf(", psnr y = %2.2f, psnr u = %2.2f, psnr v = %2.2f",
-				   (stats[0] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[0]/((float)(XDIM)*(YDIM))),
-				   (stats[1] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[1]/((float)(XDIM)*(YDIM)/4)),
-				   (stats[2] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[2]/((float)(XDIM)*(YDIM)/4)));
+        if (stats_type > 0) {   /* !XVID_TYPE_NOTHING */
+
+	        switch(stats_type) {
+	        case XVID_TYPE_IVOP:
+		        type = "I";
+		        break;
+	        case XVID_TYPE_PVOP:
+		        type = "P";
+		        break;
+	        case XVID_TYPE_BVOP:
+		        type = "B";
+		        break;
+	        case XVID_TYPE_SVOP:
+		        type = "S";
+		        break;
+	        default:
+		        type = "U";
+		        break;
+	        }
+
+            printf(" | type=%s quant=%2d, length=%7d", type, stats_quant, stats_length);
+
+            if(ARG_STATS) {
+		        printf(", psnr y = %2.2f, psnr u = %2.2f, psnr v = %2.2f",
+			           (stats[0] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[0]/((float)(XDIM)*(YDIM))),
+			           (stats[1] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[1]/((float)(XDIM)*(YDIM)/4)),
+			           (stats[2] == 0)? 0.0f: 48.131f - 10*(float)log10((float)stats[2]/((float)(XDIM)*(YDIM)/4)));
+            }
 		}
 
 		printf("\n");
 
+
 		/* Update encoding time stats */
 		totalenctime += enctime;
 		totalsize += m4v_size;
+
+        /* Not coded frames return 0 */
+		if(m4v_size == 0) goto next_frame;
+
 
 /*****************************************************************************
  *                       Save stream to file
@@ -520,6 +534,7 @@ static void usage()
 	fprintf(stderr, " -h integer     : frame height ([1.2048])\n");
 	fprintf(stderr, " -b integer     : target bitrate (>0 | default=900kbit)\n");
 	fprintf(stderr, " -bn integer    : max bframes (default=0)\n");
+    fprintf(stderr, " -p             : packed mode\n");
 	fprintf(stderr, " -bqr integer   : bframe quantizer ratio (default=150)\n");
 	fprintf(stderr, " -bqo integer   : bframe quantizer offset (default=100)\n");
 	fprintf(stderr, " -f float       : target framerate (>0)\n");
@@ -616,12 +631,38 @@ static int read_yuvdata(FILE* handle, unsigned char *image)
  *     Routines for encoding: init encoder, frame step, release encoder
  ****************************************************************************/
 
+/* sample plugin */
+
+int rawenc_debug(void * handle, int opt, void * param1, void * param2)
+{
+    switch(opt)
+    {
+    case XVID_PLG_INFO :
+    case XVID_PLG_CREATE :
+    case XVID_PLG_DESTROY :
+    case XVID_PLG_BEFORE :
+       return 0;
+
+    case XVID_PLG_AFTER :
+       {
+       xvid_plg_data_t * data = (xvid_plg_data_t*)param1;
+       printf("type=%i, quant=%i, length=%i\n", data->type, data->quant, data->length);
+       return 0;
+       }
+    }
+
+    return XVID_ERR_FAIL;
+}
+
+
 #define FRAMERATE_INCR 1001
 
 /* Initialize encoder for first use, pass all needed parameters to the codec */
 static int enc_init(int use_assembler)
 {
 	int xerr;
+
+    /* xvid_enc_plugin_t plugins[1]; */
 	
 	xvid_gbl_init_t   xvid_gbl_init;
 	xvid_enc_create_t xvid_enc_create;
@@ -631,7 +672,9 @@ static int enc_init(int use_assembler)
 	 *----------------------------------------------------------------------*/
 
 	/* Set version -- version checking will done by xvidcore*/
+    memset(&xvid_gbl_init, 0, sizeof(xvid_gbl_init));
 	xvid_gbl_init.version = XVID_VERSION;
+    
 	
 	/* Do we have to enable ASM optimizations ? */
 	if(use_assembler) {
@@ -654,11 +697,18 @@ static int enc_init(int use_assembler)
 	 *----------------------------------------------------------------------*/
 
 	/* Version again */
+    memset(&xvid_enc_create, 0, sizeof(xvid_enc_create));
 	xvid_enc_create.version = XVID_VERSION;
 
 	/* Width and Height of input frames */
 	xvid_enc_create.width = XDIM;
 	xvid_enc_create.height = YDIM;
+
+    /* init plugins 
+    plugins[0].func =  rawenc_debug;
+    plugins[0].param = NULL;
+    xvid_enc_create.num_plugins = 1;
+    xvid_enc_create.plugins = plugins; */
 
 	/* No fancy thread tests */
 	xvid_enc_create.num_threads = 0;
@@ -684,7 +734,9 @@ static int enc_init(int use_assembler)
 	xvid_enc_create.frame_drop_ratio = 0;
 
 	/* Global encoder options */
-	xvid_enc_create.global = (ARG_STATS)?XVID_EXTRASTATS_ENABLE:0;
+	xvid_enc_create.global = 0;
+    if (ARG_STATS) xvid_enc_create.global |= XVID_EXTRASTATS_ENABLE;
+    if (ARG_PACKED) xvid_enc_create.global |= XVID_PACKED;
 
 	/* I use a small value here, since will not encode whole movies, but short clips */
 	xerr = xvid_encore(NULL, XVID_ENC_CREATE, &xvid_enc_create, NULL);
@@ -707,19 +759,24 @@ static int enc_stop()
 
 static int enc_main(unsigned char* image,
 					unsigned char* bitstream,
-					long *frametype,
+                    int * key,
+					int *stats_type,
+                    int *stats_quant,
+                    int *stats_length,
 					int stats[3])
 {
 	int ret;
 
 	xvid_enc_frame_t xvid_enc_frame;
-	xvid_enc_stats_t xvid_enc_stats[2];
+	xvid_enc_stats_t xvid_enc_stats;
 
 	/* Version for the frame and the stats */
+    memset(&xvid_enc_frame, 0, sizeof(xvid_enc_frame));
 	xvid_enc_frame.version = XVID_VERSION;
-	xvid_enc_stats[0].version = XVID_VERSION;
-	xvid_enc_stats[1].version = XVID_VERSION;		
-
+    
+    memset(&xvid_enc_stats, 0, sizeof(xvid_enc_stats));
+	xvid_enc_stats.version = XVID_VERSION;
+    
 	/* Bind output buffer */
 	xvid_enc_frame.bitstream = bitstream;
 	xvid_enc_frame.length = -1;
@@ -749,19 +806,17 @@ static int enc_main(unsigned char* image,
 	xvid_enc_frame.quant_intra_matrix = NULL;
 	xvid_enc_frame.quant_inter_matrix = NULL;
 
-	/* Foll proof */
-	xvid_enc_stats[0].sse_y = 0;
-	xvid_enc_stats[0].sse_v = 0;
-	xvid_enc_stats[0].sse_u = 0;
-
 	/* Encode the frame */
 	xvid_enc_frame.vop_flags |= (ARG_STATS)?XVID_EXTRASTATS:0;
 	ret = xvid_encore(enc_handle, XVID_ENC_ENCODE, &xvid_enc_frame, &xvid_enc_stats);
 
-	*frametype = xvid_enc_stats[0].type;
-	stats[0]   = xvid_enc_stats[0].sse_y;
-	stats[1]   = xvid_enc_stats[0].sse_u;
-	stats[2]   = xvid_enc_stats[0].sse_v;
+    *key = (xvid_enc_frame.out_flags & XVID_KEYFRAME);
+	*stats_type = xvid_enc_stats.type;
+    *stats_quant = xvid_enc_stats.quant;
+    *stats_length = xvid_enc_stats.length;
+	stats[0]   = xvid_enc_stats.sse_y;
+	stats[1]   = xvid_enc_stats.sse_u;
+	stats[2]   = xvid_enc_stats.sse_v;
 
 	return(ret);
 }

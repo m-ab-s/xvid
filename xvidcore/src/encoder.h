@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.27.2.1 2003-02-22 08:49:44 suxen_drol Exp $
+ *  $Id: encoder.h,v 1.27.2.2 2003-03-13 11:07:20 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -172,6 +172,16 @@ typedef struct
 
 	int iFrameNum;
 	int bitrate;
+
+    // plugins
+
+    int plugin_flags;
+    int num_plugins;
+    xvid_enc_plugin_t * plugins;
+
+    // dquant
+
+    int * temp_dquants;
 
 	// images
 
