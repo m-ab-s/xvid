@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.95.2.39 2003-08-22 16:11:58 edgomez Exp $
+ * $Id: encoder.c,v 1.95.2.40 2003-08-26 14:07:11 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1199,6 +1199,21 @@ repeat:
 
 		/* ---- update vol flags at IVOP ----------- */
 		pEnc->current->vol_flags = pEnc->mbParam.vol_flags = frame->vol_flags;
+		switch(frame->par) {
+		case XVID_PAR_11_VGA:
+		case XVID_PAR_43_PAL:
+		case XVID_PAR_43_NTSC:
+		case XVID_PAR_169_PAL:
+		case XVID_PAR_169_NTSC:
+		case XVID_PAR_EXT:
+			pEnc->mbParam.par = frame->par;
+			break;
+		default:
+			pEnc->mbParam.par = XVID_PAR_EXT;
+			break;
+		}
+		pEnc->mbParam.par_width = (frame->par_width)?frame->par_width:1;
+		pEnc->mbParam.par_height = (frame->par_height)?frame->par_height:1;
 
         if ((pEnc->mbParam.vol_flags & XVID_VOL_MPEGQUANT)) {
 			if (frame->quant_intra_matrix != NULL)

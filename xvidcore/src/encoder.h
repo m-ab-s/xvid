@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.h,v 1.27.2.13 2003-08-07 15:41:57 chl Exp $
+ * $Id: encoder.h,v 1.27.2.14 2003-08-26 14:07:11 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -71,6 +71,10 @@ typedef struct
 
     int min_quant[3];
     int max_quant[3];
+
+	int par;
+	int par_width;
+	int par_height;
 
 #ifdef _SMP
 	int num_threads;

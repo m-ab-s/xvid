@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.32 2003-08-07 15:42:20 chl Exp $
+ * $Id: xvid.h,v 1.27.2.33 2003-08-26 14:07:11 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -73,7 +73,7 @@ extern "C" {
  * doesnt hurt but not increasing it could cause difficulty for decoders in the
  * future
  */
-#define XVID_BS_VERSION "0017"
+#define XVID_BS_VERSION "0018"
 
 
 /*****************************************************************************
@@ -138,7 +138,7 @@ typedef struct {
 #define XVID_PROFILE_AS_L4   0xf4
 
 /* aspect ratios */
-#define XVID_PAR_11_VGA    1 /* 1:1 vga (square) */
+#define XVID_PAR_11_VGA    1 /* 1:1 vga (square), default if AR is not precised (ie: ==0) */
 #define XVID_PAR_43_PAL    2 /* 4:3 pal (12:11 625-line) */
 #define XVID_PAR_43_NTSC   3 /* 4:3 ntsc (10:11 525-line) */
 #define XVID_PAR_169_PAL   4 /* 16:9 pal (16:11 625-line) */

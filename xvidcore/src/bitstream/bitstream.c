@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: bitstream.c,v 1.39.2.15 2003-07-28 12:29:07 edgomez Exp $
+ * $Id: bitstream.c,v 1.39.2.16 2003-08-26 14:07:11 edgomez Exp $
  *
  ****************************************************************************/
 
@@ -1131,18 +1131,20 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	BitstreamPutBit(bs, 0);		/* random_accessible_vol */
 	BitstreamPutBits(bs, vol_type_ind, 8);	/* video_object_type_indication */
 
-	if (vol_ver_id == 1)
-	{
+	if (vol_ver_id == 1) {
 		BitstreamPutBit(bs, 0);				/* is_object_layer_identified (0=not given) */
-	}
-	else
-	{
+	} else {
 		BitstreamPutBit(bs, 1);		/* is_object_layer_identified */
 		BitstreamPutBits(bs, vol_ver_id, 4);	/* vol_ver_id == 2 */
 		BitstreamPutBits(bs, 4, 3); /* vol_ver_priority (1==highest, 7==lowest) */
 	}
 
-	BitstreamPutBits(bs, 1, 4);	/* aspect_ratio_info (1=1:1) */
+	/* Aspect ratio */
+	BitstreamPutBits(bs, pParam->par, 4); /* aspect_ratio_info (1=1:1) */
+	if(pParam->par == XVID_PAR_EXT) {
+		BitstreamPutBits(bs, pParam->par_width, 8);
+		BitstreamPutBits(bs, pParam->par_height, 8);
+	}
 
 	BitstreamPutBit(bs, 1);	/* vol_control_parameters */
 	BitstreamPutBits(bs, 1, 2);	/* chroma_format 1="4:2:0" */
@@ -1232,10 +1234,8 @@ BitstreamWriteVolHeader(Bitstream * const bs,
 	BitstreamPutBit(bs, 1);		/* resync_marker_disable */
 	BitstreamPutBit(bs, 0);		/* data_partitioned */
 
-	if (vol_ver_id != 1) 
-	{
+	if (vol_ver_id != 1) {
 		BitstreamPutBit(bs, 0);		/* newpred_enable */
-		
 		BitstreamPutBit(bs, (pParam->vol_flags & XVID_VOL_REDUCED_ENABLE)?1:0);	
 									/* reduced_resolution_vop_enabled */
 	}
