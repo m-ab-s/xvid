@@ -449,7 +449,7 @@ dnl
 dnl ==========================================================================
 
 SPECIFIC_LDFLAGS="$SPECIFIC_LDFLAGS $GNU_PROF_LDFLAGS"
-SPECIFIC_CFLAGS="$SPECIFIC_CFLAG $GNU_PROF_CFLAGS"
+SPECIFIC_CFLAGS="$SPECIFIC_CFLAGS $GNU_PROF_CFLAGS"
 
 if test "$enable_gnuprofile" = "yes" ; then
    CFLAGS=`echo $CFLAGS | sed s/'-fomit-frame-pointer'/''/`
