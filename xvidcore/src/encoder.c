@@ -26,7 +26,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- *  $Id: encoder.c,v 1.95.2.7 2003-03-15 17:03:17 suxen_drol Exp $
+ *  $Id: encoder.c,v 1.95.2.8 2003-03-15 17:06:53 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -1119,12 +1119,12 @@ repeat:
 
 		// place this frame back on the encoding-queue (head)
 		// we will deal with it next time
-		pEnc->queue_head = (pEnc->queue_head + (pEnc->mbParam.max_bframes+1) - 1) % (pEnc->mbParam.max_bframes+1);
-        pEnc->queue_size++;
-		image_swap(&pEnc->current->image, &pEnc->queue[pEnc->queue_head].image);
-
         dec_frame_num(pEnc);
         pEnc->iFrameNum--;
+
+        pEnc->queue_head = (pEnc->queue_head + (pEnc->mbParam.max_bframes+1) - 1) % (pEnc->mbParam.max_bframes+1);
+        pEnc->queue_size++;
+		image_swap(&pEnc->current->image, &pEnc->queue[pEnc->queue_head].image);
 
 		// grab the last frame from the bframe-queue
 

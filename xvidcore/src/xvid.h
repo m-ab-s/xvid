@@ -19,7 +19,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.h,v 1.27.2.7 2003-03-15 16:04:38 suxen_drol Exp $
+ * $Id: xvid.h,v 1.27.2.8 2003-03-15 17:03:17 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -534,6 +534,7 @@ typedef struct {
 	int par_height;			/* [in:opt] aspect ratio height */
 /* ^^^----------------------------------------------------------------------------------*/
 
+    int fincr;				/* framerate increment, for variable framerate only */
 	xvid_vop_t vop_flags;			/* [in] (general)vop-based flags */
 	xvid_motion_t motion;				/* [in] ME options */
 

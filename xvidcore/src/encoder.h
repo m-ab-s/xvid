@@ -36,7 +36,7 @@
  *               support for EXTENDED API
  *  - 22.08.2001 fixed bug in iDQtab
  *
- *  $Id: encoder.h,v 1.27.2.3 2003-03-15 14:32:56 suxen_drol Exp $
+ *  $Id: encoder.h,v 1.27.2.4 2003-03-15 17:03:17 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -141,6 +141,7 @@ typedef struct
 typedef struct
 {
     int frame_num;
+    int fincr;
 	xvid_vol_t vol_flags;
     xvid_vop_t vop_flags;
 	xvid_motion_t motion_flags;
