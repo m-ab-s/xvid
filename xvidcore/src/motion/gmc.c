@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: gmc.c,v 1.1.2.7 2004-03-04 00:47:17 syskin Exp $
+ * $Id: gmc.c,v 1.1.2.8 2004-03-06 11:06:18 syskin Exp $
  *
  ****************************************************************************/
 
@@ -72,15 +72,14 @@ void Predict_16x16_C(const NEW_GMC_DATA * const This,
 			if (u > 0 && u <= W) { ri = MTab[u&15]; Offset = u>>4;	}
 			else {
 				if (u > W) Offset = W>>4;
-				else Offset = -1;
-				ri = 0;
+				else Offset = 0;
+				ri = MTab[0];
 			}
 
 			if (v > 0 && v <= H) { rj = MTab[v&15]; Offset += (v>>4)*srcstride; }
 			else {
 				if (v > H) Offset += (H>>4)*srcstride;
-				else Offset -= srcstride;
-				rj = 0;
+				rj = MTab[0];
 			}
 
 			f0	= src[Offset + 0];
@@ -137,18 +136,17 @@ void Predict_8x8_C(const NEW_GMC_DATA * const This,
 				ri = MTab[u&15];
 				Offset = u>>4;
 			} else {
-				ri = 16;
 				if (u>W) Offset = W>>4;
-				else Offset = -1;
+				else Offset = 0;
+				ri = MTab[0];
 			}
 
 			if (v > 0 && v <= H) {
 				rj = MTab[v&15];
 				Offset += (v>>4)*srcstride;
 			} else {
-				rj = 16;
 				if (v>H) Offset += (H>>4)*srcstride;
-				else Offset -= srcstride;
+				rj = MTab[0];
 			}
 
 			f0	= uSrc[Offset + 0];
