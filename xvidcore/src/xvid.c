@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.45.2.22 2003-11-30 16:13:15 edgomez Exp $
+ * $Id: xvid.c,v 1.45.2.23 2003-12-11 17:18:29 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -46,6 +46,7 @@
 #include "utils/timer.h"
 #include "bitstream/mbcoding.h"
 #include "image/qpel.h"
+#include "image/postprocessing.h"
 
 #if defined(_DEBUG)
 unsigned int xvid_debug = 0; /* xvid debug mask */
@@ -170,6 +171,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	/* Initialize the function pointers */
 	idct_int32_init();
 	init_vlc_tables();
+	init_postproc();
 
 	/* Fixed Point Forward/Inverse DCT transformations */
 	fdct = fdct_int32;
