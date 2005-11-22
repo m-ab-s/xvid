@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.65 2005-11-22 10:23:01 suxen_drol Exp $
+ * $Id: xvid.c,v 1.65.2.1 2005-11-22 10:44:09 suxen_drol Exp $
  *
  ****************************************************************************/
 
@@ -712,7 +712,7 @@ xvid_gbl_info(xvid_gbl_info_t * info)
 		return XVID_ERR_VERSION;
 
 	info->actual_version = XVID_VERSION;
-	info->build = "xvid-1.1.0-beta2";
+	info->build = "xvid-1.1.0";
 	info->cpu_flags = detect_cpu_flags();
 
 #if defined(_SMP) && defined(WIN32)
