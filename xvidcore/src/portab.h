@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: portab.h,v 1.54 2005-01-05 23:02:15 edgomez Exp $
+ * $Id: portab.h,v 1.54.2.1 2006-07-10 15:05:30 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -291,8 +291,8 @@ static __inline int64_t read_counter(void)
  *---------------------------------------------------------------------------*/
 #    elif defined(ARCH_IS_IA64)
 #        define BSWAP(a)  __asm__ __volatile__ \
-	("mux1 %1 = %0, @rev" ";;" \
-	 "shr.u %1 = %1, 32" : "=r" (a) : "r" (a));
+ 	("mux1 %0 = %1, @rev" ";;" \
+ 	 "shr.u %0 = %0, 32" : "=r" (a) : "r" (a));
 
 static __inline int64_t read_counter(void)
 {

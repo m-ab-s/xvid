@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.65.2.1 2005-11-22 10:44:09 suxen_drol Exp $
+ * $Id: xvid.c,v 1.65.2.2 2006-07-10 15:05:30 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -636,7 +636,7 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	 * features there really are. */
 	if (cpu_flags & XVID_CPU_ASM) {
 		/* SIMD state flusher */
-		emms = emms_3dn;
+		emms = emms_mmx;
 
 		/* DCT operators */
 		fdct = fdct_skal_x86_64;
