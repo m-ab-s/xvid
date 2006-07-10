@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: config.h,v 1.9 2005-10-22 22:32:44 Isibaar Exp $
+ * $Id: config.h,v 1.9.2.1 2006-07-10 17:26:13 Isibaar Exp $
  *
  ****************************************************************************/
 #ifndef _CONFIG_H_
@@ -244,7 +244,8 @@ typedef struct REG_STR
 #define PROFILE_QPEL		0x00000010
 #define PROFILE_GMC			0x00000020
 #define PROFILE_4MV		    0x00000040
-#define PROFILE_EXTRA       0x00000080
+#define PROFILE_PACKED		0x00000080
+#define PROFILE_EXTRA       0x00000100
 
 
 static const int PARS[][2] = {
