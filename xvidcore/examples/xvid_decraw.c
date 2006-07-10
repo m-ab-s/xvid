@@ -20,7 +20,7 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid_decraw.c,v 1.22 2005-10-07 15:02:28 suxen_drol Exp $
+ * $Id: xvid_decraw.c,v 1.22.2.1 2006-07-10 15:19:41 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -267,13 +267,12 @@ int main(int argc, char *argv[])
 			mp4_ptr = mp4_buffer; 
 
 			/* read new data */
-            if(feof(in_file))
-				break;
+            if(!feof(in_file)) {
 
-			useful_bytes += fread(mp4_buffer + already_in_buffer,
-								  1, BUFFER_SIZE - already_in_buffer,
-								  in_file);
-
+				useful_bytes += fread(mp4_buffer + already_in_buffer,
+									  1, BUFFER_SIZE - already_in_buffer,
+									  in_file);
+			}
 		}
 
 
