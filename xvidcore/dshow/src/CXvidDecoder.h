@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: CXvidDecoder.h,v 1.6 2005-10-08 00:58:02 suxen_drol Exp $
+ * $Id: CXvidDecoder.h,v 1.6.2.1 2007-06-27 18:57:42 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -30,7 +30,7 @@
 #include "IXvidDecoder.h"
 
 
-#define XVID_NAME_L		L"XviD MPEG-4 Video Decoder"
+#define XVID_NAME_L		L"Xvid MPEG-4 Video Decoder"
 
 /* --- fourcc --- */
 

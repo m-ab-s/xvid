@@ -1747,7 +1747,7 @@ static BOOL adv_dialog(HWND hParent, CONFIG * config, const int * dlgs, int size
 	psh.dwFlags = PSH_PROPSHEETPAGE | PSH_NOAPPLYNOW | PSH_NOCONTEXTHELP;
 	psh.hwndParent = hParent;
 	psh.hInstance = g_hInst;
-	psh.pszCaption = (LPSTR) "XviD Configuration";
+	psh.pszCaption = (LPSTR) "Xvid Configuration";
 	psh.nPages = size;
 	psh.nStartPage = 0;
 	psh.ppsp = (LPCPROPSHEETPAGE)&psp;
