@@ -77,7 +77,7 @@ END
 
 IDD_MAIN DIALOGEX 0, 0, 225, 255
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "XviD Configuration"
+CAPTION "Xvid Configuration"
 FONT 8, "MS Shell Dlg"
 BEGIN
     COMBOBOX        IDC_PROFILE,88,16,91,200,CBS_DROPDOWNLIST | WS_VSCROLL | 
@@ -465,7 +465,7 @@ END
 
 IDD_ABOUT DIALOG DISCARDABLE  0, 0, 192, 165
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "XviD MPEG4 Video Codec"
+CAPTION "Xvid MPEG4 Video Codec"
 FONT 8, "MS Shell Dlg"
 BEGIN
     CTEXT           "GPL'ed MPEG4 video codec demonstration.\nFor educational purposes only.",
@@ -474,7 +474,7 @@ BEGIN
                     SS_CENTERIMAGE
     CTEXT           "BUILD",IDC_BUILD,8,28,176,8,SS_CENTERIMAGE
     CONTROL         "IDB_LOGO",IDC_STATIC,"Static",SS_BITMAP,24,56,15,13
-    CTEXT           "XviD MPEG4 video codec",IDC_STATIC,8,16,176,12
+    CTEXT           "Xvid MPEG4 video codec",IDC_STATIC,8,16,176,12
     GROUPBOX        "About",IDC_STATIC,4,4,184,132
     DEFPUSHBUTTON   "OK",IDOK,102,144,80,14
     CTEXT           "CORE",IDC_CORE,8,40,176,8,SS_CENTERIMAGE
@@ -585,7 +585,7 @@ BEGIN
     EDITTEXT        IDC_LEVEL_BITRATE,156,131,40,12,ES_RIGHT | 
                     ES_AUTOHSCROLL | ES_READONLY
     LTEXT           "Profile @ Level:",IDC_STATIC,8,10,52,8
-    GROUPBOX        "Level - XviD will not force you to respect these",
+    GROUPBOX        "Level - Xvid will not force you to respect these",
                     IDC_LEVEL_LEVEL_G,8,28,196,66
     LTEXT           "Suggested:",IDC_LEVEL_DIM_S,16,45,48,8
     LTEXT           "x",IDC_STATIC,120,45,8,8
@@ -627,7 +627,7 @@ END
 
 IDD_STATUS DIALOGEX 0, 0, 325, 220
 STYLE DS_MODALFRAME | WS_MINIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "XviD Status"
+CAPTION "Xvid Status"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
     CONTROL         "",IDC_STATUS_GRAPH,"Static",SS_OWNERDRAW | SS_NOTIFY,4,
@@ -884,7 +884,7 @@ END
 // Bitmap
 //
 
-IDB_LOGO                BITMAP  DISCARDABLE     "XviD_logo.bmp"
+IDB_LOGO                BITMAP  DISCARDABLE     "Xvid_logo.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -991,8 +991,8 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDC_CPU_AUTO            "Enable XviD's internal CPU detection"
-    IDC_CPU_FORCE           "Override XviD's internal CPU detection (not recommended)"
+    IDC_CPU_AUTO            "Enable Xvid's internal CPU detection"
+    IDC_CPU_FORCE           "Override Xvid's internal CPU detection (not recommended)"
 END
 
 STRINGTABLE DISCARDABLE 
