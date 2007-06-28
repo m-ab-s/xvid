@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbcoding.c,v 1.52.2.1 2007-06-27 18:57:42 Isibaar Exp $
+ * $Id: mbcoding.c,v 1.52.2.2 2007-06-28 15:00:11 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -1051,7 +1051,7 @@ get_coeff(Bitstream * bs,
 	return (level << 20) >> 20;
 
   error:
-	*run = VLC_ERROR;
+	*run = 64;
 	return 0;
 }
 
@@ -1068,7 +1068,7 @@ get_intra_block(Bitstream * bs,
 	do {
 		level = get_coeff(bs, &run, &last, 1, 0);
 		coeff += run;
-		if ((run|coeff)&~63) {
+		if (coeff & ~63) {
 			DPRINTF(XVID_DEBUG_ERROR,"fatal: invalid run or index");
 			break;
 		}
@@ -1109,7 +1109,7 @@ get_inter_block_h263(
 	do {
 		level = get_coeff(bs, &run, &last, 0, 0);
 		p += run;
-		if ((run|p)&~63) {
+		if (p & ~63) {
 			DPRINTF(XVID_DEBUG_ERROR,"fatal: invalid run or index");
 			break;
 		}
@@ -1144,7 +1144,7 @@ get_inter_block_mpeg(
 	do {
 		level = get_coeff(bs, &run, &last, 0, 0);
 		p += run;
-		if ((run|p)&~63) {
+		if (p & ~63) {
 			DPRINTF(XVID_DEBUG_ERROR,"fatal: invalid run or index");
 			break;
 		}
