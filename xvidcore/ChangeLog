@@ -3,6 +3,13 @@
 # also removed all my email adresses from the output because they are not
 # relevant.
 
+user: 	Isibaar
+date:		Thu Jun 27 14:38:05 2007 +0100
+files:	src/bitstream/mbcoding.c
+description:
+- patch for a potential vulnerability reported by Secunia
+
+
 user:
 date:        Tue Nov 22 21:08:50 2005 +0100
 files:       examples/xvid_bench.c
