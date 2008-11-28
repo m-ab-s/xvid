@@ -1,3 +1,9 @@
+xvidcore (1.2.0-1) stable; urgency=low
+
+  * New upstream release
+
+ -- Michael Militzer <michael@xvid.org>  Thu, 28 Nov 2008 18:56:07 +0100
+
 xvidcore (1.2.0-0beta1) unstable; urgency=low
 
   * New upstream release
