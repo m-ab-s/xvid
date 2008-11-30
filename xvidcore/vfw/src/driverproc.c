@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: driverproc.c,v 1.8.4.1 2008-11-30 16:38:31 Isibaar Exp $
+ * $Id: driverproc.c,v 1.8.4.2 2008-11-30 17:57:14 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -45,7 +45,7 @@ INT_PTR WINAPI DllMain(
 }
 
 /* __declspec(dllexport) */ LRESULT WINAPI DriverProc(
-	DWORD dwDriverId, 
+	DWORD_PTR dwDriverId, 
 	HDRVR hDriver, 
 	UINT uMsg, 
 	LPARAM lParam1, 
@@ -310,8 +310,8 @@ void WINAPI Configure(HWND hwnd, HINSTANCE hinst, LPTSTR lpCmdLine, int nCmdShow
 {
 	DWORD dwDriverId;
 
-	dwDriverId = (DWORD) DriverProc(0, 0, DRV_OPEN, 0, 0);
-	if (dwDriverId != (DWORD)NULL)
+	dwDriverId = (LRESULT) DriverProc(0, 0, DRV_OPEN, 0, 0);
+	if (dwDriverId != (LRESULT)NULL)
 	{
 		if (lstrcmpi(lpCmdLine, "about")==0) {
 			DriverProc(dwDriverId, 0, ICM_ABOUT, (LPARAM)GetDesktopWindow(), 0);
