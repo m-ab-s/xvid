@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: xvid.c,v 1.77.2.2 2008-11-30 16:38:31 Isibaar Exp $
+ * $Id: xvid.c,v 1.77.2.3 2008-12-01 15:04:56 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -27,6 +27,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#if !defined(_WIN32)
+  #include <unistd.h>
+#endif
 
 #include "xvid.h"
 #include "decoder.h"
@@ -675,7 +679,6 @@ xvid_gbl_info(xvid_gbl_info_t * info)
 
 #else
 
-  #include <unistd.h>
   info->num_threads = sysconf(_SC_NPROCESSORS_CONF);	
 
 #endif
