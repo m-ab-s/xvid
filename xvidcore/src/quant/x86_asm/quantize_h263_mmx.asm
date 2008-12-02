@@ -21,7 +21,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: quantize_h263_mmx.asm,v 1.11.2.1 2008-12-01 17:27:03 Isibaar Exp $
+; * $Id: quantize_h263_mmx.asm,v 1.11.2.2 2008-12-02 14:00:09 Isibaar Exp $
 ; *
 ; ****************************************************************************/
 
@@ -247,7 +247,7 @@ ENDFUNC
 
 ALIGN SECTION_ALIGN
 quant_h263_intra_sse2:
-
+  PUSH_XMM6_XMM7
   mov _EAX, prm2     ; data
  
   movsx _EAX, word [_EAX]      ; data[0]
@@ -363,7 +363,7 @@ quant_h263_intra_sse2:
   mov TMP1, prm1     ; coeff
   mov [TMP1],ax  
   xor _EAX,_EAX            ; return 0
-
+  POP_XMM6_XMM7
   ret
 ENDFUNC
  
