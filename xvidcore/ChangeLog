@@ -1,6 +1,66 @@
 # Note that this ChangeLog covers only changes to the HEAD branch
 
 ---------------------
+Date: 2008/12/02 15:00:09
+Author: Isibaar
+Branch: release-1_2-branch
+Tag: (none) 
+Log:
+missing PUSH/POP_XMM6_XMM7 in quant_h263_intra_sse2
+WIN64 XMM6/XMM7 bench
+
+Members: 
+	examples/xvid_bench.c:1.38->1.38.2.1 
+	src/image/x86_asm/gmc_mmx.asm:1.7.2.1->1.7.2.2 
+	src/quant/x86_asm/quantize_h263_mmx.asm:1.11.2.1->1.11.2.2 
+	src/utils/emms.h:1.16->1.16.4.1 
+	src/utils/x86_asm/cpuid.asm:1.15->1.15.2.1 
+
+---------------------
+Date: 2008/12/01 18:27:03
+Author: Isibaar
+Branch: release-1_2-branch
+Tag: (none) 
+Log:
+properly treat XMM6/XMM7 as non-volatile on WIN64
+
+Members: 
+	src/nasm.inc:1.1.2.1->1.1.2.2 
+	src/bitstream/x86_asm/cbp_sse2.asm:1.10->1.10.2.1 
+	src/dct/x86_asm/fdct_sse2_skal.asm:1.10->1.10.2.1 
+	src/dct/x86_asm/idct_sse2_dmitry.asm:1.8->1.8.2.1 
+	src/image/x86_asm/gmc_mmx.asm:1.7->1.7.2.1 
+	src/image/x86_asm/postprocessing_sse2.asm:1.10->1.10.2.1 
+	src/motion/x86_asm/sad_sse2.asm:1.16->1.16.2.1 
+	src/plugins/x86_asm/plugin_ssim-a.asm:1.9->1.9.2.1 
+	src/quant/x86_asm/quantize_h263_mmx.asm:1.11->1.11.2.1 
+
+---------------------
+Date: 2008/12/01 17:35:47
+Author: Isibaar
+Branch: release-1_2-branch
+Tag: (none) 
+Log:
+increased version number to 1.2.1
+
+Members: 
+	build/generic/configure.in:1.25->1.25.2.1 
+	debian/changelog:1.2.2.1->1.2.2.2 
+	src/xvid.c:1.77.2.3->1.77.2.4 
+	src/xvid.h:1.63.2.1->1.63.2.2 
+
+---------------------
+Date: 2008/12/01 16:04:56
+Author: Isibaar
+Branch: release-1_2-branch
+Tag: (none) 
+Log:
+OSX/Leopard compilation fix by Guillaume Poirier
+
+Members: 
+	src/xvid.c:1.77.2.2->1.77.2.3 
+
+---------------------
 Date: 2008/11/28 19:28:08
 Author: Isibaar
 Branch: release-1_2-branch
