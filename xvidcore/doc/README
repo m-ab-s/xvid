@@ -7,4 +7,11 @@ INSTALL
 This file describes the steps to build and install XviD on supported
 platforms.
 
-Last edited: $Date: 2004-03-22 22:36:23 $
+NOTE FOR MacOS X PLATFORM
+-------------------------
+
+Many versions of nasm are known to be buggy for Mach-O output.
+
+* nasm 2.06rc2 or later is required for Mac OS X build *
+
+Last edited: $Date: 2009-05-25 09:25:50 $

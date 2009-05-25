@@ -19,7 +19,7 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: fdct_sse2_skal.asm,v 1.10.2.1 2008-12-01 17:27:03 Isibaar Exp $
+; * $Id: fdct_sse2_skal.asm,v 1.10.2.2 2009-05-25 09:25:50 Isibaar Exp $
 ; *
 ; ***************************************************************************/
 
@@ -604,6 +604,9 @@ fdct_sse2_skal:
   ret
 ENDFUNC
 
+; Mac-specific workaround for misaligned DCT tables
+ALIGN SECTION_ALIGN  
+  times 8 dw 0 
 
 %ifidn __OUTPUT_FORMAT__,elf
 section ".note.GNU-stack" noalloc noexec nowrite progbits
