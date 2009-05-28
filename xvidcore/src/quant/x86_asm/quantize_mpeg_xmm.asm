@@ -20,7 +20,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: quantize_mpeg_xmm.asm,v 1.10 2008-11-26 02:21:02 Isibaar Exp $
+; * $Id: quantize_mpeg_xmm.asm,v 1.10.2.1 2009-05-28 08:42:37 Isibaar Exp $
 ; *
 ; ***************************************************************************/
 
@@ -137,7 +137,7 @@ dd 0
 ; Code
 ;=============================================================================
 
-SECTION .rotext align=SECTION_ALIGN
+TEXT
 
 cglobal quant_mpeg_inter_xmm
 cglobal dequant_mpeg_intra_3dne

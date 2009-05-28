@@ -19,7 +19,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: quantize_h263_3dne.asm,v 1.9 2008-11-26 01:04:34 Isibaar Exp $
+; * $Id: quantize_h263_3dne.asm,v 1.9.2.1 2009-05-28 08:42:37 Isibaar Exp $
 ; *
 ; *************************************************************************/
 ;
@@ -135,7 +135,7 @@ int_2048:
 ; Code
 ;=============================================================================
 
-SECTION .rotext align=SECTION_ALIGN
+TEXT
 
 
 ;-----------------------------------------------------------------------------

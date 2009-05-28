@@ -19,7 +19,7 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: reduced_mmx.asm,v 1.9 2008-11-26 01:04:34 Isibaar Exp $
+; * $Id: reduced_mmx.asm,v 1.9.2.1 2009-05-28 08:42:37 Isibaar Exp $
 ; *
 ; *************************************************************************/
 
@@ -45,7 +45,7 @@ Mask_ff dw 0xff,0xff,0xff,0xff
 
 ;===========================================================================
 
-SECTION .rotext align=SECTION_ALIGN
+TEXT
 
 cglobal xvid_Copy_Upsampled_8x8_16To8_mmx
 cglobal xvid_Add_Upsampled_8x8_16To8_mmx

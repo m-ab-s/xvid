@@ -20,7 +20,7 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: sad_sse2.asm,v 1.16.2.1 2008-12-01 17:27:03 Isibaar Exp $
+; * $Id: sad_sse2.asm,v 1.16.2.2 2009-05-28 08:42:37 Isibaar Exp $
 ; *
 ; ***************************************************************************/
 
@@ -39,7 +39,7 @@ zero    times 4   dd 0
 ; Code
 ;=============================================================================
 
-SECTION .rotext align=SECTION_ALIGN
+TEXT
 
 cglobal  sad16_sse2
 cglobal  dev16_sse2

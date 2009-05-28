@@ -19,7 +19,7 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: colorspace_yuv_mmx.asm,v 1.10 2008-11-26 23:35:50 Isibaar Exp $
+; * $Id: colorspace_yuv_mmx.asm,v 1.10.2.1 2009-05-28 08:42:37 Isibaar Exp $
 ; *
 ; ***************************************************************************/
 
@@ -468,7 +468,7 @@ ENDFUNC
 ; Code
 ;=============================================================================
 
-SECTION .rotext align=SECTION_ALIGN
+TEXT
 
 MAKE_YV12_TO_YV12	yv12_to_yv12_mmx, 0
 

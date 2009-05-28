@@ -37,7 +37,7 @@ xmm_0x80:
 ; Code
 ;=============================================================================
 
-SECTION .rotext align=SECTION_ALIGN
+TEXT
 
 cglobal image_brightness_sse2
 

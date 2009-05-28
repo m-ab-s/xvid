@@ -19,7 +19,7 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: postprocessing_mmx.asm,v 1.9 2008-11-26 23:35:50 Isibaar Exp $
+; * $Id: postprocessing_mmx.asm,v 1.9.2.1 2009-05-28 08:42:37 Isibaar Exp $
 ; *
 ; *************************************************************************/
 
@@ -46,7 +46,7 @@ mmx_offset:
 ; Code
 ;=============================================================================
 
-SECTION .rotext align=SECTION_ALIGN
+TEXT
 
 cglobal image_brightness_mmx
 

@@ -19,7 +19,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: nasm.inc,v 1.1.2.2 2008-12-01 17:27:03 Isibaar Exp $
+; * $Id: nasm.inc,v 1.1.2.3 2009-05-28 08:42:37 Isibaar Exp $
 ; *
 ; ***************************************************************************/
 
@@ -166,6 +166,14 @@ BITS 32
       %else
             SECTION .rodata align=SECTION_ALIGN
       %endif
+%endmacro
+
+%macro TEXT 0
+%ifidn __OUTPUT_FORMAT__,macho
+      SECTION .text align=SECTION_ALIGN
+%else
+      SECTION .rotext align=SECTION_ALIGN
+%endif
 %endmacro
 
 %macro cglobal 1

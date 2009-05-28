@@ -21,7 +21,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: quantize_h263_mmx.asm,v 1.11.2.2 2008-12-02 14:00:09 Isibaar Exp $
+; * $Id: quantize_h263_mmx.asm,v 1.11.2.3 2009-05-28 08:42:37 Isibaar Exp $
 ; *
 ; ****************************************************************************/
 
@@ -90,7 +90,7 @@ mmx_div:
 ; Code
 ;=============================================================================
 
-SECTION .rotext align=SECTION_ALIGN
+TEXT
 
 cglobal quant_h263_intra_mmx
 cglobal quant_h263_intra_sse2

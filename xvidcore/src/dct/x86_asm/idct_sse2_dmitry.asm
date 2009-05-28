@@ -19,7 +19,7 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: idct_sse2_dmitry.asm,v 1.8.2.1 2008-12-01 17:27:03 Isibaar Exp $
+; * $Id: idct_sse2_dmitry.asm,v 1.8.2.2 2009-05-28 08:42:37 Isibaar Exp $
 ; *
 ; ***************************************************************************/
 
@@ -145,7 +145,7 @@ ocos_4_16: dw  23170,  23170,  23170,  23170    ; cos * (2<<15) + 0.5
 ; Code
 ;=============================================================================
 
-SECTION .rotext align=SECTION_ALIGN
+TEXT
 
 cglobal idct_sse2_dmitry
 
