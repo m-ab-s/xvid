@@ -1,6 +1,20 @@
 # Note that this ChangeLog covers only changes to the HEAD branch
 
 ---------------------
+Date: 2009/05/27 14:46:09
+Author: Isibaar
+Branch: release-1_2-branch
+Tag: (none)
+Log:
+back-port from HEAD:
+  - add resync-marker range check
+  - return E_FAIL on XVID_ERR_MEMORY error in dshow
+
+Members:
+        dshow/src/CXvidDecoder.cpp:1.16->1.16.2.1
+        src/decoder.c:1.80->1.80.2.2
+
+---------------------
 Date: 2009/05/25 11:25:50
 Author: Isibaar
 Branch: release-1_2-branch
