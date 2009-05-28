@@ -19,7 +19,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: nasm.inc,v 1.1.2.3 2009-05-28 08:42:37 Isibaar Exp $
+; * $Id: nasm.inc,v 1.1.2.4 2009-05-28 15:04:35 Isibaar Exp $
 ; *
 ; ***************************************************************************/
 
@@ -103,6 +103,11 @@ DEFAULT REL
 %define PTR_SIZE 8
 %define PTR_TYPE qword
 
+%ifdef __YASM_VERSION_ID__
+%define XVID_MOVSXD movsxd
+%else
+%define XVID_MOVSXD movsx
+%endif
 
 %else
 
@@ -149,6 +154,7 @@ BITS 32
 %define PUSH_XMM6_XMM7
 %define POP_XMM6_XMM7
 
+%define XVID_MOVSXD movsx
 %endif
 
 

@@ -20,7 +20,7 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: quantize_mpeg_xmm.asm,v 1.10.2.1 2009-05-28 08:42:37 Isibaar Exp $
+; * $Id: quantize_mpeg_xmm.asm,v 1.10.2.2 2009-05-28 15:04:35 Isibaar Exp $
 ; *
 ; ***************************************************************************/
 
@@ -524,7 +524,7 @@ dequant_mpeg_inter_3dne:
   pxor mm6, mm6     ; mismatch sum
   push _ESI
   push _EDI
-  mov _ESI, mmzero
+  lea _ESI, [mmzero]
   pxor mm1, mm1
   pxor mm3, mm3
 %ifdef ARCH_IS_X86_64
