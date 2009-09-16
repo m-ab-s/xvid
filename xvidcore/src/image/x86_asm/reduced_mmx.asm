@@ -19,7 +19,7 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: reduced_mmx.asm,v 1.9.2.1 2009-05-28 08:42:37 Isibaar Exp $
+; * $Id: reduced_mmx.asm,v 1.9.2.2 2009-09-16 17:11:39 Isibaar Exp $
 ; *
 ; *************************************************************************/
 
@@ -985,8 +985,4 @@ ENDFUNC
 
   ; pfeewwww... Never Do That On Stage Again. :)
 
-
-%ifidn __OUTPUT_FORMAT__,elf
-section ".note.GNU-stack" noalloc noexec nowrite progbits
-%endif
-
+NON_EXEC_STACK

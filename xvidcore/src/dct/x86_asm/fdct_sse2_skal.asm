@@ -19,7 +19,7 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: fdct_sse2_skal.asm,v 1.10.2.3 2009-05-28 08:42:37 Isibaar Exp $
+; * $Id: fdct_sse2_skal.asm,v 1.10.2.4 2009-09-16 17:11:39 Isibaar Exp $
 ; *
 ; ***************************************************************************/
 
@@ -608,7 +608,4 @@ ENDFUNC
 ALIGN SECTION_ALIGN  
   times 8 dw 0 
 
-%ifidn __OUTPUT_FORMAT__,elf
-section ".note.GNU-stack" noalloc noexec nowrite progbits
-%endif
-
+NON_EXEC_STACK
