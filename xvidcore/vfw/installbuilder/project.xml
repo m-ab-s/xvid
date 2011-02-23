@@ -1,0 +1,23 @@
+<autoUpdateProject>
+  <shortName>Xvid</shortName>
+  <fullName>Xvid Video Codec</fullName>
+  <logoImage>xvid.png</logoImage>
+  <vendor>Xvid Team</vendor>
+  <saveRelativePaths>1</saveRelativePaths>
+  <requireInstallationByRootUser>0</requireInstallationByRootUser>
+  <requestedExecutionLevel>asInvoker</requestedExecutionLevel>
+  <postUpdateDownloadActionList>
+  <!-- Make sure the file has the .exe suffix (IB automatically append a numeric suffix if a file with the same name exists when downloading the installer) --> 
+  <actionGroup>
+    <actionList>
+      <deleteFile path="${system_temp_directory}/xvidupdate.exe"/>
+      <renameFile origin="${downloadedFilePath}" destination="${system_temp_directory}/xvidupdate.exe"/> 
+      <setInstallerVariable name="downloadedFilePath" value="${system_temp_directory}/xvidupdate.exe"/>
+    </actionList>
+  </actionGroup>
+  <runProgram>
+    <program>cmd</program>
+    <programArguments>/c ${downloadedFilePath.dos} &amp;</programArguments>
+  </runProgram>
+  </postUpdateDownloadActionList>
+</autoUpdateProject>
