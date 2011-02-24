@@ -51,6 +51,48 @@
         </wow64FsRedirection>
     </readyToInstallActionList>
     <postInstallationActionList>
+        <copyFile>
+            <abortOnError>0</abortOnError>
+            <destination>${system_temp_directory}/xvid_x86/xvid.ax</destination>
+            <origin>${system_temp_directory}/xvid_x86/xvid.ax_mft</origin>
+            <showMessageOnError>0</showMessageOnError>
+            <ruleList>
+                <platformTest>
+                    <type>windows-x64</type>
+                </platformTest>
+                <fileExists>
+                    <path>${windows_folder_windows}/SysWOW64/mfplat.dll</path>
+                </fileExists>
+            </ruleList>
+        </copyFile>
+        <copyFile>
+            <abortOnError>0</abortOnError>
+            <destination>${system_temp_directory}/xvid_x64/xvid.ax</destination>
+            <origin>${system_temp_directory}/xvid_x64/xvid.ax_mft</origin>
+            <showMessageOnError>0</showMessageOnError>
+            <ruleList>
+                <platformTest>
+                    <type>windows-x64</type>
+                </platformTest>
+                <fileExists>
+                    <path>${windows_folder_windows}/system32/mfplat.dll</path>
+                </fileExists>
+            </ruleList>
+        </copyFile>
+        <copyFile>
+            <abortOnError>0</abortOnError>
+            <destination>${system_temp_directory}/xvid_x86/xvid.ax</destination>
+            <origin>${system_temp_directory}/xvid_x86/xvid.ax_mft</origin>
+            <showMessageOnError>0</showMessageOnError>
+            <ruleList>
+                <platformTest>
+                    <type>windows-x86</type>
+                </platformTest>
+                <fileExists>
+                    <path>${windows_folder_system}/mfplat.dll</path>
+                </fileExists>
+            </ruleList>
+        </copyFile>
         <runProgram>
             <abortOnError>0</abortOnError>
             <program>${system_temp_directory}/xvid_x86/setpriv32.exe</program>
@@ -524,6 +566,9 @@
                         <distributionFile>
                             <origin>setpriv32.exe</origin>
                         </distributionFile>
+                        <distributionFile>
+                            <origin>../../dshow/bin/xvid.ax_mft</origin>
+                        </distributionFile>
                     </distributionFileList>
                 </folder>
                 <folder>
@@ -546,6 +591,9 @@
                         </distributionFile>
                         <distributionFile>
                             <origin>setpriv64.exe</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>../../dshow/bin/x64/xvid.ax_mft</origin>
                         </distributionFile>
                     </distributionFileList>
                     <ruleList>
