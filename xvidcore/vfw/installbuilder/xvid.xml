@@ -1,7 +1,7 @@
 <project>
     <shortName>Xvid</shortName>
     <fullName>Xvid Video Codec</fullName>
-    <version>1.3.0</version>
+    <version>1.3.1</version>
     <installerFilename>${product_shortname}-${product_version}-${platform_name}.${platform_exec_suffix}</installerFilename>
     <readmeFile>releasenotes.txt</readmeFile>
     <licenseFile>../../LICENSE</licenseFile>
@@ -41,14 +41,6 @@
                 </platformTest>
             </ruleList>
         </runProgram>
-        <wow64FsRedirection>
-            <action>disable</action>
-            <ruleList>
-                <platformTest>
-                    <type>windows-x64</type>
-                </platformTest>
-            </ruleList>
-        </wow64FsRedirection>
     </readyToInstallActionList>
     <postInstallationActionList>
         <copyFile>
@@ -58,13 +50,185 @@
             <showMessageOnError>0</showMessageOnError>
             <ruleList>
                 <platformTest>
-                    <type>windows-x64</type>
+                    <type>windows</type>
                 </platformTest>
                 <fileExists>
-                    <path>${windows_folder_windows}/SysWOW64/mfplat.dll</path>
+                    <path>${windows_folder_system}/mfplat.dll</path>
                 </fileExists>
             </ruleList>
         </copyFile>
+        <copyFile>
+            <abortOnError>0</abortOnError>
+            <destination>${windows_folder_system}/xvid.ax</destination>
+            <origin>${system_temp_directory}/xvid_x86/xvid.ax</origin>
+            <ruleEvaluationLogic>or</ruleEvaluationLogic>
+            <showMessageOnError>0</showMessageOnError>
+            <ruleList>
+                <platformTest>
+                    <type>windows-2000</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+            </ruleList>
+        </copyFile>
+        <copyFile>
+            <abortOnError>0</abortOnError>
+            <destination>${windows_folder_system}/xvidcore.dll</destination>
+            <origin>${system_temp_directory}/xvid_x86/xvidcore.dll</origin>
+            <ruleEvaluationLogic>or</ruleEvaluationLogic>
+            <showMessageOnError>0</showMessageOnError>
+            <ruleList>
+                <platformTest>
+                    <type>windows-2000</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+            </ruleList>
+        </copyFile>
+        <copyFile>
+            <abortOnError>0</abortOnError>
+            <destination>${windows_folder_system}/xvidvfw.dll</destination>
+            <origin>${system_temp_directory}/xvid_x86/xvidvfw.dll</origin>
+            <ruleEvaluationLogic>or</ruleEvaluationLogic>
+            <showMessageOnError>0</showMessageOnError>
+            <ruleList>
+                <platformTest>
+                    <type>windows-2000</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+            </ruleList>
+        </copyFile>
+        <runProgram>
+            <customErrorMessage>Failed to install Xvid VfW Codec (32-bit)!</customErrorMessage>
+            <program>${windows_folder_system}/rundll32.exe</program>
+            <programArguments>setupapi.dll,InstallHinfSection DefaultInstall 0 ${system_temp_directory}/xvid_x86/xvid.inf</programArguments>
+            <ruleList>
+                <platformTest>
+                    <type>windows</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-2000</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-xp</type>
+                </platformTest>
+            </ruleList>
+        </runProgram>
+        <runProgram>
+            <customErrorMessage>DirectShow filter (32-bit) register failed!</customErrorMessage>
+            <program>${windows_folder_system}/regsvr32.exe</program>
+            <programArguments>/s ${windows_folder_system}/xvid.ax</programArguments>
+            <workingDirectory>${windows_folder_system}</workingDirectory>
+            <ruleList>
+                <platformTest>
+                    <type>windows</type>
+                </platformTest>
+            </ruleList>
+        </runProgram>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\MediaResources\icm\vidc.XVID</key>
+            <name>Description</name>
+            <ruleEvaluationLogic>or</ruleEvaluationLogic>
+            <showMessageOnError>0</showMessageOnError>
+            <type>REG_SZ</type>
+            <value>Xvid MPEG-4 Video Codec</value>
+            <wowMode>32</wowMode>
+            <ruleList>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-2000</type>
+                </platformTest>
+            </ruleList>
+        </registrySet>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\MediaResources\icm\vidc.XVID</key>
+            <name>Driver</name>
+            <ruleEvaluationLogic>or</ruleEvaluationLogic>
+            <showMessageOnError>0</showMessageOnError>
+            <type>REG_SZ</type>
+            <value>xvidvfw.dll</value>
+            <wowMode>32</wowMode>
+            <ruleList>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-2000</type>
+                </platformTest>
+            </ruleList>
+        </registrySet>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\MediaResources\icm\vidc.XVID</key>
+            <name>FriendlyName</name>
+            <ruleEvaluationLogic>or</ruleEvaluationLogic>
+            <showMessageOnError>0</showMessageOnError>
+            <type>REG_SZ</type>
+            <value>XVID</value>
+            <wowMode>32</wowMode>
+            <ruleList>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-2000</type>
+                </platformTest>
+            </ruleList>
+        </registrySet>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\drivers.desc</key>
+            <name>xvidvfw.dll</name>
+            <ruleEvaluationLogic>or</ruleEvaluationLogic>
+            <showMessageOnError>0</showMessageOnError>
+            <type>REG_SZ</type>
+            <value>Xvid MPEG-4 Video Codec</value>
+            <wowMode>32</wowMode>
+            <ruleList>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-2000</type>
+                </platformTest>
+            </ruleList>
+        </registrySet>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Drivers32</key>
+            <name>vidc.XVID</name>
+            <ruleEvaluationLogic>or</ruleEvaluationLogic>
+            <showMessageOnError>0</showMessageOnError>
+            <type>REG_SZ</type>
+            <value>xvidvfw.dll</value>
+            <wowMode>32</wowMode>
+            <ruleList>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-2000</type>
+                </platformTest>
+            </ruleList>
+        </registrySet>
+        <wow64FsRedirection>
+            <action>disable</action>
+            <ruleList>
+                <platformTest>
+                    <type>windows-x64</type>
+                </platformTest>
+            </ruleList>
+        </wow64FsRedirection>
         <copyFile>
             <abortOnError>0</abortOnError>
             <destination>${system_temp_directory}/xvid_x64/xvid.ax</destination>
@@ -81,18 +245,155 @@
         </copyFile>
         <copyFile>
             <abortOnError>0</abortOnError>
-            <destination>${system_temp_directory}/xvid_x86/xvid.ax</destination>
-            <origin>${system_temp_directory}/xvid_x86/xvid.ax_mft</origin>
+            <destination>${windows_folder_windows}/system32/xvid.ax</destination>
+            <origin>${system_temp_directory}/xvid_x64/xvid.ax</origin>
             <showMessageOnError>0</showMessageOnError>
             <ruleList>
                 <platformTest>
-                    <type>windows-x86</type>
+                    <type>windows-xp</type>
                 </platformTest>
-                <fileExists>
-                    <path>${windows_folder_system}/mfplat.dll</path>
-                </fileExists>
+                <platformTest>
+                    <type>windows-x64</type>
+                </platformTest>
             </ruleList>
         </copyFile>
+        <copyFile>
+            <abortOnError>0</abortOnError>
+            <destination>${windows_folder_windows}/system32/xvidcore.dll</destination>
+            <origin>${system_temp_directory}/xvid_x64/xvidcore.dll</origin>
+            <showMessageOnError>0</showMessageOnError>
+            <ruleList>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-x64</type>
+                </platformTest>
+            </ruleList>
+        </copyFile>
+        <copyFile>
+            <abortOnError>0</abortOnError>
+            <destination>${windows_folder_windows}/system32/xvidvfw.dll</destination>
+            <origin>${system_temp_directory}/xvid_x64/xvidvfw.dll</origin>
+            <showMessageOnError>0</showMessageOnError>
+            <ruleList>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-x64</type>
+                </platformTest>
+            </ruleList>
+        </copyFile>
+        <runProgram>
+            <customErrorMessage>Failed to install Xvid VfW Codec (64-bit)!</customErrorMessage>
+            <program>${windows_folder_windows}/system32/rundll32.exe</program>
+            <programArguments>setupapi.dll,InstallHinfSection DefaultInstall 0 ${system_temp_directory}/xvid_x64/xvid.inf</programArguments>
+            <ruleList>
+                <platformTest>
+                    <type>windows-x64</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-xp</type>
+                </platformTest>
+            </ruleList>
+        </runProgram>
+        <runProgram>
+            <customErrorMessage>DirectShow filter (64-bit) register failed!</customErrorMessage>
+            <program>${windows_folder_windows}/system32/regsvr32.exe</program>
+            <programArguments>/s ${windows_folder_windows}/system32/xvid.ax</programArguments>
+            <workingDirectory>${windows_folder_windows}/system32</workingDirectory>
+            <ruleList>
+                <platformTest type="windows-x64"/>
+            </ruleList>
+        </runProgram>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\MediaResources\icm\vidc.XVID</key>
+            <name>Description</name>
+            <showMessageOnError>0</showMessageOnError>
+            <type>REG_SZ</type>
+            <value>Xvid MPEG-4 Video Codec</value>
+            <wowMode>64</wowMode>
+            <ruleList>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-x64</type>
+                </platformTest>
+            </ruleList>
+        </registrySet>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\MediaResources\icm\vidc.XVID</key>
+            <name>Driver</name>
+            <showMessageOnError>0</showMessageOnError>
+            <type>REG_SZ</type>
+            <value>xvidvfw.dll</value>
+            <wowMode>64</wowMode>
+            <ruleList>
+                <platformTest>
+                    <type>windows-x64</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+            </ruleList>
+        </registrySet>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\MediaResources\icm\vidc.XVID</key>
+            <name>FriendlyName</name>
+            <showMessageOnError>0</showMessageOnError>
+            <type>REG_SZ</type>
+            <value>XVID</value>
+            <wowMode>64</wowMode>
+            <ruleList>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-x64</type>
+                </platformTest>
+            </ruleList>
+        </registrySet>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\drivers.desc</key>
+            <name>xvidvfw.dll</name>
+            <ruleEvaluationLogic>or</ruleEvaluationLogic>
+            <showMessageOnError>0</showMessageOnError>
+            <type>REG_SZ</type>
+            <value>Xvid MPEG-4 Video Codec</value>
+            <wowMode>64</wowMode>
+            <ruleList>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-x64</type>
+                </platformTest>
+            </ruleList>
+        </registrySet>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Drivers32</key>
+            <name>vidc.XVID</name>
+            <showMessageOnError>0</showMessageOnError>
+            <type>REG_SZ</type>
+            <value>xvidvfw.dll</value>
+            <wowMode>64</wowMode>
+            <ruleList>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-x64</type>
+                </platformTest>
+            </ruleList>
+        </registrySet>
         <runProgram>
             <abortOnError>0</abortOnError>
             <program>${system_temp_directory}/xvid_x86/setpriv32.exe</program>
@@ -118,65 +419,6 @@
                 <platformTest>
                     <type>windows-x64</type>
                 </platformTest>
-            </ruleList>
-        </runProgram>
-        <runProgram>
-            <customErrorMessage>Failed to install Xvid VfW Codec (64-bit)!</customErrorMessage>
-            <program>${windows_folder_windows}/system32/rundll32.exe</program>
-            <programArguments>setupapi.dll,InstallHinfSection DefaultInstall 0 ${system_temp_directory}/xvid_x64/xvid.inf</programArguments>
-            <ruleList>
-                <platformTest>
-                    <type>windows-x64</type>
-                </platformTest>
-            </ruleList>
-        </runProgram>
-        <runProgram>
-            <customErrorMessage>Failed to install Xvid VfW Codec (32-bit)!</customErrorMessage>
-            <program>${windows_folder_windows}/SysWOW64/rundll32.exe</program>
-            <programArguments>setupapi.dll,InstallHinfSection DefaultInstall 0 ${system_temp_directory}/xvid_x86/xvid.inf</programArguments>
-            <ruleList>
-                <platformTest>
-                    <type>windows-x64</type>
-                </platformTest>
-            </ruleList>
-        </runProgram>
-        <runProgram>
-            <customErrorMessage>Failed to install Xvid VfW Codec (32-bit)!</customErrorMessage>
-            <program>${windows_folder_system}/rundll32.exe</program>
-            <programArguments>setupapi.dll,InstallHinfSection DefaultInstall 0 ${system_temp_directory}/xvid_x86/xvid.inf</programArguments>
-            <ruleList>
-                <platformTest>
-                    <type>windows-x86</type>
-                </platformTest>
-            </ruleList>
-        </runProgram>
-        <runProgram>
-            <customErrorMessage>DirectShow filter (32-bit) register failed!</customErrorMessage>
-            <program>${windows_folder_system}/regsvr32.exe</program>
-            <programArguments>/s ${windows_folder_system}/xvid.ax</programArguments>
-            <workingDirectory>${windows_folder_system}</workingDirectory>
-            <ruleList>
-                <platformTest>
-                    <type>windows-x86</type>
-                </platformTest>
-            </ruleList>
-        </runProgram>
-        <runProgram>
-            <customErrorMessage>DirectShow filter (32-bit) register failed!</customErrorMessage>
-            <program>${windows_folder_windows}/SysWOW64/regsvr32.exe</program>
-            <programArguments>/s ${windows_folder_windows}/SysWOW64/xvid.ax</programArguments>
-            <workingDirectory>${windows_folder_windows}/SysWOW64</workingDirectory>
-            <ruleList>
-                <platformTest type="windows-x64"/>
-            </ruleList>
-        </runProgram>
-        <runProgram>
-            <customErrorMessage>DirectShow filter (64-bit) register failed!</customErrorMessage>
-            <program>${windows_folder_windows}/system32/regsvr32.exe</program>
-            <programArguments>/s ${windows_folder_windows}/system32/xvid.ax</programArguments>
-            <workingDirectory>${windows_folder_windows}/system32</workingDirectory>
-            <ruleList>
-                <platformTest type="windows-x64"/>
             </ruleList>
         </runProgram>
         <deleteFile>
@@ -339,6 +581,78 @@
         </registrySet>
     </postInstallationActionList>
     <preUninstallationActionList>
+        <runProgram>
+            <customErrorMessage>DirectShow filter (32-bit) unregister failed!</customErrorMessage>
+            <program>${windows_folder_system}/regsvr32.exe</program>
+            <programArguments>/s /u ${windows_folder_system}/xvid.ax</programArguments>
+            <workingDirectory>${windows_folder_system}</workingDirectory>
+            <ruleList>
+                <platformTest type="windows"/>
+            </ruleList>
+        </runProgram>
+        <runProgram>
+            <customErrorMessage>Failed to remove Xvid VfW Codec (32-bit)!</customErrorMessage>
+            <program>${windows_folder_system}/rundll32.exe</program>
+            <programArguments>setupapi.dll,InstallHinfSection Remove_XviD 132 ${windows_folder_windows}/inf/xvid.inf</programArguments>
+            <ruleList>
+                <platformTest>
+                    <type>windows</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-2000</type>
+                </platformTest>
+            </ruleList>
+        </runProgram>
+        <deleteFile>
+            <abortOnError>0</abortOnError>
+            <matchHiddenFiles>1</matchHiddenFiles>
+            <path>${windows_folder_system}/xvid.ax</path>
+            <ruleEvaluationLogic>or</ruleEvaluationLogic>
+            <showMessageOnError>0</showMessageOnError>
+            <ruleList>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-2000</type>
+                </platformTest>
+            </ruleList>
+        </deleteFile>
+        <deleteFile>
+            <abortOnError>0</abortOnError>
+            <matchHiddenFiles>1</matchHiddenFiles>
+            <path>${windows_folder_system}/xvidvfw.dll</path>
+            <ruleEvaluationLogic>or</ruleEvaluationLogic>
+            <showMessageOnError>0</showMessageOnError>
+            <ruleList>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-2000</type>
+                </platformTest>
+            </ruleList>
+        </deleteFile>
+        <deleteFile>
+            <abortOnError>0</abortOnError>
+            <matchHiddenFiles>1</matchHiddenFiles>
+            <path>${windows_folder_system}/xvidcore.dll</path>
+            <ruleEvaluationLogic>or</ruleEvaluationLogic>
+            <showMessageOnError>0</showMessageOnError>
+            <ruleList>
+                <platformTest>
+                    <type>windows-2000</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+            </ruleList>
+        </deleteFile>
         <wow64FsRedirection>
             <action>disable</action>
             <ruleList>
@@ -357,44 +671,6 @@
             </ruleList>
         </runProgram>
         <runProgram>
-            <customErrorMessage>DirectShow filter (32-bit) unregister failed!</customErrorMessage>
-            <program>${windows_folder_system}/regsvr32.exe</program>
-            <programArguments>/s /u ${windows_folder_system}/xvid.ax</programArguments>
-            <workingDirectory>${windows_folder_system}</workingDirectory>
-            <ruleList>
-                <platformTest type="windows-x86"/>
-            </ruleList>
-        </runProgram>
-        <runProgram>
-            <customErrorMessage>DirectShow filter (32-bit) unregister failed!</customErrorMessage>
-            <program>${windows_folder_windows}/SysWOW64/regsvr32.exe</program>
-            <programArguments>/s /u ${windows_folder_windows}/SysWOW64/xvid.ax</programArguments>
-            <workingDirectory>${windows_folder_windows}/SysWOW64</workingDirectory>
-            <ruleList>
-                <platformTest type="windows-x64"/>
-            </ruleList>
-        </runProgram>
-        <runProgram>
-            <customErrorMessage>Failed to remove Xvid VfW Codec (32-bit)!</customErrorMessage>
-            <program>${windows_folder_system}/rundll32.exe</program>
-            <programArguments>setupapi.dll,InstallHinfSection Remove_XviD 132 ${windows_folder_windows}/inf/xvid.inf</programArguments>
-            <ruleList>
-                <platformTest>
-                    <type>windows-x86</type>
-                </platformTest>
-            </ruleList>
-        </runProgram>
-        <runProgram>
-            <customErrorMessage>Failed to remove Xvid VfW Codec (32-bit)!</customErrorMessage>
-            <program>${windows_folder_windows}/SysWOW64/rundll32.exe</program>
-            <programArguments>setupapi.dll,InstallHinfSection Remove_XviD 132 ${installdir}/xvid.inf</programArguments>
-            <ruleList>
-                <platformTest>
-                    <type>windows-x64</type>
-                </platformTest>
-            </ruleList>
-        </runProgram>
-        <runProgram>
             <customErrorMessage>Failed to remove Xvid VfW Codec (64-bit)!</customErrorMessage>
             <program>${windows_folder_windows}/system32/rundll32.exe</program>
             <programArguments>setupapi.dll,InstallHinfSection Remove_XviD 132 ${installdir}/xvid.inf</programArguments>
@@ -402,8 +678,54 @@
                 <platformTest>
                     <type>windows-x64</type>
                 </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-xp</type>
+                </platformTest>
             </ruleList>
         </runProgram>
+        <deleteFile>
+            <abortOnError>0</abortOnError>
+            <matchHiddenFiles>1</matchHiddenFiles>
+            <path>${windows_folder_windows}/system32/xvid.ax</path>
+            <showMessageOnError>0</showMessageOnError>
+            <ruleList>
+                <platformTest>
+                    <type>windows-x64</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+            </ruleList>
+        </deleteFile>
+        <deleteFile>
+            <abortOnError>0</abortOnError>
+            <matchHiddenFiles>1</matchHiddenFiles>
+            <path>${windows_folder_windows}/system32/xvidvfw.dll</path>
+            <showMessageOnError>0</showMessageOnError>
+            <ruleList>
+                <platformTest>
+                    <type>windows-x64</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+            </ruleList>
+        </deleteFile>
+        <deleteFile>
+            <abortOnError>0</abortOnError>
+            <matchHiddenFiles>1</matchHiddenFiles>
+            <path>${windows_folder_windows}/system32/xvidcore.dll</path>
+            <showMessageOnError>0</showMessageOnError>
+            <ruleList>
+                <platformTest>
+                    <type>windows-x64</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-xp</type>
+                </platformTest>
+            </ruleList>
+        </deleteFile>
     </preUninstallationActionList>
     <postUninstallationActionList>
         <registryDelete>
@@ -426,8 +748,8 @@
     <startMenuGroupName>${product_shortname}</startMenuGroupName>
     <updateInformationURL>http://downloads.xvid.org/downloads/update.xml</updateInformationURL>
     <vendor>Xvid Team</vendor>
-    <versionId>130</versionId>
-    <windowsExecutableIcon>../Xvid/xvid.ico</windowsExecutableIcon>
+    <versionId>131</versionId>
+    <windowsExecutableIcon>xvid.ico</windowsExecutableIcon>
     <componentList>
         <component>
             <name>default</name>
