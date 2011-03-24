@@ -441,16 +441,6 @@
                 </platformTest>
             </ruleList>
         </deleteFile>
-        <showQuestion text="Do you want to automatically check for Updates?" variable="AutoUpdate">
-            <default>yes</default>
-            <ruleList>
-                <registryTest>
-                    <key>HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run</key>
-                    <logic>does_not_exist</logic>
-                    <name>Xvid</name>
-                </registryTest>
-            </ruleList>
-        </showQuestion>
         <registrySet>
             <key>HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run</key>
             <name>Xvid</name>
@@ -1032,6 +1022,37 @@
             <mustExist>0</mustExist>
             <width>40</width>
         </directoryParameter>
+        <choiceParameter>
+            <ask>yes</ask>
+            <ruleList>
+                <registryTest>
+                  <key>HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run</key>
+                  <logic>does_not_exist</logic>
+                  <name>Xvid</name>
+                </registryTest>
+            </ruleList>
+            <default>yes</default>
+            <explanation>Do you want to automatically check for updates?</explanation>
+            <title>Update Settings</title>
+            <name>AutoUpdater</name>
+            <displayType>radiobuttons</displayType>
+            <optionList>
+              <option>
+                <value>yes</value>
+                <text>Yes, automatically notify me when updates are available.</text>
+              </option>
+              <option>
+                <value>no</value>
+                <text>No, I want to check for updates manually.</text>
+              </option>
+            </optionList>
+            <postShowPageActionList>
+              <setInstallerVariable>
+                <name>AutoUpdate</name>
+                <value>${AutoUpdater}</value>
+              </setInstallerVariable>
+            </postShowPageActionList>
+        </choiceParameter>
     </parameterList>
     <platformOptionsList>
         <platformOptions>
