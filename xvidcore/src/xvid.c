@@ -3,8 +3,8 @@
  *  XVID MPEG-4 VIDEO CODEC
  *  - Native API implementation  -
  *
- *  Copyright(C) 2001-2004 Peter Ross <pross@xvid.org>
- *               2002-2010 Michael Militzer <isibaar@xvid.org>
+ *  Copyright(C) 2001-2011 Peter Ross <pross@xvid.org>
+ *               2002-2011 Michael Militzer <isibaar@xvid.org>
  *
  *  This program is free software ; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -206,7 +206,6 @@ int xvid_gbl_init(xvid_gbl_init_t * init)
 	cpu_flags = (init->cpu_flags & XVID_CPU_FORCE) ? init->cpu_flags : detect_cpu_flags();
 
 	/* Initialize the function pointers */
-	idct_int32_init();
 	init_vlc_tables();
 
 	/* Fixed Point Forward/Inverse DCT transformations */
