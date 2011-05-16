@@ -1,5 +1,0 @@
-authors
-
-
-Peter Ross <pross@xvid.org>
-Daniel Smith <danielsmith@astroboymail.com>
