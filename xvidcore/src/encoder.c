@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.c,v 1.141 2011-04-06 14:30:14 Isibaar Exp $
+ * $Id$
  *
  ****************************************************************************/
 
