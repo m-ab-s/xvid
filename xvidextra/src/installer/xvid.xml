@@ -6,7 +6,7 @@
     <readmeFile>releasenotes.txt</readmeFile>
     <licenseFile>../../LICENSE</licenseFile>
     <logoImage>xvid.png</logoImage>
-    <splashImage>Xvid_logo.png</splashImage>
+    <splashImage>xvid_logo.png</splashImage>
     <initializationActionList>
         <registryGet>
             <key>HKEY_LOCAL_MACHINE\Software\${project.windowsSoftwareRegistryPrefix}</key>
@@ -46,7 +46,7 @@
         <copyFile>
             <abortOnError>0</abortOnError>
             <destination>${system_temp_directory}/xvid_x86/xvid.ax</destination>
-            <origin>${system_temp_directory}/xvid_x86/xvid.ax_mft</origin>
+            <origin>${system_temp_directory}/xvid_x86/xvid_mft.ax</origin>
             <showMessageOnError>0</showMessageOnError>
             <ruleList>
                 <platformTest>
@@ -300,7 +300,7 @@
         <copyFile>
             <abortOnError>0</abortOnError>
             <destination>${system_temp_directory}/xvid_x64/xvid.ax</destination>
-            <origin>${system_temp_directory}/xvid_x64/xvid.ax_mft</origin>
+            <origin>${system_temp_directory}/xvid_x64/xvid_mft.ax</origin>
             <showMessageOnError>0</showMessageOnError>
             <ruleList>
                 <platformTest>
@@ -959,7 +959,7 @@
                     <platforms>windows</platforms>
                     <distributionFileList>
                         <distributionFile>
-                            <origin>../src/xvid.ico</origin>
+                            <origin>../../../xvidcore/vfw/src/xvid.ico</origin>
                         </distributionFile>
                         <distributionFile>
                             <origin>AviC.exe</origin>
@@ -974,7 +974,7 @@
                             <origin>OGMCalc.exe</origin>
                         </distributionFile>
                         <distributionFile>
-                            <origin>releasenotes.txt</origin>
+                            <origin>../installer_work/releasenotes.txt</origin>
                         </distributionFile>
                         <distributionFile>
                             <origin>vidccleaner.exe</origin>
@@ -1043,22 +1043,22 @@
                     <platforms>windows</platforms>
                     <distributionFileList>
                         <distributionFile>
-                            <origin>../bin/xvidvfw.dll</origin>
+                            <origin>../../../xvidcore/vfw/bin/xvidvfw.dll</origin>
                         </distributionFile>
                         <distributionFile>
-                            <origin>../bin/xvidcore.dll</origin>
+                            <origin>../../../xvidcore/vfw/bin/xvidcore.dll</origin>
                         </distributionFile>
                         <distributionFile>
                             <origin>xvid.inf</origin>
                         </distributionFile>
                         <distributionFile>
-                            <origin>../../dshow/bin/xvid.ax</origin>
+                            <origin>../../../xvidcore/dshow/bin/xvid.ax</origin>
                         </distributionFile>
                         <distributionFile>
                             <origin>setpriv32.exe</origin>
                         </distributionFile>
                         <distributionFile>
-                            <origin>../../dshow/bin/xvid.ax_mft</origin>
+                            <origin>../../../xvidcore/dshow/bin/xvid_mft.ax</origin>
                         </distributionFile>
                     </distributionFileList>
                 </folder>
@@ -1069,13 +1069,13 @@
                     <platforms>windows</platforms>
                     <distributionFileList>
                         <distributionFile>
-                            <origin>../../dshow/bin/x64/xvid.ax</origin>
+                            <origin>../../../xvidcore/dshow/bin/x64/xvid.ax</origin>
                         </distributionFile>
                         <distributionFile>
-                            <origin>../bin/x64/xvidcore.dll</origin>
+                            <origin>../../../xvidcore/vfw/bin/x64/xvidcore.dll</origin>
                         </distributionFile>
                         <distributionFile>
-                            <origin>../bin/x64/xvidvfw.dll</origin>
+                            <origin>../../../xvidcore/vfw/bin/x64/xvidvfw.dll</origin>
                         </distributionFile>
                         <distributionFile>
                             <origin>xvid.inf</origin>
@@ -1084,7 +1084,7 @@
                             <origin>setpriv64.exe</origin>
                         </distributionFile>
                         <distributionFile>
-                            <origin>../../dshow/bin/x64/xvid.ax_mft</origin>
+                            <origin>../../../xvidcore/dshow/bin/x64/xvid_mft.ax</origin>
                         </distributionFile>
                     </distributionFileList>
                     <ruleList>
