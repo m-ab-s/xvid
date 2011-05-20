@@ -42,6 +42,166 @@
                 </platformTest>
             </ruleList>
         </runProgram>
+        <if>
+            <abortOnError>0</abortOnError>
+            <showMessageOnError>0</showMessageOnError>
+            <actionList>
+                <if>
+                    <abortOnError>0</abortOnError>
+                    <showMessageOnError>0</showMessageOnError>
+                    <actionList>
+                        <if>
+                            <abortOnError>0</abortOnError>
+                            <showMessageOnError>0</showMessageOnError>
+                            <actionList>
+                                <setInstallerVariable>
+                                    <abortOnError>0</abortOnError>
+                                    <name>generic_mpeg4</name>
+                                    <showMessageOnError>0</showMessageOnError>
+                                    <value>7</value>
+                                </setInstallerVariable>
+                            </actionList>
+                            <conditionRuleList>
+                                <compareValues>
+                                    <logic>equals</logic>
+                                    <negate>1</negate>
+                                    <value1>${decode_other}</value1>
+                                    <value2>0</value2>
+                                </compareValues>
+                            </conditionRuleList>
+                            <elseActionList>
+                                <setInstallerVariable>
+                                    <abortOnError>0</abortOnError>
+                                    <name>generic_mpeg4</name>
+                                    <showMessageOnError>0</showMessageOnError>
+                                    <value>3</value>
+                                </setInstallerVariable>
+                            </elseActionList>
+                        </if>
+                    </actionList>
+                    <conditionRuleList>
+                        <compareValues>
+                            <logic>equals</logic>
+                            <negate>1</negate>
+                            <value1>${decode_3ivx}</value1>
+                            <value2>0</value2>
+                        </compareValues>
+                    </conditionRuleList>
+                    <elseActionList>
+                        <if>
+                            <abortOnError>0</abortOnError>
+                            <showMessageOnError>0</showMessageOnError>
+                            <actionList>
+                                <setInstallerVariable>
+                                    <abortOnError>0</abortOnError>
+                                    <name>generic_mpeg4</name>
+                                    <showMessageOnError>0</showMessageOnError>
+                                    <value>6</value>
+                                </setInstallerVariable>
+                            </actionList>
+                            <conditionRuleList>
+                                <compareValues>
+                                    <logic>equals</logic>
+                                    <negate>1</negate>
+                                    <value1>${decode_other}</value1>
+                                    <value2>0</value2>
+                                </compareValues>
+                            </conditionRuleList>
+                            <elseActionList>
+                                <setInstallerVariable>
+                                    <abortOnError>0</abortOnError>
+                                    <name>generic_mpeg4</name>
+                                    <showMessageOnError>0</showMessageOnError>
+                                    <value>2</value>
+                                </setInstallerVariable>
+                            </elseActionList>
+                        </if>
+                    </elseActionList>
+                </if>
+            </actionList>
+            <conditionRuleList>
+                <compareValues>
+                    <logic>equals</logic>
+                    <negate>1</negate>
+                    <value1>${decode_divx}</value1>
+                    <value2>0</value2>
+                </compareValues>
+            </conditionRuleList>
+            <elseActionList>
+                <if>
+                    <abortOnError>0</abortOnError>
+                    <showMessageOnError>0</showMessageOnError>
+                    <actionList>
+                        <if>
+                            <abortOnError>0</abortOnError>
+                            <showMessageOnError>0</showMessageOnError>
+                            <actionList>
+                                <setInstallerVariable>
+                                    <abortOnError>0</abortOnError>
+                                    <name>generic_mpeg4</name>
+                                    <showMessageOnError>0</showMessageOnError>
+                                    <value>5</value>
+                                </setInstallerVariable>
+                            </actionList>
+                            <conditionRuleList>
+                                <compareValues>
+                                    <logic>equals</logic>
+                                    <negate>1</negate>
+                                    <value1>${decode_other}</value1>
+                                    <value2>0</value2>
+                                </compareValues>
+                            </conditionRuleList>
+                            <elseActionList>
+                                <setInstallerVariable>
+                                    <abortOnError>0</abortOnError>
+                                    <name>generic_mpeg4</name>
+                                    <showMessageOnError>0</showMessageOnError>
+                                    <value>1</value>
+                                </setInstallerVariable>
+                            </elseActionList>
+                        </if>
+                    </actionList>
+                    <conditionRuleList>
+                        <compareValues>
+                            <logic>equals</logic>
+                            <negate>1</negate>
+                            <value1>${decode_3IVX}</value1>
+                            <value2>0</value2>
+                        </compareValues>
+                    </conditionRuleList>
+                    <elseActionList>
+                        <if>
+                            <abortOnError>0</abortOnError>
+                            <showMessageOnError>0</showMessageOnError>
+                            <actionList>
+                                <setInstallerVariable>
+                                    <abortOnError>0</abortOnError>
+                                    <name>generic_mpeg4</name>
+                                    <showMessageOnError>0</showMessageOnError>
+                                    <value>4</value>
+                                </setInstallerVariable>
+                            </actionList>
+                            <conditionRuleList>
+                                <compareValues>
+                                    <logic>equals</logic>
+                                    <negate>1</negate>
+                                    <value1>${decode_other}</value1>
+                                    <value2>0</value2>
+                                </compareValues>
+                            </conditionRuleList>
+                            <elseActionList>
+                                <setInstallerVariable>
+                                    <abortOnError>0</abortOnError>
+                                    <name>generic_mpeg4</name>
+                                    <showMessageOnError>0</showMessageOnError>
+                                    <value>0</value>
+                                </setInstallerVariable>
+                            </elseActionList>
+                        </if>
+                    </elseActionList>
+                </if>
+            </elseActionList>
+        </if>
     </readyToInstallActionList>
     <postInstallationActionList>
         <copyFile>
@@ -767,6 +927,14 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
                 </platformTest>
             </ruleList>
         </deleteFile>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_CURRENT_USER\Software\GNU\XviD</key>
+            <name>Supported_4CC</name>
+            <showMessageOnError>0</showMessageOnError>
+            <type>REG_DWORD</type>
+            <value>${generic_mpeg4}</value>
+        </registrySet>
     </postInstallationActionList>
     <preUninstallationActionList>
         <runProgram>
@@ -1361,6 +1529,48 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
                 </registryTest>
             </ruleList>
         </choiceParameter>
+        <parameterGroup>
+            <name>decoder_configuration</name>
+            <title>Decoder Configuration</title>
+            <explanation>Use Xvid to play back also the following media types:</explanation>
+            <value></value>
+            <default></default>
+            <parameterList>
+                <booleanParameter>
+                    <name>decode_divx</name>
+                    <title>DIVX</title>
+                    <description>DIVX</description>
+                    <explanation></explanation>
+                    <value></value>
+                    <default></default>
+                    <displayStyle>checkbox-left</displayStyle>
+                </booleanParameter>
+                <booleanParameter>
+                    <name>decode_3ivx</name>
+                    <title>3IVX</title>
+                    <description>3IVX</description>
+                    <explanation></explanation>
+                    <value></value>
+                    <default></default>
+                    <displayStyle>checkbox-left</displayStyle>
+                </booleanParameter>
+                <booleanParameter>
+                    <name>decode_other</name>
+                    <title>Other MPEG-4</title>
+                    <description>Other MPEG-4</description>
+                    <explanation></explanation>
+                    <value></value>
+                    <default></default>
+                    <displayStyle>checkbox-left</displayStyle>
+                </booleanParameter>
+            </parameterList>
+            <ruleList>
+                <fileExists>
+                    <negate>1</negate>
+                    <path>${installdir}/update.ini</path>
+                </fileExists>
+            </ruleList>
+        </parameterGroup>
     </parameterList>
     <platformOptionsList>
         <platformOptions>
