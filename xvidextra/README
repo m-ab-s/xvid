@@ -1,0 +1,30 @@
+xvidextra - useful tools and addons
+-----------------------------------
+
+
+1) xvidextra - Overview
+
+The xvidextra package is a collection of useful tools and addons to
+complement xvidcore. In contrast to xvidcore, the pieces that make
+up xvidextra are not necessarily aimed to be platform independent. 
+
+Currently, xvidextra consists of the following parts:
+
+- installer:        the necessary scripts to build a windows
+                    installer of Xvid (needs: Bitrock InstallBuilder)
+
+- apps/miniconvert: a tiny (and simple) media converter application
+                    for windows that converts various input to 
+                    Xvid+MP3 AVI.
+
+
+2) Documentation
+
+- installer/howto.txt. Otherwise, none so far. Yeah.
+
+
+3) Licensing:
+
+- the tools contained in xvidextra are licensed under the terms 
+  of the GNU General Public License unless something different is
+  explicitely specified. Refer to LICENSE in xvidextra root dir.
