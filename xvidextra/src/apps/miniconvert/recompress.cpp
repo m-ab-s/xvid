@@ -564,8 +564,14 @@ RecompressGraph::CreateGraph(HWND in_ProgressWnd, int in_Pass)
   //AddToRot(m_pGraph, &dwReg);
 
   if (hr == S_OK && in_Pass != 2) { // Make progress bar visible
-	TCHAR buf[MAX_PATH+50];
-	swprintf(buf, MAX_PATH+50, TEXT("Converting %s..."), m_szSourceFilePath);
+	TCHAR buf[MAX_PATH+50], buf2[MAX_PATH];
+	if (wcslen(m_szSourceFilePath) > 60) {
+	  PathCompactPathEx(buf2, m_szSourceFilePath, 60, 0);
+      swprintf(buf, MAX_PATH+50, TEXT("Converting %s"), buf2);
+	}
+	else
+	  swprintf(buf, MAX_PATH+50, TEXT("Converting %s..."), m_szSourceFilePath);
+
 	ShowWindow(GetDlgItem(ghDlg, IDC_EDIT_SRC), SW_HIDE);
 	ShowWindow(GetDlgItem(ghDlg, IDC_BUTTON_SRC), SW_HIDE);
 	ShowWindow(GetDlgItem(ghDlg, IDC_EDIT_DST), SW_HIDE);
