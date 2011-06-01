@@ -1074,7 +1074,7 @@ RecompressThreadProc(LPVOID xParam)
       TCHAR sztmpPath[2*MAX_PATH];
 	  wcsncpy(sztmpPath, SrcFile, (ext-SrcFile));
 	  sztmpPath[ext-SrcFile] = TEXT('\0');
-      swprintf(sztmpPath, 2*MAX_PATH, TEXT("%s_Xvid%s"), sztmpPath, ext);
+      swprintf(sztmpPath, 2*MAX_PATH, TEXT("%s_Xvid.avi"), sztmpPath);
 
       PathCombine(szDstPath, DstFile, sztmpPath); // Dst
 	}
@@ -1085,7 +1085,7 @@ RecompressThreadProc(LPVOID xParam)
       TCHAR sztmpPath[2*MAX_PATH];
 	  wcsncpy(sztmpPath, NextFileName, (ext-NextFileName));
 	  sztmpPath[ext-NextFileName] = TEXT('\0');
-      swprintf(sztmpPath, 2*MAX_PATH, TEXT("%s_Xvid%s"), sztmpPath, ext);
+      swprintf(sztmpPath, 2*MAX_PATH, TEXT("%s_Xvid.avi"), sztmpPath);
 
 	  PathCombine(szDstPath, DstFile, sztmpPath); // Dst
 
