@@ -13,6 +13,6 @@ void OutputDebugStringf(char *fmt, ...)
 
 	va_start(args, fmt);
 	vsprintf(buf, fmt, args);
-	OutputDebugString(buf);
+	OutputDebugStringA(buf);
 #endif
 }

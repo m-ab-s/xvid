@@ -314,7 +314,7 @@ STDMETHODIMP CXvidDecoder::NonDelegatingQueryInterface(REFIID riid, void **ppv)
 /* constructor */
 
 CXvidDecoder::CXvidDecoder(LPUNKNOWN punk, HRESULT *phr) :
-    CVideoTransformFilter(NAME("CXvidDecoder"), punk, CLSID_XVID), m_hdll (NULL)
+    CVideoTransformFilter(TEXT("CXvidDecoder"), punk, CLSID_XVID), m_hdll (NULL)
 {
 	DPRINTF("Constructor");
 
@@ -356,7 +356,7 @@ HRESULT CXvidDecoder::OpenLib()
 	m_hdll = LoadLibrary(XVID_DLL_NAME);
 	if (m_hdll == NULL) {
 		DPRINTF("dll load failed");
-		MessageBox(0, XVID_DLL_NAME " not found","Error", MB_TOPMOST);
+		MessageBox(0, XVID_DLL_NAME TEXT(" not found"), TEXT("Error"), MB_TOPMOST);
 		return E_FAIL;
 	}
 
@@ -364,7 +364,7 @@ HRESULT CXvidDecoder::OpenLib()
 	if (xvid_global_func == NULL) {
         FreeLibrary(m_hdll);
         m_hdll = NULL;
-		MessageBox(0, "xvid_global() not found", "Error", MB_TOPMOST);
+		MessageBox(0, TEXT("xvid_global() not found"), TEXT("Error"), MB_TOPMOST);
 		return E_FAIL;
 	}
 
@@ -373,7 +373,7 @@ HRESULT CXvidDecoder::OpenLib()
         xvid_global_func = NULL;
         FreeLibrary(m_hdll);
         m_hdll = NULL;
-		MessageBox(0, "xvid_decore() not found", "Error", MB_TOPMOST);
+		MessageBox(0, TEXT("xvid_decore() not found"), TEXT("Error"), MB_TOPMOST);
 		return E_FAIL;
 	}
 
@@ -383,7 +383,7 @@ HRESULT CXvidDecoder::OpenLib()
         xvid_decore_func = NULL;
         FreeLibrary(m_hdll);
         m_hdll = NULL;
-		MessageBox(0, "xvid_global() failed", "Error", MB_TOPMOST);
+		MessageBox(0, TEXT("xvid_global() failed"), TEXT("Error"), MB_TOPMOST);
 		return E_FAIL;
 	}
 
@@ -393,7 +393,7 @@ HRESULT CXvidDecoder::OpenLib()
         xvid_decore_func = NULL;
         FreeLibrary(m_hdll);
         m_hdll = NULL;
-		MessageBox(0, "xvid_global() failed", "Error", MB_TOPMOST);
+		MessageBox(0, TEXT("xvid_global() failed"), TEXT("Error"), MB_TOPMOST);
 		return E_FAIL;
 	}
 
@@ -948,14 +948,14 @@ HRESULT CXvidDecoder::CompleteConnect(PIN_DIRECTION direction, IPin *pReceivePin
 		wc.hInstance = (HINSTANCE) g_xvid_hInst;
 		wc.hbrBackground = (HBRUSH) GetStockObject(NULL_BRUSH);
 		wc.lpszMenuName = NULL;
-		wc.lpszClassName = "XVID_MSG_WINDOW";
+		wc.lpszClassName = TEXT("XVID_MSG_WINDOW");
 		wc.hIcon = NULL;
 		wc.hIconSm = NULL;
 		wc.hCursor = NULL;
 		RegisterClassEx(&wc);
 
-		MSG_hwnd = CreateWindowEx(0, "XVID_MSG_WINDOW", NULL, 0, CW_USEDEFAULT, 
-                                  CW_USEDEFAULT, 0, 0, HWND_MESSAGE, NULL, (HINSTANCE) g_xvid_hInst, NULL);
+		MSG_hwnd = CreateWindowEx(0, TEXT("XVID_MSG_WINDOW"), NULL, 0, CW_USEDEFAULT, 
+			CW_USEDEFAULT, 0, 0, HWND_MESSAGE, NULL, (HINSTANCE) g_xvid_hInst, NULL);
 
 		/* display the tray icon */
 		NOTIFYICONDATA nid;    
@@ -966,7 +966,7 @@ HRESULT CXvidDecoder::CompleteConnect(PIN_DIRECTION direction, IPin *pReceivePin
 		nid.uID = 1456;  
 		nid.uCallbackMessage = WM_ICONMESSAGE;  
 		nid.hIcon = LoadIcon(g_xvid_hInst, MAKEINTRESOURCE(IDI_ICON));  
-		strcpy_s(nid.szTip, 19, "Xvid Video Decoder");  
+		lstrcpy(nid.szTip, TEXT("Xvid Video Decoder"));  
 		nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
 	
 		Shell_NotifyIcon(NIM_ADD, &nid); 
@@ -1660,13 +1660,13 @@ HRESULT CXvidDecoder::MFTSetOutputType(DWORD dwOutputStreamID, IMFMediaType *pTy
 		wc.hInstance = (HINSTANCE) g_xvid_hInst;
 		wc.hbrBackground = (HBRUSH) GetStockObject(NULL_BRUSH);
 		wc.lpszMenuName = NULL;
-		wc.lpszClassName = "XVID_MSG_WINDOW";
+		wc.lpszClassName = TEXT("XVID_MSG_WINDOW");
 		wc.hIcon = NULL;
 		wc.hIconSm = NULL;
 		wc.hCursor = NULL;
 		RegisterClassEx(&wc);
 
-		MSG_hwnd = CreateWindowEx(0, "XVID_MSG_WINDOW", NULL, 0, CW_USEDEFAULT, 
+		MSG_hwnd = CreateWindowEx(0, TEXT("XVID_MSG_WINDOW"), NULL, 0, CW_USEDEFAULT, 
                                   CW_USEDEFAULT, 0, 0, HWND_MESSAGE, NULL, (HINSTANCE) g_xvid_hInst, NULL);
 
 		/* display the tray icon */
@@ -1677,8 +1677,8 @@ HRESULT CXvidDecoder::MFTSetOutputType(DWORD dwOutputStreamID, IMFMediaType *pTy
 		nid.hWnd = MSG_hwnd;  
 		nid.uID = 1456;  
 		nid.uCallbackMessage = WM_ICONMESSAGE;  
-		nid.hIcon = LoadIcon(g_xvid_hInst, MAKEINTRESOURCE(IDI_ICON));  
-		strcpy_s(nid.szTip, 19, "Xvid Video Decoder");  
+		nid.hIcon = LoadIcon(g_xvid_hInst, MAKEINTRESOURCE(IDI_ICON));
+		lstrcpy(nid.szTip, TEXT("Xvid Video Decoder"));
 		nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
 		
 		Shell_NotifyIcon(NIM_ADD, &nid); 
@@ -1907,7 +1907,7 @@ HRESULT CXvidDecoder::MFTProcessInput(DWORD dwInputStreamID, IMFSample *pSample,
 	EnterCriticalSection(&m_mft_lock);
 
 	HRESULT hr = S_OK;
-	IMFMediaBuffer *pBuffer;
+	IMFMediaBuffer *pBuffer = NULL;
 
 	if (SUCCEEDED(hr)) {
 		hr = pSample->ConvertToContiguousBuffer(&pBuffer);
@@ -2161,9 +2161,9 @@ HRESULT CXvidDecoder::OnCheckInputType(IMFMediaType *pmt)
 	}
 	
 	if (m_hdll == NULL) {
-		HRESULT hr = OpenLib();
+		HRESULT hr2 = OpenLib();
 		
-		if (FAILED(hr) || (m_hdll == NULL)) // Paranoid checks.
+		if (FAILED(hr2) || (m_hdll == NULL)) // Paranoid checks.
 			hr = MF_E_INVALIDTYPE;
 	}
 	

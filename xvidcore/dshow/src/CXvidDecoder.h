@@ -161,9 +161,9 @@ private :
 	xvid_dec_frame_t m_frame;
 
 	HINSTANCE m_hdll;
-	int (*xvid_global_func)(void *handle, int opt, void *param1, void *param2);
-	int (*xvid_decore_func)(void *handle, int opt, void *param1, void *param2);
-	int ar_x, ar_y;
+	int (__cdecl *xvid_global_func)(void *handle, int opt, void *param1, void *param2);
+	int (__cdecl *xvid_decore_func)(void *handle, int opt, void *param1, void *param2);
+	UINT ar_x, ar_y;
 	bool forced_ar;
 
 	int rgb_flip;

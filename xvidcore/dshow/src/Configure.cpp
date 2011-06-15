@@ -44,7 +44,7 @@ INT_PTR adv_dialog(HWND hwndOwner)
 	psp[0].pszTemplate = MAKEINTRESOURCE (IDD_ABOUT);
 	psp[0].pszIcon = NULL;
 	psp[0].pfnDlgProc = adv_proc;
-	psp[0].pszTitle = "About";
+	psp[0].pszTitle = TEXT("About");
 	psp[0].lParam = 0;
 
 	psh.dwSize = sizeof (PROPSHEETHEADER);
@@ -52,7 +52,7 @@ INT_PTR adv_dialog(HWND hwndOwner)
 	psh.hwndParent = hwndOwner;
 	psh.hInstance = g_xvid_hInst;
 	psh.pszIcon = NULL;
-	psh.pszCaption = (LPSTR)"Xvid Configuration";
+	psh.pszCaption = TEXT("Xvid Configuration");
 	psh.nPages = sizeof (psp) / sizeof (PROPSHEETPAGE);
 	psh.ppsp = psp;
 
