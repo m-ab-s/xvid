@@ -32,8 +32,8 @@ extern "C" {
 
 /* registry stuff */
 #define XVID_REG_KEY	HKEY_CURRENT_USER
-#define XVID_REG_SUBKEY	"Software\\GNU\\XviD"
-#define XVID_REG_CLASS	"config"
+#define XVID_REG_SUBKEY	TEXT("Software\\GNU\\XviD")
+#define XVID_REG_CLASS	TEXT("config")
 
 #define REG_GET_N(X, Y, Z) size=sizeof(int);if(RegQueryValueEx(hKey, X, 0, 0, (LPBYTE)&Y, &size) != ERROR_SUCCESS) {Y=Z;}
 #define REG_GET_S(X, Y, Z) size=MAX_PATH;if(RegQueryValueEx(hKey, X, 0, 0, Y, &size) != ERROR_SUCCESS) {lstrcpy(Y, Z);}
@@ -79,7 +79,7 @@ void LoadRegistryInfo();
 void SaveRegistryInfo();
 INT_PTR CALLBACK adv_proc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-#define XVID_DLL_NAME "xvidcore.dll"
+#define XVID_DLL_NAME TEXT("xvidcore.dll")
 
 #ifdef __cplusplus
 }
