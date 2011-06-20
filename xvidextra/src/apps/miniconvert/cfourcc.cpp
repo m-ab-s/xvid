@@ -54,14 +54,14 @@ fourcc_helper(TCHAR filename[MAX_PATH], char *ptrused, char *ptrdesc, int check_
 
   memset (&avihdr, 0, AVILEN);	/* init avihdr just in case! */
 
-  fin = _wfopen (filename, L"rb");
+  fin = _tfopen (filename, TEXT("rb"));
   if (fin == NULL) {
-	OutputDebugString(L"Error: Cannot open avi file!");
+	OutputDebugString(TEXT("Error: Cannot open avi file!"));
 	return -1;
   }
 
   if (fread (avihdr, sizeof (char), AVILEN, fin) < AVILEN) {
-	OutputDebugString(L"Error: Read end unexpectedly, incomplete file?");
+	OutputDebugString(TEXT("Error: Read end unexpectedly, incomplete file?"));
 	return -1;
   }
   fclose (fin);
@@ -69,14 +69,14 @@ fourcc_helper(TCHAR filename[MAX_PATH], char *ptrused, char *ptrdesc, int check_
   if (check_only) {
     /*lazy verifier! */
     if (memcmp (avihdr, MAGIC, 4)) {
-	  OutputDebugString(L"Error: Probably not a supported avi file");
+	  OutputDebugString(TEXT("Error: Probably not a supported avi file"));
 	  return -1;
     }
   }
   else {
-    fin = _wfopen (filename, L"r+b");
+    fin = _tfopen (filename, TEXT("r+b"));
     if (fin == NULL) {
-      OutputDebugString(L"Error: Cannot open avi file for writing\n");
+      OutputDebugString(TEXT("Error: Cannot open avi file for writing\n"));
 	  return -1;
     }
 

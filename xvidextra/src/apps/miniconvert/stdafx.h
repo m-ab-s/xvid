@@ -11,6 +11,7 @@
 
 #define _USE_MATH_DEFINES
 #define _CRT_SECURE_NO_WARNINGS
+#define _CRT_NON_CONFORMING_SWPRINTFS
 
 #include <streams.h>
 #include <Dvdmedia.h>
