@@ -41,8 +41,8 @@
 
 #define APP_NAME TEXT("Xvid MiniConvert")
 
-#define Pass_FILE      "xvid_2pass.stats"
-#define Pass_FILE_W   L"xvid_2pass.stats"
+#define Pass_FILE_A    "xvid_2pass.stats"
+#define Pass_FILE      TEXT("xvid_2pass.stats")
 
 // Todo: Avoid global vars...
 OPENFILENAME sOfn, sSfn;
@@ -121,10 +121,10 @@ AddToRot(IUnknown *pUnkGraph, DWORD *pdwRegister)
     
   const size_t STRING_LENGTH = 256;
   WCHAR wsz[STRING_LENGTH];
-  swprintf(wsz, STRING_LENGTH, TEXT("FilterGraph %08x pid %08x"), 
+  swprintf(wsz, STRING_LENGTH, L"FilterGraph %08x pid %08x", 
            (DWORD_PTR)pUnkGraph, GetCurrentProcessId());
     
-  HRESULT hr = CreateItemMoniker(TEXT("!"), wsz, &pMoniker);
+  HRESULT hr = CreateItemMoniker(L"!", wsz, &pMoniker);
   if (SUCCEEDED(hr)) {
     hr = pROT->Register(ROTFLAGS_REGISTRATIONKEEPSALIVE, pUnkGraph, 
                         pMoniker, pdwRegister);
@@ -357,7 +357,7 @@ RecompressGraph::CreateGraph(HWND in_ProgressWnd, int in_Pass)
     if (hr == S_OK) pVidMeter = CProgressNotifyFilter::CreateInstance(0, &hr, 0);
     if (hr == S_OK) hr = pVidMeter->NonDelegatingQueryInterface(IID_IBaseFilter, (void **)&m_pVideoMeter);
     //hr = CoCreateInstance(CLSID_ProgressNotifyFilter, 0, CLSCTX_INPROC_SERVER, IID_IBaseFilter, (void **)&m_pVideoMeter);
-    if (hr == S_OK) hr = m_pGraph->AddFilter(m_pVideoMeter, TEXT("Video meter"));
+    if (hr == S_OK) hr = m_pGraph->AddFilter(m_pVideoMeter, L"Video meter");
     if (hr == S_OK) hr = GetFilterPin(m_pVideoMeter, PINDIR_INPUT, 0, &pVMeterInVideoPin, GUID_NULL, GUID_NULL);
 
     if (pOutVideoPin) {
@@ -427,7 +427,7 @@ RecompressGraph::CreateGraph(HWND in_ProgressWnd, int in_Pass)
         m_bFileCopy = 0;
 
         if (hr == S_OK) hr = AddDirectXFilterByMoniker(CLSID_VideoCompressorCategory, "xvid", &m_pXvidEncoder, 1);
-        if (hr == S_OK) hr = m_pGraph->AddFilter(m_pXvidEncoder, TEXT("Encoder"));
+        if (hr == S_OK) hr = m_pGraph->AddFilter(m_pXvidEncoder, L"Encoder");
 
         if (hr == S_OK) hr = ConnectFilters(m_pGraph, pOutVideoPin, m_pXvidEncoder, GUID_NULL, GUID_NULL, 0);
 		if (hr == S_OK) pCompressedVideoFilter = m_pXvidEncoder;
@@ -512,7 +512,7 @@ RecompressGraph::CreateGraph(HWND in_ProgressWnd, int in_Pass)
 #endif
 		  }
 
-          strcpy(m_pXvidCfgRec->stats, Pass_FILE);
+          strcpy(m_pXvidCfgRec->stats, Pass_FILE_A);
 
           m_pXvidCfgRec->display_status = 0;
 
@@ -524,7 +524,7 @@ RecompressGraph::CreateGraph(HWND in_ProgressWnd, int in_Pass)
 
   CUnknown *pChgUnk = ChangeSubtypeT::CreateInstance(0, &hr);
   if (hr == S_OK) hr = pChgUnk->NonDelegatingQueryInterface(IID_IBaseFilter, (void **)&m_pChgType);
-  if (hr == S_OK) hr = m_pGraph->AddFilter(m_pChgType, TEXT("ChgToxvid"));
+  if (hr == S_OK) hr = m_pGraph->AddFilter(m_pChgType, L"ChgToxvid");
   if (hr == S_OK) hr = ConnectFilters(m_pGraph, pCompressedVideoFilter, m_pChgType, GUID_NULL, GUID_NULL, 1);
 
   if (hr == S_OK) hr = AddFilterByCLSID((GUID *)&CLSID_AviDest, &m_pMuxer);
@@ -565,12 +565,12 @@ RecompressGraph::CreateGraph(HWND in_ProgressWnd, int in_Pass)
 
   if (hr == S_OK && in_Pass != 2) { // Make progress bar visible
 	TCHAR buf[MAX_PATH+50], buf2[MAX_PATH];
-	if (wcslen(m_szSourceFilePath) > 60) {
+	if (_tcslen(m_szSourceFilePath) > 60) {
 	  PathCompactPathEx(buf2, m_szSourceFilePath, 60, 0);
-      swprintf(buf, MAX_PATH+50, TEXT("Converting %s"), buf2);
+      _stprintf(buf, TEXT("Converting %s"), buf2);
 	}
 	else
-	  swprintf(buf, MAX_PATH+50, TEXT("Converting %s..."), m_szSourceFilePath);
+	  _stprintf(buf, TEXT("Converting %s..."), m_szSourceFilePath);
 
 	ShowWindow(GetDlgItem(ghDlg, IDC_EDIT_SRC), SW_HIDE);
 	ShowWindow(GetDlgItem(ghDlg, IDC_BUTTON_SRC), SW_HIDE);
@@ -600,8 +600,8 @@ RecompressGraph::AddAudioStreams(int check_only)
     bFraunhoferPro = 0;
   else {
     // C:\WINDOWS\System32\l3codecp.acm was not recognized 
-    int sLen = wcslen(kvalue);
-    if ((sLen >= 12) && (wcscmp(&(kvalue[sLen - 12]), TEXT("l3codecp.acm")) == 0)) 
+    int sLen = _tcslen(kvalue);
+    if ((sLen >= 12) && (_tcscmp(&(kvalue[sLen - 12]), TEXT("l3codecp.acm")) == 0)) 
       bFraunhoferPro = 1;
   }
 
@@ -762,7 +762,7 @@ RecompressGraph::SetDstFileName(LPCTSTR in_szFilePath)
   if (m_szDstFilePath)
     free (m_szDstFilePath);
 
-  m_szDstFilePath = _wcsdup(in_szFilePath);
+  m_szDstFilePath = _tcsdup(in_szFilePath);
 
   return S_OK;
 }
@@ -773,11 +773,19 @@ RecompressGraph::AddFileWriter(LPCTSTR in_szFilePath)
   if (!m_pGraph || m_pFileWriter)
     return E_UNEXPECTED;
 
+  int sLen = _tcslen(in_szFilePath);
+  OLECHAR *pwName = new OLECHAR [sLen+1];
+#ifndef UNICODE
+  mbstowcs(pwName, in_szFilePath, sLen+1);
+#else
+  wcsncpy(pwName, in_szFilePath, sLen+1);
+#endif
+
   HRESULT hr = AddFilterByCLSID((GUID *)&CLSID_FileWriter, &m_pFileWriter);
   IFileSinkFilter* pDst=0;
   if (hr == S_OK) hr = m_pFileWriter->QueryInterface(IID_IFileSinkFilter, (void **)(&pDst));
-  if (hr == S_OK) hr = pDst->SetFileName(in_szFilePath, &m_DstFileMediaType);
-  
+  if (hr == S_OK) hr = pDst->SetFileName(pwName, &m_DstFileMediaType);
+  delete [] pwName;
   if (pDst)
     pDst->Release();
 
@@ -792,7 +800,7 @@ RecompressGraph::AddSourceFile(LPCTSTR in_szFilePath)
   if (m_szSourceFilePath)
     free (m_szSourceFilePath);
 
-  m_szSourceFilePath = _wcsdup(in_szFilePath);
+  m_szSourceFilePath = _tcsdup(in_szFilePath);
   
   return S_OK;
 }
@@ -802,7 +810,15 @@ RecompressGraph::AddSourceFilter(LPCTSTR in_szFilePath)
 {
   if (!m_pGraph || m_pSrcFilter) return E_UNEXPECTED;
 
-  HRESULT hr = m_pGraph->AddSourceFilter(in_szFilePath, TEXT("Source filter"), &m_pSrcFilter);
+  int sLen = _tcslen(in_szFilePath);
+  OLECHAR *pwName = new OLECHAR [sLen+1];
+#ifndef UNICODE
+  mbstowcs(pwName, in_szFilePath, sLen+1);
+#else
+  wcsncpy(pwName, in_szFilePath, sLen+1);
+#endif
+
+  HRESULT hr = m_pGraph->AddSourceFilter(pwName, L"Source filter", &m_pSrcFilter);
 
 #if 0
   HRESULT hr = AddFilterByCLSID((GUID *)&CLSID_AsyncReader, &this->m_pSrcFilter);
@@ -811,6 +827,8 @@ RecompressGraph::AddSourceFilter(LPCTSTR in_szFilePath)
   if (hr == S_OK) hr = pSrc->Load(pwName, &m_SrcFileMediaType);
   if (pSrc) pSrc->Release();
 #endif
+
+  delete [] pwName;
 
   return hr;
 }
@@ -899,8 +917,8 @@ RecompressGraph::Recompress()
     pBitrateProgressNotify->GetBitrate(m_CountedFrames, m_TotalFramesSize);
 	pBitrateProgressNotify->Release();
     pBitrateProgressNotify = 0;
-    TCHAR *pSrcStr = _wcsdup(m_szSourceFilePath);
-    TCHAR *pDstStr = _wcsdup(m_szDstFilePath);
+    TCHAR *pSrcStr = _tcsdup(m_szSourceFilePath);
+    TCHAR *pDstStr = _tcsdup(m_szDstFilePath);
 
     pControl->Release();
     pEvent->Release();
@@ -914,7 +932,7 @@ RecompressGraph::Recompress()
 
     if (bBreakRequested || hr != S_OK) {
       DeleteFile(m_szDstFilePath);
-      DeleteFile(Pass_FILE_W);
+      DeleteFile(Pass_FILE);
 	  hr = E_FAIL;
       goto finish_recompress;
     }
@@ -974,7 +992,7 @@ RecompressGraph::Recompress()
   if (pEvent) pEvent->Release();
   if (pBitrateProgressNotify) pBitrateProgressNotify->Release();
 
-  DeleteFile(Pass_FILE_W);
+  DeleteFile(Pass_FILE);
 
 finish_recompress:
 
@@ -1041,10 +1059,10 @@ RecompressThreadProc(LPVOID xParam)
   TCHAR *NextFileName = SrcFile;
   TCHAR tempFile[2*MAX_PATH];
 
-  if(SrcFile[wcslen(SrcFile) + 1] != TEXT('\0')) // Multiple input files?
+  if(SrcFile[_tcslen(SrcFile) + 1] != TEXT('\0')) // Multiple input files?
   { 
     nbInputFiles = 0;
-	NextFileName = &NextFileName[wcslen(NextFileName) + 1]; 
+	NextFileName = &NextFileName[_tcslen(NextFileName) + 1]; 
     
 	while(NextFileName[0] != L'\0') // Count total filesize and number of source files
 	{
@@ -1053,14 +1071,14 @@ RecompressThreadProc(LPVOID xParam)
   	  DetermineFileSize(tempFile, &filesize);
       totalSize += filesize;
 
-      NextFileName = &NextFileName[wcslen(NextFileName) + 1];
+      NextFileName = &NextFileName[_tcslen(NextFileName) + 1];
       nbInputFiles++;
 	}
   }
 
   NextFileName = SrcFile;
   if (nbInputFiles > 1) {
-    NextFileName = &NextFileName[wcslen(NextFileName) + 1]; // Bypass dir and jump to first filename
+    NextFileName = &NextFileName[_tcslen(NextFileName) + 1]; // Bypass dir and jump to first filename
   }
 
   HRESULT hr = S_OK;
@@ -1072,30 +1090,30 @@ RecompressThreadProc(LPVOID xParam)
 	count++;
 
 	if (nbInputFiles == 1) {
-      wcscpy(tempFile, SrcFile); // Src
+      _tcscpy(tempFile, SrcFile); // Src
 
       PathStripPath(SrcFile);
 
-	  LPWSTR ext = PathFindExtension(SrcFile);
+	  LPTSTR ext = PathFindExtension(SrcFile);
       TCHAR sztmpPath[2*MAX_PATH];
-	  wcsncpy(sztmpPath, SrcFile, (ext-SrcFile));
+	  _tcsncpy(sztmpPath, SrcFile, (ext-SrcFile));
 	  sztmpPath[ext-SrcFile] = TEXT('\0');
-      swprintf(sztmpPath, 2*MAX_PATH, TEXT("%s_Xvid.avi"), sztmpPath);
+      _stprintf(sztmpPath, TEXT("%s_Xvid.avi"), sztmpPath);
 
       PathCombine(szDstPath, DstFile, sztmpPath); // Dst
 	}
 	else {
 	  PathCombine(tempFile, SrcFile, NextFileName); // Src
 
-	  LPWSTR ext = PathFindExtension(NextFileName);
+	  LPTSTR ext = PathFindExtension(NextFileName);
       TCHAR sztmpPath[2*MAX_PATH];
-	  wcsncpy(sztmpPath, NextFileName, (ext-NextFileName));
+	  _tcsncpy(sztmpPath, NextFileName, (ext-NextFileName));
 	  sztmpPath[ext-NextFileName] = TEXT('\0');
-      swprintf(sztmpPath, 2*MAX_PATH, TEXT("%s_Xvid.avi"), sztmpPath);
+      _stprintf(sztmpPath, TEXT("%s_Xvid.avi"), sztmpPath);
 
 	  PathCombine(szDstPath, DstFile, sztmpPath); // Dst
 
-      NextFileName = &NextFileName[wcslen(NextFileName) + 1];
+      NextFileName = &NextFileName[_tcslen(NextFileName) + 1];
 	}
 
     pRec->CleanUp();
@@ -1275,15 +1293,15 @@ DIALOG_MAIN(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 		GetDlgItemText(hDlg, IDC_EDIT_SRC, OpenFilePath, sizeof(OpenFilePath)/sizeof(OpenFilePath));
 
-		if (wcslen(sOfn.lpstrFile) == 0) {
-          swprintf(sOfn.lpstrFile, 2*MAX_PATH, TEXT("%s"), OpenFilePath);
+		if (_tcslen(sOfn.lpstrFile) == 0) {
+          _stprintf(sOfn.lpstrFile, TEXT("%s"), OpenFilePath);
 		}
 
         if (GetOpenFileName(&sOfn)) {
-          if(sOfn.lpstrFile[wcslen(sOfn.lpstrFile) + 1] != TEXT('\0')) // Multiple input files?
-            swprintf(OpenFilePath, 2*MAX_PATH, TEXT("%s (multiselect)"), sOfn.lpstrFile);
+          if(sOfn.lpstrFile[_tcslen(sOfn.lpstrFile) + 1] != TEXT('\0')) // Multiple input files?
+            _stprintf(OpenFilePath, TEXT("%s (multiselect)"), sOfn.lpstrFile);
 		  else
-            swprintf(OpenFilePath, 2*MAX_PATH, TEXT("%s"), sOfn.lpstrFile);
+            _stprintf(OpenFilePath, TEXT("%s"), sOfn.lpstrFile);
 
           SetDlgItemText(hDlg, IDC_EDIT_SRC, OpenFilePath);
         }
@@ -1299,16 +1317,16 @@ DIALOG_MAIN(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
         GetDlgItemText(hDlg, IDC_EDIT_DST, SaveFilePath, sizeof(SaveFilePath)/sizeof(SaveFilePath[0]));
         GetDlgItemText(hDlg, IDC_EDIT_SRC, OpenFilePath, sizeof(OpenFilePath)/sizeof(OpenFilePath[0]));
 
-	    if ((wcslen(OpenFilePath) > 0 || wcslen(sOfn.lpstrFile) > 0) && wcslen(SaveFilePath) > 0) {
+	    if ((_tcslen(OpenFilePath) > 0 || _tcslen(sOfn.lpstrFile) > 0) && _tcslen(SaveFilePath) > 0) {
           EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_START), 0);
-		  if (wcslen(sOfn.lpstrFile) > 0)
+		  if (_tcslen(sOfn.lpstrFile) > 0)
 		    SrcFile = sOfn.lpstrFile;
 		  else {
-		    OpenFilePath[wcslen(OpenFilePath)+1] = TEXT('\0');
+		    OpenFilePath[_tcslen(OpenFilePath)+1] = TEXT('\0');
 		    SrcFile = OpenFilePath;
 		  }
 
-		  wcscpy(DstFile, SaveFilePath);
+		  _tcscpy(DstFile, SaveFilePath);
 		  hConvertThread = CreateThread(0, 0, RecompressThreadProc, GetDlgItem(hDlg, IDC_PROGRESSBAR), 0, 0);
 	    }
 	    else
