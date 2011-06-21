@@ -159,6 +159,11 @@ LRESULT compress_query(CODEC * codec, BITMAPINFO * lpbiInput, BITMAPINFO * lpbiO
 		return ICERR_BADFORMAT;
 	}
 
+	if ((inhdr->biWidth % 4) || (inhdr->biHeight % 4))
+	{
+		return ICERR_BADFORMAT;
+	}
+
 	if (lpbiOutput == NULL) 
 	{
 		return ICERR_OK;
