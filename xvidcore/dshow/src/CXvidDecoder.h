@@ -193,13 +193,9 @@ private :
 	UINT64 m_duration;
 #endif
 
-#ifdef XVID_USE_TRAYICON
 	HWND MSG_hwnd; /* message handler window */
 };
 #define WM_ICONMESSAGE (WM_USER + 1)
-#else
-};
-#endif
 
 static const int PARS[][2] = {
 	{1, 1},

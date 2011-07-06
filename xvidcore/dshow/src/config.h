@@ -67,6 +67,7 @@ typedef struct
 	int aspect_ratio;
 	int num_threads;
 	DWORD cpu;
+	int bTrayIcon;
 } CONFIG;
 
 

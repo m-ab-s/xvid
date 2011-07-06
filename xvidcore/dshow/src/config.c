@@ -57,6 +57,7 @@ void LoadRegistryInfo()
 	REG_GET_N(TEXT("Decoder_Aspect_Ratio"),  g_config.aspect_ratio, 0)
 	REG_GET_N(TEXT("num_threads"),  g_config.num_threads, 0)
 	REG_GET_N(TEXT("cpu_flags"), g_config.cpu, 0)
+	REG_GET_N(TEXT("Tray_Icon"), g_config.bTrayIcon, 1);
 
 	RegCloseKey(hKey);
 }
@@ -93,6 +94,7 @@ void SaveRegistryInfo()
 	REG_SET_N(TEXT("Videoinfo_Compat"),  g_config.videoinfo_compat);
 	REG_SET_N(TEXT("Decoder_Aspect_Ratio"), g_config.aspect_ratio);
 	REG_SET_N(TEXT("num_threads"),  g_config.num_threads);
+	REG_SET_N(TEXT("Tray_Icon"), g_config.bTrayIcon);
 
 	RegCloseKey(hKey);
 }
@@ -196,6 +198,9 @@ INT_PTR CALLBACK adv_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		SendMessage(GetDlgItem(hwnd, IDC_MP4V), BM_SETCHECK, g_config.supported_4cc & SUPPORT_MP4V, 0);
 		SendMessage(GetDlgItem(hwnd, IDC_COMPAT), BM_SETCHECK, g_config.videoinfo_compat, 0);
 
+		// TrayIcon
+		SendMessage(GetDlgItem(hwnd, IDC_TRAYICON), BM_SETCHECK, g_config.bTrayIcon, 0);
+
 		EnableWindow(GetDlgItem(hwnd,IDC_DERINGY),g_config.nDeblock_Y);
 		EnableWindow(GetDlgItem(hwnd,IDC_DERINGUV),g_config.nDeblock_UV);
 
@@ -210,8 +215,11 @@ INT_PTR CALLBACK adv_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 		case IDC_RESET:
 			ZeroMemory(&g_config, sizeof(CONFIG));
+			g_config.bTrayIcon = 1;
+
 			hBrightness = GetDlgItem(hwnd, IDC_BRIGHTNESS);
 			SendMessage(hBrightness, TBM_SETPOS, (WPARAM) TRUE, (LPARAM) g_config.nBrightness);
+
 			// Load Buttons
 			SendMessage(GetDlgItem(hwnd, IDC_DEBLOCK_Y), BM_SETCHECK, g_config.nDeblock_Y, 0);
 			SendMessage(GetDlgItem(hwnd, IDC_DEBLOCK_UV), BM_SETCHECK, g_config.nDeblock_UV, 0);
@@ -223,6 +231,7 @@ INT_PTR CALLBACK adv_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SendMessage(GetDlgItem(hwnd, IDC_COLORSPACE), CB_SETCURSEL, g_config.nForceColorspace, 0); 
 			g_config.aspect_ratio = 0;
 			SendMessage(GetDlgItem(hwnd, IDC_USE_AR), CB_SETCURSEL, g_config.aspect_ratio, 0);
+			SendMessage(GetDlgItem(hwnd, IDC_TRAYICON), CB_SETCURSEL, g_config.bTrayIcon, 0);
 			break;
 		case IDC_DEBLOCK_Y:
 			g_config.nDeblock_Y = !g_config.nDeblock_Y;
@@ -253,6 +262,9 @@ INT_PTR CALLBACK adv_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			break;
 		case IDC_COMPAT:
 			g_config.videoinfo_compat = !g_config.videoinfo_compat;
+			break;
+		case IDC_TRAYICON:
+			g_config.bTrayIcon = !g_config.bTrayIcon;
 			break;
 		default :
 			return FALSE;
