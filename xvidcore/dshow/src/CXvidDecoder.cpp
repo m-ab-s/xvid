@@ -40,8 +40,6 @@
 #define XVID_USE_MFT
 #endif
 
-#define XVID_USE_TRAYICON
-
 #include <windows.h>
 
 #include <streams.h>
@@ -177,7 +175,6 @@ CFactoryTemplate g_Templates[] =
 /* note: g_cTemplates must be global; used by strmbase.lib(dllentry.cpp,dllsetup.cpp) */
 int g_cTemplates = sizeof(g_Templates) / sizeof(CFactoryTemplate);
 
-#ifdef XVID_USE_TRAYICON
 extern HINSTANCE g_xvid_hInst;
 
 static int GUI_Page = 0;
@@ -219,7 +216,6 @@ LRESULT CALLBACK msg_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	
 	return TRUE; /* ok */
 }
-#endif
 
 STDAPI DllRegisterServer()
 {
@@ -496,7 +492,6 @@ CXvidDecoder::~CXvidDecoder()
 {
     DPRINTF("Destructor");
 
-#ifdef XVID_USE_TRAYICON
 	if (Tray_Icon) { /* Destroy tray icon */
 		NOTIFYICONDATA nid;
 		ZeroMemory(&nid,sizeof(NOTIFYICONDATA));
@@ -508,7 +503,6 @@ CXvidDecoder::~CXvidDecoder()
 		Shell_NotifyIcon(NIM_DELETE, &nid);
 		Tray_Icon = 0;
 	}
-#endif
 
 	/* Close xvidcore library */
 	CloseLib();
@@ -935,8 +929,7 @@ HRESULT CXvidDecoder::CompleteConnect(PIN_DIRECTION direction, IPin *pReceivePin
 {
 	DPRINTF("CompleteConnect");
 
-#ifdef XVID_USE_TRAYICON
-	if ((direction == PINDIR_OUTPUT) && (Tray_Icon == 0)) 
+	if ((direction == PINDIR_OUTPUT) && (Tray_Icon == 0) && (g_config.bTrayIcon != 0)) 
 	{
 		WNDCLASSEX wc; 
 
@@ -974,7 +967,6 @@ HRESULT CXvidDecoder::CompleteConnect(PIN_DIRECTION direction, IPin *pReceivePin
 		DestroyIcon(nid.hIcon);
 		Tray_Icon = 1;
 	}
-#endif
 
 	return S_OK;
 }
@@ -1647,8 +1639,8 @@ HRESULT CXvidDecoder::MFTSetOutputType(DWORD dwOutputStreamID, IMFMediaType *pTy
 			hr = OnSetOutputType(pType);
 		}
 	}
-#ifdef XVID_USE_TRAYICON
-	if (SUCCEEDED(hr) && Tray_Icon == 0) /* Create message passing window */
+
+	if (SUCCEEDED(hr) && (Tray_Icon == 0) && (g_config.bTrayIcon != 0)) /* Create message passing window */
 	{
 		WNDCLASSEX wc; 
 
@@ -1686,7 +1678,6 @@ HRESULT CXvidDecoder::MFTSetOutputType(DWORD dwOutputStreamID, IMFMediaType *pTy
 		DestroyIcon(nid.hIcon);
 		Tray_Icon = 1;
 	}
-#endif
 
 	LeaveCriticalSection(&m_mft_lock);
 	return hr;
