@@ -1803,10 +1803,6 @@ void test_yuv()
 		TEST_YUYV(yv12_to_uyvy_altivec_c, 4, with_flip);
 		printf(" yv12_to_uyvy_altivec_c %.3f usec       crc32=0x%08x %s\n",
 			t, iCrc, (iCrc!=yuv_CRCs[4][with_flip])?"| ERROR": "" );
-
-         	TEST_YUYV(yv12_to_bgra_altivec_c, 4, with_flip);
-		printf(" yv12_to_bgra_altivec_c %.3f usec       crc32=0x%08x %s\n",
-                        t, iCrc, (iCrc!=yuv_CRCs[5][with_flip])?"| ERROR": "" );
 #endif
 	}
 	printf( " --- \n" );
