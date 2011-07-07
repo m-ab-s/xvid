@@ -331,6 +331,21 @@ CXvidDecoder::CXvidDecoder(LPUNKNOWN punk, HRESULT *phr) :
     LoadRegistryInfo();
 
     *phr = OpenLib();
+
+	{
+      TCHAR lpFilename[MAX_PATH];
+	  int sLen = GetModuleFileName(NULL, lpFilename, MAX_PATH);
+#ifdef _UNICODE
+	  if ((sLen >= 11) && (_wcsnicmp(&(lpFilename[sLen - 11]), TEXT("dllhost.exe"), 11) == 0)) {
+#else
+	  if ((sLen >= 11) && (_strnicmp(&(lpFilename[sLen - 11]), TEXT("dllhost.exe"), 11) == 0)) {
+#endif
+	    if (Tray_Icon == 0) Tray_Icon = -1; // create no tray icon upon thumbnail generation
+	  }
+	  else
+        if (Tray_Icon == -1) Tray_Icon = 0; // can show tray icon
+	}
+
 }
 
 HRESULT CXvidDecoder::OpenLib()
@@ -492,7 +507,7 @@ CXvidDecoder::~CXvidDecoder()
 {
     DPRINTF("Destructor");
 
-	if (Tray_Icon) { /* Destroy tray icon */
+	if (Tray_Icon > 0) { /* Destroy tray icon */
 		NOTIFYICONDATA nid;
 		ZeroMemory(&nid,sizeof(NOTIFYICONDATA));
 
