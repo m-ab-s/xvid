@@ -66,10 +66,13 @@ protected:
 
   IGraphBuilder* m_pGraph;
   ICaptureGraphBuilder2 *m_pBuilder;
-  
+  IMediaEvent *m_pEvent;
+  IMediaControl *m_pControl;
+
   IBaseFilter *m_pVideoMeter;
   //IBaseFilter *m_pEmmsDummy;
   IBaseFilter* m_pSrcFilter;
+  IBaseFilter* m_pSplitter;
   IBaseFilter* m_pXvidEncoder;
   IAMVfwCompressDialogs *m_pXvidConfig;
   IBaseFilter* m_pMuxer;
@@ -79,6 +82,7 @@ protected:
   std::vector <IBaseFilter *>m_vOtherFilters;
   TCHAR *m_szSourceFilePath, *m_szDstFilePath;
   HRESULT AddSourceFilter(LPCTSTR in_szFilePath);
+  HRESULT TrySourceFilter(LPCOLESTR pwName, GUID *in_Clsid);
   HRESULT AddFileWriter(LPCTSTR in_szFilePath);
   HRESULT AddFilterByCLSID(GUID *in_Filter, IBaseFilter **out_pFilter);
   
@@ -88,6 +92,7 @@ protected:
   int m_ToAlloc;
   
   HRESULT AddAudioStreams(int check_only);
+  void RemoveIfUnconnectedInput(IBaseFilter *in_pFilter);
   
   DWORD m_CountedFrames;
   LONGLONG m_TotalFramesSize;
@@ -95,9 +100,11 @@ protected:
   int m_bFileCopy;
   
   DWORD m_Width, m_Height;
-  int m_bIsWM;
+  int m_bIsWMV;
   int m_bBreakRequested;
   DWORD m_curSize, m_totalSize, m_elapsedSize;
+
+  HRESULT WaitForCompletion(long *out_Evt);
 };
 
 #endif							/* _RECOMPRESS_H_ */
