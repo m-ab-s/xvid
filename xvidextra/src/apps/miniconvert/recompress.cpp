@@ -159,12 +159,14 @@ RecompressGraph::RecompressGraph()
   m_Bitrate = m_bFileCopy = 0;
   m_Width = m_Height = 0;
 
-  m_pVideoMeter = m_pSrcFilter = m_pXvidEncoder = 0;
+  m_pVideoMeter = m_pSplitter = m_pSrcFilter = m_pXvidEncoder = 0;
   //m_pEmmsDummy = 0;
   m_pMuxer = m_pFileWriter = m_pChgType = 0;
   m_pXvidConfig = 0;
   m_bBreakRequested = 0;
 
+  m_pEvent = 0;
+  m_pControl = 0;
   m_elapsedSize = m_curSize = m_totalSize = 0;
 }
 
@@ -211,6 +213,12 @@ RecompressGraph::CleanUp()
     m_pGraph->RemoveFilter(m_pSrcFilter); 
     m_pSrcFilter->Release(); 
     m_pSrcFilter = 0;
+  }
+
+  if (m_pSplitter) {
+    m_pGraph->RemoveFilter(m_pSplitter);
+    m_pSplitter->Release();
+    m_pSplitter = 0;
   }
 
   if (m_pXvidEncoder) {
@@ -302,9 +310,8 @@ RecompressGraph::CreateGraph(HWND in_ProgressWnd, int in_Pass)
                                         IID_IGraphBuilder, (void **)&m_pGraph);
 
   if (hr == S_OK) hr = m_pBuilder->SetFiltergraph(m_pGraph);
+  m_bIsWMV = 0;
   if (hr == S_OK) hr = AddSourceFilter(m_szSourceFilePath);
-
-  m_bIsWM = 0;
 
   m_UsedStreamsCnt = 1;
   m_vDuration = 0;
@@ -312,46 +319,27 @@ RecompressGraph::CreateGraph(HWND in_ProgressWnd, int in_Pass)
   IPin *pOutVideoPin = 0;
   CMediaType vMt;
 
-  if (hr == S_OK) {
+  if (hr == S_OK && m_bIsWMV) {
     if (GetFilterPin(m_pSrcFilter, PINDIR_OUTPUT, 0, &pOutVideoPin, 
-		             MEDIATYPE_Video, GUID_NULL) == S_OK) 
-	{
-      IServiceProvider *pSrcServiceProvider = 0;
-
-      if (m_pSrcFilter->QueryInterface(IID_IServiceProvider, 
-		                               (void **)&pSrcServiceProvider) == S_OK) 
-	  {
-        IWMReaderAdvanced2 *pRdrAdv2 = 0;
-
-        if (pSrcServiceProvider->QueryInterface(IID_IWMReaderAdvanced2, 
-			                                    (void **)&pRdrAdv2) == S_OK) 
-		{
-          m_bIsWM = 1;
-
+		             MEDIATYPE_Video, GUID_NULL) == S_OK) {
           IEnumMediaTypes *pIEnumMediaTypes = 0;
 
-          if (pOutVideoPin->EnumMediaTypes(&pIEnumMediaTypes) == S_OK) 
-		  {
+      if (pOutVideoPin->EnumMediaTypes(&pIEnumMediaTypes) == S_OK) {
             AM_MEDIA_TYPE *ppMt;
 
-            if (pIEnumMediaTypes->Next(1, &ppMt, 0) == S_OK) 
-			{
+        if (pIEnumMediaTypes->Next(1, &ppMt, 0) == S_OK) {
               vMt = *ppMt;
               DeleteMediaType(ppMt);
             }
             pIEnumMediaTypes->Release();
           }
-          pRdrAdv2->Release();
-        }
-        pSrcServiceProvider->Release();
-      }
       pOutVideoPin->QueryInterface(IID_IMediaSeeking, (void **)&pSeek);
     }
   }
 
   IPin* pVMeterInVideoPin = 0;
   if ((hr == S_OK)) {
-  //if (!m_bIsWM && (hr == S_OK)) {
+  //if (!m_bIsWMV && (hr == S_OK)) {
     CUnknown *pVidMeter = 0;
 
     if (hr == S_OK) pVidMeter = CProgressNotifyFilter::CreateInstance(0, &hr, 0);
@@ -389,17 +377,17 @@ RecompressGraph::CreateGraph(HWND in_ProgressWnd, int in_Pass)
   if (hr == S_OK) {
     m_TotalFrames = 0;
 
-	if (hr == S_OK && !m_bIsWM) hr = pVMeterInVideoPin->ConnectionMediaType(&vMt);
+	if (hr == S_OK && !m_bIsWMV) hr = pVMeterInVideoPin->ConnectionMediaType(&vMt);
 
 	if (m_vDuration != 0) {
       if (vMt.formattype != FORMAT_None) {
         if (vMt.formattype == FORMAT_VideoInfo || vMt.formattype == FORMAT_MPEGVideo) {
           m_AvgTimeForFrame = (DWORD) ((VIDEOINFOHEADER *)vMt.pbFormat)->AvgTimePerFrame;
-          if (m_bIsWM) m_Bitrate = ((VIDEOINFOHEADER *)vMt.pbFormat)->dwBitRate;
+          if (m_bIsWMV) m_Bitrate = ((VIDEOINFOHEADER *)vMt.pbFormat)->dwBitRate;
         } 
 		else if (vMt.formattype == FORMAT_VideoInfo2 || vMt.formattype == FORMAT_MPEG2Video) {
           m_AvgTimeForFrame = (DWORD) (((VIDEOINFOHEADER2 *)vMt.pbFormat)->AvgTimePerFrame);
-          if (m_bIsWM) m_Bitrate = ((VIDEOINFOHEADER2 *)vMt.pbFormat)->dwBitRate;
+          if (m_bIsWMV) m_Bitrate = ((VIDEOINFOHEADER2 *)vMt.pbFormat)->dwBitRate;
         } 
 		else return VFW_E_TYPE_NOT_ACCEPTED;
       }
@@ -421,7 +409,7 @@ RecompressGraph::CreateGraph(HWND in_ProgressWnd, int in_Pass)
           || gSubtype == FOURCCMap('4PML') || gSubtype == FOURCCMap('4pml')
           || gSubtype == FOURCCMap('4PMS') || gSubtype == FOURCCMap('4pms')) 
 	  {
-        pCompressedVideoFilter = m_pVideoMeter ? m_pVideoMeter : m_pSrcFilter;
+        pCompressedVideoFilter = m_pVideoMeter ? m_pVideoMeter : (m_pSplitter ? m_pSplitter : m_pSrcFilter);
       } 
 	  else {        
         m_bFileCopy = 0;
@@ -433,7 +421,7 @@ RecompressGraph::CreateGraph(HWND in_ProgressWnd, int in_Pass)
 		if (hr == S_OK) pCompressedVideoFilter = m_pXvidEncoder;
 
 #if 0
-        if (!m_bIsWM) {
+        if (!m_bIsWMV) {
           // dummy filter - emms instruction only
           CUnknown *pVidMeterEmms = 0;
           if (hr == S_OK) pVidMeterEmms = CProgressNotifyFilter::CreateInstance(0, &hr, 0);
@@ -614,7 +602,8 @@ RecompressGraph::AddAudioStreams(int check_only)
       if (pOutPin) pOutPin->Release();
       if (pInPin) pInPin->Release();
     }
-  } else hr = m_pSrcFilter->QueryInterface(IID_IBaseFilter, (void **)&PinInfo.pFilter);
+  } else if (m_pSplitter) hr = m_pSplitter->QueryInterface(IID_IBaseFilter, (void **)&PinInfo.pFilter);
+  else hr = m_pSrcFilter->QueryInterface(IID_IBaseFilter, (void **)&PinInfo.pFilter);
   
   IPin *pAudioPin = 0;
   if (check_only) {
@@ -666,7 +655,8 @@ RecompressGraph::AddAudioStreams(int check_only)
           bNeedsRecompression = 1;
 	      m_bFileCopy = 0; // file copy strategy cannot be used on this input
         } 
-		else if (((MPEGLAYER3WAVEFORMAT *)paomt->pbFormat)->fdwFlags & 4) { // VBR
+		else if ((paomt->subtype.Data1 == 0x55) && 
+      (((MPEGLAYER3WAVEFORMAT *)paomt->pbFormat)->fdwFlags != MPEGLAYER3_FLAG_PADDING_ON)){ // VBR 
           bNeedsRecompression = 1;
         }
         if (pAmtEnum) pAmtEnum->Release();
@@ -679,7 +669,13 @@ RecompressGraph::AddAudioStreams(int check_only)
           hr = AddDirectXFilterByMoniker(CLSID_AudioCompressorCategory, "MPEG Layer-3", &pAudioCompressor, 0);
           if (hr == S_OK) hr = m_pGraph->AddFilter(pAudioCompressor, 0);
 
-          if (hr == S_OK) hr = ConnectFilters(m_pGraph, pAudioPin, pAudioCompressor, MEDIATYPE_Audio, GUID_NULL, 0);
+          IBaseFilter *pFFdA=0;
+          if (hr == S_OK) AddFilterByCLSID((GUID *)&CLSID_FFDshowAudioDecoder, &pFFdA);
+
+          if (hr == S_OK) hr = ConnectFilters(m_pGraph, pAudioPin, pAudioCompressor, GUID_NULL, GUID_NULL, 0);
+
+          RemoveIfUnconnectedInput(pFFdA);
+          if (pFFdA) pFFdA->Release();
         
           IPin *pMp3Pin = 0;
           if (hr == S_OK) hr = GetFilterPin(pAudioCompressor, PINDIR_OUTPUT, 0, &pMp3Pin, MEDIATYPE_Audio, GUID_NULL);
@@ -690,13 +686,29 @@ RecompressGraph::AddAudioStreams(int check_only)
           int bConnected = 0;
 
 		  if (hr == S_OK) {
-            while (!bConnected && (hr = pMp3MtEnum->Next(1, &pMp3mt, 0)) == S_OK) {
+            DWORD UsedDataRate = 0, MaxDataRate=0;
+            // Some files have mono track 8kHz, it's not possible to obtain 128kbps datarate
+            while (UsedDataRate != 16000 && (pMp3MtEnum->Next(1, &pMp3mt, 0) == S_OK)) {
               MPEGLAYER3WAVEFORMAT *pMp3cb = (MPEGLAYER3WAVEFORMAT *)pMp3mt->pbFormat;
               if (
                   //pMp3cb->nSamplesPerSec == 44100 && 
-                  pMp3cb->wfx.nAvgBytesPerSec == 16000) 
-			  {
-                CUnknown *pMp3Normalizer = 0;
+				  pMp3cb->wfx.nAvgBytesPerSec == 16000) {
+                    UsedDataRate = 16000;
+              }
+              if (MaxDataRate < pMp3cb->wfx.nAvgBytesPerSec)
+                MaxDataRate = pMp3cb->wfx.nAvgBytesPerSec;
+              DeleteMediaType(pMp3mt);
+            }
+            pMp3MtEnum->Reset();
+            if (UsedDataRate != 16000) UsedDataRate = MaxDataRate;
+            
+			while (!bConnected && (pMp3MtEnum->Next(1, &pMp3mt, 0) == S_OK)) {
+              MPEGLAYER3WAVEFORMAT *pMp3cb = (MPEGLAYER3WAVEFORMAT *)pMp3mt->pbFormat;
+              if (
+                  //pMp3cb->nSamplesPerSec == 44100 && 
+                  pMp3cb->wfx.nAvgBytesPerSec == UsedDataRate) {                
+
+				CUnknown *pMp3Normalizer = 0;
                 IBaseFilter *pIMp3Normalizer = 0;
 				// Type 2 - only 16000 Bps = 128kbit audio
                 if (hr == S_OK) pMp3Normalizer = CProgressNotifyFilter::CreateInstance(0, &hr, 2);
@@ -734,6 +746,7 @@ RecompressGraph::AddAudioStreams(int check_only)
           if (pIMp3Normalizer) pIMp3Normalizer->Release();
         }
         if (hr == S_OK && PinInfo.pFilter == m_pSrcFilter) m_UsedStreamsCnt++;
+        if (hr == S_OK && PinInfo.pFilter == m_pSplitter) m_UsedStreamsCnt++;
       }
       pAudioPin->Release();
     }
@@ -818,8 +831,97 @@ RecompressGraph::AddSourceFilter(LPCTSTR in_szFilePath)
   wcsncpy(pwName, in_szFilePath, sLen+1);
 #endif
 
-  HRESULT hr = m_pGraph->AddSourceFilter(pwName, L"Source filter", &m_pSrcFilter);
+  HRESULT hr = TrySourceFilter(pwName, (GUID *)&CLSID_AsyncReader);
+  //  
+  //  AddFilterByCLSID((GUID *)&CLSID_AsyncReader, &m_pSrcFilter);
+  //IFileSourceFilter* pSrc =0 ;
+  //if (hr == S_OK) hr = m_pSrcFilter->QueryInterface(IID_IFileSourceFilter, (void **)(&pSrc));
+  //if (hr == S_OK) hr = pSrc->Load(in_szFilePath, 0);//&m_SrcFileMediaType);
 
+  IPin* pOutSrcPin=0, *pVideoPin=0;
+  if (hr == S_OK) hr = GetFilterPin(m_pSrcFilter, PINDIR_OUTPUT, 0, &pOutSrcPin, GUID_NULL, GUID_NULL);
+  IEnumMediaTypes* pEnumSrcMediaTypes=0;
+  if (hr == S_OK) hr = pOutSrcPin->EnumMediaTypes(&pEnumSrcMediaTypes);
+  //if (hr == S_OK) hr = pEnumSrcMediaTypes->Reset();
+  AM_MEDIA_TYPE *pMt =0;
+  if (hr == S_OK) do hr = pEnumSrcMediaTypes->Next(1, &pMt, 0); 
+  while (hr == S_OK && (pMt->majortype != MEDIATYPE_Stream || pMt->subtype == GUID_NULL));
+  if (hr == S_OK) m_SrcFileMediaType = *pMt;
+  if (pMt) DeleteMediaType(pMt);
+  if (pEnumSrcMediaTypes) pEnumSrcMediaTypes->Release();
+  if (hr == S_OK) {
+    if (m_SrcFileMediaType.majortype == MEDIATYPE_Stream) {
+      if (m_SrcFileMediaType.subtype == MEDIASUBTYPE_Asf ||
+        m_SrcFileMediaType.subtype == MEDIASUBTYPE_ASF) {
+        m_bIsWMV = 1;
+      } else if (m_SrcFileMediaType.subtype == MEDIASUBTYPE_Avi) 
+        hr = AddFilterByCLSID((GUID *)&CLSID_AviSplitter, &m_pSplitter);
+      else {//if (m_SrcFileMediaType.subtype == MEDIASUBTYPE_MP4) 
+        hr = AddFilterByCLSID((GUID *)&CLSID_LAVSplitter, &m_pSplitter);
+        if (hr == S_OK) {
+          hr = ConnectFilters(m_pGraph, pOutSrcPin, m_pSplitter);
+          if (hr == S_OK) hr = GetFilterPin(m_pSplitter, PINDIR_OUTPUT, 0, &pVideoPin, MEDIATYPE_Video, GUID_NULL);
+          if (m_pSplitter || !pVideoPin) {
+            m_pGraph->RemoveFilter(m_pSplitter);
+            m_pSplitter->Release();
+            m_pSplitter = 0;
+          }
+          if (pVideoPin) {pVideoPin->Release(); pVideoPin = 0;}
+        }
+        if (!m_pSplitter) {
+          hr = AddFilterByCLSID((GUID *)&CLSID_HaaliMediaSplitter_AR, &m_pSplitter);
+          if (hr == S_OK) {
+            hr = ConnectFilters(m_pGraph, pOutSrcPin, m_pSplitter);
+            if (hr == S_OK) hr = GetFilterPin(m_pSplitter, PINDIR_OUTPUT, 0, &pVideoPin, MEDIATYPE_Video, GUID_NULL);
+            if (m_pSplitter || !pVideoPin) {
+              m_pGraph->RemoveFilter(m_pSplitter);
+              m_pSplitter->Release();
+              m_pSplitter = 0;
+            }
+            if (pVideoPin) {pVideoPin->Release(); pVideoPin = 0;}
+          }
+        }
+      }
+    } else hr = VFW_E_TYPE_NOT_ACCEPTED;
+  }
+
+  if (m_bIsWMV || !m_pSplitter) {
+    if (m_pSrcFilter) {
+      m_pGraph->RemoveFilter(m_pSrcFilter);
+      m_pSrcFilter->Release();
+    }
+    m_pSrcFilter = 0;
+    if (m_bIsWMV) hr = TrySourceFilter(pwName, (GUID *)&CLSID_WMAsfReader );
+    else {
+      //if (m_SrcFileMediaType.majortype == MEDIATYPE_Stream && m_SrcFileMediaType.subtype != GUID_NULL) {
+        hr = TrySourceFilter(pwName, (GUID *)&CLSID_LAVSource);
+        if (hr == S_OK) hr = GetFilterPin(m_pSrcFilter, PINDIR_OUTPUT, 0, &pVideoPin, MEDIATYPE_Video, GUID_NULL);
+        if (!m_pSrcFilter || !pVideoPin) {
+          if (!pVideoPin && m_pSrcFilter) {
+            m_pGraph->RemoveFilter(m_pSrcFilter);
+            m_pSrcFilter->Release();
+            m_pSrcFilter = 0;
+          }
+          if (!m_pSrcFilter) TrySourceFilter(pwName, (GUID *)&CLSID_HaaliMediaSplitter);
+          if (hr == S_OK) hr = GetFilterPin(m_pSrcFilter, PINDIR_OUTPUT, 0, &pVideoPin, MEDIATYPE_Video, GUID_NULL);
+          if (!pVideoPin && m_pSrcFilter) {
+            m_pGraph->RemoveFilter(m_pSrcFilter);
+            m_pSrcFilter->Release();
+            m_pSrcFilter = 0;
+          }
+        }
+        if (pVideoPin) {
+          pVideoPin->Release();
+          pVideoPin = 0;
+        }
+      //} else {
+      //  hr = TrySourceFilter(in_szFilePath, (GUID *)&CLSID_HaaliMediaSplitter);
+      //  if (!m_pSrcFilter) TrySourceFilter(in_szFilePath, (GUID *)&CLSID_LAVSource);
+      //}
+    }
+    if (!m_pSrcFilter) hr = m_pGraph->AddSourceFilter(pwName, 0, &m_pSrcFilter);
+  } 
+  if (pOutSrcPin) pOutSrcPin->Release();
 #if 0
   HRESULT hr = AddFilterByCLSID((GUID *)&CLSID_AsyncReader, &this->m_pSrcFilter);
   IFileSourceFilter* pSrc =0 ;
@@ -834,6 +936,22 @@ RecompressGraph::AddSourceFilter(LPCTSTR in_szFilePath)
 }
 
 HRESULT 
+RecompressGraph::TrySourceFilter(LPCOLESTR pwName, GUID *in_Clsid) 
+{
+  HRESULT hr = AddFilterByCLSID(in_Clsid, &m_pSrcFilter);
+  IFileSourceFilter* pSrc =0 ;
+  if (hr == S_OK) hr = m_pSrcFilter->QueryInterface(IID_IFileSourceFilter, (void **)(&pSrc));
+  if (hr == S_OK) hr = pSrc->Load(pwName, 0);//&m_SrcFileMediaType);
+  if (pSrc) pSrc->Release();
+  if (hr != S_OK && m_pSrcFilter) {
+    m_pGraph->RemoveFilter(m_pSrcFilter);
+    m_pSrcFilter->Release();
+    m_pSrcFilter = 0;
+  }
+  return hr;
+}
+
+HRESULT 
 RecompressGraph::SetProgress(int elapsedSize, int totalSize) 
 {
   
@@ -844,12 +962,28 @@ RecompressGraph::SetProgress(int elapsedSize, int totalSize)
 }
 
 HRESULT 
+RecompressGraph::WaitForCompletion(long *out_Evt) 
+{
+  long Evt, P1, P2;
+  TCHAR szErrorStr[150];
+  HRESULT hr = S_OK;
+  do {
+    hr = m_pEvent->GetEvent(&Evt, &P1, &P2, INFINITE);
+    if (Evt == EC_ERRORABORT) {
+      _stprintf(szErrorStr, _TEXT("Error ocurred\nCode=%08X, %08X\nContinue?"), P1, P2);
+      if (MessageBox(ghDlg, szErrorStr, 0, MB_YESNO) == IDYES) Evt = 0;
+    }
+  } while (Evt != EC_COMPLETE && Evt != EC_STREAM_ERROR_STOPPED && Evt != EC_USERABORT && Evt != EC_ERRORABORT);
+  *out_Evt = Evt;
+  return S_OK;
+}
+
+HRESULT 
 RecompressGraph::Recompress() 
 {
   if (!m_pGraph) return E_UNEXPECTED;
   
-  IMediaEvent *pEvent = 0;
-  IMediaControl *pControl = 0;
+  long E = 0;
   HRESULT hr = S_OK;
   
   if (hr == S_OK && m_bFileCopy == 1 && 
@@ -864,12 +998,11 @@ RecompressGraph::Recompress()
     goto finish_recompress;
   }
 
-  hr = m_pGraph->QueryInterface(IID_IMediaControl, (void **)&pControl);
-  if (hr == S_OK) hr = m_pGraph->QueryInterface(IID_IMediaEvent, (void **)&pEvent);
+  hr = m_pGraph->QueryInterface(IID_IMediaControl, (void **)&m_pControl);
+  if (hr == S_OK) hr = m_pGraph->QueryInterface(IID_IMediaEvent, (void **)&m_pEvent);
 
   IRecProgressNotify *pBitrateProgressNotify=0;
   OAFilterState oas;
-  long E=0;
 
   if (hr == S_OK) hr = (m_pVideoMeter ? m_pVideoMeter : m_pChgType)->QueryInterface(IID_IRecProgressNotify, 
                                                                       (void **)&pBitrateProgressNotify);
@@ -889,9 +1022,9 @@ RecompressGraph::Recompress()
     m_pXvidConfig = 0;
 
     if (hr == S_OK) {
-      hr = pControl->Run();
+      hr = m_pControl->Run();
       if (hr == S_OK) {
-        do hr = pControl->GetState(1000, &oas); 
+        do hr = m_pControl->GetState(1000, &oas); 
         while ((oas != State_Running && hr == S_OK ) || hr == VFW_S_STATE_INTERMEDIATE || hr == S_FALSE);
       }
     }
@@ -899,13 +1032,14 @@ RecompressGraph::Recompress()
     //long Evt, P1, P2;
     //if (hr == S_OK) do hr = pEvent->GetEvent(&Evt, &P1, &P2, INFINITE);
     //while (Evt != EC_COMPLETE && Evt != 3 && Evt != 2);
-    if (hr == S_OK) hr = pEvent->WaitForCompletion(INFINITE, &E);
+    //if (hr == S_OK) hr = m_pEvent->WaitForCompletion(INFINITE, &E);
+    hr = WaitForCompletion(&E);
 
-    if (pControl) {
+    if (m_pControl) {
       HRESULT hrTmp;
       if (E == EC_USERABORT) m_pSrcFilter->Stop();
-      hrTmp = pControl->Stop();
-      do hrTmp = pControl->GetState(1000, &oas); 
+      hrTmp = m_pControl->Stop();
+      do hrTmp = m_pControl->GetState(1000, &oas); 
       while ((oas != State_Stopped && hrTmp == S_OK ) || 
 		      hrTmp == VFW_S_STATE_INTERMEDIATE || hrTmp == S_FALSE);
       if (hr == S_OK) hr = hrTmp;
@@ -920,10 +1054,10 @@ RecompressGraph::Recompress()
     TCHAR *pSrcStr = _tcsdup(m_szSourceFilePath);
     TCHAR *pDstStr = _tcsdup(m_szDstFilePath);
 
-    pControl->Release();
-    pEvent->Release();
-    pControl = 0;
-    pEvent = 0;
+    m_pControl->Release();
+    m_pEvent->Release();
+    m_pControl = 0;
+    m_pEvent = 0;
     int bBreakRequested = m_bBreakRequested;
     //if (hr == S_OK) 
       CleanUp();
@@ -938,8 +1072,8 @@ RecompressGraph::Recompress()
     }
 
     if (hr == S_OK) hr = CreateGraph(m_ProgressWnd, 2);
-    if (hr == S_OK) hr = m_pGraph->QueryInterface(IID_IMediaControl, (void **)&pControl);
-    if (hr == S_OK) hr = m_pGraph->QueryInterface(IID_IMediaEvent, (void **)&pEvent);
+    if (hr == S_OK) hr = m_pGraph->QueryInterface(IID_IMediaControl, (void **)&m_pControl);
+    if (hr == S_OK) hr = m_pGraph->QueryInterface(IID_IMediaEvent, (void **)&m_pEvent);
     
     if (hr == S_OK) hr = (m_pVideoMeter ? m_pVideoMeter : m_pChgType)->QueryInterface(IID_IRecProgressNotify, 
                                                                         (void **)&pBitrateProgressNotify);
@@ -959,37 +1093,39 @@ RecompressGraph::Recompress()
   DeleteFile(m_szDstFilePath);
   
   if (hr == S_OK) {
-    hr = pControl->Run();
+    hr = m_pControl->Run();
     if (hr == S_OK) {
-      do hr = pControl->GetState(1000, &oas); 
+      do hr = m_pControl->GetState(1000, &oas); 
       while ((oas != State_Running && hr == S_OK ) || hr == VFW_S_STATE_INTERMEDIATE || hr == S_FALSE);
     }
   }
 
-#if 0
-  long Evt, P1, P2;
-  if (hr == S_OK) do hr = pEvent->GetEvent(&Evt, &P1, &P2, INFINITE);
-  while (Evt != EC_COMPLETE && Evt != 3 && Evt != 2);
+//#if 0
+//  long Evt, P1, P2;
+  //if (hr == S_OK) do hr = m_pEvent->GetEvent(&Evt, &P1, &P2, INFINITE);
+  //while (Evt != EC_COMPLETE && (Evt != 3 || P1 == 0xC00D002F) && Evt != 2);
 
-  for (int iCnt=0; (iCnt < m_UsedStreamsCnt) && (hr == S_OK); iCnt++) {
-    if (hr == S_OK) do hr = pEvent->WaitForCompletion(INFINITE, &E); 
-    while (hr == S_OK && E != 1);
-  }
-#endif
-  if (hr == S_OK) hr = pEvent->WaitForCompletion(INFINITE, &E); 
+  //for (int iCnt=0; (iCnt < m_UsedStreamsCnt) && (hr == S_OK); iCnt++) {
+  //  if (hr == S_OK) do hr = pEvent->WaitForCompletion(INFINITE, &E); 
+  //  while (hr == S_OK && E != 1);
+  //}
+//#endif
+  //if (hr == S_OK) hr = pEvent->WaitForCompletion(INFINITE, &E); 
+//  long Evt;
+  if (hr == S_OK) hr = WaitForCompletion(&E);
 
-  if (pControl) {
+  if (m_pControl) {
     if (E == EC_USERABORT) m_pSrcFilter->Stop();
-    HRESULT hrTmp = pControl->Stop();
-    do hrTmp = pControl->GetState(1000, &oas); 
+    HRESULT hrTmp = m_pControl->Stop();
+    do hrTmp = m_pControl->GetState(1000, &oas); 
     while ((oas != State_Stopped && hrTmp == S_OK ) || 
            hrTmp == VFW_S_STATE_INTERMEDIATE || hrTmp == S_FALSE);
     if (hr == S_OK) hr = hrTmp;
   }
   if (E == EC_ERRORABORT) hr = E_FAIL;
 
-  if (pControl) pControl->Release();
-  if (pEvent) pEvent->Release();
+  if (m_pControl) m_pControl->Release();
+  if (m_pEvent) m_pEvent->Release();
   if (pBitrateProgressNotify) pBitrateProgressNotify->Release();
 
   DeleteFile(Pass_FILE);
@@ -1043,6 +1179,16 @@ RecompressGraph::BreakConversion()
   }
 }
 
+void 
+RecompressGraph::RemoveIfUnconnectedInput(IBaseFilter *in_pFilter) 
+{
+  IPin *pPin;
+  HRESULT hr = GetFilterPin(in_pFilter, PINDIR_INPUT, 0, &pPin, GUID_NULL, GUID_NULL);
+  if (hr == S_OK && pPin) {
+    pPin->Release();
+    m_pGraph->RemoveFilter(in_pFilter);
+  }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // main.cpp
@@ -1284,7 +1430,7 @@ DIALOG_MAIN(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
       break;
 
 	case WM_COMMAND:
-      if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL) {
+      if (LOWORD(wParam) == IDCANCEL) {
         EndDialog(hDlg, LOWORD(wParam));
         return TRUE;
       } 

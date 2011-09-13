@@ -2,8 +2,7 @@
 // Microsoft Visual C++ generated include file.
 // Used by dialog.rc
 //
-#define IDOK2                           2
-#define IDABOUT                         2
+#define IDABOUT                         3
 #define IDD_DIALOG_MAIN                 101
 #define IDC_EDIT_SRC                    1001
 #define IDC_BUTTON_SRC                  1002
