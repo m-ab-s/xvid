@@ -294,6 +294,7 @@ ALTIVEC_CFLAGS=""
 PRE_SHARED_LIB=""
 SO_API_MAJOR_LINK=""
 SO_LINK=""
+IMPORT_LIB=""
 case "$target_os" in
      linux*|solaris*|gnu*)
 	AC_MSG_RESULT([ok])
@@ -313,10 +314,19 @@ case "$target_os" in
 	SPECIFIC_LDFLAGS="-Wl,-soname,libxvidcore.\$(SHARED_EXTENSION).\$(API_MAJOR) -shared -lc -lm"
 	SPECIFIC_CFLAGS="-fPIC"
 	;;
-     [[cC]][[yY]][[gG]][[wW]][[iI]][[nN]]*|mingw32*|mks*)
+     [[cC]][[yY]][[gG]][[wW]][[iI]][[nN]]*)
 	AC_MSG_RESULT([ok])
-	STATIC_LIB="xvidcore.\$(STATIC_EXTENSION)"
-	SHARED_LIB="xvidcore.\$(SHARED_EXTENSION)"
+	STATIC_LIB="libxvidcore.\$(STATIC_EXTENSION)"
+	SHARED_LIB="cygxvidcore.\$(SHARED_EXTENSION)"
+	IMPORT_LIB="libxvidcore.\$(SHARED_EXTENSION).\$(STATIC_EXTENSION)"
+	SPECIFIC_LDFLAGS="-shared -Wl,--dll,--out-implib,\$@.a libxvidcore.def"
+	SPECIFIC_CFLAGS=""
+	;;
+     mingw32*|mks*)
+	AC_MSG_RESULT([ok])
+	STATIC_LIB="libxvidcore.\$(STATIC_EXTENSION)"
+	SHARED_LIB="libxvidcore.\$(SHARED_EXTENSION)"
+	IMPORT_LIB="libxvidcore.\$(SHARED_EXTENSION).\$(STATIC_EXTENSION)"
 	SPECIFIC_LDFLAGS="-shared -Wl,--dll,--out-implib,\$@.a libxvidcore.def"
 	SPECIFIC_CFLAGS=""
 	;;
@@ -352,6 +362,10 @@ esac
 
 if test x"$PRE_SHARED_LIB" = x; then 
   PRE_SHARED_LIB=$SHARED_LIB
+fi
+
+if test x"$IMPORT_LIB" = x; then
+  IMPORT_LIB=$SHARED_LIB
 fi
 
 dnl ==========================================================================
@@ -751,6 +765,7 @@ AC_SUBST(PRE_SHARED_LIB)
 AC_SUBST(SO_API_MAJOR_LINK)
 AC_SUBST(SO_LINK)
 AC_SUBST(SHARED_LIB)
+AC_SUBST(IMPORT_LIB)
 AC_SUBST(ALTIVEC_CFLAGS)
 
 dnl ==========================================================================
