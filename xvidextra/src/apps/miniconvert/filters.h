@@ -82,6 +82,9 @@ DECLARE_INTERFACE_(IRecProgressNotify, IUnknown)
   STDMETHOD (SetTotalSize)(int nbTotal) PURE;
   STDMETHOD (SetElapsedSize)(int nbElapsed) PURE;
   STDMETHOD (SetCurSize)(int nbCur) PURE;
+  STDMETHOD (GetMeasuredTimes) (LONGLONG &outStopTimeMin, LONGLONG &outStopTimeMax, LONGLONG &outm_StartTimeMin, LONGLONG &outm_StartTimeMax) PURE;
+  STDMETHOD (SetForceTimeParams) (LONGLONG inStartTimeOffset, LONGLONG inFpsNom, LONGLONG inFpsDen) PURE;
+  STDMETHOD (SetAudioBitrate) (int Bitrate) PURE;
 };
 
 class CIRecProgressNotify : public IRecProgressNotify 
@@ -97,6 +100,10 @@ protected:
   LONGLONG m_stopTime;
   int m_Width, m_Height;
   int m_curSize, m_totalSize, m_elapsedSize;
+  LONGLONG m_FpsNom, m_FpsDen;
+  LONGLONG m_StopTimeMin, m_StopTimeMax, m_StartTimeMin, m_StartTimeMax;
+  int m_bForceTimeStamps;
+  int m_AudioBitrate;
 
 public:
   CIRecProgressNotify();
@@ -108,6 +115,9 @@ public:
   STDMETHODIMP SetTotalSize(int nbTotal);
   STDMETHODIMP SetCurSize(int nbCur);
   STDMETHODIMP SetElapsedSize(int nbElapsed);
+  STDMETHODIMP GetMeasuredTimes (LONGLONG &outStopTimeMin, LONGLONG &outStopTimeMax, LONGLONG &outStartTimeMin, LONGLONG &outStartTimeMax);
+  STDMETHODIMP SetForceTimeParams (LONGLONG inStartTimeOffset, LONGLONG inFpsNom, LONGLONG inFpsDen);
+  STDMETHODIMP SetAudioBitrate(int Bitrate);
 };
 
 class CProgressNotifyFilter : public CTransInPlaceFilter, CIRecProgressNotify 
@@ -116,7 +126,7 @@ public:
   static CUnknown * WINAPI CreateInstance(IUnknown *pUnk, HRESULT *phr, int Type);
   CProgressNotifyFilter(LPUNKNOWN pUnk, HRESULT *phr, int Type);
   ~CProgressNotifyFilter();
-  int m_FpsNom, m_FpsDen, m_MinSampleSize;
+  int m_MinSampleSize;
 
   virtual HRESULT CompleteConnect(PIN_DIRECTION direction, IPin *pReceivePin);
   LONGLONG m_AvgTimeForFrame;
@@ -161,7 +171,7 @@ public:
   GUID m_SubtypeID;
   int m_OutFcc;
   
-  int m_FpsNom, m_FpsDen;
+  LONGLONG m_UnitDuration, m_UnitTimeDelta, m_MaxStartTime, m_MaxStopTime;
   DWORD m_AvgTimeForFrame;
   
   BYTE *m_pMpeg4Sequence;

@@ -105,13 +105,8 @@ CProgressNotifyFilter::CheckInputType(const CMediaType *mtIn)
 	else if (mtIn->formattype == FORMAT_WaveFormatEx && m_Type == 2) {
 
       MPEGLAYER3WAVEFORMAT *pMp3 = (MPEGLAYER3WAVEFORMAT *)mtIn->pbFormat;
-	  if (pMp3->wfx.nAvgBytesPerSec != 16000)
+      if (pMp3->wfx.nChannels >= 2 && pMp3->wfx.nAvgBytesPerSec != m_AudioBitrate)
         return VFW_E_TYPE_NOT_ACCEPTED;
-
-      // WAVEFORMATEX *pWaveFormat = (WAVEFORMATEX *)mtIn->pbFormat;
-      // if (pWaveFormat->nChannels > 2)
-	  //   return VFW_E_TYPE_NOT_ACCEPTED;
-
     } 
 	else if (m_Type == 0) {
 	  return VFW_E_TYPE_NOT_ACCEPTED;
@@ -128,6 +123,7 @@ CProgressNotifyFilter::Transform(IMediaSample *pSample)
   pSample->GetTime(&osTime, &eTime);
   sTime = osTime;
   int bSetTime = 0;
+  DWORD SamplesSize = pSample->GetActualDataLength();
 
   if (m_Type == 0) { // Video
 
@@ -166,8 +162,7 @@ CProgressNotifyFilter::Transform(IMediaSample *pSample)
     if (m_MediaType.subtype == MEDIASUBTYPE_MP3) {
       pMp3 = (MPEGLAYER3WAVEFORMAT *)m_MediaType.pbFormat;
 
-      DWORD ThisSamples = (pMp3->wfx.nSamplesPerSec >= 32000 ? 576 : 1152) * pMp3->nFramesPerBlock;
-      m_SampleCnt += ThisSamples;
+      DWORD ThisSamples = (pMp3->wfx.nSamplesPerSec >= 32000 ? 1152 : 576) * pMp3->nFramesPerBlock;
 
       LONGLONG sDuration =  eTime - sTime;
       if (((m_SampleCnt || sTime) && sTime <= m_stopTime)) {
@@ -180,6 +175,7 @@ CProgressNotifyFilter::Transform(IMediaSample *pSample)
         bSetTime = 1;
       }
       sTime = osTime; //!!
+      m_SampleCnt += ThisSamples;
 
       pSample->SetSyncPoint(TRUE);
     }
@@ -414,6 +410,33 @@ CIRecProgressNotify::SetElapsedSize(int nbElapsed)
   return S_OK;
 }
 
+STDMETHODIMP 
+CIRecProgressNotify::GetMeasuredTimes (LONGLONG &outStopTimeMin, LONGLONG &outStopTimeMax, LONGLONG &outStartTimeMin, LONGLONG &outStartTimeMax) 
+{
+  outStopTimeMin = m_StopTimeMin;
+  outStopTimeMax = m_StopTimeMax;
+  outStartTimeMin = m_StartTimeMin;
+  outStartTimeMax = m_StartTimeMax;
+  return S_OK;
+}
+
+STDMETHODIMP 
+CIRecProgressNotify::SetForceTimeParams (LONGLONG inStartTimeOffset, LONGLONG inFpsNom, LONGLONG inFpsDen) 
+{
+  m_StartTimeMin = inStartTimeOffset;
+  m_FpsNom = inFpsNom;
+  m_FpsDen = inFpsDen;
+  m_bForceTimeStamps = 1;
+  return S_OK;
+}
+
+STDMETHODIMP 
+CIRecProgressNotify::SetAudioBitrate (int Bitrate) 
+{
+  m_AudioBitrate = Bitrate;
+  return S_OK;
+}
+
 CIRecProgressNotify::CIRecProgressNotify() 
 {
   m_Pass = -1;
@@ -424,6 +447,9 @@ CIRecProgressNotify::CIRecProgressNotify()
   m_totalSize = 0;
   m_curSize = 0;
   m_elapsedSize = 0;
+  m_StopTimeMin = m_StopTimeMax = m_StartTimeMin = m_StartTimeMax = 0;
+  m_bForceTimeStamps = 0;
+  m_AudioBitrate = 1600;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -683,6 +709,14 @@ ChangeSubtypeT::CompleteConnect(PIN_DIRECTION direction, IPin *pReceivePin)
       }
 
       m_SampleCnt = 0;
+      m_UnitDuration = (10000000LL * m_FpsDen)/m_FpsNom;
+      m_UnitTimeDelta = m_UnitDuration / 5;
+      if (m_UnitTimeDelta < 1000) m_UnitTimeDelta = m_UnitDuration > 2000 ? 1000 : m_UnitDuration/2;
+      m_stopTime = m_startTime = 0;
+
+
+      m_MaxStartTime = m_MaxStopTime = 0;
+
       return S_OK;
     }
     else { // if (direction == PINDIR_OUTPUT) {
@@ -707,6 +741,18 @@ ChangeSubtypeT::CompleteConnect(PIN_DIRECTION direction, IPin *pReceivePin)
       }
       else
         return VFW_E_TYPE_NOT_ACCEPTED;
+
+      if (m_bForceTimeStamps) {
+        if (m_OutMediaType.formattype == FORMAT_VideoInfo || 
+          m_OutMediaType.formattype == FORMAT_MPEGVideo) {
+          ((VIDEOINFOHEADER *)m_OutMediaType.pbFormat)->AvgTimePerFrame = 
+            m_AvgTimeForFrame = (DWORD) (m_FpsNom/m_FpsDen);
+        } else if (m_OutMediaType.formattype == FORMAT_VideoInfo2 || 
+          m_OutMediaType.formattype == FORMAT_MPEG2Video) {
+          ((VIDEOINFOHEADER2 *)m_OutMediaType.pbFormat)->AvgTimePerFrame = 
+            m_AvgTimeForFrame = (DWORD) (m_FpsNom/m_FpsDen);
+        }
+      }
 
       if (m_OutFcc == pBmp->biCompression)
         return S_OK;
@@ -753,7 +799,15 @@ ChangeSubtypeT::Transform(IMediaSample *pIn, IMediaSample *pOut)
 
     DWORD OutOffset = 0;
     if (*((int *)pBufIn) != 0xB0010000 && m_pMpeg4Sequence) {
-	  if (pIn->IsSyncPoint() == S_OK) { // I-VOP
+      int FrameType = -1;
+      for (int iOffset=0; iOffset < (int) (lSize - 5) && FrameType == -1; iOffset++) {
+        if (*((int *)(&(pBufIn[iOffset]))) == 0xB6010000) {
+          FrameType = (pBufIn[iOffset + 4] >> 6)& 3;
+        }
+      }
+      pOut->SetSyncPoint(FrameType == 0 ? TRUE : FALSE);
+	  //if (pIn->IsSyncPoint() == S_OK) { // I-VOP         // IsSyncPoint() is not reliable !!
+      if (FrameType == 0) {
         memcpy(pBufOut, m_pMpeg4Sequence, m_Mpeg4SequenceSize);
         OutOffset = m_Mpeg4SequenceSize;
       }
@@ -761,29 +815,78 @@ ChangeSubtypeT::Transform(IMediaSample *pIn, IMediaSample *pOut)
 
     pOut->SetActualDataLength(lSize + OutOffset);
     memcpy(&pBufOut[OutOffset], pBufIn, lSize);
-    LONGLONG UnitDuration = (10000000LL * m_FpsDen)/m_FpsNom;
-    LONGLONG NormalStart = (m_SampleCnt * 10000000LL * m_FpsDen)/m_FpsNom;
-    LONGLONG NormalEnd = ((m_SampleCnt + 1) * 10000000LL * m_FpsDen)/m_FpsNom;
+    LONGLONG ExpectedStart = m_stopTime;
+    LONGLONG ExpectedStop = m_stopTime + m_UnitDuration;
 
     LONGLONG sTime, eTime;
     pOut->GetTime(&sTime, &eTime);
     int bSetTime = 0;
     LONGLONG sDuration =  eTime - sTime;
 
+    if (m_Pass == 1) {
+      if (m_SampleCnt == 0) {
+        m_StopTimeMin = m_StopTimeMax = eTime;
+        m_StartTimeMin =  m_StartTimeMax = sTime;
+      } else {
+        if (m_StopTimeMin > eTime) m_StopTimeMin = eTime;
+        if (m_StopTimeMax < eTime) m_StopTimeMax = eTime;
+        if (m_StartTimeMin > sTime) m_StartTimeMin = sTime;
+        if (m_StartTimeMax < sTime) m_StartTimeMax = sTime;
+      }
+    } else if (m_SampleCnt == 0 && m_bForceTimeStamps) {
+      m_UnitDuration = m_FpsNom/m_FpsDen;
+      m_UnitTimeDelta = m_UnitDuration / 5;
+      if (m_UnitTimeDelta < 1000) m_UnitTimeDelta = m_UnitDuration > 2000 ? 1000 : m_UnitDuration/2;
+    }
+
+    int bForceStopTime = 0;
+    if (abs((long)((LONGLONG)(ExpectedStop - m_MaxStopTime))) < m_UnitTimeDelta) {
+      // re-use of time that had one of previous samples
+      // in case when times of samples are reordered
+      // to keep exactly in sync with speed of playing of original speed 
+      // in long distance. Any way of calculation based on 
+      // number of samples may fail if stream is long enough
+      // and frame duration is calculated not with
+      // absolute precision (NTSC - family framerates: 23.98, 29.97, etc...)
+
+      ExpectedStop = m_MaxStopTime;
+      bForceStopTime = 1;
+      if (ExpectedStart + m_UnitDuration > ExpectedStop + m_UnitTimeDelta) {
+        ExpectedStart = m_MaxStartTime;
+        if (ExpectedStart + m_UnitDuration > ExpectedStop)
+          ExpectedStart = ExpectedStop - m_UnitDuration;
+      }
+    }
+
+    //LONGLONG eTimeN = eTime * m_FpsNom, Den0 = 10000000LL * m_FpsDen;
+    //int SampleEMin = ((eTimeN < 100000) ? 0 : eTimeN - 10000)/Den0, SampleEMax = (eTimeN + 10000)/Den0;
+    //int TimeEDiff = eTime - m_stopTime;
+    LONGLONG MaxStartTime = max(m_MaxStartTime, sTime),
+      MaxStopTime = max(m_MaxStopTime, eTime);
+
     // simply set correct end time - seems to work here...
-    if (eTime <  sTime + UnitDuration) {
-      eTime = sTime + UnitDuration;
+
+    //if (m_Pass ==2 && m_bForceTimeStamps) {
+    //  sTime = m_SampleCnt * m_FpsNom / m_FpsDen;
+    //  eTime = (m_SampleCnt +1) * m_FpsNom / m_FpsDen;
+    //  bSetTime = 1;
+    //}
+
+    if (eTime + m_UnitTimeDelta <  sTime + m_UnitDuration) {
+      eTime = sTime + m_UnitDuration;
       bSetTime = 1;
-	}
+    }
+
+    if ((bForceStopTime) || (eTime + m_UnitDuration < ExpectedStop)) {
+    //if ((bForceStopTime) || (eTime > ExpectedStop + m_UnitTimeDelta) || (eTime + m_UnitTimeDelta < ExpectedStop)) {
+      eTime = ExpectedStop;
+      sTime = ExpectedStart;
+      bSetTime = 1;
+    }
+    m_MaxStartTime = max(MaxStartTime, sTime);
+    m_MaxStopTime = max(MaxStopTime, eTime);
 
     if (bSetTime) pOut->SetTime(&sTime, &eTime);
-
-#if 0
-    LONGLONG sTime=0, eTime=0;
-    sTime = (m_SampleCnt * 10000000LL * m_FpsDen)/m_FpsNom;
-    eTime = ((m_SampleCnt + 1) * 10000000LL * m_FpsDen)/m_FpsNom - 1;
-    pOut->SetTime(&sTime, &eTime);
-#endif
 
     m_startTime = sTime;
     m_stopTime = eTime;

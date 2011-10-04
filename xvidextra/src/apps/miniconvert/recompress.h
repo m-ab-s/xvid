@@ -63,6 +63,7 @@ public:
 
 protected:
   HWND m_ProgressWnd;
+  LONGLONG m_MinSTime, m_MaxSTime, m_MinETime, m_MaxETime;
 
   IGraphBuilder* m_pGraph;
   ICaptureGraphBuilder2 *m_pBuilder;
@@ -78,7 +79,8 @@ protected:
   IBaseFilter* m_pMuxer;
   IBaseFilter* m_pFileWriter;
   IBaseFilter *m_pChgType;
-  
+  IRecProgressNotify *m_pIChgTypeNorm;
+
   std::vector <IBaseFilter *>m_vOtherFilters;
   TCHAR *m_szSourceFilePath, *m_szDstFilePath;
   HRESULT AddSourceFilter(LPCTSTR in_szFilePath);

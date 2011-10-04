@@ -162,6 +162,7 @@ RecompressGraph::RecompressGraph()
   m_pVideoMeter = m_pSplitter = m_pSrcFilter = m_pXvidEncoder = 0;
   //m_pEmmsDummy = 0;
   m_pMuxer = m_pFileWriter = m_pChgType = 0;
+  m_pIChgTypeNorm = 0;
   m_pXvidConfig = 0;
   m_bBreakRequested = 0;
 
@@ -195,14 +196,6 @@ RecompressGraph::CleanUp()
   m_szSourceFilePath = m_szDstFilePath = 0;
   m_curSize = 0;
 
-#if 0
-  if (m_pEmmsDummy) {
-    m_pGraph->RemoveFilter(m_pEmmsDummy); 
-    m_pEmmsDummy->Release(); 
-    m_pEmmsDummy = 0;
-  }
-#endif
-
   if (m_pVideoMeter) {
     m_pGraph->RemoveFilter(m_pVideoMeter); 
     m_pVideoMeter->Release(); 
@@ -230,6 +223,11 @@ RecompressGraph::CleanUp()
   if (m_pXvidConfig) {
     m_pXvidConfig->Release();
     m_pXvidConfig = 0;
+  }
+
+  if (m_pIChgTypeNorm) {
+    m_pIChgTypeNorm->Release();
+    m_pIChgTypeNorm = 0;
   }
 
   if (m_pChgType) {
@@ -420,28 +418,6 @@ RecompressGraph::CreateGraph(HWND in_ProgressWnd, int in_Pass)
         if (hr == S_OK) hr = ConnectFilters(m_pGraph, pOutVideoPin, m_pXvidEncoder, GUID_NULL, GUID_NULL, 0);
 		if (hr == S_OK) pCompressedVideoFilter = m_pXvidEncoder;
 
-#if 0
-        if (!m_bIsWMV) {
-          // dummy filter - emms instruction only
-          CUnknown *pVidMeterEmms = 0;
-          if (hr == S_OK) pVidMeterEmms = CProgressNotifyFilter::CreateInstance(0, &hr, 0);
-          if (hr == S_OK) hr = pVidMeterEmms->NonDelegatingQueryInterface(IID_IBaseFilter, (void **)&m_pEmmsDummy);
-          //if (hr == S_OK) hr = CoCreateInstance(CLSID_ProgressNotifyFilter, 0, CLSCTX_INPROC_SERVER, IID_IBaseFilter, (void **)&m_pEmmsDummy);
-          if (hr == S_OK) hr = m_pGraph->AddFilter(m_pEmmsDummy, TEXT("Video meter emms"));
-          IPin *pOutPin = 0, *pInPin=0;
-
-          if (hr == S_OK) hr = GetFilterPin(m_pXvidEncoder, PINDIR_INPUT, 1, &pInPin, GUID_NULL, GUID_NULL);
-          if (hr == S_OK) hr = pInPin->ConnectedTo(&pOutPin);
-          if (hr == S_OK) hr = m_pGraph->Disconnect(pInPin);
-          if (hr == S_OK) hr = m_pGraph->Disconnect(pOutPin);
-          if (hr == S_OK) hr = ConnectFilters(m_pGraph, pOutPin, m_pEmmsDummy, GUID_NULL, GUID_NULL, 1);
-          if (hr == S_OK) hr = ConnectFilters(m_pGraph, m_pEmmsDummy, pInPin, GUID_NULL, GUID_NULL, 1);
-
-          if (pInPin) pInPin->Release();
-          if (pOutPin) pOutPin->Release();
-        }
-#endif
-
         m_ToAlloc = 0;
         if (hr == S_OK) hr = m_pXvidEncoder->QueryInterface(IID_IAMVfwCompressDialogs, (void **)&m_pXvidConfig);
 
@@ -526,25 +502,26 @@ RecompressGraph::CreateGraph(HWND in_ProgressWnd, int in_Pass)
   if (pIConfigInterleaving) pIConfigInterleaving->Release();
 #endif
 
+  if (hr == S_OK) hr = m_pChgType->QueryInterface(IID_IRecProgressNotify, (void **)&m_pIChgTypeNorm);
+  if (hr == S_OK) hr = m_pIChgTypeNorm->SetTotalFrames(m_TotalFrames);
+  if (hr == S_OK) m_pIChgTypeNorm->SetPass(in_Pass);
+
+  if (in_Pass == 2) {
+    LONGLONG FpsNom = m_MaxETime - m_MinETime, FpsDen = m_CountedFrames > 1 ? m_CountedFrames-1 : 1;
+    LONGLONG cAvgTimeForFrame = FpsNom/FpsDen;
+    //if (((ULONGLONG)m_AvgTimeForFrame*m_CountedFrames - FpsNom) > m_AvgTimeForFrame + m_CountedFrames) {
+    if (!m_AvgTimeForFrame) {
+      m_pIChgTypeNorm->SetForceTimeParams(m_MinSTime, FpsNom, FpsDen);
+    }
+  }
+
   if (hr == S_OK) hr = ConnectFilters(m_pGraph, m_pChgType, m_pMuxer, MEDIATYPE_Video, GUID_NULL, 1);
   
-  IRecProgressNotify *pChgN = 0;
-  if (hr == S_OK) hr = m_pChgType->QueryInterface(IID_IRecProgressNotify, (void **)&pChgN);
-  if (hr == S_OK) hr = pChgN->SetTotalFrames(m_TotalFrames);
-  if (pChgN) pChgN->Release();
-
   if (hr == S_OK) hr = AddFileWriter(m_szDstFilePath);
   if (hr == S_OK) hr = ConnectFilters(m_pGraph, m_pMuxer, m_pFileWriter, GUID_NULL, GUID_NULL, 1);
 
   if ((hr == S_OK) && ((in_Pass ==2) || (!m_pXvidEncoder))) hr = AddAudioStreams(0);
   else if (hr == S_OK) hr = AddAudioStreams(1);
-
-#if 0
-  IConfigAviMux *pIConfigAviMux = 0;
-  if (hr == S_OK) hr = m_pMuxer->QueryInterface(IID_IConfigAviMux, (void **)&pIConfigAviMux);
-  pIConfigAviMux->SetMasterStream(0);
-  if (pIConfigAviMux) pIConfigAviMux->Release();
-#endif
 
   if (pVMeterInVideoPin) pVMeterInVideoPin->Release();
   if (pOutVideoPin) pOutVideoPin->Release();
@@ -716,6 +693,11 @@ RecompressGraph::AddAudioStreams(int check_only)
                                                                                  (void **)&pIMp3Normalizer);
                 if (hr == S_OK) hr = m_pGraph->AddFilter(pIMp3Normalizer, 0);
 
+                IRecProgressNotify *pAudioRecNotify = 0;
+                pIMp3Normalizer->QueryInterface(IID_IRecProgressNotify, (void **)&pAudioRecNotify);
+                pAudioRecNotify->SetAudioBitrate(UsedDataRate);
+                pAudioRecNotify->Release();
+
                 IPin *pNormMp3Pin = 0;
                 if (hr == S_OK) hr = GetFilterPin(pIMp3Normalizer, PINDIR_INPUT, 0, &pNormMp3Pin, GUID_NULL, GUID_NULL);
                 if (hr == S_OK) hr = m_pGraph->ConnectDirect(pMp3Pin, pNormMp3Pin, pMp3mt);
@@ -821,7 +803,29 @@ RecompressGraph::AddSourceFile(LPCTSTR in_szFilePath)
 HRESULT 
 RecompressGraph::AddSourceFilter(LPCTSTR in_szFilePath) 
 {
+  HRESULT hr = S_OK;
   if (!m_pGraph || m_pSrcFilter) return E_UNEXPECTED;
+
+  BYTE StartBytes[512];
+  DWORD cbReadHdr=0;
+  int ExpectedType=0;
+  HANDLE hFile = CreateFile(in_szFilePath, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+  if (hFile != INVALID_HANDLE_VALUE) {
+    if (ReadFile(hFile, StartBytes, sizeof(StartBytes), &cbReadHdr, 0) && cbReadHdr == sizeof(StartBytes)) {
+      if ((*(int *)StartBytes) == 'FFIR') ExpectedType = 1;  // AVI
+      else if (((int *)StartBytes)[1] == 'pytf' || ((int *)StartBytes)[1] == 'tadm' || ((int *)StartBytes)[1] == 'voom') ExpectedType = 2; // MOV/MP4
+      else if (((int *)StartBytes)[0] == 0xA3DF451A) {
+        for (int iPos = 4; (ExpectedType == 0 && iPos +11 < sizeof(StartBytes)); iPos++) {
+          if ((*(int *)&(StartBytes[iPos]) == 0x6D888242) && (*(int *)&(StartBytes[iPos+3]) == 'rtam')
+            && (*(int *)&(StartBytes[iPos+7]) == 'akso')) {
+            ExpectedType = 3; // MKV
+          }
+        }
+      } else if (((int *)StartBytes)[0] == 0x75B22630) ExpectedType = 4;  // WMV/ASF
+    } else hr = VFW_E_FILE_TOO_SHORT;
+    CloseHandle(hFile);
+  } else return VFW_E_NOT_FOUND;
+  if (hr != S_OK) return hr;  
 
   int sLen = _tcslen(in_szFilePath);
   OLECHAR *pwName = new OLECHAR [sLen+1];
@@ -831,58 +835,67 @@ RecompressGraph::AddSourceFilter(LPCTSTR in_szFilePath)
   wcsncpy(pwName, in_szFilePath, sLen+1);
 #endif
 
-  HRESULT hr = TrySourceFilter(pwName, (GUID *)&CLSID_AsyncReader);
-  //  
-  //  AddFilterByCLSID((GUID *)&CLSID_AsyncReader, &m_pSrcFilter);
-  //IFileSourceFilter* pSrc =0 ;
-  //if (hr == S_OK) hr = m_pSrcFilter->QueryInterface(IID_IFileSourceFilter, (void **)(&pSrc));
-  //if (hr == S_OK) hr = pSrc->Load(in_szFilePath, 0);//&m_SrcFileMediaType);
+  // preferred configuration:
+  // ASF/WMV : WM ASF Reader
+  // AVI: Async Reader -> Avi Splitter
+  // MOV/MP4: Async Reader -> Lav splitter (secondary Haali splitter) (Haali has problems with some movs and mp4 files)
+  // MKV: Async Reader -> Haali splitter (secondary Lav splitter)
+  // if configuration Reader->Splitter is not available for mov/mp4/mkv, then reader+splitter is tried.
+  // if everything fails, we let the GraphBuilder to choose filters by default.
 
   IPin* pOutSrcPin=0, *pVideoPin=0;
-  if (hr == S_OK) hr = GetFilterPin(m_pSrcFilter, PINDIR_OUTPUT, 0, &pOutSrcPin, GUID_NULL, GUID_NULL);
-  IEnumMediaTypes* pEnumSrcMediaTypes=0;
-  if (hr == S_OK) hr = pOutSrcPin->EnumMediaTypes(&pEnumSrcMediaTypes);
-  //if (hr == S_OK) hr = pEnumSrcMediaTypes->Reset();
-  AM_MEDIA_TYPE *pMt =0;
-  if (hr == S_OK) do hr = pEnumSrcMediaTypes->Next(1, &pMt, 0); 
-  while (hr == S_OK && (pMt->majortype != MEDIATYPE_Stream || pMt->subtype == GUID_NULL));
-  if (hr == S_OK) m_SrcFileMediaType = *pMt;
-  if (pMt) DeleteMediaType(pMt);
-  if (pEnumSrcMediaTypes) pEnumSrcMediaTypes->Release();
-  if (hr == S_OK) {
-    if (m_SrcFileMediaType.majortype == MEDIATYPE_Stream) {
-      if (m_SrcFileMediaType.subtype == MEDIASUBTYPE_Asf ||
-        m_SrcFileMediaType.subtype == MEDIASUBTYPE_ASF) {
-        m_bIsWMV = 1;
-      } else if (m_SrcFileMediaType.subtype == MEDIASUBTYPE_Avi) 
-        hr = AddFilterByCLSID((GUID *)&CLSID_AviSplitter, &m_pSplitter);
-      else {//if (m_SrcFileMediaType.subtype == MEDIASUBTYPE_MP4) 
-        hr = AddFilterByCLSID((GUID *)&CLSID_LAVSplitter, &m_pSplitter);
-        if (hr == S_OK) {
-          hr = ConnectFilters(m_pGraph, pOutSrcPin, m_pSplitter);
-          if (hr == S_OK) hr = GetFilterPin(m_pSplitter, PINDIR_OUTPUT, 0, &pVideoPin, MEDIATYPE_Video, GUID_NULL);
-          if (m_pSplitter || !pVideoPin) {
-            m_pGraph->RemoveFilter(m_pSplitter);
-            m_pSplitter->Release();
-            m_pSplitter = 0;
-          }
-          if (pVideoPin) {pVideoPin->Release(); pVideoPin = 0;}
-        }
-        if (!m_pSplitter) {
-          hr = AddFilterByCLSID((GUID *)&CLSID_HaaliMediaSplitter_AR, &m_pSplitter);
+  if (ExpectedType == 4) m_bIsWMV = 1;
+  else {
+    hr = TrySourceFilter(pwName, (GUID *)&CLSID_AsyncReader);
+
+    if (hr == S_OK) hr = GetFilterPin(m_pSrcFilter, PINDIR_OUTPUT, 0, &pOutSrcPin, GUID_NULL, GUID_NULL);
+    IEnumMediaTypes* pEnumSrcMediaTypes=0;
+    if (hr == S_OK) hr = pOutSrcPin->EnumMediaTypes(&pEnumSrcMediaTypes);
+    AM_MEDIA_TYPE *pMt =0;
+  if (hr == S_OK) hr = pEnumSrcMediaTypes->Next(1, &pMt, 0); 
+  while (hr == S_OK && (pMt->majortype != MEDIATYPE_Stream || pMt->subtype == GUID_NULL)) { 
+    DeleteMediaType(pMt);
+    pMt = 0;
+    hr = pEnumSrcMediaTypes->Next(1, &pMt, 0); 
+  }
+    if (hr == S_OK) m_SrcFileMediaType = *pMt;
+    if (pMt) DeleteMediaType(pMt);
+    if (pEnumSrcMediaTypes) pEnumSrcMediaTypes->Release();
+    if (hr == S_OK) {
+      if (m_SrcFileMediaType.majortype == MEDIATYPE_Stream) {
+        if (m_SrcFileMediaType.subtype == MEDIASUBTYPE_Asf ||
+          m_SrcFileMediaType.subtype == MEDIASUBTYPE_ASF) {
+          m_bIsWMV = 1;
+        } else if (m_SrcFileMediaType.subtype == MEDIASUBTYPE_Avi) 
+          hr = AddFilterByCLSID((GUID *)&CLSID_AviSplitter, &m_pSplitter);
+        else {
+          hr = AddFilterByCLSID((GUID *)((ExpectedType == 3) ? &CLSID_HaaliMediaSplitter_AR : &CLSID_LAVSplitter), &m_pSplitter);
           if (hr == S_OK) {
             hr = ConnectFilters(m_pGraph, pOutSrcPin, m_pSplitter);
             if (hr == S_OK) hr = GetFilterPin(m_pSplitter, PINDIR_OUTPUT, 0, &pVideoPin, MEDIATYPE_Video, GUID_NULL);
-            if (m_pSplitter || !pVideoPin) {
+          if (m_pSplitter && !pVideoPin) {
               m_pGraph->RemoveFilter(m_pSplitter);
               m_pSplitter->Release();
               m_pSplitter = 0;
             }
             if (pVideoPin) {pVideoPin->Release(); pVideoPin = 0;}
           }
+          if (!m_pSplitter) {
+            hr = AddFilterByCLSID((GUID *)((ExpectedType != 3) ? &CLSID_HaaliMediaSplitter_AR : &CLSID_LAVSplitter), &m_pSplitter);
+            if (hr == S_OK) {
+              hr = ConnectFilters(m_pGraph, pOutSrcPin, m_pSplitter);
+              if (hr == S_OK) hr = GetFilterPin(m_pSplitter, PINDIR_OUTPUT, 0, &pVideoPin, MEDIATYPE_Video, GUID_NULL);
+            if (m_pSplitter && !pVideoPin) {
+                m_pGraph->RemoveFilter(m_pSplitter);
+                m_pSplitter->Release();
+                m_pSplitter = 0;
+              }
+              if (pVideoPin) {pVideoPin->Release(); pVideoPin = 0;}
+            }
+          }
         }
-      }
-    } else hr = VFW_E_TYPE_NOT_ACCEPTED;
+      } else hr = VFW_E_TYPE_NOT_ACCEPTED;
+    }
   }
 
   if (m_bIsWMV || !m_pSplitter) {
@@ -893,8 +906,7 @@ RecompressGraph::AddSourceFilter(LPCTSTR in_szFilePath)
     m_pSrcFilter = 0;
     if (m_bIsWMV) hr = TrySourceFilter(pwName, (GUID *)&CLSID_WMAsfReader );
     else {
-      //if (m_SrcFileMediaType.majortype == MEDIATYPE_Stream && m_SrcFileMediaType.subtype != GUID_NULL) {
-        hr = TrySourceFilter(pwName, (GUID *)&CLSID_LAVSource);
+      hr = TrySourceFilter(pwName, (GUID *)(ExpectedType == 3 ? &CLSID_HaaliMediaSplitter : &CLSID_LAVSource));
         if (hr == S_OK) hr = GetFilterPin(m_pSrcFilter, PINDIR_OUTPUT, 0, &pVideoPin, MEDIATYPE_Video, GUID_NULL);
         if (!m_pSrcFilter || !pVideoPin) {
           if (!pVideoPin && m_pSrcFilter) {
@@ -902,7 +914,7 @@ RecompressGraph::AddSourceFilter(LPCTSTR in_szFilePath)
             m_pSrcFilter->Release();
             m_pSrcFilter = 0;
           }
-          if (!m_pSrcFilter) TrySourceFilter(pwName, (GUID *)&CLSID_HaaliMediaSplitter);
+          if (!m_pSrcFilter) hr = TrySourceFilter(pwName, (GUID *)(ExpectedType != 3 ? &CLSID_HaaliMediaSplitter : &CLSID_LAVSource));
           if (hr == S_OK) hr = GetFilterPin(m_pSrcFilter, PINDIR_OUTPUT, 0, &pVideoPin, MEDIATYPE_Video, GUID_NULL);
           if (!pVideoPin && m_pSrcFilter) {
             m_pGraph->RemoveFilter(m_pSrcFilter);
@@ -914,23 +926,10 @@ RecompressGraph::AddSourceFilter(LPCTSTR in_szFilePath)
           pVideoPin->Release();
           pVideoPin = 0;
         }
-      //} else {
-      //  hr = TrySourceFilter(in_szFilePath, (GUID *)&CLSID_HaaliMediaSplitter);
-      //  if (!m_pSrcFilter) TrySourceFilter(in_szFilePath, (GUID *)&CLSID_LAVSource);
-      //}
     }
     if (!m_pSrcFilter) hr = m_pGraph->AddSourceFilter(pwName, 0, &m_pSrcFilter);
   } 
   if (pOutSrcPin) pOutSrcPin->Release();
-#if 0
-  HRESULT hr = AddFilterByCLSID((GUID *)&CLSID_AsyncReader, &this->m_pSrcFilter);
-  IFileSourceFilter* pSrc =0 ;
-  if (hr == S_OK) hr = m_pSrcFilter->QueryInterface(IID_IFileSourceFilter, (void **)(&pSrc));
-  if (hr == S_OK) hr = pSrc->Load(pwName, &m_SrcFileMediaType);
-  if (pSrc) pSrc->Release();
-#endif
-
-  delete [] pwName;
 
   return hr;
 }
@@ -965,13 +964,15 @@ HRESULT
 RecompressGraph::WaitForCompletion(long *out_Evt) 
 {
   long Evt, P1, P2;
-  TCHAR szErrorStr[150];
+//  TCHAR szErrorStr[150];
   HRESULT hr = S_OK;
   do {
     hr = m_pEvent->GetEvent(&Evt, &P1, &P2, INFINITE);
     if (Evt == EC_ERRORABORT) {
-      _stprintf(szErrorStr, _TEXT("Error ocurred\nCode=%08X, %08X\nContinue?"), P1, P2);
-      if (MessageBox(ghDlg, szErrorStr, 0, MB_YESNO) == IDYES) Evt = 0;
+//      _stprintf(szErrorStr, _TEXT("Error ocurred\nCode=%08X, %08X\nContinue?"), P1, P2);
+//      if (MessageBox(ghDlg, szErrorStr, 0, MB_YESNO) == IDYES) Evt = 0;
+      if (P1 == 0xC00D002F && m_bIsWMV)
+        Evt = 0;
     }
   } while (Evt != EC_COMPLETE && Evt != EC_STREAM_ERROR_STOPPED && Evt != EC_USERABORT && Evt != EC_ERRORABORT);
   *out_Evt = Evt;
@@ -1060,7 +1061,10 @@ RecompressGraph::Recompress()
     m_pEvent = 0;
     int bBreakRequested = m_bBreakRequested;
     //if (hr == S_OK) 
-      CleanUp();
+
+    m_pIChgTypeNorm->GetMeasuredTimes(m_MinETime, m_MaxETime, m_MinSTime, m_MaxSTime);
+
+    CleanUp();
     m_szSourceFilePath = pSrcStr;
     m_szDstFilePath = pDstStr;
 
