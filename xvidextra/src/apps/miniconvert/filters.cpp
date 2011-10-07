@@ -139,7 +139,7 @@ CProgressNotifyFilter::Transform(IMediaSample *pSample)
     m_TotalDataSize += pSample->GetActualDataLength();
     m_SampleCnt++;
   
-    int CurPos = (int) (m_TotalFrames ? (((double)(100 * m_SampleCnt/m_TotalFrames) + 0.5)) : 0);
+    int CurPos = (int) (m_TotalFrames ? (((double)(100 * m_SampleCnt/m_TotalFrames) + 0.5)) : ((double)(100*m_TotalDataSize / (1024*m_curSize)) + 0.5));
 
 	if (m_Pass == 0) {
 	  CurPos /= 2;
