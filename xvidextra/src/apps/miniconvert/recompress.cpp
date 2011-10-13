@@ -287,6 +287,8 @@ RecompressGraph::CleanUp()
 HRESULT 
 RecompressGraph::CreateGraph(HWND in_ProgressWnd, int in_Pass) 
 {
+  int remux_only = 0;
+
   m_FpsNom = m_FpsDen = 0;
   m_ProgressWnd = in_ProgressWnd;
 
@@ -371,6 +373,7 @@ RecompressGraph::CreateGraph(HWND in_ProgressWnd, int in_Pass)
   IBaseFilter *pCompressedVideoFilter = 0;
   int m_bRecompress = 1;
   GUID gSubtype;
+  CUnknown *pChgUnk = NULL;
 
   if (hr == S_OK) {
     m_TotalFrames = 0;
@@ -408,9 +411,13 @@ RecompressGraph::CreateGraph(HWND in_ProgressWnd, int in_Pass)
           || gSubtype == FOURCCMap('4PMS') || gSubtype == FOURCCMap('4pms')) 
 	  {
         pCompressedVideoFilter = m_pVideoMeter ? m_pVideoMeter : (m_pSplitter ? m_pSplitter : m_pSrcFilter);
+		remux_only = 1;
       } 
-	  else {        
+	  else 
+full_recompress:
+	  {        
         m_bFileCopy = 0;
+        if (remux_only==1) remux_only = 2;
 
         if (hr == S_OK) hr = AddDirectXFilterByMoniker(CLSID_VideoCompressorCategory, "xvid", &m_pXvidEncoder, 1);
         if (hr == S_OK) hr = m_pGraph->AddFilter(m_pXvidEncoder, L"Encoder");
@@ -486,11 +493,13 @@ RecompressGraph::CreateGraph(HWND in_ProgressWnd, int in_Pass)
     }
   }
 
-  CUnknown *pChgUnk = ChangeSubtypeT::CreateInstance(0, &hr);
-  if (hr == S_OK) hr = pChgUnk->NonDelegatingQueryInterface(IID_IBaseFilter, (void **)&m_pChgType);
-  if (hr == S_OK) hr = m_pGraph->AddFilter(m_pChgType, L"ChgToxvid");
+  if (remux_only != 2) {
+    pChgUnk = ChangeSubtypeT::CreateInstance(0, &hr);
+    if (hr == S_OK) hr = pChgUnk->NonDelegatingQueryInterface(IID_IBaseFilter, (void **)&m_pChgType);
+    if (hr == S_OK) hr = m_pGraph->AddFilter(m_pChgType, L"ChgToxvid");
+  }
   if (hr == S_OK) hr = ConnectFilters(m_pGraph, pCompressedVideoFilter, m_pChgType, GUID_NULL, GUID_NULL, 1);
-
+  if (hr != S_OK && remux_only==1) { hr = S_OK; goto full_recompress; } // retry with full recompress
   if (hr == S_OK) hr = AddFilterByCLSID((GUID *)&CLSID_AviDest, &m_pMuxer);
 
 #if 0

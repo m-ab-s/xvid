@@ -454,6 +454,169 @@ CIRecProgressNotify::CIRecProgressNotify()
 
 //////////////////////////////////////////////////////////////////
 
+/*****************************************************************************
+ * MPEG-4 header parsing helper function
+ ****************************************************************************/
+
+/* Copied from bitstream.c of xvidcore - TODO: BAD...
+/* Copyright (C) 2001-2003 Peter Ross <pross@xvid.org> */
+
+static const unsigned char log2_tab_16[16] =  { 0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4 };
+ 
+static unsigned int __inline log2bin(unsigned int value)
+{
+  int n = 0;
+  if (value & 0xffff0000) {
+    value >>= 16;
+    n += 16;
+  }
+  if (value & 0xff00) {
+    value >>= 8;
+    n += 8;
+  }
+  if (value & 0xf0) {
+    value >>= 4;
+    n += 4;
+  }
+ return n + log2_tab_16[value];
+}
+
+int
+Check_Video_Headers(Bitstream * bs)
+{
+  unsigned int dec_ver_id = 1, vol_ver_id, start_code;
+
+  while ((BitstreamPos(bs) >> 3) + 4 <= bs->length) {
+    BitstreamByteAlign(bs);
+    start_code = BitstreamShowBits(bs, 32);
+
+    if (start_code == VISOBJ_START_CODE) {
+
+      BitstreamSkip(bs, 32);	/* visual_object_start_code */
+      if (BitstreamGetBit(bs))	/* is_visual_object_identified */
+      {
+        dec_ver_id = BitstreamGetBits(bs, 4);	/* visual_object_ver_id */
+        BitstreamSkip(bs, 3);	/* visual_object_priority */
+      } else {
+        dec_ver_id = 1;
+      }
+
+      if (BitstreamShowBits(bs, 4) != VISOBJ_TYPE_VIDEO)	/* visual_object_type */
+      {
+        return -1;
+      }
+      BitstreamSkip(bs, 4);
+
+      /* video_signal_type */
+
+      if (BitstreamGetBit(bs))	/* video_signal_type */
+      {
+        BitstreamSkip(bs, 3);	/* video_format */
+        BitstreamSkip(bs, 1);	/* video_range */
+        if (BitstreamGetBit(bs))	/* color_description */
+        {
+          BitstreamSkip(bs, 8);	/* color_primaries */
+          BitstreamSkip(bs, 8);	/* transfer_characteristics */
+          BitstreamSkip(bs, 8);	/* matrix_coefficients */
+        }
+      }
+    } else if ((start_code & ~VIDOBJLAY_START_CODE_MASK) == VIDOBJLAY_START_CODE) {
+
+      BitstreamSkip(bs, 32);	/* video_object_layer_start_code */
+      BitstreamSkip(bs, 1);	/* random_accessible_vol */
+
+      BitstreamSkip(bs, 8);   /* video_object_type_indication */
+
+      if (BitstreamGetBit(bs))	/* is_object_layer_identifier */
+      {
+        vol_ver_id = BitstreamGetBits(bs, 4);	/* video_object_layer_verid */
+        BitstreamSkip(bs, 3);	/* video_object_layer_priority */
+      } else {
+        vol_ver_id = dec_ver_id;
+      }
+                
+      if (BitstreamGetBits(bs, 4) == VIDOBJLAY_AR_EXTPAR)	/* aspect_ratio_info */
+      {
+        BitstreamSkip(bs, 16);	/* par_width + par_height */
+      }
+
+      if (BitstreamGetBit(bs))	/* vol_control_parameters */
+      {
+        BitstreamSkip(bs, 2);	/* chroma_format */
+        BitstreamSkip(bs, 1);	/* low_delay */
+        if (BitstreamGetBit(bs))	/* vbv_parameters */
+        {
+          BitstreamSkip(bs,15);  	/* first_half_bit_rate */
+          READ_MARKER();
+          BitstreamSkip(bs,15);		/* latter_half_bit_rate */
+          READ_MARKER();
+
+          BitstreamSkip(bs, 15);	/* first_half_vbv_buffer_size */
+          READ_MARKER();
+          BitstreamSkip(bs, 3);		/* latter_half_vbv_buffer_size */
+
+          BitstreamSkip(bs, 11);	/* first_half_vbv_occupancy */
+          READ_MARKER();
+          BitstreamSkip(bs, 15);	/* latter_half_vbv_occupancy */
+          READ_MARKER();
+        }
+      }
+
+      if (BitstreamGetBits(bs, 2) != VIDOBJLAY_SHAPE_RECTANGULAR) /* video_object_layer_shape */
+      {
+        return -1;
+      }
+
+      READ_MARKER();
+
+      /********************** for decode B-frame time ***********************/
+      unsigned int time_inc_resolution = BitstreamGetBits(bs, 16);	/* vop_time_increment_resolution */
+
+      unsigned time_inc_bits = 1;
+
+      if (time_inc_resolution > 0) {
+        time_inc_bits = MAX(log2bin(time_inc_resolution-1), 1);
+      }
+
+      READ_MARKER();
+
+      if (BitstreamGetBit(bs))	/* fixed_vop_rate */
+      {
+        BitstreamSkip(bs, time_inc_bits);	/* fixed_vop_time_increment */
+      }
+
+      READ_MARKER();
+      BitstreamSkip(bs, 13);	/* video_object_layer_width */
+      READ_MARKER();
+      BitstreamSkip(bs, 13);	/* video_object_layer_height */
+      READ_MARKER();
+
+      if (BitstreamGetBit(bs)) 
+      {
+        return -1;
+	  }
+
+      if (!BitstreamGetBit(bs))	/* obmc_disable */
+      {
+        return -1;
+      }
+
+      if (BitstreamGetBits(bs, (vol_ver_id == 1 ? 1 : 2)) != 0)	/* sprite_enable */
+      {
+        return -1;
+      }
+	}
+    else					/* start_code == ? */
+	{
+      BitstreamSkip(bs, 8);
+	}
+  }
+
+  return 0;
+}
+
+/*****************************************************************************/
+
 CUnknown * WINAPI 
 ChangeSubtypeT::CreateInstance(IUnknown *pUnk, HRESULT *phr) 
 {
@@ -653,6 +816,12 @@ ChangeSubtypeT::CompleteConnect(PIN_DIRECTION direction, IPin *pReceivePin)
           if (m_Mpeg4SequenceSize > 0) {
             m_pMpeg4Sequence = (BYTE *)malloc(m_Mpeg4SequenceSize*sizeof(BYTE));
             memcpy(m_pMpeg4Sequence, (const BYTE *)mpeg2info->dwSequenceHeader, m_Mpeg4SequenceSize);
+
+			Bitstream bs;
+			BitstreamInit(&bs, m_pMpeg4Sequence, m_Mpeg4SequenceSize);
+
+            if (Check_Video_Headers(&bs) == -1) // Is upstream MPEG-4 video compatible with XVID?
+              return VFW_E_TYPE_NOT_ACCEPTED;
           }
         }
       }

@@ -178,4 +178,185 @@ public:
   int m_Mpeg4SequenceSize;
 };
 
+
+/*****************************************************************************
+ * Bitstream helper functions
+ ****************************************************************************/
+
+/* Copied from bitstream.h of xvidcore - TODO: BAD...
+/* Copyright (C) 2001-2003 Peter Ross <pross@xvid.org> */
+
+/* Input buffer should be readable as full chunks of 8bytes, including
+the end of the buffer. Padding might be appropriate. If only chunks
+of 4bytes are applicable, define XVID_SAFE_BS_TAIL. Note that this will
+slow decoding, so consider this as a last-resort solution */
+
+/* #define XVID_SAFE_BS_TAIL */
+
+#define BSWAP(a) __asm mov eax,a __asm bswap eax __asm mov a, eax
+
+#define VIDOBJLAY_START_CODE_MASK	0x0000000f
+#define VIDOBJLAY_START_CODE		0x00000120	/* ..0x0000012f */
+#define VISOBJ_START_CODE			0x000001b5
+
+#define VIDOBJLAY_SHAPE_RECTANGULAR			0
+#define VISOBJ_TYPE_VIDEO					1
+#define VIDOBJLAY_AR_EXTPAR					15
+
+#define READ_MARKER()	BitstreamSkip(bs, 1)
+
+#define MAX(a, b) ((a > b) ? (a) : (b))
+
+
+typedef struct
+{
+	unsigned int bufa;
+	unsigned int bufb;
+	unsigned int buf;
+	unsigned int pos;
+	unsigned int *tail;
+	unsigned int *start;
+	unsigned int length;
+	unsigned int initpos;
+}
+Bitstream;
+
+
+/* initialise bitstream structure */
+
+static void __inline
+BitstreamInit(Bitstream * const bs,
+			  void *const bitstream,
+			  unsigned int length)
+{
+	unsigned int tmp;
+	size_t bitpos;
+	unsigned int adjbitstream = (unsigned int)bitstream;
+
+	/*
+	 * Start the stream on a uint32_t boundary, by rounding down to the
+	 * previous uint32_t and skipping the intervening bytes.
+	 */
+	bitpos = ((sizeof(unsigned int)-1) & (size_t)bitstream);
+	adjbitstream = adjbitstream - bitpos;
+	bs->start = bs->tail = (unsigned int *) adjbitstream;
+
+	tmp = *bs->start;
+#ifndef ARCH_IS_BIG_ENDIAN
+	BSWAP(tmp);
+#endif
+	bs->bufa = tmp;
+
+	tmp = *(bs->start + 1);
+#ifndef ARCH_IS_BIG_ENDIAN
+	BSWAP(tmp);
+#endif
+	bs->bufb = tmp;
+
+	bs->pos = bs->initpos = (unsigned int) bitpos*8;
+	/* preserve the intervening bytes */
+	if (bs->initpos > 0)
+		bs->buf = bs->bufa & (0xffffffff << (32 - bs->initpos));
+	else
+		bs->buf = 0;
+	bs->length = length;
+}
+
+
+/* reads n bits from bitstream without changing the stream pos */
+
+static unsigned int __inline
+BitstreamShowBits(Bitstream * const bs,
+				  const unsigned int bits)
+{
+	int nbit = (bits + bs->pos) - 32;
+
+	if (nbit > 0) {
+		return ((bs->bufa & (0xffffffff >> bs->pos)) << nbit) | (bs->
+																 bufb >> (32 -
+																		  nbit));
+	} else {
+		return (bs->bufa & (0xffffffff >> bs->pos)) >> (32 - bs->pos - bits);
+	}
+}
+
+
+/* skip n bits forward in bitstream */
+
+static __inline void
+BitstreamSkip(Bitstream * const bs,
+			  const unsigned int bits)
+{
+	bs->pos += bits;
+
+	if (bs->pos >= 32) {
+		unsigned int tmp;
+
+		bs->bufa = bs->bufb;
+#if defined(XVID_SAFE_BS_TAIL)
+		if (bs->tail<(bs->start+((bs->length+3)>>2)))
+#endif
+		{
+			tmp = *((unsigned int *) bs->tail + 2);
+#ifndef ARCH_IS_BIG_ENDIAN
+			BSWAP(tmp);
+#endif
+			bs->bufb = tmp;
+			bs->tail++;
+		}
+#if defined(XVID_SAFE_BS_TAIL)
+		else {
+			bs->bufb = 0;
+		}
+#endif
+		bs->pos -= 32;
+	}
+}
+
+
+/* move forward to the next byte boundary */
+
+static __inline void
+BitstreamByteAlign(Bitstream * const bs)
+{
+	unsigned int remainder = bs->pos % 8;
+
+	if (remainder) {
+		BitstreamSkip(bs, 8 - remainder);
+	}
+}
+
+
+/* bitstream length (unit bits) */
+
+static unsigned int __inline
+BitstreamPos(const Bitstream * const bs)
+{
+	return((unsigned int)(8*((unsigned int)bs->tail - (unsigned int)bs->start) + bs->pos - bs->initpos));
+}
+
+
+/* read n bits from bitstream */
+
+static unsigned int __inline
+BitstreamGetBits(Bitstream * const bs,
+				 const unsigned int n)
+{
+	unsigned int ret = BitstreamShowBits(bs, n);
+
+	BitstreamSkip(bs, n);
+	return ret;
+}
+
+
+/* read single bit from bitstream */
+
+static unsigned int __inline
+BitstreamGetBit(Bitstream * const bs)
+{
+	return BitstreamGetBits(bs, 1);
+}
+
+/*****************************************************************************/
+
 #endif							/* _FILTERS_H_ */
