@@ -3,7 +3,7 @@
  *  XVID MPEG-4 VIDEO CODEC
  *  - XviD Decoder part of the DShow Filter  -
  *
- *  Copyright(C) 2002-2010 Peter Ross <pross@xvid.org>
+ *  Copyright(C) 2002-2012 Peter Ross <pross@xvid.org>
  *
  *  This program is free software ; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,6 +28,10 @@
 
 #include <xvid.h>
 #include "IXvidDecoder.h"
+
+#ifndef HWND_MESSAGE
+#define HWND_MESSAGE ((HWND)-3)
+#endif
 
 #define XVID_NAME_L		L"Xvid MPEG-4 Video Decoder"
 
