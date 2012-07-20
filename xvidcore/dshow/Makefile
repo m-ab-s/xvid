@@ -112,7 +112,7 @@ $(LIBSO): $(BUILD_DIR) $(OBJECTS)
 			$(OBJECTS) xvid.ax.def \
 			-L$(DXTREE)/Lib -lstrmiids \
 			$(DXBASECLASSES)/strmbase.lib \
-			-luuid -lwinmm -lole32 -loleaut32 -lcomctl32 -lstdc++ #-lgdi32
+			-luuid -lwinmm -lole32 -loleaut32 -lcomctl32 -lstdc++ -lgdi32
 
 clean:
 	@echo "  Cl: Object files and target lib"
