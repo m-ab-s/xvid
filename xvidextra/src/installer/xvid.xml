@@ -1,7 +1,7 @@
 <project>
     <shortName>Xvid</shortName>
     <fullName>Xvid Video Codec</fullName>
-    <version>1.3.2</version>
+    <version>1.4.0</version>
     <installerFilename>${product_shortname}-${product_version}-${platform_name}.${platform_exec_suffix}</installerFilename>
     <readmeFile>releasenotes.txt</readmeFile>
     <licenseFile>../../LICENSE</licenseFile>
@@ -1180,7 +1180,7 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
     <vendor>Xvid Team</vendor>
     <versionId>132</versionId>
     <windowsExecutableIcon>xvid.ico</windowsExecutableIcon>
-    <windowsResourceFileVersion>1.3.2.0</windowsResourceFileVersion>
+    <windowsResourceFileVersion>1.4.0.0</windowsResourceFileVersion>
     <windowsResourceOriginalFilename>${product_shortname}-${product_version}-${platform_name}.${platform_exec_suffix}</windowsResourceOriginalFilename>
     <componentList>
         <component>
