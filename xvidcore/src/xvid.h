@@ -34,8 +34,6 @@ extern "C" {
  * function export defines
  ****************************************************************************/
 
-/* Attention! Work in progress. TODO: Review */
-
 #ifndef XVID_IMPEXP
 #define XVID_IMPEXP             extern
 #endif
