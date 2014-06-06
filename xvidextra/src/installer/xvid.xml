@@ -1250,12 +1250,12 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
         </registrySet>
         <runProgram>
             <program>${windows_folder_system}\msiexec.exe</program>
-            <programArguments>/q /i "${installdir}\xvid-gstreamer-x86-2013.6.msi" INSTALLDIR="${installdir}\xvid-gstreamer"</programArguments>
+            <programArguments>/passive /i "${installdir}\xvid-gstreamer-x86-2013.6.msi" INSTALLDIR="${installdir}\xvid-gstreamer"</programArguments>
         </runProgram>
         <runProgram>
             <explanation>Installing Xvid Web Player</explanation>
             <program>${windows_folder_system}\msiexec.exe</program>
-            <programArguments>/q /i "${installdir}\XvidWebPlayer.msi" INSTALLDIR="${installdir}\xvid-gstreamer\0.10\x86\bin"</programArguments>
+            <programArguments>/passive /i "${installdir}\XvidWebPlayer.msi" INSTALLDIR="${installdir}\xvid-gstreamer\0.10\x86\bin"</programArguments>
         </runProgram>
     </postInstallationActionList>
     <preUninstallationActionList>
@@ -1468,6 +1468,14 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
                 </platformTest>
             </ruleList>
         </deleteFile>
+        <runProgram>
+            <program>${windows_folder_system}\msiexec.exe</program>
+            <programArguments>/passive /x "${installdir}\XvidWebPlayer.msi" INSTALLDIR="${installdir}\xvid-gstreamer\0.10\x86\bin"</programArguments>
+        </runProgram>
+        <runProgram>
+            <program>${windows_folder_system}\msiexec.exe</program>
+            <programArguments>/passive /x "${installdir}\xvid-gstreamer-x86-2013.6.msi" INSTALLDIR="${installdir}\xvid-gstreamer"</programArguments>
+        </runProgram>
     </preUninstallationActionList>
     <postUninstallationActionList>
         <registryDelete>
