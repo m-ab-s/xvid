@@ -8,6 +8,319 @@
     <logoImage>xvid.png</logoImage>
     <splashImage>xvid_logo.png</splashImage>
     <allowLanguageSelection>1</allowLanguageSelection>
+    <componentList>
+        <component>
+            <name>default</name>
+            <description>Default Component</description>
+            <canBeEdited>1</canBeEdited>
+            <selected>1</selected>
+            <show>1</show>
+            <folderList>
+                <folder>
+                    <description>Program Files</description>
+                    <destination>${installdir}</destination>
+                    <name>programfiles</name>
+                    <platforms>all</platforms>
+                    <shortcutList>
+                        <shortcut>
+                            <comment>Uninstall</comment>
+                            <exec>${installdir}/${uninstallerName}</exec>
+                            <icon></icon>
+                            <name>Uninstall ${product_fullname}</name>
+                            <path>${installdir}</path>
+                            <platforms>all</platforms>
+                            <runAsAdmin>0</runAsAdmin>
+                            <runInTerminal>0</runInTerminal>
+                            <windowsExec>${installdir}/${uninstallerName}.exe</windowsExec>
+                            <windowsExecArgs></windowsExecArgs>
+                            <windowsIcon></windowsIcon>
+                            <windowsPath>${installdir}</windowsPath>
+                        </shortcut>
+                    </shortcutList>
+                </folder>
+                <folder>
+                    <description>Program Files</description>
+                    <destination>${installdir}</destination>
+                    <name>programfileslinux</name>
+                    <platforms>linux</platforms>
+                </folder>
+                <folder>
+                    <description>Program Files</description>
+                    <destination>${installdir}</destination>
+                    <name>programfileswindows</name>
+                    <platforms>windows</platforms>
+                    <distributionFileList>
+                        <distributionFile>
+                            <origin>../../../xvidcore/vfw/src/xvid.ico</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>AviC.exe</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>../../LICENSE</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>MiniCalc.exe</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>OGMCalc.exe</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>releasenotes.txt</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>vidccleaner.exe</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>Xvid_Quant_Matrices.zip</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>StatsReader.exe</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>statsreader.txt</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>xvid.inf</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>xvid.ico</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>autoupdate-windows.exe</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>update.ini</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>CheckUpdate.exe</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>MiniConvert.exe</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>XvidWebPlayer.msi</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>xvid-gstreamer-x86-2013.6.msi</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>../../../xvidcore/build/win32/bin/xvid_encraw.exe</origin>
+                        </distributionFile>
+                    </distributionFileList>
+                    <shortcutList>
+                        <linkShortcut>
+                            <comment>Xvid Website</comment>
+                            <icon></icon>
+                            <name>xvidhomepage</name>
+                            <platforms>windows</platforms>
+                            <runAsAdmin>0</runAsAdmin>
+                            <runInTerminal>0</runInTerminal>
+                            <url>http://www.xvid.org/</url>
+                            <windowsIcon></windowsIcon>
+                        </linkShortcut>
+                    </shortcutList>
+                </folder>
+                <folder>
+                    <description>Program Files</description>
+                    <destination>${installdir}</destination>
+                    <name>programfilesosx</name>
+                    <platforms>osx</platforms>
+                </folder>
+                <folder>
+                    <description>Temp Directory (x86)</description>
+                    <destination>${system_temp_directory}/xvid_x86</destination>
+                    <name>tmp_x86</name>
+                    <platforms>windows</platforms>
+                    <distributionFileList>
+                        <distributionFile>
+                            <origin>../../../xvidcore/vfw/bin/xvidvfw.dll</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>../../../xvidcore/vfw/bin/xvidcore.dll</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>xvid.inf</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>../../../xvidcore/dshow/bin/xvid.ax</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>setpriv32.exe</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>../../../xvidcore/dshow/bin/xvid_mft.ax</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>setavi32.exe</origin>
+                        </distributionFile>
+                    </distributionFileList>
+                </folder>
+                <folder>
+                    <description>Temp Directory (x64)</description>
+                    <destination>${system_temp_directory}/xvid_x64</destination>
+                    <name>tmp_x64</name>
+                    <platforms>windows</platforms>
+                    <distributionFileList>
+                        <distributionFile>
+                            <origin>../../../xvidcore/dshow/bin/x64/xvid.ax</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>../../../xvidcore/vfw/bin/x64/xvidcore.dll</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>../../../xvidcore/vfw/bin/x64/xvidvfw.dll</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>xvid.inf</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>setpriv64.exe</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>../../../xvidcore/dshow/bin/x64/xvid_mft.ax</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>setavi64.exe</origin>
+                        </distributionFile>
+                    </distributionFileList>
+                    <ruleList>
+                        <platformTest type="windows-x64"/>
+                    </ruleList>
+                </folder>
+            </folderList>
+            <startMenuShortcutList>
+                <startMenuShortcut>
+                    <comment>Uninstall ${product_fullname}</comment>
+                    <name>Uninstall ${product_fullname}</name>
+                    <runAsAdmin>0</runAsAdmin>
+                    <runInTerminal>0</runInTerminal>
+                    <windowsExec>${installdir}/${uninstallerName}.exe</windowsExec>
+                    <windowsExecArgs></windowsExecArgs>
+                    <windowsIcon></windowsIcon>
+                    <windowsPath>${installdir}/</windowsPath>
+                </startMenuShortcut>
+                <startMenuShortcut>
+                    <comment>Configure the Decoder properties</comment>
+                    <name>Configure Decoder</name>
+                    <runAsAdmin>0</runAsAdmin>
+                    <runInTerminal>0</runInTerminal>
+                    <windowsExec>${windows_folder_system}/rundll32.exe</windowsExec>
+                    <windowsExecArgs>xvid.ax,Configure</windowsExecArgs>
+                    <windowsIcon>${installdir}/xvid.ico</windowsIcon>
+                    <windowsPath></windowsPath>
+                </startMenuShortcut>
+                <startMenuShortcut>
+                    <comment>Configure the encoder properties</comment>
+                    <name>Configure Encoder</name>
+                    <runAsAdmin>0</runAsAdmin>
+                    <runInTerminal>0</runInTerminal>
+                    <windowsExec>${windows_folder_system}/rundll32.exe</windowsExec>
+                    <windowsExecArgs>xvidvfw.dll,Configure</windowsExecArgs>
+                    <windowsIcon>${installdir}/xvid.ico</windowsIcon>
+                    <windowsPath></windowsPath>
+                </startMenuShortcut>
+                <startMenuFileShortcut>
+                    <comment>Important notes concerning this Xvid build</comment>
+                    <filePath>${installdir}/releasenotes.txt</filePath>
+                    <name>Release Notes</name>
+                    <runAsAdmin>0</runAsAdmin>
+                    <runInTerminal>0</runInTerminal>
+                    <windowsIcon></windowsIcon>
+                </startMenuFileShortcut>
+                <startMenuShortcut>
+                    <comment>Check whether a new update for Xvid is available</comment>
+                    <name>Check for Updates</name>
+                    <runAsAdmin>0</runAsAdmin>
+                    <runInTerminal>0</runInTerminal>
+                    <windowsExec>${installdir}/autoupdate-windows.exe</windowsExec>
+                    <windowsExecArgs></windowsExecArgs>
+                    <windowsIcon></windowsIcon>
+                    <windowsPath>${installdir}/</windowsPath>
+                </startMenuShortcut>
+                <startMenuLinkShortcut>
+                    <comment>Link to the Xvid homepage</comment>
+                    <name>Xvid Homepage</name>
+                    <runAsAdmin>0</runAsAdmin>
+                    <runInTerminal>0</runInTerminal>
+                    <url>http://www.xvid.org</url>
+                    <windowsIcon></windowsIcon>
+                </startMenuLinkShortcut>
+                <startMenuFolder>
+                    <name>Advanced</name>
+                    <platforms>windows</platforms>
+                    <startMenuShortcutList>
+                        <startMenuShortcut>
+                            <comment>Quickly change the FourCC of your AVI files</comment>
+                            <name>Nic's FourCC Changer</name>
+                            <runAsAdmin>0</runAsAdmin>
+                            <runInTerminal>0</runInTerminal>
+                            <windowsExec>${installdir}/AviC.exe</windowsExec>
+                            <windowsExecArgs></windowsExecArgs>
+                            <windowsIcon></windowsIcon>
+                            <windowsPath>${installdir}/</windowsPath>
+                        </startMenuShortcut>
+                        <startMenuFileShortcut>
+                            <comment>A selection of custom quant matrices</comment>
+                            <filePath>${installdir}/Xvid_Quant_Matrices.zip</filePath>
+                            <name>Some Quantization Matrices</name>
+                            <runAsAdmin>0</runAsAdmin>
+                            <runInTerminal>0</runInTerminal>
+                            <windowsIcon></windowsIcon>
+                        </startMenuFileShortcut>
+                        <startMenuShortcut>
+                            <comment>Check the first pass size and more</comment>
+                            <name>StatsReader 2.1</name>
+                            <runAsAdmin>0</runAsAdmin>
+                            <runInTerminal>0</runInTerminal>
+                            <windowsExec>${installdir}/StatsReader.exe</windowsExec>
+                            <windowsExecArgs></windowsExecArgs>
+                            <windowsIcon></windowsIcon>
+                            <windowsPath>${installdir}/</windowsPath>
+                        </startMenuShortcut>
+                        <startMenuFileShortcut>
+                            <comment>Documentation for the StatsReader</comment>
+                            <filePath>${installdir}/statsreader.txt</filePath>
+                            <name>StatsReader Notes</name>
+                            <runAsAdmin>0</runAsAdmin>
+                            <runInTerminal>0</runInTerminal>
+                            <windowsIcon></windowsIcon>
+                        </startMenuFileShortcut>
+                        <startMenuShortcut>
+                            <comment>An AVI bitrate calculator</comment>
+                            <name>Nic's MiniCalc</name>
+                            <runAsAdmin>0</runAsAdmin>
+                            <runInTerminal>0</runInTerminal>
+                            <windowsExec>${installdir}/MiniCalc.exe</windowsExec>
+                            <windowsExecArgs></windowsExecArgs>
+                            <windowsIcon></windowsIcon>
+                            <windowsPath>${installdir}/</windowsPath>
+                        </startMenuShortcut>
+                        <startMenuShortcut>
+                            <comment>Command line encoder application</comment>
+                            <name>xvid_encraw</name>
+                            <runAsAdmin>0</runAsAdmin>
+                            <runInTerminal>0</runInTerminal>
+                            <windowsExec>%comspec%</windowsExec>
+                            <windowsExecArgs>/k ""${installdir}\xvid_encraw.exe"" -h</windowsExecArgs>
+                            <windowsIcon></windowsIcon>
+                            <windowsPath>${installdir}</windowsPath>
+                        </startMenuShortcut>
+                    </startMenuShortcutList>
+                </startMenuFolder>
+                <startMenuShortcut>
+                    <comment>Simple media converter to create Xvid videos</comment>
+                    <name>Xvid MiniConvert</name>
+                    <runAsAdmin>0</runAsAdmin>
+                    <runInTerminal>0</runInTerminal>
+                    <windowsExec>${installdir}/MiniConvert.exe</windowsExec>
+                    <windowsExecArgs></windowsExecArgs>
+                    <windowsIcon></windowsIcon>
+                    <windowsPath>${installdir}/</windowsPath>
+                </startMenuShortcut>
+            </startMenuShortcutList>
+        </component>
+    </componentList>
     <initializationActionList>
         <registryGet>
             <key>HKEY_LOCAL_MACHINE\Software\${project.windowsSoftwareRegistryPrefix}</key>
@@ -935,6 +1248,15 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
             <type>REG_DWORD</type>
             <value>${generic_mpeg4}</value>
         </registrySet>
+        <runProgram>
+            <explanation>Installing Xvid Web Player</explanation>
+            <program>${windows_folder_system}/msiexec.exe</program>
+            <programArguments>/q /i "${installdir}/XvidWebPlayer.msi" INSTALLDIR="${installdir}/xvid-gstreamer/0.10/x86/bin"</programArguments>
+        </runProgram>
+        <runProgram>
+            <program>${windows_folder_system}/msiexec</program>
+            <programArguments>/q /i "${installdir}/xvid-gstreamer-x86-2013.6.msi" INSTALLDIR="${installdir}/xvid-gstreamer"</programArguments>
+        </runProgram>
     </postInstallationActionList>
     <preUninstallationActionList>
         <runProgram>
@@ -1182,313 +1504,6 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
     <windowsExecutableIcon>xvid.ico</windowsExecutableIcon>
     <windowsResourceFileVersion>1.4.0.0</windowsResourceFileVersion>
     <windowsResourceOriginalFilename>${product_shortname}-${product_version}-${platform_name}.${platform_exec_suffix}</windowsResourceOriginalFilename>
-    <componentList>
-        <component>
-            <name>default</name>
-            <description>Default Component</description>
-            <canBeEdited>1</canBeEdited>
-            <selected>1</selected>
-            <show>1</show>
-            <folderList>
-                <folder>
-                    <description>Program Files</description>
-                    <destination>${installdir}</destination>
-                    <name>programfiles</name>
-                    <platforms>all</platforms>
-                    <shortcutList>
-                        <shortcut>
-                            <comment>Uninstall</comment>
-                            <exec>${installdir}/${uninstallerName}</exec>
-                            <icon></icon>
-                            <name>Uninstall ${product_fullname}</name>
-                            <path>${installdir}</path>
-                            <platforms>all</platforms>
-                            <runAsAdmin>0</runAsAdmin>
-                            <runInTerminal>0</runInTerminal>
-                            <windowsExec>${installdir}/${uninstallerName}.exe</windowsExec>
-                            <windowsExecArgs></windowsExecArgs>
-                            <windowsIcon></windowsIcon>
-                            <windowsPath>${installdir}</windowsPath>
-                        </shortcut>
-                    </shortcutList>
-                </folder>
-                <folder>
-                    <description>Program Files</description>
-                    <destination>${installdir}</destination>
-                    <name>programfileslinux</name>
-                    <platforms>linux</platforms>
-                </folder>
-                <folder>
-                    <description>Program Files</description>
-                    <destination>${installdir}</destination>
-                    <name>programfileswindows</name>
-                    <platforms>windows</platforms>
-                    <distributionFileList>
-                        <distributionFile>
-                            <origin>../../../xvidcore/vfw/src/xvid.ico</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>AviC.exe</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>../../LICENSE</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>MiniCalc.exe</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>OGMCalc.exe</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>releasenotes.txt</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>vidccleaner.exe</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>Xvid_Quant_Matrices.zip</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>StatsReader.exe</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>statsreader.txt</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>xvid.inf</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>xvid.ico</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>autoupdate-windows.exe</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>update.ini</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>CheckUpdate.exe</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>MiniConvert.exe</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>../../../xvidcore/build/win32/bin/xvid_encraw.exe</origin>
-                        </distributionFile>
-                    </distributionFileList>
-                    <shortcutList>
-                        <linkShortcut>
-                            <comment>Xvid Website</comment>
-                            <icon></icon>
-                            <name>xvidhomepage</name>
-                            <platforms>windows</platforms>
-                            <runAsAdmin>0</runAsAdmin>
-                            <runInTerminal>0</runInTerminal>
-                            <url>http://www.xvid.org/</url>
-                            <windowsIcon></windowsIcon>
-                        </linkShortcut>
-                    </shortcutList>
-                </folder>
-                <folder>
-                    <description>Program Files</description>
-                    <destination>${installdir}</destination>
-                    <name>programfilesosx</name>
-                    <platforms>osx</platforms>
-                </folder>
-                <folder>
-                    <description>Temp Directory (x86)</description>
-                    <destination>${system_temp_directory}/xvid_x86</destination>
-                    <name>tmp_x86</name>
-                    <platforms>windows</platforms>
-                    <distributionFileList>
-                        <distributionFile>
-                            <origin>../../../xvidcore/vfw/bin/xvidvfw.dll</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>../../../xvidcore/vfw/bin/xvidcore.dll</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>xvid.inf</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>../../../xvidcore/dshow/bin/xvid.ax</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>setpriv32.exe</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>../../../xvidcore/dshow/bin/xvid_mft.ax</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>setavi32.exe</origin>
-                        </distributionFile>
-                    </distributionFileList>
-                </folder>
-                <folder>
-                    <description>Temp Directory (x64)</description>
-                    <destination>${system_temp_directory}/xvid_x64</destination>
-                    <name>tmp_x64</name>
-                    <platforms>windows</platforms>
-                    <distributionFileList>
-                        <distributionFile>
-                            <origin>../../../xvidcore/dshow/bin/x64/xvid.ax</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>../../../xvidcore/vfw/bin/x64/xvidcore.dll</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>../../../xvidcore/vfw/bin/x64/xvidvfw.dll</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>xvid.inf</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>setpriv64.exe</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>../../../xvidcore/dshow/bin/x64/xvid_mft.ax</origin>
-                        </distributionFile>
-                        <distributionFile>
-                            <origin>setavi64.exe</origin>
-                        </distributionFile>
-                    </distributionFileList>
-                    <ruleList>
-                        <platformTest type="windows-x64"/>
-                    </ruleList>
-                </folder>
-            </folderList>
-            <startMenuShortcutList>
-                <startMenuShortcut>
-                    <comment>Uninstall ${product_fullname}</comment>
-                    <name>Uninstall ${product_fullname}</name>
-                    <runAsAdmin>0</runAsAdmin>
-                    <runInTerminal>0</runInTerminal>
-                    <windowsExec>${installdir}/${uninstallerName}.exe</windowsExec>
-                    <windowsExecArgs></windowsExecArgs>
-                    <windowsIcon></windowsIcon>
-                    <windowsPath>${installdir}/</windowsPath>
-                </startMenuShortcut>
-                <startMenuShortcut>
-                    <comment>Configure the Decoder properties</comment>
-                    <name>Configure Decoder</name>
-                    <runAsAdmin>0</runAsAdmin>
-                    <runInTerminal>0</runInTerminal>
-                    <windowsExec>${windows_folder_system}/rundll32.exe</windowsExec>
-                    <windowsExecArgs>xvid.ax,Configure</windowsExecArgs>
-                    <windowsIcon>${installdir}/xvid.ico</windowsIcon>
-                    <windowsPath></windowsPath>
-                </startMenuShortcut>
-                <startMenuShortcut>
-                    <comment>Configure the encoder properties</comment>
-                    <name>Configure Encoder</name>
-                    <runAsAdmin>0</runAsAdmin>
-                    <runInTerminal>0</runInTerminal>
-                    <windowsExec>${windows_folder_system}/rundll32.exe</windowsExec>
-                    <windowsExecArgs>xvidvfw.dll,Configure</windowsExecArgs>
-                    <windowsIcon>${installdir}/xvid.ico</windowsIcon>
-                    <windowsPath></windowsPath>
-                </startMenuShortcut>
-                <startMenuFileShortcut>
-                    <comment>Important notes concerning this Xvid build</comment>
-                    <filePath>${installdir}/releasenotes.txt</filePath>
-                    <name>Release Notes</name>
-                    <runAsAdmin>0</runAsAdmin>
-                    <runInTerminal>0</runInTerminal>
-                    <windowsIcon></windowsIcon>
-                </startMenuFileShortcut>
-                <startMenuShortcut>
-                    <comment>Check whether a new update for Xvid is available</comment>
-                    <name>Check for Updates</name>
-                    <runAsAdmin>0</runAsAdmin>
-                    <runInTerminal>0</runInTerminal>
-                    <windowsExec>${installdir}/autoupdate-windows.exe</windowsExec>
-                    <windowsExecArgs></windowsExecArgs>
-                    <windowsIcon></windowsIcon>
-                    <windowsPath>${installdir}/</windowsPath>
-                </startMenuShortcut>
-                <startMenuLinkShortcut>
-                    <comment>Link to the Xvid homepage</comment>
-                    <name>Xvid Homepage</name>
-                    <runAsAdmin>0</runAsAdmin>
-                    <runInTerminal>0</runInTerminal>
-                    <url>http://www.xvid.org</url>
-                    <windowsIcon></windowsIcon>
-                </startMenuLinkShortcut>
-                <startMenuFolder>
-                    <name>Advanced</name>
-                    <platforms>windows</platforms>
-                    <startMenuShortcutList>
-                        <startMenuShortcut>
-                            <comment>Quickly change the FourCC of your AVI files</comment>
-                            <name>Nic's FourCC Changer</name>
-                            <runAsAdmin>0</runAsAdmin>
-                            <runInTerminal>0</runInTerminal>
-                            <windowsExec>${installdir}/AviC.exe</windowsExec>
-                            <windowsExecArgs></windowsExecArgs>
-                            <windowsIcon></windowsIcon>
-                            <windowsPath>${installdir}/</windowsPath>
-                        </startMenuShortcut>
-                        <startMenuFileShortcut>
-                            <comment>A selection of custom quant matrices</comment>
-                            <filePath>${installdir}/Xvid_Quant_Matrices.zip</filePath>
-                            <name>Some Quantization Matrices</name>
-                            <runAsAdmin>0</runAsAdmin>
-                            <runInTerminal>0</runInTerminal>
-                            <windowsIcon></windowsIcon>
-                        </startMenuFileShortcut>
-                        <startMenuShortcut>
-                            <comment>Check the first pass size and more</comment>
-                            <name>StatsReader 2.1</name>
-                            <runAsAdmin>0</runAsAdmin>
-                            <runInTerminal>0</runInTerminal>
-                            <windowsExec>${installdir}/StatsReader.exe</windowsExec>
-                            <windowsExecArgs></windowsExecArgs>
-                            <windowsIcon></windowsIcon>
-                            <windowsPath>${installdir}/</windowsPath>
-                        </startMenuShortcut>
-                        <startMenuFileShortcut>
-                            <comment>Documentation for the StatsReader</comment>
-                            <filePath>${installdir}/statsreader.txt</filePath>
-                            <name>StatsReader Notes</name>
-                            <runAsAdmin>0</runAsAdmin>
-                            <runInTerminal>0</runInTerminal>
-                            <windowsIcon></windowsIcon>
-                        </startMenuFileShortcut>
-                        <startMenuShortcut>
-                            <comment>An AVI bitrate calculator</comment>
-                            <name>Nic's MiniCalc</name>
-                            <runAsAdmin>0</runAsAdmin>
-                            <runInTerminal>0</runInTerminal>
-                            <windowsExec>${installdir}/MiniCalc.exe</windowsExec>
-                            <windowsExecArgs></windowsExecArgs>
-                            <windowsIcon></windowsIcon>
-                            <windowsPath>${installdir}/</windowsPath>
-                        </startMenuShortcut>
-                        <startMenuShortcut>
-                            <comment>Command line encoder application</comment>
-                            <name>xvid_encraw</name>
-                            <runAsAdmin>0</runAsAdmin>
-                            <runInTerminal>0</runInTerminal>
-                            <windowsExec>%comspec%</windowsExec>
-                            <windowsExecArgs>/k ""${installdir}\xvid_encraw.exe"" -h</windowsExecArgs>
-                            <windowsIcon></windowsIcon>
-                            <windowsPath>${installdir}</windowsPath>
-                        </startMenuShortcut>
-                    </startMenuShortcutList>
-                </startMenuFolder>
-                <startMenuShortcut>
-                    <comment>Simple media converter to create Xvid videos</comment>
-                    <name>Xvid MiniConvert</name>
-                    <runAsAdmin>0</runAsAdmin>
-                    <runInTerminal>0</runInTerminal>
-                    <windowsExec>${installdir}/MiniConvert.exe</windowsExec>
-                    <windowsExecArgs></windowsExecArgs>
-                    <windowsIcon></windowsIcon>
-                    <windowsPath>${installdir}/</windowsPath>
-                </startMenuShortcut>
-            </startMenuShortcutList>
-        </component>
-    </componentList>
     <parameterList>
         <directoryParameter>
             <name>installdir</name>
