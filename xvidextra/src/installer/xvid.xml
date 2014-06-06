@@ -1250,12 +1250,17 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
         </registrySet>
         <runProgram>
             <program>${windows_folder_system}\msiexec.exe</program>
-            <programArguments>/passive /i "${installdir}\xvid-gstreamer-x86-2013.6.msi" INSTALLDIR="${installdir}\xvid-gstreamer"</programArguments>
+            <programArguments>/passive /I "${installdir}\xvid-gstreamer-x86-2013.6.msi" INSTALLDIR="${installdir}\xvid-gstreamer"</programArguments>
+            <show>0</show>
+            <useMSDOSPath>0</useMSDOSPath>
+            <workingDirectory>${installdir}</workingDirectory>
         </runProgram>
         <runProgram>
             <explanation>Installing Xvid Web Player</explanation>
             <program>${windows_folder_system}\msiexec.exe</program>
-            <programArguments>/passive /i "${installdir}\XvidWebPlayer.msi" INSTALLDIR="${installdir}\xvid-gstreamer\0.10\x86\bin"</programArguments>
+            <programArguments>/passive /I "${installdir}\XvidWebPlayer.msi" INSTALLDIR="${installdir}\xvid-gstreamer\0.10\x86\bin"</programArguments>
+            <show>0</show>
+            <useMSDOSPath>0</useMSDOSPath>
         </runProgram>
     </postInstallationActionList>
     <preUninstallationActionList>
@@ -1470,11 +1475,14 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
         </deleteFile>
         <runProgram>
             <program>${windows_folder_system}\msiexec.exe</program>
-            <programArguments>/passive /x "${installdir}\XvidWebPlayer.msi" INSTALLDIR="${installdir}\xvid-gstreamer\0.10\x86\bin"</programArguments>
+            <programArguments>/passive /X "${installdir}\XvidWebPlayer.msi" INSTALLDIR="${installdir}\xvid-gstreamer\0.10\x86\bin"</programArguments>
+            <useMSDOSPath>0</useMSDOSPath>
+            <workingDirectory>${installdir}</workingDirectory>
         </runProgram>
         <runProgram>
             <program>${windows_folder_system}\msiexec.exe</program>
-            <programArguments>/passive /x "${installdir}\xvid-gstreamer-x86-2013.6.msi" INSTALLDIR="${installdir}\xvid-gstreamer"</programArguments>
+            <programArguments>/passive /X "${installdir}\xvid-gstreamer-x86-2013.6.msi" INSTALLDIR="${installdir}\xvid-gstreamer"</programArguments>
+            <workingDirectory>${installdir}</workingDirectory>
         </runProgram>
     </preUninstallationActionList>
     <postUninstallationActionList>
