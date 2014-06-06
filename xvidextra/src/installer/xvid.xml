@@ -1,7 +1,7 @@
 <project>
     <shortName>Xvid</shortName>
     <fullName>Xvid Video Codec</fullName>
-    <version>1.4.0</version>
+    <version>14</version>
     <installerFilename>${product_shortname}-${product_version}-${platform_name}.${platform_exec_suffix}</installerFilename>
     <readmeFile>releasenotes.txt</readmeFile>
     <licenseFile>../../LICENSE</licenseFile>
@@ -1249,13 +1249,13 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
             <value>${generic_mpeg4}</value>
         </registrySet>
         <runProgram>
-            <explanation>Installing Xvid Web Player</explanation>
-            <program>${windows_folder_system}/msiexec.exe</program>
-            <programArguments>/q /i "${installdir}/XvidWebPlayer.msi" INSTALLDIR="${installdir}/xvid-gstreamer/0.10/x86/bin"</programArguments>
+            <program>${windows_folder_system}\msiexec.exe</program>
+            <programArguments>/q /i "${installdir}\xvid-gstreamer-x86-2013.6.msi" INSTALLDIR="${installdir}\xvid-gstreamer"</programArguments>
         </runProgram>
         <runProgram>
-            <program>${windows_folder_system}/msiexec</program>
-            <programArguments>/q /i "${installdir}/xvid-gstreamer-x86-2013.6.msi" INSTALLDIR="${installdir}/xvid-gstreamer"</programArguments>
+            <explanation>Installing Xvid Web Player</explanation>
+            <program>${windows_folder_system}\msiexec.exe</program>
+            <programArguments>/q /i "${installdir}\XvidWebPlayer.msi" INSTALLDIR="${installdir}\xvid-gstreamer\0.10\x86\bin"</programArguments>
         </runProgram>
     </postInstallationActionList>
     <preUninstallationActionList>
