@@ -1,0 +1,24 @@
+Xvid-1.3.2-20110525 _Final Release_
+
+
+This is Xvid 1.3.2 bugfix release. It replaces the previous 1.3.1 stable release.
+
+Changes since 1.3.1:
+
+* xvidcore
+  - Updated implementation of IDCT/FDCT to match error spec of 
+    MMX/SSE code
+  - Added "make info" to unix Makefile 
+  - Removed debian directory from release tarballs
+  - Made multi-threading (pthread support) switchable at compile time
+ 
+* VFW frontend
+  - Minor GUI changes
+
+* DShow/MFT frontend
+  - GUI cosmetics
+  - Updated MSVC project files with seperate build configs for MFT-enabled 
+    binary
+
+
+http://www.xvid.org/

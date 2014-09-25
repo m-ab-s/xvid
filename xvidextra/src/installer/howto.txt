@@ -1,0 +1,18 @@
+Howto create the Xvid installer
+-------------------------------
+
+1. Install Bitrock InstallBuilder Professional
+
+2. Create a releasenotes.txt file in the current directory 
+   with information about the release
+
+3. Unzip wintools.zip
+
+4. Generate autoupdate-windows.exe:
+   BITROCK_INSTALLER_PATH\autoupdate\bin\customize build INSTALLER_PATH/project.xml windows
+
+5. Start Bitrock InstallBuilder GUI and open "xvid.xml" project file
+
+6. Make sure the Xvid version numbers are correctly set in Bitrock GUI (or xvid.xml) and update.ini
+
+7. Click on "Build" in Bitrock InstallBuilder GUI
