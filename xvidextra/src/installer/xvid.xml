@@ -992,10 +992,6 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
                 </platformTest>
                 <platformTest>
                     <negate>1</negate>
-                    <type>windows-nt</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
                     <type>windows-9x</type>
                 </platformTest>
                 <platformTest>
@@ -1022,10 +1018,6 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
                 <platformTest>
                     <negate>1</negate>
                     <type>windows-vista</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-nt</type>
                 </platformTest>
                 <platformTest>
                     <negate>1</negate>
@@ -1073,10 +1065,6 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
                 </platformTest>
                 <platformTest>
                     <negate>1</negate>
-                    <type>windows-nt</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
                     <type>windows-9x</type>
                 </platformTest>
                 <platformTest>
@@ -1106,10 +1094,6 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
                 <platformTest>
                     <negate>1</negate>
                     <type>windows-vista</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-nt</type>
                 </platformTest>
                 <platformTest>
                     <negate>1</negate>
@@ -1145,10 +1129,6 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
                 </platformTest>
                 <platformTest>
                     <negate>1</negate>
-                    <type>windows-nt</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
                     <type>windows-9x</type>
                 </platformTest>
                 <platformTest>
@@ -1178,10 +1158,6 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
                 </platformTest>
                 <platformTest>
                     <negate>1</negate>
-                    <type>windows-nt</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
                     <type>windows-9x</type>
                 </platformTest>
                 <platformTest>
@@ -1213,10 +1189,6 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
                 </platformTest>
                 <platformTest>
                     <negate>1</negate>
-                    <type>windows-nt</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
                     <type>windows-9x</type>
                 </platformTest>
                 <platformTest>
@@ -1248,10 +1220,6 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
                 <platformTest>
                     <negate>1</negate>
                     <type>windows-vista</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-nt</type>
                 </platformTest>
                 <platformTest>
                     <negate>1</negate>
@@ -1289,10 +1257,6 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
                 </platformTest>
                 <platformTest>
                     <negate>1</negate>
-                    <type>windows-nt</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
                     <type>windows-9x</type>
                 </platformTest>
                 <platformTest>
@@ -1321,10 +1285,6 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
                 <platformTest>
                     <negate>1</negate>
                     <type>windows-vista</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-nt</type>
                 </platformTest>
                 <platformTest>
                     <negate>1</negate>
