@@ -101,6 +101,12 @@
                         <distributionFile>
                             <origin>../../../xvidcore/build/win32/bin/xvid_encraw.exe</origin>
                         </distributionFile>
+                        <distributionFile>
+                            <origin>xvid.png</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>CheckUpdate.ps1</origin>
+                        </distributionFile>
                     </distributionFileList>
                     <shortcutList>
                         <linkShortcut>
@@ -1034,7 +1040,7 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
             <key>HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run</key>
             <name>Xvid</name>
             <type>REG_SZ</type>
-            <value>${installdir}\CheckUpdate.exe</value>
+            <value>powershell.exe -nologo -WindowStyle hidden -Noninteractive -NoProfile -ExecutionPolicy Bypass -File "${installdir}\CheckUpdate.ps1"</value>
             <ruleList>
                 <platformTest>
                     <type>windows</type>
@@ -1653,9 +1659,7 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
     <requireInstallationByRootUser>1</requireInstallationByRootUser>
     <saveRelativePaths>1</saveRelativePaths>
     <startMenuGroupName>${product_shortname}</startMenuGroupName>
-    <updateInformationURL>http://update.xvid.org/update.xml</updateInformationURL>
     <vendor>Xvid Team</vendor>
-    <versionId>132</versionId>
     <windowsExecutableIcon>xvid.ico</windowsExecutableIcon>
     <windowsResourceFileVersion>1.4.0.0</windowsResourceFileVersion>
     <windowsResourceOriginalFilename>${product_shortname}-${product_version}-${platform_name}.${platform_exec_suffix}</windowsResourceOriginalFilename>
