@@ -3,7 +3,7 @@
  *  XVID MPEG-4 VIDEO CODEC
  *  - Configuration processing -
  *
- *  Copyright(C) 2002-2011 Peter Ross <pross@xvid.org>
+ *  Copyright(C) 2002-2012 Peter Ross <pross@xvid.org>
  *
  *  This program is free software ; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 
 #include <windows.h>
 #include <commctrl.h>
-#include <xvid.h>		// Xvid API
+#include <xvid.h>
 #include "config.h"
 #include "debug.h"
 #include "resource.h"
@@ -44,25 +44,25 @@ void LoadRegistryInfo()
 	RegOpenKeyEx(XVID_REG_KEY, XVID_REG_SUBKEY, 0, KEY_READ, &hKey);
 
 	// Set the default post-processing settings
-	REG_GET_N(TEXT("Brightness"), g_config.nBrightness, 0)
-	REG_GET_N(TEXT("Deblock_Y"),  g_config.nDeblock_Y, 0)
-	REG_GET_N(TEXT("Deblock_UV"), g_config.nDeblock_UV, 0)
-	REG_GET_N(TEXT("Dering_Y"),  g_config.nDering_Y, 0)
-	REG_GET_N(TEXT("Dering_UV"),  g_config.nDering_UV, 0)
-	REG_GET_N(TEXT("FilmEffect"), g_config.nFilmEffect, 0)
-	REG_GET_N(TEXT("ForceColorspace"), g_config.nForceColorspace, 0)
-	REG_GET_N(TEXT("FlipVideo"),  g_config.nFlipVideo, 0)
-	REG_GET_N(TEXT("Supported_4CC"),  g_config.supported_4cc, 0)
-	REG_GET_N(TEXT("Videoinfo_Compat"),  g_config.videoinfo_compat, 0)
-	REG_GET_N(TEXT("Decoder_Aspect_Ratio"),  g_config.aspect_ratio, 0)
-	REG_GET_N(TEXT("num_threads"),  g_config.num_threads, 0)
-	REG_GET_N(TEXT("cpu_flags"), g_config.cpu, 0)
-	REG_GET_N(TEXT("Tray_Icon"), g_config.bTrayIcon, 1);
+	REG_GET_N("Brightness", g_config.nBrightness, 0)
+	REG_GET_N("Deblock_Y",  g_config.nDeblock_Y, 0)
+	REG_GET_N("Deblock_UV", g_config.nDeblock_UV, 0)
+	REG_GET_N("Dering_Y",  g_config.nDering_Y, 0)
+	REG_GET_N("Dering_UV",  g_config.nDering_UV, 0)
+	REG_GET_N("FilmEffect", g_config.nFilmEffect, 0)
+	REG_GET_N("ForceColorspace", g_config.nForceColorspace, 0)
+	REG_GET_N("FlipVideo",  g_config.nFlipVideo, 0)
+	REG_GET_N("Supported_4CC",  g_config.supported_4cc, 0)
+	REG_GET_N("Videoinfo_Compat",  g_config.videoinfo_compat, 0)
+	REG_GET_N("Decoder_Aspect_Ratio",  g_config.aspect_ratio, 0)
+	REG_GET_N("num_threads",  g_config.num_threads, 0)
+	REG_GET_N("cpu_flags", g_config.cpu, 0)
+    REG_GET_N("Tray_Icon", g_config.bTrayIcon, 1);
 
 	RegCloseKey(hKey);
 }
 
-void SaveRegistryInfo()
+void SaveRegistryInfo(int perfCount)
 {
 	HKEY hKey;
 	DWORD dispo;
@@ -78,23 +78,37 @@ void SaveRegistryInfo()
 			&hKey, 
 			&dispo) != ERROR_SUCCESS)
 	{
-		OutputDebugString(TEXT("Couldn't create XVID_REG_SUBKEY"));
+		OutputDebugString("Couldn't create XVID_REG_SUBKEY");
 		return;
 	}
 
-	REG_SET_N(TEXT("Brightness"), g_config.nBrightness);
-	REG_SET_N(TEXT("Deblock_Y"),  g_config.nDeblock_Y);
-	REG_SET_N(TEXT("Deblock_UV"), g_config.nDeblock_UV);
-	REG_SET_N(TEXT("Dering_Y"), g_config.nDering_Y);
-	REG_SET_N(TEXT("Dering_UV"), g_config.nDering_UV);
-	REG_SET_N(TEXT("FilmEffect"), g_config.nFilmEffect);
-	REG_SET_N(TEXT("ForceColorspace"), g_config.nForceColorspace);
-	REG_SET_N(TEXT("FlipVideo"), g_config.nFlipVideo);
-	REG_SET_N(TEXT("Supported_4CC"),  g_config.supported_4cc);
-	REG_SET_N(TEXT("Videoinfo_Compat"),  g_config.videoinfo_compat);
-	REG_SET_N(TEXT("Decoder_Aspect_Ratio"), g_config.aspect_ratio);
-	REG_SET_N(TEXT("num_threads"),  g_config.num_threads);
-	REG_SET_N(TEXT("Tray_Icon"), g_config.bTrayIcon);
+	if (perfCount > 0) {
+		unsigned int updateCount = 0;
+		HKEY hKey2 = hKey;
+		DWORD size;
+
+		RegOpenKeyEx(XVID_REG_KEY, XVID_REG_SUBKEY, 0, KEY_READ, &hKey);
+		REG_GET_N("PerfCount", updateCount, 0);
+		RegCloseKey(hKey);
+		hKey = hKey2;
+		updateCount += perfCount;
+		REG_SET_N("PerfCount", updateCount);
+	}
+	else {
+		REG_SET_N("Brightness", g_config.nBrightness);
+		REG_SET_N("Deblock_Y", g_config.nDeblock_Y);
+		REG_SET_N("Deblock_UV", g_config.nDeblock_UV);
+		REG_SET_N("Dering_Y", g_config.nDering_Y);
+		REG_SET_N("Dering_UV", g_config.nDering_UV);
+		REG_SET_N("FilmEffect", g_config.nFilmEffect);
+		REG_SET_N("ForceColorspace", g_config.nForceColorspace);
+		REG_SET_N("FlipVideo", g_config.nFlipVideo);
+		REG_SET_N("Supported_4CC", g_config.supported_4cc);
+		REG_SET_N("Videoinfo_Compat", g_config.videoinfo_compat);
+		REG_SET_N("Decoder_Aspect_Ratio", g_config.aspect_ratio);
+		REG_SET_N("num_threads", g_config.num_threads);
+		REG_SET_N("Tray_Icon", g_config.bTrayIcon);
+	}
 
 	RegCloseKey(hKey);
 }
@@ -105,7 +119,6 @@ INT_PTR CALLBACK adv_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	HWND hBrightness;
 
-	UNREFERENCED_PARAMETER(lParam);
 	switch ( uMsg )
 	{
 	case WM_DESTROY:
@@ -116,17 +129,17 @@ INT_PTR CALLBACK adv_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			nForceColorspace = SendMessage(GetDlgItem(hwnd, IDC_COLORSPACE), CB_GETCURSEL, 0, 0); 
 			if ( g_config.nForceColorspace != nForceColorspace )
 			{
-				MessageBox(0, TEXT("You have changed the output colorspace.\r\nClose the movie and open it for the new colorspace to take effect."), TEXT("Xvid DShow"), MB_TOPMOST);
+				MessageBox(0, "You have changed the output colorspace.\r\nClose the movie and open it for the new colorspace to take effect.", "Xvid DShow", MB_TOPMOST);
 			}
 			g_config.nForceColorspace = (int) nForceColorspace;
 
 			aspect_ratio = SendMessage(GetDlgItem(hwnd, IDC_USE_AR), CB_GETCURSEL, 0, 0);
 			if ( g_config.aspect_ratio != aspect_ratio )
 			{
-				MessageBox(0, TEXT("You have changed the default aspect ratio.\r\nClose the movie and open it for the new aspect ratio to take effect."), TEXT("Xvid DShow"), MB_TOPMOST);
+				MessageBox(0, "You have changed the default aspect ratio.\r\nClose the movie and open it for the new aspect ratio to take effect.", "Xvid DShow", MB_TOPMOST);
 			}
 			g_config.aspect_ratio = (int) aspect_ratio;
-			SaveRegistryInfo();
+			SaveRegistryInfo(0);
 		}
 		break;
 
@@ -145,25 +158,25 @@ INT_PTR CALLBACK adv_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				((int (__cdecl *)(void *, int, void *, void *))GetProcAddress(m_hdll, "xvid_global"))
 					(0, XVID_GBL_INFO, &info, NULL);
 
-				wsprintfA(core, "Xvid MPEG-4 Video Codec v%d.%d.%d",
+				wsprintf(core, "Xvid MPEG-4 Video Codec v%d.%d.%d",
 					XVID_VERSION_MAJOR(info.actual_version),
 					XVID_VERSION_MINOR(info.actual_version),
 					XVID_VERSION_PATCH(info.actual_version));
 
 				FreeLibrary(m_hdll);
 			} else {
-				wsprintfA(core, "xvidcore.dll not found!");
+				wsprintf(core, "xvidcore.dll not found!");
 			}
 
-			SetDlgItemTextA(hwnd, IDC_CORE, core);
+			SetDlgItemText(hwnd, IDC_CORE, core);
 		}
 
 		// Load Force Colorspace Box
-		SendMessage(GetDlgItem(hwnd, IDC_COLORSPACE), CB_ADDSTRING, 0, (LPARAM)TEXT("No Force")); 
-		SendMessage(GetDlgItem(hwnd, IDC_COLORSPACE), CB_ADDSTRING, 0, (LPARAM)TEXT("YV12")); 
-		SendMessage(GetDlgItem(hwnd, IDC_COLORSPACE), CB_ADDSTRING, 0, (LPARAM)TEXT("YUY2")); 
-		SendMessage(GetDlgItem(hwnd, IDC_COLORSPACE), CB_ADDSTRING, 0, (LPARAM)TEXT("RGB24")); 
-		SendMessage(GetDlgItem(hwnd, IDC_COLORSPACE), CB_ADDSTRING, 0, (LPARAM)TEXT("RGB32")); 
+		SendMessage(GetDlgItem(hwnd, IDC_COLORSPACE), CB_ADDSTRING, 0, (LPARAM)"No Force"); 
+		SendMessage(GetDlgItem(hwnd, IDC_COLORSPACE), CB_ADDSTRING, 0, (LPARAM)"YV12"); 
+		SendMessage(GetDlgItem(hwnd, IDC_COLORSPACE), CB_ADDSTRING, 0, (LPARAM)"YUY2"); 
+		SendMessage(GetDlgItem(hwnd, IDC_COLORSPACE), CB_ADDSTRING, 0, (LPARAM)"RGB24"); 
+		SendMessage(GetDlgItem(hwnd, IDC_COLORSPACE), CB_ADDSTRING, 0, (LPARAM)"RGB32"); 
 
 		// Select Colorspace
 		SendMessage(GetDlgItem(hwnd, IDC_COLORSPACE), CB_SETCURSEL, g_config.nForceColorspace, 0); 
@@ -174,11 +187,11 @@ INT_PTR CALLBACK adv_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		SendMessage(hBrightness, TBM_SETPOS, (WPARAM)TRUE, (LPARAM) g_config.nBrightness);
 
 		// Load Aspect Ratio Box
-		SendMessage(GetDlgItem(hwnd, IDC_USE_AR), CB_ADDSTRING, 0, (LPARAM)TEXT("Auto (MPEG-4 first)")); 
-		SendMessage(GetDlgItem(hwnd, IDC_USE_AR), CB_ADDSTRING, 0, (LPARAM)TEXT("Auto (external first)")); 
-		SendMessage(GetDlgItem(hwnd, IDC_USE_AR), CB_ADDSTRING, 0, (LPARAM)TEXT("4:3")); 
-		SendMessage(GetDlgItem(hwnd, IDC_USE_AR), CB_ADDSTRING, 0, (LPARAM)TEXT("16:9")); 
-		SendMessage(GetDlgItem(hwnd, IDC_USE_AR), CB_ADDSTRING, 0, (LPARAM)TEXT("2.35:1")); 
+		SendMessage(GetDlgItem(hwnd, IDC_USE_AR), CB_ADDSTRING, 0, (LPARAM)"Auto (MPEG-4 first)"); 
+		SendMessage(GetDlgItem(hwnd, IDC_USE_AR), CB_ADDSTRING, 0, (LPARAM)"Auto (external first)"); 
+		SendMessage(GetDlgItem(hwnd, IDC_USE_AR), CB_ADDSTRING, 0, (LPARAM)"4:3"); 
+		SendMessage(GetDlgItem(hwnd, IDC_USE_AR), CB_ADDSTRING, 0, (LPARAM)"16:9"); 
+		SendMessage(GetDlgItem(hwnd, IDC_USE_AR), CB_ADDSTRING, 0, (LPARAM)"2.35:1"); 
 
 		// Select Aspect Ratio
 		SendMessage(GetDlgItem(hwnd, IDC_USE_AR), CB_SETCURSEL, g_config.aspect_ratio, 0);
@@ -197,6 +210,7 @@ INT_PTR CALLBACK adv_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		SendMessage(GetDlgItem(hwnd, IDC_3IVX), BM_SETCHECK, g_config.supported_4cc & SUPPORT_3IVX, 0);
 		SendMessage(GetDlgItem(hwnd, IDC_MP4V), BM_SETCHECK, g_config.supported_4cc & SUPPORT_MP4V, 0);
 		SendMessage(GetDlgItem(hwnd, IDC_COMPAT), BM_SETCHECK, g_config.videoinfo_compat, 0);
+
 
 		// TrayIcon
 		SendMessage(GetDlgItem(hwnd, IDC_TRAYICON), BM_SETCHECK, g_config.bTrayIcon, 0);
@@ -274,14 +288,14 @@ INT_PTR CALLBACK adv_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		EnableWindow(GetDlgItem(hwnd, IDC_USE_AR), !g_config.videoinfo_compat);
 
-		SaveRegistryInfo();
+		SaveRegistryInfo(0);
 		
 
 		break;
 	case WM_NOTIFY:
 		hBrightness = GetDlgItem(hwnd, IDC_BRIGHTNESS);
 		g_config.nBrightness = (int) SendMessage(hBrightness, TBM_GETPOS, (WPARAM)NULL, (LPARAM)NULL);
-		SaveRegistryInfo();
+		SaveRegistryInfo(0);
 		break;
 	default :
 		return FALSE;

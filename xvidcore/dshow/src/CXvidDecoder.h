@@ -26,12 +26,9 @@
 #ifndef _FILTER_H_
 #define _FILTER_H_
 
+#include <time.h>
 #include <xvid.h>
 #include "IXvidDecoder.h"
-
-#ifndef HWND_MESSAGE
-#define HWND_MESSAGE ((HWND)-3)
-#endif
 
 #define XVID_NAME_L		L"Xvid MPEG-4 Video Decoder"
 #define XVID_NAME_MFT_L	L"Xvid MPEG-4 Video Decoder MFT"
@@ -158,7 +155,7 @@ public :
 
 private :
 
-	HRESULT ChangeColorspace(GUID subtype, GUID formattype, void * format, int noflip);
+	HRESULT ChangeColorspace(GUID subtype, GUID formattype, void * format, int *bitdepth, int noflip);
 	HRESULT OpenLib();
 	void CloseLib();
 
@@ -166,13 +163,16 @@ private :
 	xvid_dec_frame_t m_frame;
 
 	HINSTANCE m_hdll;
-	int (__cdecl *xvid_global_func)(void *handle, int opt, void *param1, void *param2);
-	int (__cdecl *xvid_decore_func)(void *handle, int opt, void *param1, void *param2);
-	UINT ar_x, ar_y;
+	int (*xvid_global_func)(void *handle, int opt, void *param1, void *param2);
+	int (*xvid_decore_func)(void *handle, int opt, void *param1, void *param2);
+	int ar_x, ar_y;
 	bool forced_ar;
 
 	int rgb_flip;
 	int out_stride;
+
+	clock_t m_startClock;
+	int m_tray_icon;
 
 	/* mft stuff */
 #if defined(XVID_USE_MFT)
@@ -181,10 +181,11 @@ private :
 	HRESULT OnSetInputType(IMFMediaType *pmt);
 	HRESULT OnCheckInputType(IMFMediaType *pmt);
 
-	HRESULT OnSetOutputType(IMFMediaType *pmt);
+	HRESULT OnSetOutputType(IMFMediaType *pmt, int bitdepth);
 
 	IMFMediaType *m_pInputType;
 	IMFMediaType *m_pOutputType;
+	int m_pOutputTypeBPP;
 
 	CRITICAL_SECTION m_mft_lock;
 	REFERENCE_TIME m_timestamp;
@@ -196,9 +197,9 @@ private :
 	REFERENCE_TIME m_rtFrame;
 	MFRatio m_frameRate;
 	UINT64 m_duration;
-#endif
 
-	HWND MSG_hwnd; /* message handler window */
+	HANDLE m_thread_handle;
+#endif
 };
 #define WM_ICONMESSAGE (WM_USER + 1)
 
