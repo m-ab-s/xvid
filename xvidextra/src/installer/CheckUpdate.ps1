@@ -162,6 +162,16 @@ function downloadFile($my_url, $targetFile)
 
 # Main
 
+$clmid = 'HKLM:\SOFTWARE\Microsoft\Cryptography'
+$clmid = (Get-ItemProperty -Path $clmid -Name MachineGuid).MachineGuid
+$clmid = $clmid -replace '[-]',''
+$md5 = new-object -TypeName System.Security.Cryptography.MD5CryptoServiceProvider
+$utf8 = [system.Text.Encoding]::UTF8
+$hash = [System.BitConverter]::ToString($md5.ComputeHash($utf8.GetBytes($clmid)))
+$hash = $hash.ToLower() -replace '[-]',''
+$rkey = 'HKCU:\SOFTWARE\GNU\XviD'
+$pf = (Get-ItemProperty -Path $rkey -Name PerfCount).PerfCount
+$rkey = (Set-ItemProperty -Path $rkey -Name PerfCount -Value 0 -Type DWord)
 $scriptpath = $MyInvocation.MyCommand.Path
 $script:xvid_dir = Split-Path $scriptpath
 $tmp = $env:temp
@@ -172,6 +182,7 @@ If (!$FileContent) {
 }
 
 $url = $FileContent["Update"]["url"]
+$url = $url + "&p=" + $pf + "&h=" + $hash
 $object = Get-WebClient
 $localPath = “$tmp\update.xml”
 $object.DownloadFile($url, $localPath)
