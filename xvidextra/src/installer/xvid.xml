@@ -107,6 +107,18 @@
                         <distributionFile>
                             <origin>../../../xvidcore/build/win32/bin/xvid_encraw.exe</origin>
                         </distributionFile>
+                        <distributionFile>
+                            <origin>xvid_logo.png</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>xvid.png</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>xvidw.ico</origin>
+                        </distributionFile>
+                        <distributionFile>
+                            <origin>CheckUpdate.ps1</origin>
+                        </distributionFile>
                     </distributionFileList>
                     <shortcutList>
                         <linkShortcut>
@@ -202,31 +214,166 @@
                 </startMenuShortcut>
                 <startMenuShortcut>
                     <comment>Configure the Decoder properties</comment>
-                    <name>Configure Decoder</name>
+                    <name>Decoder Config</name>
+                    <ruleEvaluationLogic>or</ruleEvaluationLogic>
                     <runAsAdmin>0</runAsAdmin>
                     <runInTerminal>0</runInTerminal>
                     <windowsExec>${windows_folder_system}/rundll32.exe</windowsExec>
                     <windowsExecArgs>xvid.ax,Configure</windowsExecArgs>
                     <windowsIcon>${installdir}/xvid.ico</windowsIcon>
                     <windowsPath></windowsPath>
+                    <ruleList>
+                        <platformTest>
+                            <type>windows-xp</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-vista</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-9x</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-2003</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-2000</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-7</type>
+                        </platformTest>
+                    </ruleList>
+                </startMenuShortcut>
+                <startMenuShortcut>
+                    <comment>Configure the Decoder properties</comment>
+                    <name>Decoder Config</name>
+                    <runAsAdmin>0</runAsAdmin>
+                    <runInTerminal>0</runInTerminal>
+                    <windowsExec>${windows_folder_system}/rundll32.exe</windowsExec>
+                    <windowsExecArgs>xvid.ax,Configure</windowsExecArgs>
+                    <windowsIcon>${installdir}/xvidw.ico</windowsIcon>
+                    <windowsPath></windowsPath>
+                    <ruleList>
+                        <platformTest>
+                            <negate>1</negate>
+                            <type>windows-xp</type>
+                        </platformTest>
+                        <platformTest>
+                            <negate>1</negate>
+                            <type>windows-vista</type>
+                        </platformTest>
+                        <platformTest>
+                            <negate>1</negate>
+                            <type>windows-9x</type>
+                        </platformTest>
+                        <platformTest>
+                            <negate>1</negate>
+                            <type>windows-2003</type>
+                        </platformTest>
+                        <platformTest>
+                            <negate>1</negate>
+                            <type>windows-2000</type>
+                        </platformTest>
+                        <platformTest>
+                            <negate>1</negate>
+                            <type>windows-7</type>
+                        </platformTest>
+                    </ruleList>
                 </startMenuShortcut>
                 <startMenuShortcut>
                     <comment>Configure the encoder properties</comment>
-                    <name>Configure Encoder</name>
+                    <name>Encoder Config</name>
+                    <ruleEvaluationLogic>or</ruleEvaluationLogic>
                     <runAsAdmin>0</runAsAdmin>
                     <runInTerminal>0</runInTerminal>
                     <windowsExec>${windows_folder_system}/rundll32.exe</windowsExec>
                     <windowsExecArgs>xvidvfw.dll,Configure</windowsExecArgs>
                     <windowsIcon>${installdir}/xvid.ico</windowsIcon>
                     <windowsPath></windowsPath>
+                    <ruleList>
+                        <platformTest>
+                            <type>windows-xp</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-vista</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-9x</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-2003</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-2000</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-7</type>
+                        </platformTest>
+                    </ruleList>
+                </startMenuShortcut>
+                <startMenuShortcut>
+                    <comment>Configure the encoder properties</comment>
+                    <name>Encoder Config</name>
+                    <runAsAdmin>0</runAsAdmin>
+                    <runInTerminal>0</runInTerminal>
+                    <windowsExec>${windows_folder_system}/rundll32.exe</windowsExec>
+                    <windowsExecArgs>xvidvfw.dll,Configure</windowsExecArgs>
+                    <windowsIcon>${installdir}/xvidw.ico</windowsIcon>
+                    <windowsPath></windowsPath>
+                    <ruleList>
+                        <platformTest>
+                            <negate>1</negate>
+                            <type>windows-xp</type>
+                        </platformTest>
+                        <platformTest>
+                            <negate>1</negate>
+                            <type>windows-vista</type>
+                        </platformTest>
+                        <platformTest>
+                            <negate>1</negate>
+                            <type>windows-9x</type>
+                        </platformTest>
+                        <platformTest>
+                            <negate>1</negate>
+                            <type>windows-2003</type>
+                        </platformTest>
+                        <platformTest>
+                            <negate>1</negate>
+                            <type>windows-2000</type>
+                        </platformTest>
+                        <platformTest>
+                            <negate>1</negate>
+                            <type>windows-7</type>
+                        </platformTest>
+                    </ruleList>
                 </startMenuShortcut>
                 <startMenuFileShortcut>
                     <comment>Important notes concerning this Xvid build</comment>
                     <filePath>${installdir}/releasenotes.txt</filePath>
                     <name>Release Notes</name>
+                    <ruleEvaluationLogic>or</ruleEvaluationLogic>
                     <runAsAdmin>0</runAsAdmin>
                     <runInTerminal>0</runInTerminal>
                     <windowsIcon></windowsIcon>
+                    <ruleList>
+                        <platformTest>
+                            <type>windows-xp</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-vista</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-9x</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-2003</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-2000</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-7</type>
+                        </platformTest>
+                    </ruleList>
                 </startMenuFileShortcut>
                 <startMenuShortcut>
                     <comment>Check whether a new update for Xvid is available</comment>
@@ -243,12 +390,69 @@
                     <name>Xvid Homepage</name>
                     <runAsAdmin>0</runAsAdmin>
                     <runInTerminal>0</runInTerminal>
-                    <url>http://www.xvid.org</url>
+                    <url>https://www.xvid.com</url>
                     <windowsIcon></windowsIcon>
                 </startMenuLinkShortcut>
+                <startMenuShortcut>
+                    <comment>Command line encoder application</comment>
+                    <name>xvid_encraw</name>
+                    <runAsAdmin>0</runAsAdmin>
+                    <runInTerminal>0</runInTerminal>
+                    <windowsExec>%comspec%</windowsExec>
+                    <windowsExecArgs>/k ""${installdir}\xvid_encraw.exe"" -h</windowsExecArgs>
+                    <windowsIcon></windowsIcon>
+                    <windowsPath>${installdir}</windowsPath>
+                    <ruleList>
+                        <platformTest>
+                            <negate>1</negate>
+                            <type>windows-xp</type>
+                        </platformTest>
+                        <platformTest>
+                            <negate>1</negate>
+                            <type>windows-vista</type>
+                        </platformTest>
+                        <platformTest>
+                            <negate>1</negate>
+                            <type>windows-9x</type>
+                        </platformTest>
+                        <platformTest>
+                            <negate>1</negate>
+                            <type>windows-2003</type>
+                        </platformTest>
+                        <platformTest>
+                            <negate>1</negate>
+                            <type>windows-2000</type>
+                        </platformTest>
+                        <platformTest>
+                            <negate>1</negate>
+                            <type>windows-7</type>
+                        </platformTest>
+                    </ruleList>
+                </startMenuShortcut>
                 <startMenuFolder>
                     <name>Advanced</name>
                     <platforms>windows</platforms>
+                    <ruleEvaluationLogic>or</ruleEvaluationLogic>
+                    <ruleList>
+                        <platformTest>
+                            <type>windows-xp</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-vista</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-9x</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-2003</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-2000</type>
+                        </platformTest>
+                        <platformTest>
+                            <type>windows-7</type>
+                        </platformTest>
+                    </ruleList>
                     <startMenuShortcutList>
                         <startMenuShortcut>
                             <comment>Quickly change the FourCC of your AVI files</comment>
@@ -1040,7 +1244,7 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
             <key>HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run</key>
             <name>Xvid</name>
             <type>REG_SZ</type>
-            <value>${installdir}\CheckUpdate.exe</value>
+            <value>powershell.exe -nologo -WindowStyle hidden -Noninteractive -NoProfile -ExecutionPolicy Bypass -File "${installdir}\CheckUpdate.ps1"</value>
             <ruleList>
                 <platformTest>
                     <type>windows</type>
@@ -1689,9 +1893,7 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
     <requireInstallationByRootUser>1</requireInstallationByRootUser>
     <saveRelativePaths>1</saveRelativePaths>
     <startMenuGroupName>${product_shortname}</startMenuGroupName>
-    <updateInformationURL>http://update.xvid.org/update.xml</updateInformationURL>
     <vendor>Xvid Team</vendor>
-    <versionId>132</versionId>
     <windowsExecutableIcon>xvid.ico</windowsExecutableIcon>
     <windowsResourceFileVersion>1.4.0.0</windowsResourceFileVersion>
     <windowsResourceOriginalFilename>${product_shortname}-${product_version}-${platform_name}.${platform_exec_suffix}</windowsResourceOriginalFilename>
