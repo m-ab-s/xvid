@@ -1829,8 +1829,8 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
         </deleteFile>
         <registrySet>
             <abortOnError>0</abortOnError>
-            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc\58564944</key>
-            <name>Description</name>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc</key>
+            <name>58564944</name>
             <showMessageOnError>0</showMessageOnError>
             <type>REG_DWORD</type>
             <value>5634504d</value>
@@ -1838,8 +1838,8 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
         </registrySet>
         <registrySet>
             <abortOnError>0</abortOnError>
-            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc\78766964</key>
-            <name>Description</name>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc</key>
+            <name>78766964</name>
             <showMessageOnError>0</showMessageOnError>
             <type>REG_DWORD</type>
             <value>5634504d</value>
@@ -1847,8 +1847,8 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
         </registrySet>
         <registrySet>
             <abortOnError>0</abortOnError>
-            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc\58564944</key>
-            <name>Description</name>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc</key>
+            <name>58564944</name>
             <showMessageOnError>0</showMessageOnError>
             <type>REG_DWORD</type>
             <value>5634504d</value>
@@ -1856,8 +1856,8 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
         </registrySet>
         <registrySet>
             <abortOnError>0</abortOnError>
-            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc\78766964</key>
-            <name>Description</name>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc</key>
+            <name>78766964</name>
             <showMessageOnError>0</showMessageOnError>
             <type>REG_DWORD</type>
             <value>5634504d</value>
