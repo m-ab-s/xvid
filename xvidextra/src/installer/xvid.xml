@@ -1879,6 +1879,42 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
                 </platformTest>
             </ruleList>
         </registryDelete>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc\58564944</key>
+            <name>Description</name>
+            <showMessageOnError>0</showMessageOnError>
+            <type>REG_DWORD</type>
+            <value>5634504d</value>
+            <wowMode>32</wowMode>
+        </registrySet>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc\78766964</key>
+            <name>Description</name>
+            <showMessageOnError>0</showMessageOnError>
+            <type>REG_DWORD</type>
+            <value>5634504d</value>
+            <wowMode>32</wowMode>
+        </registrySet>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc\58564944</key>
+            <name>Description</name>
+            <showMessageOnError>0</showMessageOnError>
+            <type>REG_DWORD</type>
+            <value>5634504d</value>
+            <wowMode>64</wowMode>
+        </registrySet>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc\78766964</key>
+            <name>Description</name>
+            <showMessageOnError>0</showMessageOnError>
+            <type>REG_DWORD</type>
+            <value>5634504d</value>
+            <wowMode>64</wowMode>
+        </registrySet>
         <deleteFile>
             <abortOnError>0</abortOnError>
             <path>${windows_folder_common_programs}/${product_shortname}</path>
