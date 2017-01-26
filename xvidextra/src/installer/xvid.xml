@@ -1255,11 +1255,13 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
                 <compareText logic="equals" text="${AutoUpdate}" value="yes"/>
             </ruleList>
         </registrySet>
-        <registryDelete>
+        <registrySet>
             <abortOnError>0</abortOnError>
             <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc</key>
             <name>58564944</name>
             <showMessageOnError>0</showMessageOnError>
+            <type>REG_DWORD</type>
+            <value>1482049860</value>
             <wowMode>64</wowMode>
             <ruleList>
                 <platformTest>
@@ -1286,12 +1288,45 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
                     <type>windows-x64</type>
                 </platformTest>
             </ruleList>
-        </registryDelete>
-        <registryDelete>
+        </registrySet>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc</key>
+            <name>58564944</name>
+            <showMessageOnError>0</showMessageOnError>
+            <type>REG_DWORD</type>
+            <value>1482049860</value>
+            <wowMode>32</wowMode>
+            <ruleList>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-vista</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-9x</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-2003</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-2000</type>
+                </platformTest>
+            </ruleList>
+        </registrySet>
+        <registrySet>
             <abortOnError>0</abortOnError>
             <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc</key>
             <name>78766964</name>
             <showMessageOnError>0</showMessageOnError>
+            <type>REG_DWORD</type>
+            <value>2021026148</value>
             <wowMode>64</wowMode>
             <ruleList>
                 <platformTest>
@@ -1318,41 +1353,14 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
                     <type>windows-x64</type>
                 </platformTest>
             </ruleList>
-        </registryDelete>
-        <registryDelete>
-            <abortOnError>0</abortOnError>
-            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc</key>
-            <name>58564944</name>
-            <showMessageOnError>0</showMessageOnError>
-            <wowMode>32</wowMode>
-            <ruleList>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-xp</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-vista</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-9x</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-2003</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-2000</type>
-                </platformTest>
-            </ruleList>
-        </registryDelete>
-        <registryDelete>
+        </registrySet>
+        <registrySet>
             <abortOnError>0</abortOnError>
             <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc</key>
             <name>78766964</name>
             <showMessageOnError>0</showMessageOnError>
+            <type>REG_DWORD</type>
+            <value>2021026148</value>
             <wowMode>32</wowMode>
             <ruleList>
                 <platformTest>
@@ -1376,7 +1384,7 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
                     <type>windows-2000</type>
                 </platformTest>
             </ruleList>
-        </registryDelete>
+        </registrySet>
         <registrySet>
             <abortOnError>0</abortOnError>
             <key>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\DirectShow\Preferred</key>
@@ -1644,6 +1652,132 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
         </addDirectoryToPath>
     </postInstallationActionList>
     <preUninstallationActionList>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc</key>
+            <name>58564944</name>
+            <type>REG_DWORD</type>
+            <value>1446269005</value>
+            <wowMode>32</wowMode>
+            <ruleList>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-9x</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-2000</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-2003</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-vista</type>
+                </platformTest>
+            </ruleList>
+        </registrySet>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc</key>
+            <name>78766964</name>
+            <type>REG_DWORD</type>
+            <value>1446269005</value>
+            <wowMode>32</wowMode>
+            <ruleList>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-vista</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-9x</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-2003</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-2000</type>
+                </platformTest>
+            </ruleList>
+        </registrySet>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc</key>
+            <name>58564944</name>
+            <type>REG_DWORD</type>
+            <value>1446269005</value>
+            <wowMode>64</wowMode>
+            <ruleList>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-vista</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-2000</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-2003</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-9x</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-x64</type>
+                </platformTest>
+            </ruleList>
+        </registrySet>
+        <registrySet>
+            <abortOnError>0</abortOnError>
+            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc</key>
+            <name>78766964</name>
+            <type>REG_DWORD</type>
+            <value>1446269005</value>
+            <wowMode>64</wowMode>
+            <ruleList>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-xp</type>
+                </platformTest>
+                <platformTest>
+                    <type>windows-x64</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-vista</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-9x</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-2000</type>
+                </platformTest>
+                <platformTest>
+                    <negate>1</negate>
+                    <type>windows-2003</type>
+                </platformTest>
+            </ruleList>
+        </registrySet>
         <runProgram>
             <customErrorMessage>DirectShow filter (32-bit) unregister failed!</customErrorMessage>
             <program>${windows_folder_system}/regsvr32.exe</program>
@@ -1866,42 +2000,6 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
         <removeDirectoryFromPath>
             <path>${installdir}\xvid-gstreamer\0.10\x86\bin</path>
         </removeDirectoryFromPath>
-        <registrySet>
-            <abortOnError>0</abortOnError>
-            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc</key>
-            <name>58564944</name>
-            <showMessageOnError>0</showMessageOnError>
-            <type>REG_DWORD</type>
-            <value>5634504d</value>
-            <wowMode>32</wowMode>
-        </registrySet>
-        <registrySet>
-            <abortOnError>0</abortOnError>
-            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc</key>
-            <name>78766964</name>
-            <showMessageOnError>0</showMessageOnError>
-            <type>REG_DWORD</type>
-            <value>5634504d</value>
-            <wowMode>32</wowMode>
-        </registrySet>
-        <registrySet>
-            <abortOnError>0</abortOnError>
-            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc</key>
-            <name>58564944</name>
-            <showMessageOnError>0</showMessageOnError>
-            <type>REG_DWORD</type>
-            <value>5634504d</value>
-            <wowMode>64</wowMode>
-        </registrySet>
-        <registrySet>
-            <abortOnError>0</abortOnError>
-            <key>HKEY_LOCAL_MACHINE\SOFTWARE\Classes\MediaFoundation\MapVideo4cc</key>
-            <name>78766964</name>
-            <showMessageOnError>0</showMessageOnError>
-            <type>REG_DWORD</type>
-            <value>5634504d</value>
-            <wowMode>64</wowMode>
-        </registrySet>
     </preUninstallationActionList>
     <postUninstallationActionList>
         <registryDelete>
