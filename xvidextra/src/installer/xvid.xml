@@ -1256,24 +1256,7 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
             <wowMode>64</wowMode>
             <ruleList>
                 <platformTest>
-                    <negate>1</negate>
-                    <type>windows-xp</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-vista</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-9x</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-2003</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-2000</type>
+                    <type>windows-7</type>
                 </platformTest>
                 <platformTest>
                     <type>windows-x64</type>
@@ -1290,24 +1273,7 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
             <wowMode>32</wowMode>
             <ruleList>
                 <platformTest>
-                    <negate>1</negate>
-                    <type>windows-xp</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-vista</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-9x</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-2003</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-2000</type>
+                    <type>windows-7</type>
                 </platformTest>
             </ruleList>
         </registrySet>
@@ -1321,24 +1287,7 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
             <wowMode>64</wowMode>
             <ruleList>
                 <platformTest>
-                    <negate>1</negate>
-                    <type>windows-xp</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-vista</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-9x</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-2003</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-2000</type>
+                    <type>windows-7</type>
                 </platformTest>
                 <platformTest>
                     <type>windows-x64</type>
@@ -1355,24 +1304,7 @@ Reason: Your installed version of Windows Media Player is too old! To make full 
             <wowMode>32</wowMode>
             <ruleList>
                 <platformTest>
-                    <negate>1</negate>
-                    <type>windows-xp</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-vista</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-9x</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-2003</type>
-                </platformTest>
-                <platformTest>
-                    <negate>1</negate>
-                    <type>windows-2000</type>
+                    <type>windows-7</type>
                 </platformTest>
             </ruleList>
         </registrySet>
