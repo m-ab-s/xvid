@@ -130,6 +130,7 @@ read_video_packet_header(Bitstream *bs,
 	}
 
 	mbnum = (mbnum_bits == 0) ? 0 : BitstreamGetBits(bs, mbnum_bits);		/* macroblock_number */
+	DPRINTF(XVID_DEBUG_HEADER, "mbnum %i\n", mbnum);
 
 	if (dec->shape != VIDOBJLAY_SHAPE_BINARY_ONLY)
 	{
