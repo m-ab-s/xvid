@@ -84,7 +84,7 @@ extern "C" {
  * doesnt hurt but not increasing it could cause difficulty for decoders in the
  * future
  */
-#define XVID_BS_VERSION 73 
+#define XVID_BS_VERSION 74 
 
 /*****************************************************************************
  * error codes
