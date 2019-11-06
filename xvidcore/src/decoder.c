@@ -1666,7 +1666,7 @@ repeat:
     goto repeat;
   }
 
-  if(dec->frames == 0 && coding_type != I_VOP) {
+  if((dec->frames == 0 && coding_type != I_VOP) || (!dec->width || !dec->height)) {
     /* 1st frame is not an i-vop */
     goto repeat;
   }

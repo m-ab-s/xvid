@@ -990,7 +990,7 @@ BitstreamReadHeaders(Bitstream * bs,
 			memset(tmp, 0, 256);
 			tmp[0] = BitstreamShowBits(bs, 8);
 
-			for(i = 1; i < 256; i++){
+			for(i = 1; i < 255; i++){
 				tmp[i] = (BitstreamShowBits(bs, 16) & 0xFF);
 
 				if(tmp[i] == 0)
