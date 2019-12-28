@@ -6,7 +6,15 @@ This is Xvid 1.3.7 bugfix release. It replaces the previous 1.3.6 stable release
 Changes since 1.3.6:
 
 * xvidcore
-  - Fix for a decoder regression in handling Inter matrices with MPEG
+  - Fix for a regression in initializing the Inter matrix with MPEG
     Quantization
+
+Changes since 1.3.5:
+
+* xvidcore
+  - Fix for various, long-standing and potentially critical security 
+    vulnerabilities in the decoder (credit to OSS-Fuzz)
+
+  - Always use .text sections in nasm code for macho target
  
 https://www.xvid.com/
