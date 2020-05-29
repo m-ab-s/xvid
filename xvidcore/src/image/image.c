@@ -158,7 +158,7 @@ image_setedges(IMAGE * image,
 		height = (height+15)&~15;
 	}
 
-	width2 = width/2;
+	width2 = MAX(1, width/2);
 
 	for (i = 0; i < EDGE_SIZE; i++) {
 		memset(dst, *src, EDGE_SIZE);
