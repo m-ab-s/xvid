@@ -47,7 +47,10 @@
 #ifndef WIN32
 #include <sys/time.h>
 #else
+#define WINVER       0x0500
+#define _WIN32_WINNT 0x0500
 #include <windows.h>
+#include <fcntl.h>    /* _setmode() (thru io.h) and _O_BINARY */
 #include <vfw.h>
 #include <time.h>
 #define XVID_AVI_INPUT
@@ -1313,6 +1316,9 @@ void encode_sequence(enc_sequence_data_t *h) {
 #endif
 
 	if (ARG_INPUTFILE == NULL || strcmp(ARG_INPUTFILE, "stdin") == 0) {
+#ifdef _WIN32
+		_setmode(_fileno(stdin), _O_BINARY);
+#endif
 		in_file = stdin;
 	} else {
 #ifdef XVID_AVI_INPUT
