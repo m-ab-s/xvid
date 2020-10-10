@@ -127,7 +127,7 @@ static const int vop_presets[] = {
  *                     Command line global variables
  ****************************************************************************/
 
-#define MAX_ZONES   64
+#define MAX_ZONES   8192
 #define MAX_ENC_INSTANCES 4
 #define MAX_XDIM 4096
 #define MAX_YDIM 4096
