@@ -1538,7 +1538,8 @@ static void decoder_output(DECODER * dec, IMAGE * img, MACROBLOCK * mbs,
     img = &dec->tmp;
   }
 
-  if ((frame->output.plane[0] != NULL) && (frame->output.stride[0] >= dec->width)) {
+  if ((frame->output.csp == XVID_CSP_INTERNAL) || 
+      ((frame->output.plane[0] != NULL) && (frame->output.stride[0] >= dec->width))) {
     image_output(img, dec->width, dec->height,
            dec->edged_width, (uint8_t**)frame->output.plane, frame->output.stride,
            frame->output.csp, dec->interlacing);
